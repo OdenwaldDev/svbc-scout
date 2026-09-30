@@ -2101,7 +2101,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.35', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.36', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18027,6 +18027,161 @@ function hpDatei(art){
 }
 
 /* =====================================================================
+   Sportzentrale Beta 0.36 · Wer hat welche Version? Update-Nachricht per WhatsApp
+   Wunsch Albert (30.09.2026): In der Nutzerverwaltung sehen, wer noch auf einer alten Version hängt,
+   und direkt von dort eine Update-Nachricht schicken, zur Not mit Anmelde-Link, der in die neueste Version führt.
+   - Jedes Gerät meldet beim Start Version, Adresse (alt/neu), ob als App installiert und die Plattform
+   - Nutzerverwaltung: pro Person die Version, oben die Zusammenfassung, Knopf „Update-Nachricht“
+   - Der Anmelde-Link geht an die Adresse, auf der die Person ihre App hat (alte Adresse = App vor dem 28.09. installiert)
+   ===================================================================== */
+const AV_ADR={alt:'https://odenwalddev.github.io/svbc-scout/',neu:'https://svbsc.kaderwerk.pro/'};
+const AV_ADR_T={alt:'alte Adresse',neu:'svbsc.kaderwerk.pro',andere:'andere Adresse'};
+const AV_NEU_AB='2026-09-28';
+
+function avGeraet(){
+  let g=''; try{ g=localStorage.getItem('sv_geraet')||''; }catch(e){}
+  if(!/^[a-z0-9-]{8,40}$/.test(g)){
+    try{ g=crypto.randomUUID(); }catch(e){ g=Math.random().toString(36).slice(2,12)+'-'+Date.now().toString(36); }
+    g=String(g).toLowerCase(); try{ localStorage.setItem('sv_geraet',g); }catch(e){}
+  }
+  return g;
+}
+function avPlattform(){ const u=navigator.userAgent||'';
+  if(/iPhone|iPod/.test(u))return 'iPhone'; if(/iPad/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1))return 'iPad';
+  if(/Android/.test(u))return /Mobile/.test(u)?'Android-Handy':'Android-Tablet';
+  if(/Windows/.test(u))return 'Windows'; if(/Macintosh/.test(u))return 'Mac'; if(/Linux/.test(u))return 'Linux'; return 'anderes'; }
+function avBrowser(){ const u=navigator.userAgent||'';
+  if(/SamsungBrowser/.test(u))return 'Samsung Internet'; if(/Edg[A]?\//.test(u))return 'Edge'; if(/Firefox|FxiOS/.test(u))return 'Firefox';
+  if(/CriOS|Chrome/.test(u))return 'Chrome'; if(/Safari/.test(u))return 'Safari'; return 'anderer'; }
+function avApp(){ try{ return matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true; }catch(e){ return false; } }
+let _avGemeldet=0;
+async function appMelden(){
+  _avGemeldet=Date.now();
+  try{ const host=(location.host+location.pathname).replace(/index\.html$/,'');
+    await SVB.sb.rpc('app_melden',{p:{geraet:avGeraet(),build:APP_BUILD,host,app:avApp(),plattform:avPlattform(),browser:avBrowser()}}); }catch(e){}
+}
+setTimeout(appMelden,2500);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&Date.now()-_avGemeldet>6*36e5)appMelden(); });
+
+/* ---------- Auswertung ---------- */
+function avNr(b){ const m=String(b||'').match(/(\d+)\.(\d+)/); return m?(+m[1])*1000+(+m[2]):null; }
+function avV(b){ const s=String(b||''); return /^beta-/.test(s)?'Beta '+s.slice(5):(/^\d+\.\d+$/.test(s)?'Beta '+s:s); }
+function avStatus(info){
+  const g=(info&&info.geraete)||[], cur=avNr(APP_BUILD);
+  if(g.length){ const n=g[0], nr=avNr(n.build);
+    const ok=n.build===APP_BUILD||(cur!=null&&nr!=null&&nr>=cur);
+    return {k:ok?'ok':'alt',build:n.build,g:n,t:avV(n.build)}; }
+  if(info&&info.patch&&avNr(info.patch)!=null&&avNr(info.patch)<100000)return {k:'alt',build:null,g:null,t:'vor Beta 0.36',patch:info.patch};
+  return {k:'unb',build:null,g:null,t:'noch keine Meldung'};
+}
+function avGeraetText(g){ if(!g)return ''; return [g.app?'App':'Browser',g.plattform,AV_ADR_T[g.adresse]||''].filter(Boolean).join(' · '); }
+function avZiel(u,info){
+  const g=(info&&info.geraete)||[];
+  if(g.length&&(g[0].adresse==='alt'||g[0].adresse==='neu'))return g[0].adresse;
+  return (u.created_at&&String(u.created_at).slice(0,10)<AV_NEU_AB)?'alt':'neu';
+}
+
+let AV_DATA=null;
+async function avLaden(){ const {data,error}=await SVB.sb.rpc('app_versionen'); if(error)throw error; AV_DATA=data||{}; return AV_DATA; }
+
+async function avAdminVersionen(){
+  const P=document.getElementById('panel-admin'); if(!P||!isAdmin())return;
+  try{ await avLaden(); }catch(e){ console.warn('Versionen',e); return; }
+  const rows=[...P.querySelectorAll('.urow[data-u]')]; if(!rows.length)return;
+  let ok=0, alt=[], unb=[];
+  rows.forEach(r=>{
+    const id=r.dataset.u, u=SV_USERS.find(x=>x.id===id); if(!u)return;
+    const S=avStatus(AV_DATA[id]); const st=r.querySelector('.st');
+    if(u.active&&(u.pw_set||u.last_sign_in_at)){ if(S.k==='ok')ok++; else if(S.k==='alt')alt.push(u); else unb.push(u); }
+    if(st&&!st.querySelector('.av-v')){
+      const d=document.createElement('span'); d.className='av-v '+S.k;
+      d.innerHTML=(S.k==='ok'?'✓ ':S.k==='alt'?'⚠️ ':'')+svEsc(S.t)+(S.g?' · '+svEsc(avGeraetText(S.g)):'');
+      d.title=S.g?'zuletzt gemeldet '+svAgo(S.g.zuletzt):(S.patch?'Neuigkeiten zuletzt gelesen: '+avV(S.patch):'Dieses Gerät hat sich noch nicht gemeldet');
+      st.appendChild(document.createElement('br')); st.appendChild(d);
+    }
+    const acts=r.querySelector('.acts');
+    if(acts&&u.id!==SVU.id&&u.active&&(u.pw_set||u.last_sign_in_at)&&!acts.querySelector('[data-avupd]')){
+      const b=document.createElement('button'); b.className='iconbtn'+(S.k==='ok'?'':' av-hin'); b.dataset.avupd=u.id; b.title='Update-Nachricht schicken'; b.innerHTML=SVI('send');
+      b.onclick=()=>avUpdateFenster(u.id); acts.insertBefore(b,acts.firstChild);
+    }
+  });
+  const head=P.querySelector('.ulist'); if(!head)return;
+  P.querySelectorAll('.av-sum').forEach(x=>x.remove());
+  const d=document.createElement('div'); d.className='av-sum';
+  const namen=l=>l.map(u=>svEsc(svFirst(u.name)||u.email)).join(', ');
+  d.innerHTML=`<b>📲 App-Versionen</b><span>Aktuell ist <b>${svEsc(avV(APP_BUILD))}</b>. ${ok} ${ok===1?'Person ist':'Personen sind'} auf dem neuesten Stand.`
+    +(alt.length?` Noch alt: ${namen(alt)}.`:'')+(unb.length?` Ohne Meldung: ${namen(unb)}.`:'')
+    +`</span><small>Mit ${SVI('send').replace('<svg','<svg style="width:13px;height:13px;vertical-align:-2px"')} schickst du eine Update-Nachricht per WhatsApp, auf Wunsch mit Anmelde-Link.</small>`;
+  head.before(d);
+}
+{ const _arV=svAdminRender; svAdminRender=async function(){ const r=await _arV.apply(this,arguments); try{ await avAdminVersionen(); }catch(e){ console.warn('Versionen',e); } return r; }; }
+
+/* ---------- Update-Nachricht ---------- */
+function avText(u,link){
+  const fn=svFirst(u.name)||'du';
+  return `Hallo ${fn}! In der SV/BSC Sportzentrale gibt es ein Update (${avV(APP_BUILD)}).\n\nMach die App einfach einmal ganz zu und öffne sie wieder, dann holt sie sich die neue Version von selbst. Wenn sie offen ist, reicht auch einmal nach unten ziehen.`
+    +(link?`\n\nFalls du danach abgemeldet bist, tipp auf diesen Link, der meldet dich direkt an:\n${link}\n\nDer Link ist nur für dich und nur begrenzt gültig.`:'');
+}
+async function avUpdateFenster(id){
+  const u=SV_USERS.find(x=>x.id===id); if(!u)return;
+  const info=(AV_DATA||{})[id]||{}, S=avStatus(info), g=info.geraete||[];
+  const st={ziel:avZiel(u,info),mitLink:true,links:{},laedt:false};
+  const M=svModal(`<div class="og-form av-f"><h2>📲 Update für ${svEsc(u.name||u.email)}</h2>
+    <div class="av-stand ${S.k}"><b>${S.k==='ok'?'✓ Ist auf dem neuesten Stand':S.k==='alt'?'⚠️ Hat noch eine ältere Version':'Noch keine Meldung von einem Gerät'}</b>
+      <span>${g.length?g.slice(0,4).map(x=>`${svEsc(avV(x.build))} · ${svEsc(avGeraetText(x))} · ${svEsc(svAgo(x.zuletzt))}`).join('<br>')
+        :(info.patch?'Neuigkeiten zuletzt gelesen in '+svEsc(avV(info.patch))+'. Geräte melden sich erst ab Beta 0.36.':'Geräte melden sich erst ab Beta 0.36.')}</span></div>
+    <label class="av-l">Wo hat ${svEsc(svFirst(u.name)||'die Person')} die App?</label>
+    <div class="av-ziel">
+      <label><input type="radio" name="avZ" value="alt"${st.ziel==='alt'?' checked':''}> <span><b>Alte Adresse</b><small>App vor dem 28.09. installiert</small></span></label>
+      <label><input type="radio" name="avZ" value="neu"${st.ziel==='neu'?' checked':''}> <span><b>svbsc.kaderwerk.pro</b><small>ab dem 28.09. installiert</small></span></label>
+    </div>
+    <label class="av-chk"><input type="checkbox" id="avMitLink" checked> Anmelde-Link mitschicken, falls die App nach dem Update nach dem Passwort fragt</label>
+    <textarea id="avTxt" rows="9" class="search" style="width:100%;height:auto;padding:12px;line-height:1.45"></textarea>
+    <div class="btnrow" style="margin-top:12px">
+      <a class="btn" id="avWa" href="#" target="_blank" rel="noopener">${SVI('chat')} Per WhatsApp</a>
+      <button class="btn ghost" id="avCopy">${SVI('copy')} Text kopieren</button>
+    </div>
+    <p class="note small" style="margin-top:10px">WhatsApp öffnet sich mit dem fertigen Text, du wählst nur noch ${svEsc(svFirst(u.name)||'die Person')} aus. Auf dem iPhone öffnet der Link Safari: Ist die App dort nicht abgemeldet, reicht das Neustarten der App.</p>
+  </div>`);
+  M.querySelectorAll('.btn svg').forEach(s=>{ s.style.cssText='width:16px;height:16px;vertical-align:-3px;margin-right:4px'; });
+  const T=M.querySelector('#avTxt'), WA=M.querySelector('#avWa'), CB=M.querySelector('#avMitLink');
+  let eigen=false; T.addEventListener('input',()=>{ eigen=true; setWa(); });
+  function setWa(){ WA.href='https://wa.me/?text='+encodeURIComponent(T.value); }
+  function fuellen(){ if(eigen)return; const l=st.mitLink?st.links[st.ziel]:null; T.value=avText(u,l||(st.mitLink?'(Link wird erstellt …)':'')); setWa(); }
+  async function linkHolen(){
+    if(!st.mitLink||st.links[st.ziel])return fuellen();
+    const z=st.ziel; st.laedt=true; fuellen(); WA.classList.add('dis');
+    try{ const r=await SVB.admin('link',{user_id:u.id,kind:'magiclink',app_url:AV_ADR[z]}); st.links[z]=r.link; }
+    catch(e){ kToast('⚠️ '+e.message); st.mitLink=false; CB.checked=false; }
+    st.laedt=false; WA.classList.remove('dis'); if(st.ziel===z)fuellen();
+  }
+  M.querySelectorAll('input[name=avZ]').forEach(r=>r.onchange=()=>{ st.ziel=r.value; eigen=false; linkHolen(); });
+  CB.onchange=()=>{ st.mitLink=CB.checked; eigen=false; linkHolen(); };
+  WA.onclick=e=>{ if(st.laedt){ e.preventDefault(); kToast('Einen Moment, der Link wird noch erstellt'); } };
+  M.querySelector('#avCopy').onclick=()=>{ if(st.laedt){ kToast('Einen Moment, der Link wird noch erstellt'); return; } kCopy(T.value); };
+  linkHolen();
+}
+
+(function(){ try{ const s=document.createElement('style'); s.id='svm38css'; s.textContent=`
+.av-v{display:inline-block;margin-top:2px;font-size:11.5px;font-weight:700;color:var(--ink3)}
+.av-v.ok{color:#86efac}.av-v.alt{color:#fbbf24}
+.iconbtn.av-hin{border-color:rgba(251,191,36,.55);color:#fbbf24}
+.av-sum{display:flex;flex-direction:column;gap:4px;margin:4px 0 12px;padding:12px 14px;border-radius:14px;background:rgba(143,201,236,.08);border:1px solid rgba(143,201,236,.25);font-size:13.5px;line-height:1.45}
+.av-sum small{color:var(--ink3);font-size:12px}
+.av-f h2{margin:0 0 12px}
+.av-stand{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--s3,rgba(255,255,255,.05));font-size:13px;line-height:1.5;margin-bottom:14px}
+.av-stand.ok b{color:#86efac}.av-stand.alt b{color:#fbbf24}
+.av-stand span{color:var(--ink2)}
+.av-l{display:block;font-weight:700;font-size:13px;margin:0 0 8px}
+.av-ziel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.av-ziel label{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid var(--line);cursor:pointer}
+.av-ziel label span{display:flex;flex-direction:column;gap:2px;font-size:13px}.av-ziel small{color:var(--ink3);font-size:11.5px}
+.av-chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-bottom:10px;line-height:1.4}
+.btn.dis{opacity:.55}
+@media (max-width:520px){.av-ziel{grid-template-columns:1fr}}
+`; document.head.appendChild(s); }catch(e){} })();
+
+/* =====================================================================
    SV/BSC Scout · Runde 20: „Was ist neu“: Update-Fenster & Patch-Historie
    - Nach jedem Update ein Pop-up: das Wichtigste in Kürze → „OK“ oder „Mehr erfahren“ (ganze Historie)
    - Jederzeit erreichbar: Seitenleiste / „Mehr“ / Mein Konto → „Was ist neu“
@@ -18035,6 +18190,13 @@ function hpDatei(art){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.36',v:'0.36',datum:'2026-09-30',titel:'Updates kommen sicher an',kurz:'Die App meldet jetzt, welche Version auf welchem Gerät läuft. So sehen wir, wer noch eine alte Version hat, und können gezielt Bescheid geben.',
+   punkte:[
+    {ic:'🔄',t:'Neue Versionen kommen von selbst',d:'Auch Apps, die vor dem 28.09. installiert wurden, holen sich neue Versionen jetzt zuverlässig. Einfach die App schließen und wieder öffnen.',go:'home'},
+    {ic:'📌',t:'Das alte Symbol bleibt',d:'Wer die App vor dem 28.09. aufs Handy gelegt hat, muss nichts neu installieren und sich nicht neu anmelden. Das alte Symbol zeigt immer die neueste Version.'},
+    {ic:'📲',t:'Wer hat welche Version?',d:'In der Nutzerverwaltung steht bei jeder Person, welche Version auf ihrem Handy läuft, ob als App oder im Browser und über welche Adresse.',go:'admin',r:'admin'},
+    {ic:'💬',t:'Update-Nachricht per WhatsApp',d:'Mit einem Tipp eine fertige Nachricht an alle, die noch hängen. Auf Wunsch mit Anmelde-Link, der direkt in die neueste Version führt, ohne Passwort.',r:'admin'}
+   ]},
   {id:'0.35',v:'0.35',datum:'2026-09-30',titel:'Helferpool mit QR-Code',kurz:'Wer helfen will, scannt den QR-Code, trägt sich mit Namen und Handynummer ein und kommt danach direkt in die WhatsApp-Gruppe. So wissen wir bei jeder Nummer, wer dahinter steckt.',
    punkte:[
     {ic:'📱',t:'Erst eintragen, dann in die Gruppe',d:'Der QR-Code auf dem Aushang führt zu einer kurzen Anmeldung: Name, Geburtsdatum, Handynummer, auf Wunsch E-Mail und wobei man gern hilft. Erst danach kommt der Knopf zur WhatsApp-Gruppe.',go:'orga',r:'team'},

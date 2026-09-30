@@ -2,7 +2,7 @@
    - App-Seite: erst Netz (max. 4 s), sonst gespeicherte Version → startet auch im Funkloch
    - Icons/Wappen/Chart-Bibliothek: aus dem Speicher, im Hintergrund aufgefrischt
    - Sync (Make) und version.json laufen NIE über den Speicher */
-const BUILD = 'beta-0.35';
+const BUILD = 'beta-0.36';
 const CACHE = 'svbc-scout-' + BUILD;
 const SHELL = ['./', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon-64.png', './crest.svg', './logo.png',
   './fonts/inter-var.woff2', './fonts/barlowc-700.woff2', './vendor/supabase.js?v=' + BUILD, './icons.js?v=' + BUILD, './boot.js?v=' + BUILD, './app.js?v=' + BUILD];
@@ -11,7 +11,7 @@ const PAGE_KEY = './';
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
-    await Promise.all(SHELL.map(u => fetch(new Request(u, { cache: 'no-cache' })).then(r => { if (r.ok) return c.put(u, r); }).catch(() => {})));
+    await Promise.all(SHELL.map(u => fetch(new Request(u, { cache: 'reload' })).then(r => { if (r.ok) return c.put(u, r); }).catch(() => {})));
     await self.skipWaiting();
   })());
 });
@@ -38,7 +38,8 @@ function isPage(req, url) {
 
 async function pageFirstNetwork(req) {
   const c = await caches.open(CACHE);
-  const net = fetch(req.url.split('#')[0], { cache: 'no-cache', credentials: 'same-origin' }).then(r => {
+  const net = fetch(req.url.split('#')[0], { cache: 'reload', credentials: 'same-origin' })   /* 0.36: am Browser-Zwischenspeicher vorbei (alte Weiterleitungen) */.then(r => {
+    if (r && r.redirected) r = new Response(r.body, { status: r.status, statusText: r.statusText, headers: r.headers });   /* umgeleitete Antwort darf eine Seite nicht direkt beantworten */
     if (r && r.ok) c.put(PAGE_KEY, r.clone());
     return r;
   });

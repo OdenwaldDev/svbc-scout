@@ -254,7 +254,7 @@ SV.changePassword=async function(pw){
   await sb.rpc('me_update',{p_name:null,p_pw_set:true});
 };
 SV.admin=async function(action,payload){
-  const {data,error}=await sb.functions.invoke('admin-users',{body:Object.assign({},payload||{},{action,app_url:location.origin+location.pathname})});
+  const {data,error}=await sb.functions.invoke('admin-users',{body:Object.assign({app_url:location.origin+location.pathname},payload||{},{action})});
   if(error){ let t=error.message; try{ const j=await error.context.json(); if(j&&j.error)t=j.error; }catch(e){} throw new Error(t); }
   if(data&&data.error)throw new Error(data.error);
   return data;
