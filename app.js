@@ -2101,7 +2101,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.36', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.37', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18129,7 +18129,8 @@ async function avUpdateFenster(id){
   const M=svModal(`<div class="og-form av-f"><h2>📲 Update für ${svEsc(u.name||u.email)}</h2>
     <div class="av-stand ${S.k}"><b>${S.k==='ok'?'✓ Ist auf dem neuesten Stand':S.k==='alt'?'⚠️ Hat noch eine ältere Version':'Noch keine Meldung von einem Gerät'}</b>
       <span>${g.length?g.slice(0,4).map(x=>`${svEsc(avV(x.build))} · ${svEsc(avGeraetText(x))} · ${svEsc(svAgo(x.zuletzt))}`).join('<br>')
-        :(info.patch?'Neuigkeiten zuletzt gelesen in '+svEsc(avV(info.patch))+'. Geräte melden sich erst ab Beta 0.36.':'Geräte melden sich erst ab Beta 0.36.')}</span></div>
+        :(info.patch?'Neuigkeiten zuletzt gelesen in '+svEsc(avV(info.patch))+'. Geräte melden sich erst ab Beta 0.36.':'Geräte melden sich erst ab Beta 0.36.')}</span>
+      ${info.push===undefined?'':`<span class="av-push">${info.push?'🔔 Push ist an'+(S.k==='ok'?'':'. Bleibt die App alt, kommt automatisch höchstens alle 7 Tage eine Erinnerung')+(info.erinnert?' · letzte Erinnerung '+svEsc(svAgo(info.erinnert)):'')+'.':'🔕 Kein Push aktiviert, also nur per WhatsApp erreichbar.'}</span>`}</div>
     <label class="av-l">Wo hat ${svEsc(svFirst(u.name)||'die Person')} die App?</label>
     <div class="av-ziel">
       <label><input type="radio" name="avZ" value="alt"${st.ziel==='alt'?' checked':''}> <span><b>Alte Adresse</b><small>App vor dem 28.09. installiert</small></span></label>
@@ -18172,6 +18173,7 @@ async function avUpdateFenster(id){
 .av-stand{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--s3,rgba(255,255,255,.05));font-size:13px;line-height:1.5;margin-bottom:14px}
 .av-stand.ok b{color:#86efac}.av-stand.alt b{color:#fbbf24}
 .av-stand span{color:var(--ink2)}
+.av-stand .av-push{color:var(--ink3);font-size:12px}
 .av-l{display:block;font-weight:700;font-size:13px;margin:0 0 8px}
 .av-ziel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .av-ziel label{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid var(--line);cursor:pointer}
@@ -18190,6 +18192,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.37',v:'0.37',datum:'2026-09-30',titel:'Neuigkeiten nur noch einmal',kurz:'Das Fenster mit den Neuigkeiten kommt pro Update nur noch einmal und höchstens einmal am Tag. Nachlesen kannst du alles jederzeit unter „Was ist neu“.',
+   punkte:[
+    {ic:'🔕',t:'Einmal reicht',d:'Egal wie du das Fenster schließt, für dieses Update kommt es nicht wieder. Gibt es mehrere Updates an einem Tag, siehst du sie gesammelt beim nächsten Mal. Bis dahin steht „neu“ im Menü.',go:'home'},
+    {ic:'📲',t:'Erinnerung bei alter Version',d:'Hängt eine App mehrere Tage auf einer alten Version, kommt höchstens einmal pro Woche eine Push-Nachricht. Ein Tipp darauf aktualisiert die App und zeigt, was neu ist.'},
+    {ic:'🔔',t:'Wer wurde erinnert?',d:'Im Update-Fenster der Nutzerverwaltung steht, ob die Person Push hat und wann die letzte Erinnerung rausging.',r:'admin'}
+   ]},
   {id:'0.36',v:'0.36',datum:'2026-09-30',titel:'Updates kommen sicher an',kurz:'Die App meldet jetzt, welche Version auf welchem Gerät läuft. So sehen wir, wer noch eine alte Version hat, und können gezielt Bescheid geben.',
    punkte:[
     {ic:'🔄',t:'Neue Versionen kommen von selbst',d:'Auch Apps, die vor dem 28.09. installiert wurden, holen sich neue Versionen jetzt zuverlässig. Einfach die App schließen und wieder öffnen.',go:'home'},
@@ -18582,6 +18590,56 @@ function spEntries(){
 // nach dem Laden: zuerst das Update-Fenster, danach die übrigen Pop-ups wie gehabt
 { const _pr=svPopupsRun; svPopupsRun=function(){ try{ spEntries(); spPopup(); }catch(e){ console.warn(e); } return _pr.apply(this,arguments); }; }
 { let t=0; const iv=setInterval(()=>{ if(++t>60)return clearInterval(iv); if(document.querySelector('.snav')||document.getElementById('moreSheet')){ try{ spEntries(); }catch(e){} if(SV_PREFS)clearInterval(iv); } },1000); }
+
+/* =====================================================================
+   Sportzentrale Beta 0.37 · Neuigkeiten nur einmal, Erinnerung bei alter Version
+   Wunsch Albert (30.09.2026): „Ich will nicht jedes Mal die Patch-Notes angezeigt bekommen, wenn ich die App öffne.“
+   - Das Update-Fenster zählt als gesehen, sobald es zu ist, egal wie (OK, ✕, daneben tippen, App zu)
+   - Höchstens ein Update-Fenster pro Tag und Gerät. Mehrere Updates an einem Tag: gesammelt beim nächsten Mal, bis dahin „neu“ im Menü
+   - Gesehen wird aus Datenbank UND Gerät gelesen, das Neuere gilt (fällt das Speichern im Funkloch aus, kommt es trotzdem nicht wieder)
+   - Push „Neue Version“ (Server, höchstens alle 7 Tage bei wirklich veralteter App): Tipp darauf öffnet direkt „Was ist neu“
+   ===================================================================== */
+const SP_POP_KEY='sv_patch_pop', SP_POP_PAUSE=20*36e5;
+function spIdx(x){ const k=SV_PATCHES.findIndex(p=>p.id===x); return k<0?1e9:k; }
+spSeen=function(){
+  let l=''; try{ l=localStorage.getItem('sv_patch')||''; }catch(e){}
+  const d=(SV_PREFS&&SV_PREFS.patch_seen)||'';
+  if(!d||!l)return d||l||'';
+  return spIdx(l)<spIdx(d)?l:d;
+};
+// Gerät weiß mehr als die Datenbank (Speichern ging mal nicht durch): nachtragen
+setTimeout(()=>{ try{ const l=localStorage.getItem('sv_patch')||''; const d=(SV_PREFS&&SV_PREFS.patch_seen)||'';
+  if(l&&spIdx(l)<1e9&&spIdx(l)<spIdx(d)){ if(SV_PREFS)SV_PREFS.patch_seen=l; SVB.sb.rpc('patch_gesehen',{p_id:l}).then(()=>{},()=>{}); } }catch(e){} },4000);
+
+function spPopZeit(){ let t=0; try{ t=+localStorage.getItem(SP_POP_KEY)||0; }catch(e){} return t; }
+let _spOffen=false;
+function spFertig(){ if(!_spOffen)return; _spOffen=false; spMark(); }
+{ const _sp=spPopup; spPopup=function(force){
+  if(!force&&spSeen()!==SV_PATCH_LATEST&&!window.__spShown&&Date.now()-spPopZeit()<SP_POP_PAUSE){ try{ spBadge(); }catch(e){} return; }   // heute schon eins gesehen: nur „neu“ im Menü
+  const r=_sp.apply(this,arguments);
+  if(document.querySelector('#modal .sp-pop')){ _spOffen=true; try{ localStorage.setItem(SP_POP_KEY,String(Date.now())); }catch(e){} }
+  return r; }; }
+// Wie auch immer das Fenster zugeht: gesehen
+{ const _co39=closeOverlay; closeOverlay=function(){ const war=!!document.querySelector('#modal .sp-pop, #modal .sp-hist'); const r=_co39.apply(this,arguments); if(war)spFertig(); return r; }; }
+{ const _sh39=spHistory; spHistory=function(){ const r=_sh39.apply(this,arguments); if(_spOffen)spFertig(); return r; }; }
+window.addEventListener('pagehide',()=>{ if(_spOffen){ try{ localStorage.setItem('sv_patch',SV_PATCH_LATEST); }catch(e){} spFertig(); } });
+
+/* ---------- Push „Neue Version“ öffnet direkt „Was ist neu“ ---------- */
+SVZ_ART.update=['📲','Update'];
+{ const _zi39=svzInhalt; svzInhalt=async function(m){ if(m&&m.art==='update')return {h:'',knopf:`<button class="btn" type="button" data-svzneu>✨ Was ist neu</button>`,ohneText:false}; return _zi39.apply(this,arguments); }; }
+{ const _mz39=svMeldungZeigen; svMeldungZeigen=async function(ids){
+  let M=null; try{ const {data,error}=await SVB.sb.from('meldungen').select('id,art,gelesen_at').in('id',ids); if(!error)M=data||[]; }catch(e){}
+  if(M&&M.length&&M.every(m=>m.art==='update')){
+    const neu=M.filter(m=>!m.gelesen_at).map(m=>m.id);
+    if(neu.length){ try{ await SVB.sb.rpc('meldungen_gelesen',{p_ids:neu}); }catch(e){} try{ svBadges(); }catch(e){} }
+    try{ localStorage.setItem(SP_POP_KEY,String(Date.now())); }catch(e){}
+    window.__spShown=true; _spOffen=true; spHistory();
+    try{ kToast('✓ Du bist auf '+SV_PATCH_LABEL); }catch(e){}
+    return;
+  }
+  const r=await _mz39.apply(this,arguments);
+  document.querySelectorAll('#modal [data-svzneu]').forEach(b=>b.onclick=()=>{ closeOverlay(); setTimeout(()=>spHistory(),60); });
+  return r; }; }
 
 /* ================= INIT ================= */
 renderWeights();
