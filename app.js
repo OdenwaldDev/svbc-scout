@@ -2101,7 +2101,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.40', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.41', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18192,6 +18192,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.41',v:'0.41',datum:'2026-10-06',titel:'Mein Spieltag: Aufgabenpaket und Interview',kurz:'Der Spieltag hat jetzt einen eigenen Eintrag links, das ganze Aufgabenpaket aus dem Konzept und ein Interview, das Frage für Frage das Wissen für später festhält.',
+   punkte:[
+    {ic:'🗂️',t:'Das ganze Aufgabenpaket',d:'Heimspiel, Sportplatzkasse, Schiedsrichter, Bewirtung, Spielbetrieb, Spielverlegungen, DFBnet, Sportgelände, Schlüssel und Kontakte. Jede Aufgabe zeigt, wie viel schon festgehalten ist.',go:'sptag'},
+    {ic:'🎙️',t:'Interview statt Fragebogen',d:'Die App stellt eine Frage nach der anderen, du antwortest ins Mikrofon. Daraus werden kurze Merksätze für jeden, der später hilft oder übernimmt.',go:'sptag'},
+    {ic:'📈',t:'Übergabe-Stand',d:'Ein Balken zeigt, wie viel vom Spieltag-Wissen schon in der App steht. Die Übergabe als Text listet auch, was noch offen ist.'}
+   ]},
   {id:'0.40',v:'0.40',datum:'2026-10-06',titel:'Mein Spieltag: einfach sagen, was erledigt ist',kurz:'Ein eigener Bereich für die Spieltag-Verantwortung: aufs Mikrofon tippen, sprechen, fertig. Die Checkliste hakt sich ab, Neues kommt dazu, und dein Wissen bleibt für Nachfolger erhalten.',
    punkte:[
     {ic:'🎙️',t:'Ansage per Mikrofon',d:'„Hallo Jürgen, was hast du alles erledigt? Was muss noch gemacht werden?“ Du sprichst, die App sortiert das in die Checkliste des Heimspiels. Gespeichert wird erst, wenn du „Passt“ tippst.',go:'sptag'},
@@ -19162,18 +19168,65 @@ if(typeof SV50_INFO!=='undefined'&&SV50_INFO.gegner)SV50_INFO.gegner.h='Gehört 
    - Wissen: Merksätze je Thema, von Hand oder aus Ansagen, mit „Übergabe“ als Text für Nachfolger.
    - Kein Mikrofon (alter Browser, keine Freigabe): Tastatur-Diktat im Textfeld, gleicher Weg.
    ===================================================================== */
-const SPT={C:null,darf:null,laedt:false,rec:null,an:false,text:'',zwischen:'',erg:null,liste:null,start:0,vorlesen:true,tts:null,busy:false,sicht:'alle'};
+/* Beta 0.41 · Jürgens Teilbereich: sein ganzes Aufgabenpaket aus dem Konzept 2030 (Heimspiel, Sportplatzkasse, Schiedsrichter,
+   Spielbetrieb, Sportgelände, Kontakte) mit Übergabe-Stand je Aufgabe und einem Interview: die App stellt eine Frage nach der anderen,
+   er antwortet ins Mikrofon, daraus werden Merksätze für den Nachfolger. Eigener Eintrag in der Seitenleiste. */
+const SPT={alle:{},C:null,darf:null,eigen:false,laedt:false,rec:null,an:false,text:'',zwischen:'',erg:null,liste:null,start:0,vorlesen:true,tts:null,busy:false,sicht:'alle',modus:null};
+try{ SPT.eigen=localStorage.getItem('svbc-spt-eigen')==='1'; }catch(e){}
+// Aufgabenpaket „Spieltag & Spielbetrieb“ (Abteilungskonzept 2030). t = Thema der Merksätze, a = ältere Themen, die mitzählen, f = Interview-Fragen
+const SPT_AUFG=[
+  ['Heimspiel',[
+    {k:'heimspiel',ic:'🏟️',t:'Heimspiel organisieren',d:'Ablauf, Helfer, Zeiten, wer was macht',a:['Helfer','Heimspiel','Ablauf'],
+      f:['Wann fängst du vor einem Heimspiel an, und was machst du als Erstes?','Wie bekommst du die Helfer für Kasse, Ausschank und Grill zusammen, und wen fragst du zuerst?','Was geht am Spieltag am häufigsten schief, und wie fängst du es ab?']},
+    {k:'kasse',ic:'💶',t:'Sportplatzkasse & Wechselgeld',d:'Eintritt, Wechselgeld, Abrechnung',a:['Kasse','Wechselgeld','Eintritt'],
+      f:['Woher kommt das Wechselgeld, und wie viel brauchst du an einem normalen Spieltag?','Wer zählt nach dem Spiel ab, und wo kommt das Geld dann hin?','Was kostet der Eintritt, und wer kommt umsonst rein?']},
+    {k:'schiri',ic:'🟨',t:'Schiedsrichter betreuen',d:'Begrüßung, Kabine, Getränke, Spesen',a:['Schiri','Schiedsrichter','Spesen'],
+      f:['Was bekommt der Schiedsrichter von uns, von der Ankunft bis zur Abfahrt?','Wie zahlst du die Spesen aus, und wo kommt die Quittung hin?']},
+    {k:'bewirtung',ic:'🍺',t:'Bewirtung',d:'Ausschank, Grill, Kiosk, Einkauf',a:['Gastro','Bewirtung','Grill','Einkauf'],
+      f:['Wer kauft für den Spieltag ein, und wo?','Wie ist das mit Ausschank und Grill geregelt, wer macht was?']}]],
+  ['Spielbetrieb',[
+    {k:'meldung',ic:'📋',t:'Mannschaften melden & Spielplan',d:'Meldung, Spielplan, Anstoßzeiten',a:['Spielplan','Meldung'],
+      f:['Wann und wo meldest du die Mannschaften für die neue Saison?','Wer legt die Anstoßzeiten fest, und worauf muss man dabei achten?']},
+    {k:'verlegung',ic:'📅',t:'Spiele verlegen',d:'Antrag, Fristen, Absprache mit dem Gegner',a:['Spielverlegung','Verlegung'],
+      f:['Wie läuft eine Spielverlegung ab, Schritt für Schritt?','Welche Fristen gibt es, und wen musst du fragen?']},
+    {k:'schiriwesen',ic:'🧑‍⚖️',t:'Schiedsrichterwesen',d:'Schiri-Soll, Ansetzungen, Ansprechpartner',a:['Schiedsrichterwesen','Ansetzung'],
+      f:['Wie viele Schiedsrichter muss der Verein stellen, und wer kümmert sich darum?','Was machst du, wenn kein Schiedsrichter kommt?']},
+    {k:'dfbnet',ic:'💻',t:'DFBnet & Spielbericht',d:'Aufstellung, Freigabe, Passwesen',a:['DFBnet','Spielbericht','Pässe'],
+      f:['Wer trägt den Spielbericht im DFBnet ein und gibt ihn frei?','Was tust du, wenn am Platz das Internet nicht geht?']}]],
+  ['Sportgelände',[
+    {k:'platz',ic:'🥅',t:'Platz, Tore & Netze',d:'Mähen, Markieren, Instandhaltung',a:['Platz','Netze','Tore'],
+      f:['Was muss regelmäßig am Platz gemacht werden, und wer macht es?','Wo bekommt man Ersatz für Netze, Eckfahnen und Bälle?']},
+    {k:'gelaende',ic:'🧹',t:'Sauberkeit & Arbeitseinsätze',d:'Kabinen, Gelände, Aufräumen',a:['Kabinen','Gelände','Sauberkeit','Arbeitseinsatz'],
+      f:['Wer putzt die Kabinen, und wie oft?','Wann lohnt sich ein Arbeitseinsatz, und wie trommelst du die Leute zusammen?']},
+    {k:'schluessel',ic:'🔑',t:'Schlüssel, Flutlicht & Technik',d:'Wer hat welchen Schlüssel, wie geht was an',a:['Schlüssel','Flutlicht','Technik'],
+      f:['Wer hat welche Schlüssel, und wo liegen die Ersatzschlüssel?','Wie schaltet man Flutlicht, Anzeigetafel und Lautsprecher an?']}]],
+  ['Kontakte',[
+    {k:'kontakte',ic:'📞',t:'Wichtige Kontakte',d:'Gemeinde, Kreis, Verband, Lieferanten, Notfall',a:['Kontakte','Notfall'],
+      f:['Wen rufst du an, wenn am Platz etwas kaputt ist?','Welche Ansprechpartner bei Gemeinde, Kreis und Verband sollte dein Nachfolger kennen?']}]]];
+const SPT_ALLE=SPT_AUFG.flatMap(g=>g[1]);
+const sptAufgWissen=(a,W)=>(W||[]).filter(w=>w.thema===a.t||(a.a||[]).some(x=>x.toLowerCase()===String(w.thema||'').toLowerCase()));
+function sptStand(W){ const n=SPT_ALLE.map(a=>Math.min(2,sptAufgWissen(a,W).length)); return Math.round(100*n.reduce((x,y)=>x+y,0)/(2*SPT_ALLE.length)); }
+// Nächste Interview-Frage: Aufgabe mit dem wenigsten Wissen, dort die nächste noch nicht gestellte Frage
+function sptNaechsteFrage(k){ const W=(SPT.C&&SPT.C.wissen)||[]; let gef=[]; try{ gef=JSON.parse(localStorage.getItem('svbc-spt-gefragt')||'[]'); }catch(e){}
+  const kand=(k?SPT_ALLE.filter(a=>a.k===k):SPT_ALLE.slice().sort((x,y)=>sptAufgWissen(x,W).length-sptAufgWissen(y,W).length));
+  for(const a of kand){ const i=a.f.findIndex((_,j)=>!gef.includes(a.k+':'+j)); if(i>=0)return {k:a.k,t:a.t,i,frage:a.f[i]}; }
+  const a=kand[0]; return a?{k:a.k,t:a.t,i:0,frage:a.f[0]}:null; }
+function sptGefragt(m){ try{ const g=JSON.parse(localStorage.getItem('svbc-spt-gefragt')||'[]'); const key=m.k+':'+m.i; if(!g.includes(key)){ g.push(key); localStorage.setItem('svbc-spt-gefragt',JSON.stringify(g.slice(-200))); } }catch(e){} }
 try{ SPT.vorlesen=localStorage.getItem('svbc-spt-vorlesen')!=='aus'; }catch(e){}
 SV_TBL.sptag=['mic','Mein Spieltag'];
 Object.assign(SV_PAGES,{sptag:['Mein Spieltag','Ansage per Mikrofon, Checkliste des nächsten Heimspiels und dein Wissen für Nachfolger']});
 if(typeof SV4_HUB!=='undefined'&&SV4_HUB.steuerung){ SV4_HUB.steuerung.tabs.push(['sptag','Mein Spieltag']); SV4_OF.sptag='steuerung'; }
 { const _ta=svTabAllowed; svTabAllowed=function(t){ if(t==='sptag')return SPT.darf!==false&&(typeof SVR==='undefined'||!SVR.loaded||!!SVR.role); return _ta.apply(this,arguments); }; }
+// Seitenleiste und Mehr-Menü: „Mein Spieltag“ nur für die Spieltag-Verantwortung und den Admin (alle anderen finden es in der Aufgabensteuerung)
+if(typeof sv4NavVis==='function'){ const _nv=sv4NavVis; sv4NavVis=function(){ const r=_nv.apply(this,arguments);
+  try{ document.querySelectorAll('.snav button[data-tab="sptag"],.sgrid [data-sheet="sptag"]').forEach(b=>b.style.display=SPT.eigen&&SPT.darf!==false?'':'none'); }catch(e){} return r; }; }
+function sptEigen(an){ SPT.eigen=!!an; try{ localStorage.setItem('svbc-spt-eigen',an?'1':'0'); }catch(e){} try{ sv4NavVis(); }catch(e){} }
 function sptPanel(){ let P=document.getElementById('panel-sptag'); if(P)return P;
   const ref=document.getElementById('panel-home')||document.querySelector('.panel'); if(!ref)return null;
   P=document.createElement('section'); P.className='panel'; P.id='panel-sptag'; ref.parentNode.insertBefore(P,ref.nextSibling); return P; }
 { const _gt=goTab; goTab=function(tab){ if(tab==='sptag')sptPanel(); const was=svCurTab(); const r=_gt.apply(this,arguments);
     try{ const jetzt=svCurTab(); if(jetzt==='sptag'&&was!=='sptag')sptRender(true); if(jetzt!=='sptag'&&SPT.an)sptStopp(); if(jetzt==='sptag'&&typeof sv4HubBar==='function')sv4HubBar('sptag');
-      const side=document.querySelector('.snav button[data-tab="kalender"]'); if(side&&jetzt==='sptag')document.querySelectorAll('.snav button[data-tab]').forEach(b=>b.classList.toggle('active',b===side));
+      const side=document.querySelector('.snav button[data-tab="sptag"]:not([style*="none"])')||document.querySelector('.snav button[data-tab="kalender"]'); if(side&&jetzt==='sptag')document.querySelectorAll('.snav button[data-tab]').forEach(b=>b.classList.toggle('active',b===side));
       if(jetzt==='sptag'&&document.querySelector('.tabbar .ti[data-tab="sptag"]'))document.querySelectorAll('.tabbar .ti').forEach(b=>b.classList.toggle('active',b.dataset.tab==='sptag')); }catch(e){ console.warn('Mein Spieltag',e); } return r; }; }
 
 /* ---------- Hilfen ---------- */
@@ -19188,14 +19241,16 @@ function sptUhr(ts){ try{ return new Date(ts).toLocaleTimeString('de-DE',{hour:'
 const sptSR=()=>window.SpeechRecognition||window.webkitSpeechRecognition||null;
 function sptGruss(){ const h=new Date().getHours(); return h<10?'Guten Morgen':h<18?'Hallo':'Guten Abend'; }
 function sptFrage(vn){ return `Hallo ${vn}, was hast du alles erledigt? Was muss noch gemacht werden?`; }
+function sptMicTitel(){ return SPT.modus?(SPT.an?'Ich höre zu · ':'Interview: ')+SPT.modus.t:SPT.an?'Ich höre zu …':'Ansage'; }
+function sptMicUnter(vn){ return SPT.modus?SPT.modus.frage+(SPT.an?' Tippen, wenn du fertig bist.':''):SPT.an?'Tippen, wenn du fertig bist.':sptFrage(vn); }
 
 /* ---------- Laden ---------- */
 async function sptLaden(still){
   if(SPT.laedt)return SPT.C; SPT.laedt=true;
   try{ const C=await sptRpc('spieltag_cockpit'); SPT.C=C; const war=SPT.darf; SPT.darf=true; try{ localStorage.setItem('svbc-spt-darf','1'); }catch(e){}
     if(war===false){ try{ sv4NavVis(); }catch(e){} }
-    if(C.ich&&(C.ich.spieltag||C.ich.admin))sptTabbar(); return C; }
-  catch(e){ if(/Berechtigung|Could not find the function|schema cache|PGRST202/i.test(e.message)){ SPT.darf=false; try{ localStorage.setItem('svbc-spt-darf','0'); }catch(x){} try{ sv4NavVis(); }catch(x){} } if(!still)throw e; return null; }
+    sptEigen(C.ich&&(C.ich.spieltag||C.ich.admin)); if(C.ich&&(C.ich.spieltag||C.ich.admin))sptTabbar(); return C; }
+  catch(e){ if(/Berechtigung|Could not find the function|schema cache|PGRST202/i.test(e.message)){ SPT.darf=false; SPT.eigen=false; try{ localStorage.setItem('svbc-spt-darf','0'); }catch(x){} try{ sv4NavVis(); }catch(x){} } if(!still)throw e; return null; }
   finally{ SPT.laedt=false; }
 }
 try{ if(localStorage.getItem('svbc-spt-darf')==='0')SPT.darf=false; }catch(e){}
@@ -19217,7 +19272,7 @@ async function sptRender(neu){
   const hinweis=C.ich.admin&&C.rolle&&!C.rolle.konto?`<div class="card spt-hinweis"><b>Noch kein Konto für „${sptE(C.rolle.namen||'die Spieltag-Verantwortung')}“.</b> Sobald ein Nutzer mit genau diesem Namen angelegt ist (Verwaltung → Nutzer einladen), sieht er diesen Bereich auf seiner Übersicht und bekommt die Erinnerungen. Den Namen der Zuständigkeit änderst du unter Aufgaben → Zuständigkeiten.</div>`:'';
   const mic=`<div class="card spt-mic-karte${SPT.an?' an':''}" id="sptMicKarte">
       <button type="button" class="spt-mic" id="sptMic" aria-label="${SPT.an?'Ansage beenden':'Ansage starten'}"><span class="spt-puls"></span>${SPT_MIC}</button>
-      <div class="spt-mic-txt"><b id="sptMicT">${SPT.an?'Ich höre zu …':'Ansage'}</b><small id="sptMicS">${SPT.an?'Tippen, wenn du fertig bist.':sptE(sptFrage(vn))}</small></div>
+      <div class="spt-mic-txt"><b id="sptMicT">${sptE(sptMicTitel())}</b><small id="sptMicS">${sptE(sptMicUnter(vn))}</small></div>
       <div class="spt-live" id="sptLive"${SPT.an?'':' hidden'}><p id="sptLiveT">${sptE(SPT.text)}<i>${sptE(SPT.zwischen)}</i></p></div>
       <div class="spt-tipp" id="sptTipp"${sptSR()?' hidden':''}><textarea id="sptTextIn" rows="3" placeholder="Hier tippen oder die Mikrofon-Taste deiner Tastatur nutzen: Was ist erledigt, was fehlt noch?"></textarea>
         <button type="button" class="btn" id="sptTextGo">${sptSVG('send')} Auswerten</button></div>
@@ -19226,7 +19281,10 @@ async function sptRender(neu){
   const grp={vorher:'Vorher',spieltag:'Am Spieltag',danach:'Danach'};
   const punkt=p=>`<button type="button" class="spt-p${p.e?' ok':''}" data-sptp="${sptE(p.id)}"><span class="spt-kreis">${p.e?'✓':''}</span><span class="spt-pt"><b>${sptE(p.t)}</b><small>${p.f?sptE(sptUhr(p.f))+' Uhr':''}${p.wn?(p.f?' · ':'')+sptE(p.wn):''}${p.n?' · '+sptE(p.n):''}</small></span></button>`;
   const liste=(Lx,titel,hint)=>{ if(!Lx)return ''; const of=Lx.punkte.filter(p=>!p.e), ok=Lx.punkte.filter(p=>p.e);
-    const gr=['vorher','spieltag','danach'].map(g=>{ const xs=of.filter(p=>p.g===g); return xs.length?`<h4>${grp[g]} <em>${xs.length}</em></h4>${xs.map(punkt).join('')}`:''; }).join('');
+    // Lange Listen: erst die nächsten offenen Punkte, der Rest auf Tipp (das Aufgabenpaket soll nicht weit unten verschwinden)
+    const kurz=!SPT.alle[Lx.id]&&of.length>8, zeig=kurz?new Set(of.slice(0,6).map(p=>p.id)):null;
+    const gr=['vorher','spieltag','danach'].map(g=>{ const all=of.filter(p=>p.g===g), xs=zeig?all.filter(p=>zeig.has(p.id)):all; return xs.length?`<h4>${grp[g]} <em>${all.length}</em></h4>${xs.map(punkt).join('')}`:''; }).join('')
+      +(kurz?`<button type="button" class="spt-mehr" data-sptalle="${sptE(Lx.id)}">Alle ${of.length} offenen Punkte zeigen ${sptSVG('down')}</button>`:'');
     return `<div class="card spt-liste"><div class="spt-lh"><div><h3 class="trh">${sptE(titel)}</h3><p class="note">${sptE(hint)}</p></div>${typeof ogRing==='function'?ogRing(ok.length,Lx.punkte.length,true):''}</div>
       ${gr||'<p class="spt-fertig">✅ Alles erledigt. Stark.</p>'}
       ${ok.length?`<details class="spt-ok"><summary>Erledigt (${ok.length})</summary>${ok.map(punkt).join('')}</details>`:''}
@@ -19236,15 +19294,16 @@ async function sptRender(neu){
   const zahlen=`<div class="spt-zahlen"><div><b>${S.spiele||0}</b><span>Heimspiele diese Saison</span></div><div><b>${S.punkte?Math.round(100*S.fertig/S.punkte):0} %</b><span>davon abgehakt</span></div><div><b>${A.n||0}</b><span>Ansagen</span></div><div><b>${A.erledigt||0}</b><span>Punkte per Stimme erledigt</span></div></div>`;
   P.innerHTML=kopf+hinweis+mic+`<div id="sptErg"></div>`+(N?liste(N,N.titel,'Tippe auf einen Kreis zum Abhaken. Oder sag es einfach ins Mikrofon.'):'')
     +(L&&L.punkte.some(p=>!p.e)?liste(L,'Nachbereitung: '+L.titel,'Vom letzten Heimspiel ist noch etwas offen.'):'')
-    +kommende+sptWissenHtml(W)+zahlen;
-  P.querySelector('#sptMic').onclick=()=>SPT.an?sptStopp(true):sptStart(N?N.id:(L?L.id:null));
+    +sptPaketHtml(W)+kommende+sptWissenHtml(W)+zahlen;
+  P.querySelector('#sptMic').onclick=()=>SPT.an?sptStopp(true):sptStart(N?N.id:(L?L.id:null),SPT.modus);
   P.querySelector('#sptVor').onchange=e=>{ SPT.vorlesen=e.target.checked; try{ localStorage.setItem('svbc-spt-vorlesen',SPT.vorlesen?'an':'aus'); }catch(x){} if(!SPT.vorlesen)sptStill(); };
   const tp=P.querySelector('#sptTippen'); if(tp)tp.onclick=()=>{ const t=P.querySelector('#sptTipp'); t.hidden=!t.hidden; if(!t.hidden)P.querySelector('#sptTextIn').focus(); };
   P.querySelector('#sptTextGo').onclick=()=>{ const t=P.querySelector('#sptTextIn').value.trim(); if(t.length<3){ kToast('Bitte erst etwas sagen oder tippen.'); return; } SPT.text=t; sptAuswerten(N?N.id:(L?L.id:null)); };
   P.querySelectorAll('[data-sptp]').forEach(b=>b.onclick=()=>sptHaken(b.dataset.sptp,b));
   P.querySelectorAll('[data-sptliste]').forEach(b=>b.onclick=()=>{ if(typeof ogOeffnen==='function')ogOeffnen(b.dataset.sptliste); });
-  sptWissenBind(P);
-  if(SPT.erg)sptErgebnisZeigen();
+  P.querySelectorAll('[data-sptalle]').forEach(b=>b.onclick=()=>{ SPT.alle[b.dataset.sptalle]=true; sptRender(); });
+  sptWissenBind(P); sptPaketBind(P);
+  if(SPT.erg)sptErgebnisZeigen(); else if(SPT.weiter)sptWeiterZeigen();
 }
 async function sptHaken(id,btn){
   const C=SPT.C; const Lx=[C.naechste,C.letzte].find(l=>l&&l.punkte.some(p=>p.id===id)); if(!Lx)return; const p=Lx.punkte.find(x=>x.id===id), an=!p.e;
@@ -19262,10 +19321,11 @@ function sptSprich(text,cb){
   catch(e){ if(cb)cb(); }
 }
 function sptStill(){ try{ if('speechSynthesis'in window)speechSynthesis.cancel(); }catch(e){} }
-function sptStart(listeId){
-  if(SPT.busy)return; SPT.liste=listeId||null; SPT.text=''; SPT.zwischen=''; SPT.erg=null; const E=document.getElementById('sptErg'); if(E)E.innerHTML='';
+function sptStart(listeId,modus){
+  if(SPT.busy)return; SPT.liste=listeId||null; SPT.modus=modus||null; SPT.weiter=null; SPT.text=''; SPT.zwischen=''; SPT.erg=null; const E=document.getElementById('sptErg'); if(E)E.innerHTML='';
   const vn=(SPT.C&&SPT.C.ich.vorname)||'du', SR=sptSR();
-  if(!SR){ const t=document.getElementById('sptTipp'); if(t){ t.hidden=false; t.querySelector('textarea').focus(); } sptSprich(sptFrage(vn)); return; }
+  const ansage=SPT.modus?`${vn}, ${SPT.modus.frage}`:sptFrage(vn);
+  if(!SR){ sptMicUI(); const t=document.getElementById('sptTipp'); if(t){ t.hidden=false; t.querySelector('textarea').focus(); } sptSprich(ansage); return; }
   SPT.an=true; sptMicUI(); try{ svHaptic('light'); }catch(e){}
   const los=()=>{ if(!SPT.an||SPT.rec)return;
     try{ const r=new SR(); r.lang='de-DE'; r.continuous=true; r.interimResults=true; r.maxAlternatives=1; SPT.rec=r; SPT.start=Date.now();
@@ -19277,7 +19337,7 @@ function sptStart(listeId){
       r.onend=()=>{ if(SPT.an&&SPT.rec===r){ try{ r.start(); }catch(e){ /* iOS beendet nach Pausen: einfach weiter */ } } };
       r.start(); }
     catch(e){ console.warn('Spracherkennung',e); SPT.an=false; sptMicUI(); const t=document.getElementById('sptTipp'); if(t)t.hidden=false; } };
-  sptSprich(sptFrage(vn),los);
+  sptSprich(ansage,los);
 }
 function sptStopp(auswerten){
   SPT.an=false; const r=SPT.rec; SPT.rec=null; try{ if(r){ r.onend=null; r.stop(); } }catch(e){}
@@ -19287,13 +19347,13 @@ function sptStopp(auswerten){
 }
 function sptMicUI(){ const K=document.getElementById('sptMicKarte'); if(!K)return; K.classList.toggle('an',SPT.an);
   const b=K.querySelector('#sptMic'), t=K.querySelector('#sptMicT'), s=K.querySelector('#sptMicS'), l=K.querySelector('#sptLive'); const vn=(SPT.C&&SPT.C.ich.vorname)||'du';
-  if(b)b.setAttribute('aria-label',SPT.an?'Ansage beenden':'Ansage starten'); if(t)t.textContent=SPT.an?'Ich höre zu …':'Ansage'; if(s)s.textContent=SPT.an?'Tippen, wenn du fertig bist.':sptFrage(vn); if(l)l.hidden=!SPT.an&&!SPT.text; sptLiveUI(); }
+  if(b)b.setAttribute('aria-label',SPT.an?'Ansage beenden':'Ansage starten'); if(t)t.textContent=sptMicTitel(); if(s)s.textContent=sptMicUnter(vn); if(l)l.hidden=!SPT.an&&!SPT.text; K.classList.toggle('interview',!!SPT.modus); sptLiveUI(); }
 function sptLiveUI(){ const p=document.getElementById('sptLiveT'); if(!p)return; p.innerHTML=sptE(SPT.text)+(SPT.zwischen?' <i>'+sptE(SPT.zwischen)+'</i>':'')+(SPT.an&&!SPT.text&&!SPT.zwischen?'<span class="spt-warte">Sprich einfach los. Zum Beispiel: „Helferplan steht, Wechselgeld fehlt noch, der Grill muss repariert werden.“</span>':''); }
 
 /* ---------- Auswerten (Server) und bestätigen ---------- */
 async function sptAuswerten(listeId){
-  if(SPT.busy)return; SPT.busy=true; const E=document.getElementById('sptErg'); if(E)E.innerHTML='<div class="card spt-erg"><div class="spt-denkt"><span></span><span></span><span></span></div><p>Ich sortiere das in die Checkliste …</p></div>';
-  try{ const {data,error}=await SVB.sb.functions.invoke('spieltag-ki',{body:{liste:listeId||null,text:SPT.text}});
+  if(SPT.busy)return; SPT.busy=true; const E=document.getElementById('sptErg'); if(E)E.innerHTML=`<div class="card spt-erg"><div class="spt-denkt"><span></span><span></span><span></span></div><p>${SPT.modus?'Ich schreibe das für deinen Nachfolger auf …':'Ich sortiere das in die Checkliste …'}</p></div>`;
+  try{ const M=SPT.modus; const {data,error}=await SVB.sb.functions.invoke('spieltag-ki',{body:M?{modus:'interview',thema:M.t,frage:M.frage,text:SPT.text}:{liste:listeId||null,text:SPT.text}});
     if(error)throw new Error((error.context&&error.context.status===401)?'Bitte neu anmelden.':(error.message||'Server nicht erreichbar'));
     if(!data||!data.ok){ const k=data&&data.error; throw new Error(k==='kein-schluessel'?'Die KI ist noch nicht eingerichtet (Admin: Schlüssel hinterlegen).':k==='ki-weg'?'Die KI antwortet gerade nicht. Deine Ansage ist nicht verloren, tippe gleich nochmal auf Auswerten.':k==='schluessel'?'Der KI-Schlüssel passt nicht (Admin).':(k||'Unbekannter Fehler')); }
     SPT.erg=data; sptErgebnisZeigen(); sptSprich(data.antwort+(data.rueckfrage?' '+data.rueckfrage:''));
@@ -19311,14 +19371,14 @@ function sptErgebnisZeigen(){
       ${R.offen.map((p,i)=>zeile('o',i,'○','Noch offen: '+p.t,p.war?'war schon abgehakt, wird wieder geöffnet':'')).join('')}
       ${R.neu.map((p,i)=>zeile('n',i,'+','Neu: '+p.t,({vorher:'Vorher',spieltag:'Am Spieltag',danach:'Danach'})[p.g]+(p.merken?' · bei jedem Heimspiel':''))).join('')}
       ${R.notizen.map((p,i)=>zeile('z',i,'✎','Notiz zu „'+p.t+'“',p.n)).join('')}
-      ${R.wissen.map((p,i)=>zeile('w',i,'💡','Merken für Nachfolger: '+p.thema,p.text)).join('')}</div>
+      ${R.wissen.map((p,i)=>zeile('w',i,'💡',SPT.modus?p.text:'Merken für Nachfolger: '+p.thema,SPT.modus?'':p.text)).join('')}</div>
       <p class="note small">Haken weg, was nicht stimmt. Gespeichert wird erst mit „Passt“.</p>
       <div class="btnrow"><button type="button" class="btn spt-passt" id="sptPasst">${sptSVG('check')} Passt, übernehmen</button><button type="button" class="btn ghost" id="sptNochmal2">${SPT_MIC} Nochmal sprechen</button><button type="button" class="btn ghost" id="sptWeg">Verwerfen</button></div>`
-    :`<p class="note">Da war nichts, was auf die Liste gehört. Du kannst es gleich nochmal sagen.</p><div class="btnrow"><button type="button" class="btn ghost" id="sptNochmal2">${SPT_MIC} Nochmal sprechen</button><button type="button" class="btn ghost" id="sptWeg">Schließen</button></div>`}
+    :`<p class="note">${SPT.modus?'Daraus konnte ich nichts für den Nachfolger festhalten. Erzähl ruhig etwas ausführlicher.':'Da war nichts, was auf die Liste gehört. Du kannst es gleich nochmal sagen.'}</p><div class="btnrow"><button type="button" class="btn ghost" id="sptNochmal2">${SPT_MIC} Nochmal sprechen</button><button type="button" class="btn ghost" id="sptWeg">Schließen</button></div>`}
     <details class="spt-trans"><summary>Was ich verstanden habe</summary><p>${sptE(SPT.text)}</p></details></div>`;
   const p=E.querySelector('#sptPasst'); if(p)p.onclick=()=>sptUebernehmen();
-  E.querySelector('#sptNochmal2').onclick=()=>{ SPT.erg=null; sptStart(SPT.liste); };
-  E.querySelector('#sptWeg').onclick=()=>{ SPT.erg=null; SPT.text=''; E.innerHTML=''; sptMicUI(); };
+  E.querySelector('#sptNochmal2').onclick=()=>{ SPT.erg=null; sptStart(SPT.liste,SPT.modus); };
+  E.querySelector('#sptWeg').onclick=()=>{ SPT.erg=null; SPT.text=''; SPT.modus=null; E.innerHTML=''; sptMicUI(); };
   try{ E.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){}
 }
 async function sptUebernehmen(){
@@ -19328,12 +19388,53 @@ async function sptUebernehmen(){
   SPT.busy=true; const b=E.querySelector('#sptPasst'); if(b)b.disabled=true;
   try{ const X=await sptRpc('spieltag_ansage_anwenden',{p_liste:R.liste||null,p});
     if(SPT.C){ if(X.liste&&SPT.C.naechste&&SPT.C.naechste.id===X.liste.id)Object.assign(SPT.C.naechste,X.liste); if(X.liste&&SPT.C.letzte&&SPT.C.letzte.id===X.liste.id)Object.assign(SPT.C.letzte,X.liste); SPT.C.wissen=X.wissen_alle||SPT.C.wissen; SPT.C.ansagen=SPT.C.ansagen||{}; SPT.C.ansagen.n=(SPT.C.ansagen.n||0)+1; SPT.C.ansagen.erledigt=(SPT.C.ansagen.erledigt||0)+(X.erledigt||0); }
+    const M=SPT.modus; if(M){ sptGefragt(M); SPT.weiter={t:M.t,n:X.wissen||0}; SPT.modus=null; }
     SPT.erg=null; SPT.text=''; try{ svHaptic('success'); svSound('success'); }catch(e){}
     const teile=[]; if(X.erledigt)teile.push(X.erledigt+' abgehakt'); if(X.neu)teile.push(X.neu+' neu'); if(X.wissen)teile.push(X.wissen+' gemerkt');
     kToast('✓ '+(teile.join(', ')||'Übernommen'));
     sptRender(); const Lx=SPT.C&&SPT.C.naechste; if(Lx&&Lx.punkte.length&&Lx.punkte.every(x=>x.e)){ try{ ogFeier(document.querySelector('.spt-liste')); }catch(e){} }
   }catch(e){ kToast('⚠️ '+e.message); if(b)b.disabled=false; }
   finally{ SPT.busy=false; }
+}
+
+/* ---------- Aufgabenpaket & Interview (0.41) ---------- */
+function sptPaketHtml(W){
+  const st=sptStand(W), nf=sptNaechsteFrage();
+  const kachel=a=>{ const n=sptAufgWissen(a,W).length, z=n>=2?'ok':n?'halb':'';
+    return `<button type="button" class="spt-a ${z}" data-spta="${a.k}"><span class="spt-a-ic">${a.ic}</span><span class="spt-a-t"><b>${sptE(a.t)}</b><small>${n?n+(n===1?' Merksatz':' Merksätze'):'noch nichts festgehalten'}</small></span><span class="spt-a-dot" aria-hidden="true"></span></button>`; };
+  return `<div class="card spt-paket" id="sptPaket"><div class="spt-lh"><div><h3 class="trh">Dein Aufgabenpaket</h3><p class="note">Spieltag &amp; Spielbetrieb laut Konzept 2030. Je mehr du erzählst, desto leichter wird es für jeden, der dir mal hilft oder das später übernimmt.</p></div>
+      <div class="spt-stand" title="Übergabe-Stand"><b>${st} %</b><span>Übergabe-Stand</span></div></div>
+    <div class="spt-bar" aria-hidden="true"><i style="width:${st}%"></i></div>
+    ${nf?`<button type="button" class="spt-iv" id="sptIv"><span class="spt-iv-mic">${SPT_MIC}</span><span><b>Interview starten</b><small>Ich stelle dir eine Frage nach der anderen. Nächste: „${sptE(nf.frage)}“</small></span><i>${sptSVG('chev')}</i></button>`:''}
+    ${SPT_AUFG.map(([g,L])=>`<h4>${sptE(g)}</h4><div class="spt-as">${L.map(kachel).join('')}</div>`).join('')}</div>`;
+}
+function sptPaketBind(P){
+  const iv=P.querySelector('#sptIv'); if(iv)iv.onclick=()=>sptInterview();
+  P.querySelectorAll('[data-spta]').forEach(b=>b.onclick=()=>sptAufgabe(b.dataset.spta));
+}
+function sptInterview(k,i){
+  let m=sptNaechsteFrage(k); if(!m)return;
+  if(k&&i!=null){ const a=SPT_ALLE.find(x=>x.k===k); if(a&&a.f[i])m={k,t:a.t,i,frage:a.f[i]}; }
+  if(svCurTab()!=='sptag'){ goTab('sptag'); setTimeout(()=>sptInterview(k,i),500); return; }
+  SPT.modus=m; sptMicUI(); try{ document.getElementById('sptMicKarte').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){}
+  sptStart(null,m);
+}
+function sptAufgabe(k){
+  const a=SPT_ALLE.find(x=>x.k===k); if(!a)return; const W=sptAufgWissen(a,(SPT.C&&SPT.C.wissen)||[]);
+  const M=svModal(`<div class="og-form spt-aufg"><h2>${a.ic} ${sptE(a.t)}</h2><p class="note">${sptE(a.d)}</p>
+    <h4>Festgehalten</h4>${W.length?W.map(w=>`<div class="spt-w"><p>${sptE(w.text)}</p><small>${w.quelle==='ansage'?'🎙️ gesprochen':'✎ von Hand'}${w.von?' · '+sptE(w.von):''}</small></div>`).join(''):'<p class="spt-leer">Noch nichts. Eine Frage beantworten reicht für den Anfang.</p>'}
+    <h4>Fragen dazu</h4>${a.f.map((f,i)=>`<button type="button" class="spt-fr" data-sptfr="${i}">${SPT_MIC}<span>${sptE(f)}</span></button>`).join('')}
+    <div class="btnrow sbact"><button class="btn ghost" type="button" id="sptAH">${sptSVG('plus')} Von Hand eintragen</button><button class="btn ghost" type="button" onclick="closeOverlay()">Schließen</button></div></div>`);
+  M.querySelectorAll('[data-sptfr]').forEach(b=>b.onclick=()=>{ closeOverlay(); setTimeout(()=>sptInterview(k,+b.dataset.sptfr),80); });
+  M.querySelector('#sptAH').onclick=()=>{ closeOverlay(); setTimeout(()=>{ sptWissenForm(null); const t=document.getElementById('sptWT'); if(t)t.value=a.t; },80); };
+}
+function sptWeiterZeigen(){
+  const E=document.getElementById('sptErg'), w=SPT.weiter; if(!E||!w)return; const nf=sptNaechsteFrage();
+  E.innerHTML=`<div class="card spt-erg spt-weiter"><p>✓ ${w.n?`${w.n} ${w.n===1?'Merksatz':'Merksätze'} zu „${sptE(w.t)}“ festgehalten. Danke!`:'Gespeichert.'}</p>
+    ${nf?`<p class="note">Nächste Frage: „${sptE(nf.frage)}“</p>`:''}
+    <div class="btnrow">${nf?`<button type="button" class="btn" id="sptWeiterJa">${SPT_MIC} Nächste Frage</button>`:''}<button type="button" class="btn ghost" id="sptWeiterNein">Für heute reicht's</button></div></div>`;
+  const j=E.querySelector('#sptWeiterJa'); if(j)j.onclick=()=>sptInterview();
+  E.querySelector('#sptWeiterNein').onclick=()=>{ SPT.weiter=null; E.innerHTML=''; kToast('Danke dir! Morgen geht es mit der nächsten Frage weiter.'); };
 }
 
 /* ---------- Wissen ---------- */
@@ -19353,7 +19454,7 @@ function sptWissenBind(P){
 function sptWissenForm(id){
   const w=id?(SPT.C.wissen||[]).find(x=>x.id===id):null; const themen=[...new Set((SPT.C.wissen||[]).map(x=>x.thema))];
   const M=svModal(`<div class="og-form"><h2>💡 ${w?'Eintrag ändern':'Wissen eintragen'}</h2>
-    <label>Thema<input id="sptWT" maxlength="80" list="sptThemen" value="${sptE(w?w.thema:'')}" placeholder="Kasse, Schiri, Platz, Gastro, Helfer …"><datalist id="sptThemen">${['Kasse','Schiri','Platz','Gastro','Helfer','DFBnet','Kabinen','Gäste','Wetter','Allgemein'].concat(themen).filter((v,i,a)=>a.indexOf(v)===i).map(t=>`<option value="${sptE(t)}">`).join('')}</datalist></label>
+    <label>Thema<input id="sptWT" maxlength="80" list="sptThemen" value="${sptE(w?w.thema:'')}" placeholder="z. B. Sportplatzkasse &amp; Wechselgeld"><datalist id="sptThemen">${SPT_ALLE.map(a=>a.t).concat(['Allgemein']).concat(themen).filter((v,i,a)=>a.indexOf(v)===i).map(t=>`<option value="${sptE(t)}">`).join('')}</datalist></label>
     <label>Merksatz<textarea id="sptWX" rows="4" maxlength="2000" placeholder="So, dass es jemand versteht, der das zum ersten Mal macht.">${sptE(w?w.text:'')}</textarea></label>
     <div class="btnrow sbact"><button class="btn" type="button" id="sptWS">${sptSVG('check')} Speichern</button>${w?`<button class="btn ghost" type="button" id="sptWL">${sptSVG('trash')} Löschen</button>`:''}<button class="btn ghost" type="button" onclick="closeOverlay()">Abbrechen</button></div></div>`);
   M.querySelector('#sptWS').onclick=async()=>{ try{ const W=await sptRpc('spieltag_wissen_speichern',{p_id:id||null,p_thema:M.querySelector('#sptWT').value,p_text:M.querySelector('#sptWX').value}); SPT.C.wissen=W; closeOverlay(); kToast('✓ Gemerkt'); sptRender(); }catch(e){ kToast('⚠️ '+e.message); } };
@@ -19362,6 +19463,9 @@ function sptWissenForm(id){
 }
 async function sptUebergabe(){
   let t; try{ t=await sptRpc('spieltag_uebergabe'); }catch(e){ kToast('⚠️ '+e.message); return; }
+  try{ const W=(SPT.C&&SPT.C.wissen)||[]; let p='## Aufgabenpaket Spieltag & Spielbetrieb (Konzept 2030)\n\nÜbergabe-Stand: '+sptStand(W)+' %\n';
+    SPT_AUFG.forEach(([g,L])=>{ p+='\n### '+g+'\n\n'; L.forEach(a=>{ const n=sptAufgWissen(a,W).length; p+='- '+a.t+' ('+a.d+'): '+(n?n+(n===1?' Merksatz':' Merksätze'):'noch nichts festgehalten')+'\n'; if(n<2)p+='  Offene Fragen: '+a.f.join(' ')+'\n'; }); });
+    t=t.replace('\n## Was man wissen muss','\n'+p+'\n## Was man wissen muss'); }catch(e){}
   const M=svModal(`<div class="og-form spt-ueb"><h2>📄 Übergabe Spieltag</h2><p class="note">Alles auf einer Seite: wer was macht, dein Wissen je Thema und der Ablauf eines Heimspiels. Zum Weitergeben an die Nachfolge, zum Ausdrucken oder für den Vereins-Drive.</p>
     <textarea id="sptUebT" rows="14" readonly>${sptE(t)}</textarea>
     <div class="btnrow sbact"><button class="btn" type="button" id="sptUebC">${sptSVG('copy')} Kopieren</button>${navigator.share?`<button class="btn ghost" type="button" id="sptUebS">${sptSVG('share')} Teilen</button>`:''}<button class="btn ghost" type="button" id="sptUebD">${sptSVG('download')} Als Datei</button></div></div>`);
@@ -19379,7 +19483,7 @@ async function sptHome(){
   if(!box){ box=document.createElement('div'); box.id='sptHome'; box.className='card spt-home'; const k=document.getElementById('svCockpit')||document.getElementById('svrMeine'); if(k)k.after(box); else home.prepend(box); }
   const N=C.naechste, K=(C.kommende||[])[0], offen=N?N.punkte.filter(p=>!p.e).length:0;
   box.innerHTML=`<button type="button" class="spt-home-mic" id="sptHomeMic" aria-label="Ansage starten">${SPT_MIC}</button>
-    <div class="spt-home-t"><h3>Mein Spieltag</h3><p>${N?`${sptE(sptTag(N.datum))}${N.zeit?', '+sptE(N.zeit)+' Uhr':''}: ${sptE(N.titel.replace(/^Heimspiel /,''))}. ${offen?`<b>${offen} offen</b>.`:'Alles abgehakt.'}`:K?`Nächstes Heimspiel ${sptE(sptTag(K.d))} gegen ${sptE(K.gegner||'?')}.`:'Gerade kein Heimspiel.'}</p></div>
+    <div class="spt-home-t"><h3>Mein Spieltag <em class="spt-home-st">Übergabe ${sptStand(C.wissen||[])} %</em></h3><p>${N?`${sptE(sptTag(N.datum))}${N.zeit?', '+sptE(N.zeit)+' Uhr':''}: ${sptE(N.titel.replace(/^Heimspiel /,''))}. ${offen?`<b>${offen} offen</b>.`:'Alles abgehakt.'}`:K?`Nächstes Heimspiel ${sptE(sptTag(K.d))} gegen ${sptE(K.gegner||'?')}.`:'Gerade kein Heimspiel.'}</p></div>
     ${N&&typeof ogRing==='function'?ogRing(N.punkte.length-offen,N.punkte.length):''}<button type="button" class="btn ghost sm" id="sptHomeGo">Öffnen ${sptSVG('chev')}</button>`;
   box.querySelector('#sptHomeGo').onclick=()=>goTab('sptag');
   box.querySelector('#sptHomeMic').onclick=()=>{ goTab('sptag'); setTimeout(()=>{ if(!SPT.an)sptStart(N?N.id:null); },400); };
@@ -19393,7 +19497,7 @@ async function sptHome(){
 { const _mz=svMeldungZeigen; svMeldungZeigen=async function(){ const r=await _mz.apply(this,arguments);
     try{ document.querySelectorAll('#modal [data-svzspt]').forEach(b=>b.onclick=()=>{ closeOverlay(); const id=b.dataset.svzspt; goTab('sptag'); const warte=()=>{ if(SPT.C){ if(!SPT.an)sptStart(id||(SPT.C.naechste?SPT.C.naechste.id:null)); } else setTimeout(warte,300); }; setTimeout(warte,300); }); }catch(e){} return r; }; }
 
-(function(){ try{ const s=document.createElement('style'); s.id='svm42css'; s.textContent="/* Beta 0.40 · Mein Spieltag: große Knöpfe, ein Mikrofon, wenig Text. Für Leute, die nicht jeden Tag Apps bedienen. */\n.spt-kopf{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:4px 0 14px;}\n.spt-kopf h2{margin:0 0 6px;font-size:30px;letter-spacing:-.02em;line-height:1.1;text-wrap:balance;}\n.spt-kopf h2 span{background:linear-gradient(90deg,#9cc3ff 0%,#5b9bff 45%,#b9adff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-kopf p{margin:0;font-size:16px;color:var(--ink2);max-width:62ch;line-height:1.45;}\n.spt-kopf p b{color:var(--ink);}\n.spt-wer{font-size:12.5px;color:var(--ink3);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 11px;white-space:nowrap;}\n/* Hinweis für den Admin */\n.spt-hinweis{font-size:14.5px;line-height:1.45;color:var(--ink2);border-color:rgba(251,191,36,.35)!important;}\n.spt-hinweis b{color:var(--ink);}\n/* Mikrofon-Karte */\n.spt-mic-karte{display:grid;grid-template-columns:auto 1fr;gap:16px 18px;align-items:center;padding:20px 18px;overflow:hidden;}\n.spt-mic{position:relative;width:96px;height:96px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:var(--grad-brand,linear-gradient(135deg,#3b7bff,#7c6cf6));color:#fff;cursor:pointer;display:grid;place-items:center;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 18px 40px -12px rgba(59,123,255,.7),0 2px 6px -2px rgba(0,0,0,.6);transition:transform .15s var(--ease),box-shadow .2s;-webkit-tap-highlight-color:transparent;}\n.spt-mic svg{width:44px;height:44px;position:relative;z-index:1;}\n.spt-mic:active{transform:scale(.96);}\n.spt-puls{position:absolute;inset:-6px;border-radius:50%;border:3px solid rgba(255,255,255,.0);pointer-events:none;}\n.spt-mic-karte.an .spt-mic{background:linear-gradient(135deg,#ff5f6d,#e0245e 60%,#b4175a);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 18px 44px -10px rgba(224,36,94,.75);}\n.spt-mic-karte.an .spt-puls{border-color:rgba(255,95,109,.7);animation:sptPuls 1.4s ease-out infinite;}\n@keyframes sptPuls{0%{transform:scale(.92);opacity:.9}100%{transform:scale(1.45);opacity:0}}\n.spt-mic-txt b{display:block;font-size:22px;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px;}\n.spt-mic-txt small{display:block;font-size:15px;color:var(--ink2);line-height:1.4;}\n.spt-live{grid-column:1/-1;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;min-height:54px;}\n.spt-live p{margin:0;font-size:17px;line-height:1.45;color:var(--ink);}\n.spt-live i{color:var(--ink3);font-style:normal;}\n.spt-warte{color:var(--ink3);font-size:14.5px;}\n.spt-tipp{grid-column:1/-1;display:grid;gap:10px;} .spt-tipp[hidden],.spt-live[hidden]{display:none;}\n.spt-tipp textarea{width:100%;font:inherit;font-size:16px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--ink);resize:vertical;}\n.spt-mic-fuss{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--ink3);font-size:13.5px;}\n.spt-schalter{display:flex;align-items:center;gap:8px;cursor:pointer;}\n.spt-schalter input{width:18px;height:18px;accent-color:#5b9bff;}\n.spt-link{background:none;border:0;color:var(--brand2,#5b9bff);font:inherit;font-size:13.5px;cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:3px;}\n/* Ergebnis der Ansage */\n.spt-erg{border-color:rgba(91,155,255,.35)!important;}\n.spt-erg.fehler{border-color:rgba(245,158,11,.4)!important;}\n.spt-antwort{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}\n.spt-av{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--grad-brand,#3b7bff);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3);}\n.spt-av svg{width:20px;height:20px;}\n.spt-antwort p{margin:0;font-size:17px;line-height:1.45;}\n.spt-antwort em{color:var(--ink2);font-style:normal;}\n.spt-zeilen{display:grid;gap:6px;margin:6px 0 10px;}\n.spt-z{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);cursor:pointer;}\n.spt-z input{width:20px;height:20px;accent-color:#22c55e;}\n.spt-z:has(input:not(:checked)){opacity:.45;text-decoration:line-through;}\n.spt-zi{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:900;font-size:14px;background:rgba(255,255,255,.1);}\n.spt-z b{display:block;font-size:15px;}\n.spt-z small{display:block;color:var(--ink3);font-size:13px;margin-top:2px;}\n.spt-passt{font-size:16px;}\n.spt-trans{margin-top:10px;color:var(--ink3);font-size:13.5px;}\n.spt-trans p{margin:6px 0 0;color:var(--ink2);}\n.spt-denkt{display:flex;gap:6px;margin-bottom:8px;}\n.spt-denkt span{width:9px;height:9px;border-radius:50%;background:#5b9bff;animation:sptDenkt 1.1s infinite ease-in-out;}\n.spt-denkt span:nth-child(2){animation-delay:.18s} .spt-denkt span:nth-child(3){animation-delay:.36s}\n@keyframes sptDenkt{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}\n/* Checkliste mit großen Kreisen */\n.spt-lh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;}\n.spt-lh h3{margin:0 0 4px;font-size:19px;}\n.spt-lh .note{margin:0;}\n.spt-liste h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);display:flex;gap:8px;align-items:center;}\n.spt-liste h4 em,.spt-wt h4 em{font-style:normal;background:rgba(255,255,255,.1);border-radius:999px;padding:1px 8px;font-size:12px;color:var(--ink2);}\n.spt-p{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 12px;margin:0 0 6px;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));color:var(--ink);cursor:pointer;font:inherit;-webkit-tap-highlight-color:transparent;transition:transform .12s var(--ease),opacity .2s;}\n.spt-p:active{transform:scale(.985);}\n.spt-kreis{width:38px;height:38px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);display:grid;place-items:center;font-weight:900;font-size:19px;color:#fff;transition:background .2s,border-color .2s;}\n.spt-p.ok .spt-kreis{background:linear-gradient(135deg,#22c55e,#15803d);border-color:transparent;box-shadow:0 6px 16px -6px rgba(34,197,94,.7);}\n.spt-p.ok .spt-pt b{text-decoration:line-through;color:var(--ink3);}\n.spt-pt b{display:block;font-size:16px;line-height:1.3;}\n.spt-pt small{display:block;color:var(--ink3);font-size:13px;margin-top:2px;}\n.spt-fertig{font-size:17px;margin:10px 0;}\n.spt-ok{margin-top:8px;color:var(--ink3);font-size:14px;}\n.spt-ok summary{cursor:pointer;padding:6px 0;}\n.spt-ok .spt-p{opacity:.7;}\n/* Weitere Heimspiele */\n.spt-k{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:15px;}\n.spt-k:last-child{border-bottom:0;}\n.spt-k span{color:var(--ink2);text-align:right;}\n/* Wissen */\n.spt-wt{margin-top:12px;}\n.spt-wt h4{margin:0 0 6px;font-size:15px;display:flex;gap:8px;align-items:center;}\n.spt-w{padding:10px 12px;margin-bottom:6px;border-radius:12px;background:linear-gradient(160deg,rgba(251,213,106,.1),rgba(251,213,106,.02));border:1px solid rgba(251,191,36,.18);cursor:pointer;}\n.spt-w p{margin:0;font-size:15.5px;line-height:1.4;}\n.spt-w small{display:block;color:var(--ink3);font-size:12.5px;margin-top:4px;}\n.spt-leer{color:var(--ink2);font-size:15px;}\n.spt-ueb textarea{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:13px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--ink);}\n/* Zahlen */\n.spt-zahlen{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 20px;}\n.spt-zahlen div{padding:12px;border-radius:14px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);text-align:center;}\n.spt-zahlen b{display:block;font-size:24px;letter-spacing:-.02em;background:linear-gradient(90deg,#fff,#cfe0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-zahlen span{display:block;font-size:12px;color:var(--ink3);margin-top:2px;line-height:1.3;}\n/* Übersicht-Karte */\n.spt-home{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;}\n.spt-home-mic{width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:var(--grad-brand,#3b7bff);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 12px 26px -10px rgba(59,123,255,.7);}\n.spt-home-mic svg{width:26px;height:26px;}\n.spt-home-t h3{margin:0 0 3px;font-size:17px;}\n.spt-home-t p{margin:0;font-size:14px;color:var(--ink2);line-height:1.35;}\n.spt-home-t p b{color:var(--ink);}\n@media (max-width:620px){\n  .spt-kopf h2{font-size:26px;}\n  .spt-mic-karte{grid-template-columns:1fr;justify-items:center;text-align:center;}\n  .spt-mic{width:112px;height:112px;} .spt-mic svg{width:52px;height:52px;}\n  .spt-zahlen{grid-template-columns:1fr 1fr;}\n  .spt-home{grid-template-columns:auto 1fr;} .spt-home .og-ring{display:none;} .spt-home #sptHomeGo{grid-column:1/-1;justify-self:start;}\n}\n@media (prefers-reduced-motion:reduce){ .spt-puls,.spt-denkt span{animation:none!important;} }\n"; document.head.appendChild(s); }catch(e){} })();
+(function(){ try{ const s=document.createElement('style'); s.id='svm42css'; s.textContent="/* Beta 0.40 · Mein Spieltag: große Knöpfe, ein Mikrofon, wenig Text. Für Leute, die nicht jeden Tag Apps bedienen. */\n.spt-kopf{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:4px 0 14px;}\n.spt-kopf h2{margin:0 0 6px;font-size:30px;letter-spacing:-.02em;line-height:1.1;text-wrap:balance;}\n.spt-kopf h2 span{background:linear-gradient(90deg,#9cc3ff 0%,#5b9bff 45%,#b9adff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-kopf p{margin:0;font-size:16px;color:var(--ink2);max-width:62ch;line-height:1.45;}\n.spt-kopf p b{color:var(--ink);}\n.spt-wer{font-size:12.5px;color:var(--ink3);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 11px;white-space:nowrap;}\n/* Hinweis für den Admin */\n.spt-hinweis{font-size:14.5px;line-height:1.45;color:var(--ink2);border-color:rgba(251,191,36,.35)!important;}\n.spt-hinweis b{color:var(--ink);}\n/* Mikrofon-Karte */\n.spt-mic-karte{display:grid;grid-template-columns:auto 1fr;gap:16px 18px;align-items:center;padding:20px 18px;overflow:hidden;}\n.spt-mic{position:relative;width:96px;height:96px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:var(--grad-brand,linear-gradient(135deg,#3b7bff,#7c6cf6));color:#fff;cursor:pointer;display:grid;place-items:center;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 18px 40px -12px rgba(59,123,255,.7),0 2px 6px -2px rgba(0,0,0,.6);transition:transform .15s var(--ease),box-shadow .2s;-webkit-tap-highlight-color:transparent;}\n.spt-mic svg{width:44px;height:44px;position:relative;z-index:1;}\n.spt-mic:active{transform:scale(.96);}\n.spt-puls{position:absolute;inset:-6px;border-radius:50%;border:3px solid rgba(255,255,255,.0);pointer-events:none;}\n.spt-mic-karte.an .spt-mic{background:linear-gradient(135deg,#ff5f6d,#e0245e 60%,#b4175a);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 18px 44px -10px rgba(224,36,94,.75);}\n.spt-mic-karte.an .spt-puls{border-color:rgba(255,95,109,.7);animation:sptPuls 1.4s ease-out infinite;}\n@keyframes sptPuls{0%{transform:scale(.92);opacity:.9}100%{transform:scale(1.45);opacity:0}}\n.spt-mic-txt b{display:block;font-size:22px;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px;}\n.spt-mic-txt small{display:block;font-size:15px;color:var(--ink2);line-height:1.4;}\n.spt-live{grid-column:1/-1;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;min-height:54px;}\n.spt-live p{margin:0;font-size:17px;line-height:1.45;color:var(--ink);}\n.spt-live i{color:var(--ink3);font-style:normal;}\n.spt-warte{color:var(--ink3);font-size:14.5px;}\n.spt-tipp{grid-column:1/-1;display:grid;gap:10px;} .spt-tipp[hidden],.spt-live[hidden]{display:none;}\n.spt-tipp textarea{width:100%;font:inherit;font-size:16px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--ink);resize:vertical;}\n.spt-mic-fuss{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--ink3);font-size:13.5px;}\n.spt-schalter{display:flex;align-items:center;gap:8px;cursor:pointer;}\n.spt-schalter input{width:18px;height:18px;accent-color:#5b9bff;}\n.spt-link{background:none;border:0;color:var(--brand2,#5b9bff);font:inherit;font-size:13.5px;cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:3px;}\n/* Ergebnis der Ansage */\n.spt-erg{border-color:rgba(91,155,255,.35)!important;}\n.spt-erg.fehler{border-color:rgba(245,158,11,.4)!important;}\n.spt-antwort{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}\n.spt-av{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--grad-brand,#3b7bff);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3);}\n.spt-av svg{width:20px;height:20px;}\n.spt-antwort p{margin:0;font-size:17px;line-height:1.45;}\n.spt-antwort em{color:var(--ink2);font-style:normal;}\n.spt-zeilen{display:grid;gap:6px;margin:6px 0 10px;}\n.spt-z{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);cursor:pointer;}\n.spt-z input{width:20px;height:20px;accent-color:#22c55e;}\n.spt-z:has(input:not(:checked)){opacity:.45;text-decoration:line-through;}\n.spt-zi{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:900;font-size:14px;background:rgba(255,255,255,.1);}\n.spt-z b{display:block;font-size:15px;}\n.spt-z small{display:block;color:var(--ink3);font-size:13px;margin-top:2px;}\n.spt-passt{font-size:16px;}\n.spt-trans{margin-top:10px;color:var(--ink3);font-size:13.5px;}\n.spt-trans p{margin:6px 0 0;color:var(--ink2);}\n.spt-denkt{display:flex;gap:6px;margin-bottom:8px;}\n.spt-denkt span{width:9px;height:9px;border-radius:50%;background:#5b9bff;animation:sptDenkt 1.1s infinite ease-in-out;}\n.spt-denkt span:nth-child(2){animation-delay:.18s} .spt-denkt span:nth-child(3){animation-delay:.36s}\n@keyframes sptDenkt{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}\n/* Checkliste mit großen Kreisen */\n.spt-lh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;}\n.spt-lh h3{margin:0 0 4px;font-size:19px;}\n.spt-lh .note{margin:0;}\n.spt-liste h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);display:flex;gap:8px;align-items:center;}\n.spt-liste h4 em,.spt-wt h4 em{font-style:normal;background:rgba(255,255,255,.1);border-radius:999px;padding:1px 8px;font-size:12px;color:var(--ink2);}\n.spt-p{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 12px;margin:0 0 6px;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));color:var(--ink);cursor:pointer;font:inherit;-webkit-tap-highlight-color:transparent;transition:transform .12s var(--ease),opacity .2s;}\n.spt-p:active{transform:scale(.985);}\n.spt-kreis{width:38px;height:38px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);display:grid;place-items:center;font-weight:900;font-size:19px;color:#fff;transition:background .2s,border-color .2s;}\n.spt-p.ok .spt-kreis{background:linear-gradient(135deg,#22c55e,#15803d);border-color:transparent;box-shadow:0 6px 16px -6px rgba(34,197,94,.7);}\n.spt-p.ok .spt-pt b{text-decoration:line-through;color:var(--ink3);}\n.spt-pt b{display:block;font-size:16px;line-height:1.3;}\n.spt-pt small{display:block;color:var(--ink3);font-size:13px;margin-top:2px;}\n.spt-fertig{font-size:17px;margin:10px 0;}\n.spt-ok{margin-top:8px;color:var(--ink3);font-size:14px;}\n.spt-ok summary{cursor:pointer;padding:6px 0;}\n.spt-ok .spt-p{opacity:.7;}\n/* Weitere Heimspiele */\n.spt-k{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:15px;}\n.spt-k:last-child{border-bottom:0;}\n.spt-k span{color:var(--ink2);text-align:right;}\n/* Wissen */\n.spt-wt{margin-top:12px;}\n.spt-wt h4{margin:0 0 6px;font-size:15px;display:flex;gap:8px;align-items:center;}\n.spt-w{padding:10px 12px;margin-bottom:6px;border-radius:12px;background:linear-gradient(160deg,rgba(251,213,106,.1),rgba(251,213,106,.02));border:1px solid rgba(251,191,36,.18);cursor:pointer;}\n.spt-w p{margin:0;font-size:15.5px;line-height:1.4;}\n.spt-w small{display:block;color:var(--ink3);font-size:12.5px;margin-top:4px;}\n.spt-leer{color:var(--ink2);font-size:15px;}\n.spt-ueb textarea{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:13px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--ink);}\n/* Zahlen */\n.spt-zahlen{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 20px;}\n.spt-zahlen div{padding:12px;border-radius:14px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);text-align:center;}\n.spt-zahlen b{display:block;font-size:24px;letter-spacing:-.02em;background:linear-gradient(90deg,#fff,#cfe0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-zahlen span{display:block;font-size:12px;color:var(--ink3);margin-top:2px;line-height:1.3;}\n/* Übersicht-Karte */\n.spt-home{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;}\n.spt-home-mic{width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:var(--grad-brand,#3b7bff);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 12px 26px -10px rgba(59,123,255,.7);}\n.spt-home-mic svg{width:26px;height:26px;}\n.spt-home-t h3{margin:0 0 3px;font-size:17px;}\n.spt-home-t p{margin:0;font-size:14px;color:var(--ink2);line-height:1.35;}\n.spt-home-t p b{color:var(--ink);}\n@media (max-width:620px){\n  .spt-kopf h2{font-size:26px;}\n  .spt-mic-karte{grid-template-columns:1fr;justify-items:center;text-align:center;}\n  .spt-mic{width:112px;height:112px;} .spt-mic svg{width:52px;height:52px;}\n  .spt-zahlen{grid-template-columns:1fr 1fr;}\n  .spt-home{grid-template-columns:auto 1fr;} .spt-home .og-ring{display:none;} .spt-home #sptHomeGo{grid-column:1/-1;justify-self:start;}\n}\n@media (prefers-reduced-motion:reduce){ .spt-puls,.spt-denkt span{animation:none!important;} }\n/* 0.41 · Aufgabenpaket & Interview */\n.spt-stand{text-align:right;flex:none;}\n.spt-stand b{display:block;font-size:26px;letter-spacing:-.02em;line-height:1;background:linear-gradient(90deg,#fff,#cfe0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-stand span{font-size:11.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;}\n.spt-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin:10px 0 14px;}\n.spt-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#22c55e,#5b9bff 70%,#7c6cf6);transition:width .6s var(--ease);}\n.spt-iv{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:16px;cursor:pointer;font:inherit;color:var(--ink);\n  border:1px solid rgba(91,155,255,.4);background:radial-gradient(400px 120px at 0% 0%,rgba(59,123,255,.25),transparent 70%),linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));box-shadow:inset 0 1px 0 rgba(255,255,255,.1);}\n.spt-iv-mic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--grad-brand,#3b7bff);color:#fff;box-shadow:0 8px 20px -8px rgba(59,123,255,.7);}\n.spt-iv-mic svg{width:22px;height:22px;}\n.spt-iv b{display:block;font-size:16px;}\n.spt-iv small{display:block;color:var(--ink2);font-size:13.5px;margin-top:2px;line-height:1.35;}\n.spt-iv i{color:var(--ink3);}\n.spt-paket h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);}\n.spt-as{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;}\n.spt-a{position:relative;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:14px;cursor:pointer;font:inherit;color:var(--ink);\n  border:1px solid rgba(255,255,255,.09);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));transition:border-color .15s,transform .12s;}\n.spt-a:hover{border-color:rgba(91,155,255,.45);} .spt-a:active{transform:scale(.985);}\n.spt-a-ic{font-size:22px;width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:rgba(255,255,255,.07);}\n.spt-a-t b{display:block;font-size:14.5px;line-height:1.25;}\n.spt-a-t small{display:block;color:var(--ink3);font-size:12.5px;margin-top:2px;}\n.spt-a-dot{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.3);}\n.spt-a.halb .spt-a-dot{background:#f59e0b;border-color:#f59e0b;box-shadow:0 0 10px -2px #f59e0b;}\n.spt-a.ok .spt-a-dot{background:#22c55e;border-color:#22c55e;box-shadow:0 0 10px -2px #22c55e;}\n.spt-mic-karte.interview{border-color:rgba(124,108,246,.45)!important;}\n.spt-mic-karte.interview .spt-mic-txt small{color:var(--ink);font-size:17px;}\n.spt-aufg h4{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);}\n.spt-fr{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;width:100%;text-align:left;padding:10px 12px;margin-bottom:6px;border-radius:12px;cursor:pointer;font:inherit;font-size:15px;color:var(--ink);\n  border:1px solid rgba(91,155,255,.3);background:linear-gradient(160deg,rgba(59,123,255,.12),rgba(255,255,255,.02));}\n.spt-fr svg{width:20px;height:20px;color:#9cc3ff;}\n.spt-weiter p{font-size:16px;margin:0 0 8px;}\n.spt-home-st{font-style:normal;font-size:11.5px;font-weight:700;color:#bbf7d0;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle;}\n@media (max-width:620px){ .spt-as{grid-template-columns:1fr;} .spt-stand b{font-size:22px;} }\n.spt-mehr{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;margin:2px 0 6px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);background:none;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer;}\n.spt-mehr:hover{border-color:rgba(91,155,255,.5);color:var(--ink);} .spt-mehr svg{width:16px;height:16px;}\n"; document.head.appendChild(s); }catch(e){} })();
 
 /* ================= INIT ================= */
 renderWeights();
