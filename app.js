@@ -19192,9 +19192,10 @@ function sptFrage(vn){ return `Hallo ${vn}, was hast du alles erledigt? Was muss
 /* ---------- Laden ---------- */
 async function sptLaden(still){
   if(SPT.laedt)return SPT.C; SPT.laedt=true;
-  try{ const C=await sptRpc('spieltag_cockpit'); SPT.C=C; SPT.darf=true; try{ localStorage.setItem('svbc-spt-darf','1'); }catch(e){}
+  try{ const C=await sptRpc('spieltag_cockpit'); SPT.C=C; const war=SPT.darf; SPT.darf=true; try{ localStorage.setItem('svbc-spt-darf','1'); }catch(e){}
+    if(war===false){ try{ sv4NavVis(); }catch(e){} }
     if(C.ich&&(C.ich.spieltag||C.ich.admin))sptTabbar(); return C; }
-  catch(e){ if(/Berechtigung/.test(e.message)){ SPT.darf=false; try{ localStorage.setItem('svbc-spt-darf','0'); }catch(x){} try{ sv4NavVis(); }catch(x){} } if(!still)throw e; return null; }
+  catch(e){ if(/Berechtigung|Could not find the function|schema cache|PGRST202/i.test(e.message)){ SPT.darf=false; try{ localStorage.setItem('svbc-spt-darf','0'); }catch(x){} try{ sv4NavVis(); }catch(x){} } if(!still)throw e; return null; }
   finally{ SPT.laedt=false; }
 }
 try{ if(localStorage.getItem('svbc-spt-darf')==='0')SPT.darf=false; }catch(e){}
@@ -19205,7 +19206,7 @@ function sptTabbar(){ try{ const r=svRole(), L=SV_TABBAR[r]; if(!Array.isArray(L
 async function sptRender(neu){
   const P=sptPanel(); if(!P)return;
   if(!SPT.C||neu){ if(!SPT.C)P.innerHTML='<div class="card"><div class="empty">Lade deinen Spieltag …</div></div>';
-    try{ await sptLaden(); }catch(e){ P.innerHTML=`<div class="card"><div class="empty">${sptE(e.message)}</div></div>`; return; } }
+    try{ await sptLaden(); }catch(e){ P.innerHTML=`<div class="card"><div class="empty">${/Could not find the function|schema cache|PGRST202/i.test(e.message)?'Dieser Bereich ist auf dem Server noch nicht freigeschaltet. Bitte etwas später nochmal.':sptE(e.message)}</div></div>`; try{ sv4NavVis(); svBuildTabbar(); }catch(x){} return; } }
   if(svCurTab()!=='sptag')return;
   const C=SPT.C, vn=C.ich.vorname||'du', N=C.naechste, L=C.letzte, W=C.wissen||[], K=(C.kommende||[]).filter(k=>!N||k.liste!==N.id).slice(0,4);
   const offen=N?N.punkte.filter(p=>!p.e):[], fertig=N?N.punkte.length-offen.length:0;
@@ -19371,7 +19372,8 @@ async function sptUebergabe(){
 
 /* ---------- Start: Karte auf der Übersicht ---------- */
 async function sptHome(){
-  const home=document.getElementById('panel-home'); if(!home||SPT.darf===false)return;
+  const home=document.getElementById('panel-home'); if(!home)return;
+  // auch wenn zuletzt gesperrt: der Server entscheidet (Freischaltung kommt so von selbst an)
   const C=await sptLaden(true); if(!C||!(C.ich.spieltag||C.ich.admin)){ const b=document.getElementById('sptHome'); if(b)b.remove(); return; }
   let box=document.getElementById('sptHome');
   if(!box){ box=document.createElement('div'); box.id='sptHome'; box.className='card spt-home'; const k=document.getElementById('svCockpit')||document.getElementById('svrMeine'); if(k)k.after(box); else home.prepend(box); }
