@@ -2101,7 +2101,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.39', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.40', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18192,6 +18192,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.40',v:'0.40',datum:'2026-10-06',titel:'Mein Spieltag: einfach sagen, was erledigt ist',kurz:'Ein eigener Bereich für die Spieltag-Verantwortung: aufs Mikrofon tippen, sprechen, fertig. Die Checkliste hakt sich ab, Neues kommt dazu, und dein Wissen bleibt für Nachfolger erhalten.',
+   punkte:[
+    {ic:'🎙️',t:'Ansage per Mikrofon',d:'„Hallo Jürgen, was hast du alles erledigt? Was muss noch gemacht werden?“ Du sprichst, die App sortiert das in die Checkliste des Heimspiels. Gespeichert wird erst, wenn du „Passt“ tippst.',go:'sptag'},
+    {ic:'🔔',t:'Erinnerung zur rechten Zeit',d:'Zwei Tage vor dem Heimspiel am späten Nachmittag und gut zwei Stunden nach Anpfiff kommt ein kurzer Stups: was steht, was fehlt? Die Nachricht öffnet direkt die Ansage.'},
+    {ic:'💡',t:'Wissen für Nachfolger',d:'Was man wissen muss, wenn man den Spieltag übernimmt: wo etwas liegt, wen man anruft, was schiefgehen kann. Kommt aus den Ansagen oder von Hand, mit „Übergabe als Text“.',go:'sptag'}
+   ]},
   {id:'0.39',v:'0.39',datum:'2026-10-03',titel:'Neuer Look mit Tiefe',kurz:'Verläufe, Lichtkanten und mehr Tiefe auf Karten, Knöpfen und in der Leiste. Alles an derselben Stelle wie vorher.',
    punkte:[
     {ic:'✨',t:'Karten mit Verlauf',d:'Jede Karte hat jetzt einen Verlauf von hell nach dunkel, eine feine Lichtkante oben und einen weichen Schatten. Das Cockpit bekommt den Markenverlauf.'},
@@ -18661,7 +18667,7 @@ SVZ_ART.update=['📲','Update'];
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm40css'; s.textContent="/* ===== Beta 0.38 · Lukas' Änderungswünsche ===== */\n/* Seitenleiste: eine Spalte, scrollt bis zum letzten Eintrag (vorher brach die Liste in eine unsichtbare zweite Spalte um) */\n.side .snav{flex-wrap:nowrap!important;justify-content:flex-start!important;align-content:flex-start!important;min-height:0;overflow-y:auto!important;overscroll-behavior:contain;}\n.side .snav > *{flex:none;}\n.side .snav::-webkit-scrollbar{display:block;width:6px;}\n.side .snav::-webkit-scrollbar-thumb{background:rgba(148,163,196,.28);border-radius:6px;}\n.side .snav.sv40-mehr{-webkit-mask-image:linear-gradient(#000 calc(100% - 26px),transparent);mask-image:linear-gradient(#000 calc(100% - 26px),transparent);}\n\n/* Reiterleiste: am Rechner umbrechen statt abschneiden („Massenpf…“), am Handy wischen mit Hinweis */\n@media (min-width:761px){ .hub-in{flex-wrap:wrap;row-gap:0;} }\n@media (max-width:760px){ .hubbar{position:relative;} .hubbar.sv40-r:after{content:'';position:absolute;right:0;top:0;bottom:1px;width:28px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(5,7,12,.95));} }\n\n/* Breite Tabellen: links/rechts blättern */\n.sv40-tnav{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin:-2px 0 6px;font-size:12px;color:var(--ink3);}\n.sv40-tnav button{border:1px solid var(--line2);background:rgba(148,163,196,.08);color:var(--ink);border-radius:9px;width:34px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:800;}\n.sv40-tnav button:disabled{opacity:.35;cursor:default;}\n.sv40-tnav span{margin-right:auto;}\n.trtw.sv40-wide{scroll-behavior:smooth;}\n\n/* Tabellenköpfe: Erklärung beim Überfahren */\nth.kpi-th{cursor:help;}\n\n/* Massenpflege: PlayStyles erklärt */\n.sv40-pst{margin-top:10px;border-top:1px solid var(--line2);padding-top:8px;}\n.sv40-pst summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--ink2);}\n.sv40-pst dl{display:grid;grid-template-columns:minmax(130px,190px) 1fr;gap:4px 12px;margin:8px 0 0;font-size:12.5px;}\n.sv40-pst dt{font-weight:750;color:var(--ink);}\n.sv40-pst dd{margin:0;color:var(--ink2);}\n.sv40-pst h5{grid-column:1/-1;margin:8px 0 2px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);}\n.sv40-pstd{min-height:18px;margin:6px 0 0;font-size:12.5px;color:var(--ink2);}\n@media (max-width:560px){ .sv40-pst dl{grid-template-columns:1fr;} .sv40-pst dd{margin-bottom:6px;} }\n\n/* Bevorstehende Spiele mit Gegneranalyse */\n.sv40-next tbody tr{cursor:pointer;}\n.sv40-next tbody tr:hover td{background:rgba(148,163,196,.06);}\n.sv40-ga{margin-top:14px;}\n.sv40-ga-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;}\n.sv40-ga-h h3{margin:0;}\n.sv40-hist{display:flex;flex-direction:column;gap:8px;}\n.sv40-hr{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line2);border-radius:12px;background:rgba(148,163,196,.04);flex-wrap:wrap;}\n.sv40-hr .d{min-width:74px;font-weight:750;color:var(--ink2);font-size:13px;}\n.sv40-hr .t{flex:1;min-width:180px;font-size:13px;color:var(--ink2);}\n.sv40-hr .t b{color:var(--ink);}\n.sv40-hr .t p{margin:4px 0 0;white-space:pre-wrap;}\n.sv40-hr .q{font-size:11px;font-weight:750;color:var(--ink3);}\n.sv40-ki{border-color:rgba(139,124,246,.35);background:rgba(139,124,246,.07);}\n.sv40-nf{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}\n.sv40-nf textarea{flex:1;min-width:200px;min-height:54px;}\n\n/* Aufgabensteuerung: Vorstand & Ziele */\n#panel-vorstand .card{margin-bottom:16px;}\n\n/* Wissen: Datenquellen, MScore */\n.sv40-doc h4{margin:16px 0 6px;}\n.sv40-doc p,.sv40-doc li{font-size:13.5px;line-height:1.55;color:var(--ink2);max-width:78ch;}\n.sv40-doc ol,.sv40-doc ul{padding-left:20px;margin:6px 0;}\n.sv40-doc table{font-size:13px;}\n.sv40-skala{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:8px 0;}\n.sv40-skala div{border:1px solid var(--line2);border-radius:12px;padding:8px 10px;background:rgba(148,163,196,.05);}\n.sv40-skala b{display:block;font-size:20px;font-variant-numeric:tabular-nums;}\n.sv40-skala span{font-size:12px;color:var(--ink3);}\n.sv40-dup{display:flex;flex-direction:column;gap:10px;margin-top:8px;}\n.sv40-dupg{border:1px solid var(--line2);border-radius:12px;padding:10px 12px;}\n.sv40-dupg label{display:flex;gap:8px;align-items:center;font-size:13px;padding:3px 0;}\n.sv40-dupg small{color:var(--ink3);}\n"; document.head.appendChild(s); }catch(e){} })();
 /* =====================================================================
-   Sportzentrale Beta 0.39 (Look) · 0.38 Lukas' Änderungswünsche (strukturiert und harmonisiert)
+   Sportzentrale Beta 0.40 (Mein Spieltag) · 0.39 (Look) · 0.38 Lukas' Änderungswünsche (strukturiert und harmonisiert)
    1. Navigation: Seitenleiste scrollt bis zum letzten Eintrag, alle Bereiche auf allen Geräten
    2. Aufgabensteuerung: Termine, Aufgaben, Vorstand & Ziele an einem Ort
    3. Mannschaft → Spieler: aufgeräumte Spalten, Erklärung an jedem Tabellenkopf, breite Tabellen seitlich blättern
@@ -19145,6 +19151,247 @@ function sv40ModellRender(){ const P=document.getElementById('panel-model'); if(
 if(typeof SV50_INFO!=='undefined'&&SV50_INFO.gegner)SV50_INFO.gegner.h='Gehört zu Mannschaft → Spiele → Bevorstehende. Dort steht das Wichtigste zum nächsten Gegner, ein Tipp auf ein Spiel öffnet diese ganze Analyse mit Historie.';
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm41css'; s.textContent="/* Beta 0.39 · Hochwertiger Look: sichtbare Verläufe, Glanzkanten, Tiefe. Liegt als letzte Schicht über design.css.\n   Prinzip: Oberfläche = Verlauf von leicht hell (oben links) nach dunkel, feine Lichtkante oben, weicher Schatten unten.\n   Markenverlauf = Royalblau nach Violett (links nach rechts), Gold nur für Admin/Vorstand und Hinweise. */\n:root{\n  --grad-brand:linear-gradient(135deg,#3b7bff 0%,#2f6bff 45%,#7c6cf6 100%);\n  --grad-brand-soft:linear-gradient(135deg,rgba(59,123,255,.22),rgba(124,108,246,.12));\n  --grad-gold:linear-gradient(135deg,#fbd56a,#f0a71f 60%,#d98a16);\n  --grad-surface:linear-gradient(160deg,#171f33 0%,#111726 42%,#0c1019 100%);\n  --grad-surface-2:linear-gradient(160deg,#1b2440 0%,#141b2e 45%,#0e1322 100%);\n  --kante:linear-gradient(90deg,transparent,rgba(255,255,255,.22) 35%,rgba(255,255,255,.22) 65%,transparent);\n  --glow-2:0 18px 44px -14px rgba(47,107,255,.45);\n}\n/* Hintergrund: Nordlicht oben, warmer Hauch unten rechts, Vignette */\nbody{\n  background:\n    radial-gradient(1200px 620px at 8% -10%,rgba(59,123,255,.26),transparent 62%),\n    radial-gradient(900px 520px at 96% -4%,rgba(124,108,246,.2),transparent 60%),\n    radial-gradient(800px 600px at 100% 100%,rgba(251,191,36,.07),transparent 58%),\n    linear-gradient(180deg,#070a12 0%,#05070c 55%,#04060a 100%)!important;\n  background-attachment:fixed!important;\n}\n/* Karten: Verlauf, Lichtkante oben, tiefer Schatten */\n.card,.chartcard,.pbcard,.fcard,.tile{\n  position:relative;\n  background:var(--grad-surface)!important;\n  border:1px solid rgba(140,165,220,.16)!important;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 40px -22px rgba(0,0,0,.85),0 2px 6px -2px rgba(0,0,0,.5)!important;\n}\n.card::before,.chartcard::before,.pbcard::before{\n  content:\"\";position:absolute;left:10%;right:10%;top:0;height:1px;background:var(--kante);opacity:.6;pointer-events:none;border-radius:1px;\n}\n/* Cockpit-Karte (die erste, wichtigste): Markenwash oben links */\n.card.svcock{\n  background:\n    radial-gradient(520px 220px at 0% 0%,rgba(59,123,255,.28),transparent 70%),\n    radial-gradient(380px 200px at 100% 100%,rgba(124,108,246,.16),transparent 70%),\n    var(--grad-surface-2)!important;\n  border-color:rgba(91,155,255,.3)!important;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),var(--glow-2),0 2px 6px -2px rgba(0,0,0,.5)!important;\n}\n.card.svcock .svc-h h3{background:linear-gradient(90deg,#fff,#cfe0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}\n/* Kacheln im Cockpit: Glas mit Verlauf, Symbol in Markenverlauf-Kreis */\n.svc-a{\n  background:linear-gradient(160deg,rgba(255,255,255,.10),rgba(255,255,255,.03))!important;\n  border:1px solid rgba(255,255,255,.12)!important;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 24px -14px rgba(0,0,0,.8);\n  transition:transform .15s var(--ease),border-color .15s,box-shadow .15s;\n}\n.svc-a svg{width:30px!important;height:30px!important;padding:6px;border-radius:10px;background:var(--grad-brand);color:#fff!important;box-shadow:0 6px 14px -6px var(--glow);flex:0 0 auto;}\n.svc-a:hover{border-color:rgba(91,155,255,.45)!important;transform:translateY(-1px);}\n/* Begrüßung: Name im Markenverlauf, Datum ruhiger */\n.hello h2 span{background:linear-gradient(90deg,#9cc3ff 0%,#5b9bff 45%,#b9adff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.hello{position:relative;}\n/* Rollen-Chip: Admin und Vorstand mit Metallkante */\n.rolechip.r-admin{background:linear-gradient(135deg,rgba(251,213,106,.22),rgba(217,138,22,.1))!important;border-color:rgba(251,191,36,.5)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12);}\n.rolechip.r-vorstand{background:linear-gradient(135deg,rgba(192,132,252,.24),rgba(124,108,246,.1))!important;}\n.rolechip.r-trainer,.rolechip.r-planer{background:var(--grad-brand-soft)!important;border-color:rgba(91,155,255,.4)!important;}\n/* Avatar oben rechts */\n.uav{background:var(--grad-brand)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px -6px var(--glow)!important;border:1px solid rgba(255,255,255,.14)!important;}\n.uav.r-admin{background:var(--grad-gold)!important;color:#2a1d04!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 16px -6px rgba(240,167,31,.6)!important;}\n/* Kopfleiste: feine Verlaufslinie unten statt grauer Strich */\n.topbar{border-bottom:0!important;background:linear-gradient(180deg,rgba(6,9,16,.92),rgba(6,9,16,.72))!important;}\n.topbar::after{content:\"\";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,rgba(59,123,255,.0),rgba(59,123,255,.7) 30%,rgba(124,108,246,.7) 70%,rgba(124,108,246,0));opacity:.8;}\n.topbar{position:sticky;}\n/* Knöpfe */\n.btn{background:var(--grad-brand)!important;border:1px solid rgba(255,255,255,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 10px 26px -10px var(--glow)!important;}\n.btn.ghost{background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03))!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.1)!important;}\n.btn.ghost:hover{border-color:rgba(91,155,255,.45)!important;}\n/* Untere Leiste: aktiver Reiter als Verlaufs-Pille */\n.tabbar{background:linear-gradient(180deg,rgba(20,26,42,.9),rgba(12,16,26,.92))!important;border:1px solid rgba(140,165,220,.18)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 20px 44px -12px rgba(0,0,0,.8)!important;}\n.tabbar .ti.active{background:var(--grad-brand)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 10px 22px -8px var(--glow)!important;color:#fff!important;}\n.tabbar .ti.active svg{color:#fff!important;}\n/* Listen-Einträge (Termine, Spieler, Aufgaben): Glas statt flach */\n.kal-it,.og-p,.og-karte,.row{background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02))!important;border:1px solid rgba(255,255,255,.09)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}\n.kal-it:hover,.og-karte:hover{border-color:rgba(91,155,255,.4)!important;}\n.kal-bar{background:linear-gradient(180deg,var(--c,#5b9bff),color-mix(in srgb,var(--c,#5b9bff) 55%,#7c6cf6))!important;box-shadow:0 0 12px -2px var(--c,#5b9bff);}\n/* Symbol-Kacheln in Erinnerungen und Trainer-Karte */\n.rm-ic{background:var(--grad-brand)!important;color:#fff!important;border:1px solid rgba(255,255,255,.18)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 8px 18px -8px var(--glow);}\n.rm-ic.co{background:linear-gradient(135deg,#19b36b,#0e8a5c 60%,#1aa3a0)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 8px 18px -8px rgba(34,197,94,.5);}\n/* Hinweis-Zeile im Cockpit */\n.svc-ins .note{background:linear-gradient(90deg,rgba(34,197,94,.12),rgba(34,197,94,.03));border:1px solid rgba(34,197,94,.22);border-radius:12px;padding:10px 12px;color:#bbf7d0;}\n/* Abschnitts-Überschriften mit kleinem Verlaufsbalken */\n.card h3.trh,.kal-hh h3{position:relative;padding-left:12px;}\n.card h3.trh::before,.kal-hh h3::before{content:\"\";position:absolute;left:0;top:4px;bottom:4px;width:3px;border-radius:2px;background:var(--grad-brand);}\n/* Online-Chip */\n.online .lbl{background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 11px;}\n/* Suche */\n.gsearch input{background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.03))!important;border-color:rgba(255,255,255,.12)!important;}\n/* Tabellen- und Filterleisten */\n.fbar,.og-filter{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02))!important;border:1px solid rgba(255,255,255,.1)!important;}\n.og-filter button.on,.fbar .on{background:var(--grad-brand)!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}\n/* Fortschrittsringe und Balken */\n.og-ring .fg{stroke:url(#svGradRing);}\n/* Zahlenkacheln (Kennzahlen) */\n.kpi,.stat,.tile b{background:linear-gradient(90deg,#fff,#cfe0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}\n/* Sheets und Dialoge */\n.sheet{background:var(--grad-surface-2)!important;border-top:1px solid rgba(140,165,220,.22)!important;box-shadow:0 -24px 60px -20px rgba(0,0,0,.9)!important;}\n.sheet::before{content:\"\";position:absolute;left:20%;right:20%;top:0;height:1px;background:var(--kante);}\n/* Wappen in der Kopfleiste am Handy zeigen, leicht verglast */\n@media (max-width:760px){\n  .tb-crest{display:block!important;width:30px;height:30px;border-radius:9px;background:linear-gradient(160deg,#fff,#e8eefc)!important;box-shadow:0 6px 14px -6px rgba(0,0,0,.8),inset 0 1px 0 #fff;}\n  .card{box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 14px 30px -18px rgba(0,0,0,.85)!important;}\n}\n"; document.head.appendChild(s); }catch(e){} })();
+/* =====================================================================
+   Sportzentrale Beta 0.40 · Mein Spieltag
+   Ein eigener Bereich für die Spieltag-Verantwortung (Rolle „spieltag“, zurzeit Jürgen Möhler):
+   - Großer Mikrofon-Knopf: „Hallo Jürgen, was hast du alles erledigt? Was muss noch gemacht werden?“ Sprechen, fertig.
+     Sprache zu Text läuft im Browser (SpeechRecognition), die KI auf dem Server sortiert das Gesagte in die Checkliste
+     (abgehakt, neu, Notizen) und merkt sich Erfahrungswissen für Nachfolger. Gespeichert wird erst nach einem Tipp auf „Passt“.
+   - Nächstes Heimspiel mit Fortschritt, offene Punkte nach Vorher / Am Tag / Danach, Nachbereitung des letzten Spiels.
+   - Push: zwei Tage vorher am späten Nachmittag und gut zwei Stunden nach Anpfiff, beide öffnen direkt die Ansage.
+   - Wissen: Merksätze je Thema, von Hand oder aus Ansagen, mit „Übergabe“ als Text für Nachfolger.
+   - Kein Mikrofon (alter Browser, keine Freigabe): Tastatur-Diktat im Textfeld, gleicher Weg.
+   ===================================================================== */
+const SPT={C:null,darf:null,laedt:false,rec:null,an:false,text:'',zwischen:'',erg:null,liste:null,start:0,vorlesen:true,tts:null,busy:false,sicht:'alle'};
+try{ SPT.vorlesen=localStorage.getItem('svbc-spt-vorlesen')!=='aus'; }catch(e){}
+SV_TBL.sptag=['mic','Mein Spieltag'];
+Object.assign(SV_PAGES,{sptag:['Mein Spieltag','Ansage per Mikrofon, Checkliste des nächsten Heimspiels und dein Wissen für Nachfolger']});
+if(typeof SV4_HUB!=='undefined'&&SV4_HUB.steuerung){ SV4_HUB.steuerung.tabs.push(['sptag','Mein Spieltag']); SV4_OF.sptag='steuerung'; }
+{ const _ta=svTabAllowed; svTabAllowed=function(t){ if(t==='sptag')return SPT.darf!==false&&(typeof SVR==='undefined'||!SVR.loaded||!!SVR.role); return _ta.apply(this,arguments); }; }
+function sptPanel(){ let P=document.getElementById('panel-sptag'); if(P)return P;
+  const ref=document.getElementById('panel-home')||document.querySelector('.panel'); if(!ref)return null;
+  P=document.createElement('section'); P.className='panel'; P.id='panel-sptag'; ref.parentNode.insertBefore(P,ref.nextSibling); return P; }
+{ const _gt=goTab; goTab=function(tab){ if(tab==='sptag')sptPanel(); const was=svCurTab(); const r=_gt.apply(this,arguments);
+    try{ const jetzt=svCurTab(); if(jetzt==='sptag'&&was!=='sptag')sptRender(true); if(jetzt!=='sptag'&&SPT.an)sptStopp(); if(jetzt==='sptag'&&typeof sv4HubBar==='function')sv4HubBar('sptag');
+      const side=document.querySelector('.snav button[data-tab="kalender"]'); if(side&&jetzt==='sptag')document.querySelectorAll('.snav button[data-tab]').forEach(b=>b.classList.toggle('active',b===side));
+      if(jetzt==='sptag'&&document.querySelector('.tabbar .ti[data-tab="sptag"]'))document.querySelectorAll('.tabbar .ti').forEach(b=>b.classList.toggle('active',b.dataset.tab==='sptag')); }catch(e){ console.warn('Mein Spieltag',e); } return r; }; }
+
+/* ---------- Hilfen ---------- */
+const sptE=s=>svEsc(s==null?'':String(s));
+const sptSVG=n=>{ try{ return SVI(n); }catch(e){ return ''; } };
+const SPT_MIC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/><path d="M8 21h8"/></svg>';
+async function sptRpc(fn,args){ const {data,error}=await SVB.sb.rpc(fn,args||{}); if(error)throw new Error(/42501|Berechtigung/.test(error.message+error.code)?'Dafür fehlt dir die Berechtigung.':error.message); return data; }
+function sptTag(d){ try{ const x=new Date(d+'T12:00:00'), h=new Date(), n=Math.round((x-new Date(h.getFullYear(),h.getMonth(),h.getDate(),12))/864e5);
+  const rel=n===0?'Heute':n===1?'Morgen':n===-1?'Gestern':n>1&&n<7?'in '+n+' Tagen':n<-1&&n>-7?'vor '+(-n)+' Tagen':null;
+  return (rel?rel+', ':'')+x.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit'}); }catch(e){ return d; } }
+function sptUhr(ts){ try{ return new Date(ts).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+const sptSR=()=>window.SpeechRecognition||window.webkitSpeechRecognition||null;
+function sptGruss(){ const h=new Date().getHours(); return h<10?'Guten Morgen':h<18?'Hallo':'Guten Abend'; }
+function sptFrage(vn){ return `Hallo ${vn}, was hast du alles erledigt? Was muss noch gemacht werden?`; }
+
+/* ---------- Laden ---------- */
+async function sptLaden(still){
+  if(SPT.laedt)return SPT.C; SPT.laedt=true;
+  try{ const C=await sptRpc('spieltag_cockpit'); SPT.C=C; SPT.darf=true; try{ localStorage.setItem('svbc-spt-darf','1'); }catch(e){}
+    if(C.ich&&(C.ich.spieltag||C.ich.admin))sptTabbar(); return C; }
+  catch(e){ if(/Berechtigung/.test(e.message)){ SPT.darf=false; try{ localStorage.setItem('svbc-spt-darf','0'); }catch(x){} try{ sv4NavVis(); }catch(x){} } if(!still)throw e; return null; }
+  finally{ SPT.laedt=false; }
+}
+try{ if(localStorage.getItem('svbc-spt-darf')==='0')SPT.darf=false; }catch(e){}
+// Für die Spieltag-Verantwortung steht „Mein Spieltag“ unten in der Leiste
+function sptTabbar(){ try{ const r=svRole(), L=SV_TABBAR[r]; if(!Array.isArray(L)||L.includes('sptag'))return; L.splice(1,0,'sptag'); if(L.length>4)L.length=4; svBuildTabbar(); }catch(e){} }
+
+/* ---------- Seite ---------- */
+async function sptRender(neu){
+  const P=sptPanel(); if(!P)return;
+  if(!SPT.C||neu){ if(!SPT.C)P.innerHTML='<div class="card"><div class="empty">Lade deinen Spieltag …</div></div>';
+    try{ await sptLaden(); }catch(e){ P.innerHTML=`<div class="card"><div class="empty">${sptE(e.message)}</div></div>`; return; } }
+  if(svCurTab()!=='sptag')return;
+  const C=SPT.C, vn=C.ich.vorname||'du', N=C.naechste, L=C.letzte, W=C.wissen||[], K=(C.kommende||[]).filter(k=>!N||k.liste!==N.id).slice(0,4);
+  const offen=N?N.punkte.filter(p=>!p.e):[], fertig=N?N.punkte.length-offen.length:0;
+  const kopf=`<div class="spt-kopf"><div><h2>${sptE(sptGruss())}, <span>${sptE(vn)}</span>.</h2>
+      <p>${N?`${sptE(sptTag(N.datum))}${N.zeit?' um '+sptE(N.zeit)+' Uhr':''}: ${sptE(N.titel.replace(/^Heimspiel /,'Heimspiel '))}. ${offen.length?`<b>${offen.length} ${offen.length===1?'Punkt':'Punkte'}</b> noch offen.`:'Alles abgehakt.'}`
+        :K.length?`Nächstes Heimspiel ${sptE(sptTag(K[0].d))}${K[0].z?' um '+sptE(K[0].z)+' Uhr':''} gegen ${sptE(K[0].gegner||'?')}. Die Checkliste kommt zwei Wochen vorher von selbst.`:'Gerade steht kein Heimspiel an.'}</p></div>
+      ${C.ich.spieltag?'':`<span class="spt-wer">${sptE(C.rolle&&C.rolle.titel||'Spieltag')}: ${sptE(C.rolle&&C.rolle.namen||'offen')}</span>`}</div>`;
+  const hinweis=C.ich.admin&&C.rolle&&!C.rolle.konto?`<div class="card spt-hinweis"><b>Noch kein Konto für „${sptE(C.rolle.namen||'die Spieltag-Verantwortung')}“.</b> Sobald ein Nutzer mit genau diesem Namen angelegt ist (Verwaltung → Nutzer einladen), sieht er diesen Bereich auf seiner Übersicht und bekommt die Erinnerungen. Den Namen der Zuständigkeit änderst du unter Aufgaben → Zuständigkeiten.</div>`:'';
+  const mic=`<div class="card spt-mic-karte${SPT.an?' an':''}" id="sptMicKarte">
+      <button type="button" class="spt-mic" id="sptMic" aria-label="${SPT.an?'Ansage beenden':'Ansage starten'}"><span class="spt-puls"></span>${SPT_MIC}</button>
+      <div class="spt-mic-txt"><b id="sptMicT">${SPT.an?'Ich höre zu …':'Ansage'}</b><small id="sptMicS">${SPT.an?'Tippen, wenn du fertig bist.':sptE(sptFrage(vn))}</small></div>
+      <div class="spt-live" id="sptLive"${SPT.an?'':' hidden'}><p id="sptLiveT">${sptE(SPT.text)}<i>${sptE(SPT.zwischen)}</i></p></div>
+      <div class="spt-tipp" id="sptTipp"${sptSR()?' hidden':''}><textarea id="sptTextIn" rows="3" placeholder="Hier tippen oder die Mikrofon-Taste deiner Tastatur nutzen: Was ist erledigt, was fehlt noch?"></textarea>
+        <button type="button" class="btn" id="sptTextGo">${sptSVG('send')} Auswerten</button></div>
+      <div class="spt-mic-fuss"><label class="spt-schalter"><input type="checkbox" id="sptVor"${SPT.vorlesen?' checked':''}> Antwort vorlesen</label>
+        ${sptSR()?`<button type="button" class="spt-link" id="sptTippen">Lieber tippen</button>`:''}</div></div>`;
+  const grp={vorher:'Vorher',spieltag:'Am Spieltag',danach:'Danach'};
+  const punkt=p=>`<button type="button" class="spt-p${p.e?' ok':''}" data-sptp="${sptE(p.id)}"><span class="spt-kreis">${p.e?'✓':''}</span><span class="spt-pt"><b>${sptE(p.t)}</b><small>${p.f?sptE(sptUhr(p.f))+' Uhr':''}${p.wn?(p.f?' · ':'')+sptE(p.wn):''}${p.n?' · '+sptE(p.n):''}</small></span></button>`;
+  const liste=(Lx,titel,hint)=>{ if(!Lx)return ''; const of=Lx.punkte.filter(p=>!p.e), ok=Lx.punkte.filter(p=>p.e);
+    const gr=['vorher','spieltag','danach'].map(g=>{ const xs=of.filter(p=>p.g===g); return xs.length?`<h4>${grp[g]} <em>${xs.length}</em></h4>${xs.map(punkt).join('')}`:''; }).join('');
+    return `<div class="card spt-liste"><div class="spt-lh"><div><h3 class="trh">${sptE(titel)}</h3><p class="note">${sptE(hint)}</p></div>${typeof ogRing==='function'?ogRing(ok.length,Lx.punkte.length,true):''}</div>
+      ${gr||'<p class="spt-fertig">✅ Alles erledigt. Stark.</p>'}
+      ${ok.length?`<details class="spt-ok"><summary>Erledigt (${ok.length})</summary>${ok.map(punkt).join('')}</details>`:''}
+      <div class="btnrow"><button type="button" class="btn ghost sm" data-sptliste="${sptE(Lx.id)}">${sptSVG('check')} Ganze Checkliste mit Chat und Helfern</button></div></div>`; };
+  const kommende=K.length?`<div class="card spt-kommend"><h3 class="trh">Weitere Heimspiele</h3>${K.map(k=>`<div class="spt-k"><b>${sptE(sptTag(k.d))}${k.z?', '+sptE(k.z)+' Uhr':''}</b><span>${k.m==='h2'?'Zweite':'Erste'} gegen ${sptE(k.gegner||'?')}</span></div>`).join('')}</div>`:'';
+  const S=C.saison||{}, A=C.ansagen||{};
+  const zahlen=`<div class="spt-zahlen"><div><b>${S.spiele||0}</b><span>Heimspiele diese Saison</span></div><div><b>${S.punkte?Math.round(100*S.fertig/S.punkte):0} %</b><span>davon abgehakt</span></div><div><b>${A.n||0}</b><span>Ansagen</span></div><div><b>${A.erledigt||0}</b><span>Punkte per Stimme erledigt</span></div></div>`;
+  P.innerHTML=kopf+hinweis+mic+`<div id="sptErg"></div>`+(N?liste(N,N.titel,'Tippe auf einen Kreis zum Abhaken. Oder sag es einfach ins Mikrofon.'):'')
+    +(L&&L.punkte.some(p=>!p.e)?liste(L,'Nachbereitung: '+L.titel,'Vom letzten Heimspiel ist noch etwas offen.'):'')
+    +kommende+sptWissenHtml(W)+zahlen;
+  P.querySelector('#sptMic').onclick=()=>SPT.an?sptStopp(true):sptStart(N?N.id:(L?L.id:null));
+  P.querySelector('#sptVor').onchange=e=>{ SPT.vorlesen=e.target.checked; try{ localStorage.setItem('svbc-spt-vorlesen',SPT.vorlesen?'an':'aus'); }catch(x){} if(!SPT.vorlesen)sptStill(); };
+  const tp=P.querySelector('#sptTippen'); if(tp)tp.onclick=()=>{ const t=P.querySelector('#sptTipp'); t.hidden=!t.hidden; if(!t.hidden)P.querySelector('#sptTextIn').focus(); };
+  P.querySelector('#sptTextGo').onclick=()=>{ const t=P.querySelector('#sptTextIn').value.trim(); if(t.length<3){ kToast('Bitte erst etwas sagen oder tippen.'); return; } SPT.text=t; sptAuswerten(N?N.id:(L?L.id:null)); };
+  P.querySelectorAll('[data-sptp]').forEach(b=>b.onclick=()=>sptHaken(b.dataset.sptp,b));
+  P.querySelectorAll('[data-sptliste]').forEach(b=>b.onclick=()=>{ if(typeof ogOeffnen==='function')ogOeffnen(b.dataset.sptliste); });
+  sptWissenBind(P);
+  if(SPT.erg)sptErgebnisZeigen();
+}
+async function sptHaken(id,btn){
+  const C=SPT.C; const Lx=[C.naechste,C.letzte].find(l=>l&&l.punkte.some(p=>p.id===id)); if(!Lx)return; const p=Lx.punkte.find(x=>x.id===id), an=!p.e;
+  btn.classList.toggle('ok',an); btn.querySelector('.spt-kreis').textContent=an?'✓':''; try{ svHaptic(an?'success':'light'); svSound(an?'success':'tick'); }catch(e){}
+  try{ const R=await sptRpc('orga_punkt_haken',{p_id:id,p_erledigt:an}); Object.assign(Lx,R); await new Promise(r=>setTimeout(r,an?420:120)); sptRender();
+    if(an&&Lx.punkte.every(x=>x.e)){ try{ ogFeier(document.querySelector('.spt-liste')); }catch(e){} kToast('🎉 Alles erledigt, danke!'); } }
+  catch(e){ btn.classList.toggle('ok',!an); kToast('⚠️ '+e.message); } }
+
+/* ---------- Ansage: Begrüßung, Mikrofon, Transkript ---------- */
+function sptSprich(text,cb){
+  if(!SPT.vorlesen||!('speechSynthesis'in window)){ if(cb)cb(); return; }
+  try{ sptStill(); const u=new SpeechSynthesisUtterance(text); u.lang='de-DE'; u.rate=1; let fertig=false; const done=()=>{ if(fertig)return; fertig=true; if(cb)cb(); };
+    const V=speechSynthesis.getVoices().filter(v=>/^de/i.test(v.lang)); const w=V.find(v=>/Anna|Petra|Markus|Google Deutsch|Helena/i.test(v.name))||V[0]; if(w)u.voice=w;
+    u.onend=done; u.onerror=done; SPT.tts=u; speechSynthesis.speak(u); setTimeout(done,Math.min(9000,1200+text.length*75)); }
+  catch(e){ if(cb)cb(); }
+}
+function sptStill(){ try{ if('speechSynthesis'in window)speechSynthesis.cancel(); }catch(e){} }
+function sptStart(listeId){
+  if(SPT.busy)return; SPT.liste=listeId||null; SPT.text=''; SPT.zwischen=''; SPT.erg=null; const E=document.getElementById('sptErg'); if(E)E.innerHTML='';
+  const vn=(SPT.C&&SPT.C.ich.vorname)||'du', SR=sptSR();
+  if(!SR){ const t=document.getElementById('sptTipp'); if(t){ t.hidden=false; t.querySelector('textarea').focus(); } sptSprich(sptFrage(vn)); return; }
+  SPT.an=true; sptMicUI(); try{ svHaptic('light'); }catch(e){}
+  const los=()=>{ if(!SPT.an||SPT.rec)return;
+    try{ const r=new SR(); r.lang='de-DE'; r.continuous=true; r.interimResults=true; r.maxAlternatives=1; SPT.rec=r; SPT.start=Date.now();
+      r.onresult=ev=>{ let fin='', zw=''; for(let i=ev.resultIndex;i<ev.results.length;i++){ const t=ev.results[i][0].transcript; if(ev.results[i].isFinal)fin+=t+' '; else zw+=t; }
+        if(fin)SPT.text=(SPT.text+' '+fin).replace(/\s+/g,' ').trim(); SPT.zwischen=zw; sptLiveUI(); };
+      r.onerror=ev=>{ const k=ev.error||''; if(k==='no-speech'||k==='aborted')return;
+        console.warn('Spracherkennung',k); SPT.an=false; sptMicUI(); const t=document.getElementById('sptTipp'); if(t){ t.hidden=false; }
+        kToast(k==='not-allowed'||k==='service-not-allowed'?'Das Mikrofon ist nicht freigegeben. Du kannst stattdessen tippen oder das Mikrofon deiner Tastatur nutzen.':'Die Spracherkennung klappt gerade nicht. Tippen geht immer.'); };
+      r.onend=()=>{ if(SPT.an&&SPT.rec===r){ try{ r.start(); }catch(e){ /* iOS beendet nach Pausen: einfach weiter */ } } };
+      r.start(); }
+    catch(e){ console.warn('Spracherkennung',e); SPT.an=false; sptMicUI(); const t=document.getElementById('sptTipp'); if(t)t.hidden=false; } };
+  sptSprich(sptFrage(vn),los);
+}
+function sptStopp(auswerten){
+  SPT.an=false; const r=SPT.rec; SPT.rec=null; try{ if(r){ r.onend=null; r.stop(); } }catch(e){}
+  if(SPT.zwischen){ SPT.text=(SPT.text+' '+SPT.zwischen).trim(); SPT.zwischen=''; }
+  sptMicUI();
+  if(auswerten){ if(SPT.text.trim().length<3){ kToast('Ich habe nichts verstanden. Versuch es nochmal, ruhig etwas näher ans Handy.'); const t=document.getElementById('sptTipp'); if(t)t.hidden=false; return; } sptAuswerten(SPT.liste); }
+}
+function sptMicUI(){ const K=document.getElementById('sptMicKarte'); if(!K)return; K.classList.toggle('an',SPT.an);
+  const b=K.querySelector('#sptMic'), t=K.querySelector('#sptMicT'), s=K.querySelector('#sptMicS'), l=K.querySelector('#sptLive'); const vn=(SPT.C&&SPT.C.ich.vorname)||'du';
+  if(b)b.setAttribute('aria-label',SPT.an?'Ansage beenden':'Ansage starten'); if(t)t.textContent=SPT.an?'Ich höre zu …':'Ansage'; if(s)s.textContent=SPT.an?'Tippen, wenn du fertig bist.':sptFrage(vn); if(l)l.hidden=!SPT.an&&!SPT.text; sptLiveUI(); }
+function sptLiveUI(){ const p=document.getElementById('sptLiveT'); if(!p)return; p.innerHTML=sptE(SPT.text)+(SPT.zwischen?' <i>'+sptE(SPT.zwischen)+'</i>':'')+(SPT.an&&!SPT.text&&!SPT.zwischen?'<span class="spt-warte">Sprich einfach los. Zum Beispiel: „Helferplan steht, Wechselgeld fehlt noch, der Grill muss repariert werden.“</span>':''); }
+
+/* ---------- Auswerten (Server) und bestätigen ---------- */
+async function sptAuswerten(listeId){
+  if(SPT.busy)return; SPT.busy=true; const E=document.getElementById('sptErg'); if(E)E.innerHTML='<div class="card spt-erg"><div class="spt-denkt"><span></span><span></span><span></span></div><p>Ich sortiere das in die Checkliste …</p></div>';
+  try{ const {data,error}=await SVB.sb.functions.invoke('spieltag-ki',{body:{liste:listeId||null,text:SPT.text}});
+    if(error)throw new Error((error.context&&error.context.status===401)?'Bitte neu anmelden.':(error.message||'Server nicht erreichbar'));
+    if(!data||!data.ok){ const k=data&&data.error; throw new Error(k==='kein-schluessel'?'Die KI ist noch nicht eingerichtet (Admin: Schlüssel hinterlegen).':k==='ki-weg'?'Die KI antwortet gerade nicht. Deine Ansage ist nicht verloren, tippe gleich nochmal auf Auswerten.':k==='schluessel'?'Der KI-Schlüssel passt nicht (Admin).':(k||'Unbekannter Fehler')); }
+    SPT.erg=data; sptErgebnisZeigen(); sptSprich(data.antwort+(data.rueckfrage?' '+data.rueckfrage:''));
+  }catch(e){ if(E)E.innerHTML=`<div class="card spt-erg fehler"><p>⚠️ ${sptE(e.message)}</p><div class="btnrow"><button type="button" class="btn sm" id="sptNochmal">Nochmal auswerten</button><button type="button" class="btn ghost sm" id="sptTippenJetzt">Text ansehen</button></div></div>`;
+    const b=document.getElementById('sptNochmal'); if(b)b.onclick=()=>sptAuswerten(listeId); const t=document.getElementById('sptTippenJetzt'); if(t)t.onclick=()=>{ const x=document.getElementById('sptTipp'); if(x){ x.hidden=false; x.querySelector('textarea').value=SPT.text; } }; }
+  finally{ SPT.busy=false; }
+}
+function sptErgebnisZeigen(){
+  const E=document.getElementById('sptErg'), R=SPT.erg; if(!E||!R)return;
+  const n=R.erledigt.length+R.offen.length+R.neu.length+R.notizen.length+R.wissen.length;
+  const zeile=(k,i,ic,h,s)=>`<label class="spt-z"><input type="checkbox" checked data-sptz="${k}:${i}"><span class="spt-zi">${ic}</span><span><b>${sptE(h)}</b>${s?`<small>${sptE(s)}</small>`:''}</span></label>`;
+  E.innerHTML=`<div class="card spt-erg"><div class="spt-antwort"><span class="spt-av">${SPT_MIC}</span><p>${sptE(R.antwort)}${R.rueckfrage?`<br><em>${sptE(R.rueckfrage)}</em>`:''}</p></div>
+    ${n?`<div class="spt-zeilen">
+      ${R.erledigt.map((p,i)=>zeile('e',i,'✓','Erledigt: '+p.t,'')).join('')}
+      ${R.offen.map((p,i)=>zeile('o',i,'○','Noch offen: '+p.t,p.war?'war schon abgehakt, wird wieder geöffnet':'')).join('')}
+      ${R.neu.map((p,i)=>zeile('n',i,'+','Neu: '+p.t,({vorher:'Vorher',spieltag:'Am Spieltag',danach:'Danach'})[p.g]+(p.merken?' · bei jedem Heimspiel':''))).join('')}
+      ${R.notizen.map((p,i)=>zeile('z',i,'✎','Notiz zu „'+p.t+'“',p.n)).join('')}
+      ${R.wissen.map((p,i)=>zeile('w',i,'💡','Merken für Nachfolger: '+p.thema,p.text)).join('')}</div>
+      <p class="note small">Haken weg, was nicht stimmt. Gespeichert wird erst mit „Passt“.</p>
+      <div class="btnrow"><button type="button" class="btn spt-passt" id="sptPasst">${sptSVG('check')} Passt, übernehmen</button><button type="button" class="btn ghost" id="sptNochmal2">${SPT_MIC} Nochmal sprechen</button><button type="button" class="btn ghost" id="sptWeg">Verwerfen</button></div>`
+    :`<p class="note">Da war nichts, was auf die Liste gehört. Du kannst es gleich nochmal sagen.</p><div class="btnrow"><button type="button" class="btn ghost" id="sptNochmal2">${SPT_MIC} Nochmal sprechen</button><button type="button" class="btn ghost" id="sptWeg">Schließen</button></div>`}
+    <details class="spt-trans"><summary>Was ich verstanden habe</summary><p>${sptE(SPT.text)}</p></details></div>`;
+  const p=E.querySelector('#sptPasst'); if(p)p.onclick=()=>sptUebernehmen();
+  E.querySelector('#sptNochmal2').onclick=()=>{ SPT.erg=null; sptStart(SPT.liste); };
+  E.querySelector('#sptWeg').onclick=()=>{ SPT.erg=null; SPT.text=''; E.innerHTML=''; sptMicUI(); };
+  try{ E.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){}
+}
+async function sptUebernehmen(){
+  const E=document.getElementById('sptErg'), R=SPT.erg; if(!E||!R||SPT.busy)return;
+  const an=k=>[...E.querySelectorAll(`[data-sptz^="${k}:"]`)].filter(x=>x.checked).map(x=>+x.dataset.sptz.split(':')[1]);
+  const p={erledigt:an('e').map(i=>R.erledigt[i].id),offen:an('o').map(i=>R.offen[i].id),neu:an('n').map(i=>R.neu[i]),notizen:an('z').map(i=>({id:R.notizen[i].id,n:R.notizen[i].n})),wissen:an('w').map(i=>R.wissen[i]),transkript:SPT.text,antwort:R.antwort};
+  SPT.busy=true; const b=E.querySelector('#sptPasst'); if(b)b.disabled=true;
+  try{ const X=await sptRpc('spieltag_ansage_anwenden',{p_liste:R.liste||null,p});
+    if(SPT.C){ if(X.liste&&SPT.C.naechste&&SPT.C.naechste.id===X.liste.id)Object.assign(SPT.C.naechste,X.liste); if(X.liste&&SPT.C.letzte&&SPT.C.letzte.id===X.liste.id)Object.assign(SPT.C.letzte,X.liste); SPT.C.wissen=X.wissen_alle||SPT.C.wissen; SPT.C.ansagen=SPT.C.ansagen||{}; SPT.C.ansagen.n=(SPT.C.ansagen.n||0)+1; SPT.C.ansagen.erledigt=(SPT.C.ansagen.erledigt||0)+(X.erledigt||0); }
+    SPT.erg=null; SPT.text=''; try{ svHaptic('success'); svSound('success'); }catch(e){}
+    const teile=[]; if(X.erledigt)teile.push(X.erledigt+' abgehakt'); if(X.neu)teile.push(X.neu+' neu'); if(X.wissen)teile.push(X.wissen+' gemerkt');
+    kToast('✓ '+(teile.join(', ')||'Übernommen'));
+    sptRender(); const Lx=SPT.C&&SPT.C.naechste; if(Lx&&Lx.punkte.length&&Lx.punkte.every(x=>x.e)){ try{ ogFeier(document.querySelector('.spt-liste')); }catch(e){} }
+  }catch(e){ kToast('⚠️ '+e.message); if(b)b.disabled=false; }
+  finally{ SPT.busy=false; }
+}
+
+/* ---------- Wissen ---------- */
+function sptWissenHtml(W){
+  const T={}; (W||[]).forEach(w=>{ (T[w.thema]=T[w.thema]||[]).push(w); });
+  const themen=Object.keys(T).sort((a,b)=>a.localeCompare(b,'de'));
+  return `<div class="card spt-wissen" id="sptWissen"><div class="spt-lh"><div><h3 class="trh">💡 Wissen für Nachfolger</h3><p class="note">Was man wissen muss, wenn man den Spieltag mal übernimmt: wo etwas liegt, wen man anruft, was schiefgehen kann. Kommt aus deinen Ansagen oder von Hand.</p></div></div>
+    ${themen.length?themen.map(t=>`<div class="spt-wt"><h4>${sptE(t)} <em>${T[t].length}</em></h4>${T[t].map(w=>`<div class="spt-w" data-sptw="${sptE(w.id)}"><p>${sptE(w.text)}</p><small>${w.quelle==='ansage'?'🎙️ aus einer Ansage':'✎ von Hand'}${w.liste?' · '+sptE(w.liste):''}</small></div>`).join('')}</div>`).join('')
+      :'<p class="spt-leer">Noch nichts gemerkt. Sag bei der nächsten Ansage einfach, was du gelernt hast („Der Grill braucht 45 Minuten Vorlauf“), oder trage es hier ein.</p>'}
+    <div class="btnrow"><button type="button" class="btn ghost sm" id="sptWNeu">${sptSVG('plus')} Eintragen</button><button type="button" class="btn ghost sm" id="sptWExp">${sptSVG('file')} Übergabe als Text</button></div></div>`;
+}
+function sptWissenBind(P){
+  const n=P.querySelector('#sptWNeu'); if(n)n.onclick=()=>sptWissenForm(null);
+  const x=P.querySelector('#sptWExp'); if(x)x.onclick=()=>sptUebergabe();
+  P.querySelectorAll('[data-sptw]').forEach(d=>d.onclick=()=>sptWissenForm(d.dataset.sptw));
+}
+function sptWissenForm(id){
+  const w=id?(SPT.C.wissen||[]).find(x=>x.id===id):null; const themen=[...new Set((SPT.C.wissen||[]).map(x=>x.thema))];
+  const M=svModal(`<div class="og-form"><h2>💡 ${w?'Eintrag ändern':'Wissen eintragen'}</h2>
+    <label>Thema<input id="sptWT" maxlength="80" list="sptThemen" value="${sptE(w?w.thema:'')}" placeholder="Kasse, Schiri, Platz, Gastro, Helfer …"><datalist id="sptThemen">${['Kasse','Schiri','Platz','Gastro','Helfer','DFBnet','Kabinen','Gäste','Wetter','Allgemein'].concat(themen).filter((v,i,a)=>a.indexOf(v)===i).map(t=>`<option value="${sptE(t)}">`).join('')}</datalist></label>
+    <label>Merksatz<textarea id="sptWX" rows="4" maxlength="2000" placeholder="So, dass es jemand versteht, der das zum ersten Mal macht.">${sptE(w?w.text:'')}</textarea></label>
+    <div class="btnrow sbact"><button class="btn" type="button" id="sptWS">${sptSVG('check')} Speichern</button>${w?`<button class="btn ghost" type="button" id="sptWL">${sptSVG('trash')} Löschen</button>`:''}<button class="btn ghost" type="button" onclick="closeOverlay()">Abbrechen</button></div></div>`);
+  M.querySelector('#sptWS').onclick=async()=>{ try{ const W=await sptRpc('spieltag_wissen_speichern',{p_id:id||null,p_thema:M.querySelector('#sptWT').value,p_text:M.querySelector('#sptWX').value}); SPT.C.wissen=W; closeOverlay(); kToast('✓ Gemerkt'); sptRender(); }catch(e){ kToast('⚠️ '+e.message); } };
+  const l=M.querySelector('#sptWL'); if(l)l.onclick=async()=>{ try{ const W=await sptRpc('spieltag_wissen_loeschen',{p_id:id}); SPT.C.wissen=W; closeOverlay(); kToast('Gelöscht'); sptRender(); }catch(e){ kToast('⚠️ '+e.message); } };
+  setTimeout(()=>M.querySelector(w?'#sptWX':'#sptWT').focus(),50);
+}
+async function sptUebergabe(){
+  let t; try{ t=await sptRpc('spieltag_uebergabe'); }catch(e){ kToast('⚠️ '+e.message); return; }
+  const M=svModal(`<div class="og-form spt-ueb"><h2>📄 Übergabe Spieltag</h2><p class="note">Alles auf einer Seite: wer was macht, dein Wissen je Thema und der Ablauf eines Heimspiels. Zum Weitergeben an die Nachfolge, zum Ausdrucken oder für den Vereins-Drive.</p>
+    <textarea id="sptUebT" rows="14" readonly>${sptE(t)}</textarea>
+    <div class="btnrow sbact"><button class="btn" type="button" id="sptUebC">${sptSVG('copy')} Kopieren</button>${navigator.share?`<button class="btn ghost" type="button" id="sptUebS">${sptSVG('share')} Teilen</button>`:''}<button class="btn ghost" type="button" id="sptUebD">${sptSVG('download')} Als Datei</button></div></div>`);
+  M.querySelector('#sptUebC').onclick=async()=>{ try{ await navigator.clipboard.writeText(t); kToast('✓ Kopiert'); }catch(e){ const a=M.querySelector('#sptUebT'); a.focus(); a.select(); kToast('Markiert, jetzt kopieren'); } };
+  const s=M.querySelector('#sptUebS'); if(s)s.onclick=()=>{ navigator.share({title:'Übergabe Spieltag SV/BSC',text:t}).catch(()=>{}); };
+  M.querySelector('#sptUebD').onclick=()=>{ try{ const b=new Blob([t],{type:'text/markdown;charset=utf-8'}), a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='Uebergabe-Spieltag-'+new Date().toISOString().slice(0,10)+'.md'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); }catch(e){ kToast('⚠️ '+e.message); } };
+}
+
+/* ---------- Start: Karte auf der Übersicht ---------- */
+async function sptHome(){
+  const home=document.getElementById('panel-home'); if(!home||SPT.darf===false)return;
+  const C=await sptLaden(true); if(!C||!(C.ich.spieltag||C.ich.admin)){ const b=document.getElementById('sptHome'); if(b)b.remove(); return; }
+  let box=document.getElementById('sptHome');
+  if(!box){ box=document.createElement('div'); box.id='sptHome'; box.className='card spt-home'; const k=document.getElementById('svCockpit')||document.getElementById('svrMeine'); if(k)k.after(box); else home.prepend(box); }
+  const N=C.naechste, K=(C.kommende||[])[0], offen=N?N.punkte.filter(p=>!p.e).length:0;
+  box.innerHTML=`<button type="button" class="spt-home-mic" id="sptHomeMic" aria-label="Ansage starten">${SPT_MIC}</button>
+    <div class="spt-home-t"><h3>Mein Spieltag</h3><p>${N?`${sptE(sptTag(N.datum))}${N.zeit?', '+sptE(N.zeit)+' Uhr':''}: ${sptE(N.titel.replace(/^Heimspiel /,''))}. ${offen?`<b>${offen} offen</b>.`:'Alles abgehakt.'}`:K?`Nächstes Heimspiel ${sptE(sptTag(K.d))} gegen ${sptE(K.gegner||'?')}.`:'Gerade kein Heimspiel.'}</p></div>
+    ${N&&typeof ogRing==='function'?ogRing(N.punkte.length-offen,N.punkte.length):''}<button type="button" class="btn ghost sm" id="sptHomeGo">Öffnen ${sptSVG('chev')}</button>`;
+  box.querySelector('#sptHomeGo').onclick=()=>goTab('sptag');
+  box.querySelector('#sptHomeMic').onclick=()=>{ goTab('sptag'); setTimeout(()=>{ if(!SPT.an)sptStart(N?N.id:null); },400); };
+}
+{ const _rh=renderHome; renderHome=function(){ const r=_rh.apply(this,arguments); try{ setTimeout(sptHome,500); }catch(e){} return r; }; }
+
+/* ---------- Push „Sag mir, was erledigt ist“ öffnet direkt die Ansage ---------- */
+{ const _zi=svzInhalt; svzInhalt=async function(m){ const x=await _zi.apply(this,arguments);
+    if(m&&m.art==='orga'&&(m.data||{}).ansage)x.knopf=`<button class="btn sv32-go" type="button" data-svzspt="${sptE(m.data.liste||'')}">${SPT_MIC} <span>Ansage starten</span></button>`;
+    return x; }; }
+{ const _mz=svMeldungZeigen; svMeldungZeigen=async function(){ const r=await _mz.apply(this,arguments);
+    try{ document.querySelectorAll('#modal [data-svzspt]').forEach(b=>b.onclick=()=>{ closeOverlay(); const id=b.dataset.svzspt; goTab('sptag'); const warte=()=>{ if(SPT.C){ if(!SPT.an)sptStart(id||(SPT.C.naechste?SPT.C.naechste.id:null)); } else setTimeout(warte,300); }; setTimeout(warte,300); }); }catch(e){} return r; }; }
+
+(function(){ try{ const s=document.createElement('style'); s.id='svm42css'; s.textContent="/* Beta 0.40 · Mein Spieltag: große Knöpfe, ein Mikrofon, wenig Text. Für Leute, die nicht jeden Tag Apps bedienen. */\n.spt-kopf{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:4px 0 14px;}\n.spt-kopf h2{margin:0 0 6px;font-size:30px;letter-spacing:-.02em;line-height:1.1;text-wrap:balance;}\n.spt-kopf h2 span{background:linear-gradient(90deg,#9cc3ff 0%,#5b9bff 45%,#b9adff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-kopf p{margin:0;font-size:16px;color:var(--ink2);max-width:62ch;line-height:1.45;}\n.spt-kopf p b{color:var(--ink);}\n.spt-wer{font-size:12.5px;color:var(--ink3);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 11px;white-space:nowrap;}\n/* Hinweis für den Admin */\n.spt-hinweis{font-size:14.5px;line-height:1.45;color:var(--ink2);border-color:rgba(251,191,36,.35)!important;}\n.spt-hinweis b{color:var(--ink);}\n/* Mikrofon-Karte */\n.spt-mic-karte{display:grid;grid-template-columns:auto 1fr;gap:16px 18px;align-items:center;padding:20px 18px;overflow:hidden;}\n.spt-mic{position:relative;width:96px;height:96px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:var(--grad-brand,linear-gradient(135deg,#3b7bff,#7c6cf6));color:#fff;cursor:pointer;display:grid;place-items:center;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 18px 40px -12px rgba(59,123,255,.7),0 2px 6px -2px rgba(0,0,0,.6);transition:transform .15s var(--ease),box-shadow .2s;-webkit-tap-highlight-color:transparent;}\n.spt-mic svg{width:44px;height:44px;position:relative;z-index:1;}\n.spt-mic:active{transform:scale(.96);}\n.spt-puls{position:absolute;inset:-6px;border-radius:50%;border:3px solid rgba(255,255,255,.0);pointer-events:none;}\n.spt-mic-karte.an .spt-mic{background:linear-gradient(135deg,#ff5f6d,#e0245e 60%,#b4175a);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 18px 44px -10px rgba(224,36,94,.75);}\n.spt-mic-karte.an .spt-puls{border-color:rgba(255,95,109,.7);animation:sptPuls 1.4s ease-out infinite;}\n@keyframes sptPuls{0%{transform:scale(.92);opacity:.9}100%{transform:scale(1.45);opacity:0}}\n.spt-mic-txt b{display:block;font-size:22px;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px;}\n.spt-mic-txt small{display:block;font-size:15px;color:var(--ink2);line-height:1.4;}\n.spt-live{grid-column:1/-1;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;min-height:54px;}\n.spt-live p{margin:0;font-size:17px;line-height:1.45;color:var(--ink);}\n.spt-live i{color:var(--ink3);font-style:normal;}\n.spt-warte{color:var(--ink3);font-size:14.5px;}\n.spt-tipp{grid-column:1/-1;display:grid;gap:10px;} .spt-tipp[hidden],.spt-live[hidden]{display:none;}\n.spt-tipp textarea{width:100%;font:inherit;font-size:16px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--ink);resize:vertical;}\n.spt-mic-fuss{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--ink3);font-size:13.5px;}\n.spt-schalter{display:flex;align-items:center;gap:8px;cursor:pointer;}\n.spt-schalter input{width:18px;height:18px;accent-color:#5b9bff;}\n.spt-link{background:none;border:0;color:var(--brand2,#5b9bff);font:inherit;font-size:13.5px;cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:3px;}\n/* Ergebnis der Ansage */\n.spt-erg{border-color:rgba(91,155,255,.35)!important;}\n.spt-erg.fehler{border-color:rgba(245,158,11,.4)!important;}\n.spt-antwort{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}\n.spt-av{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--grad-brand,#3b7bff);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3);}\n.spt-av svg{width:20px;height:20px;}\n.spt-antwort p{margin:0;font-size:17px;line-height:1.45;}\n.spt-antwort em{color:var(--ink2);font-style:normal;}\n.spt-zeilen{display:grid;gap:6px;margin:6px 0 10px;}\n.spt-z{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);cursor:pointer;}\n.spt-z input{width:20px;height:20px;accent-color:#22c55e;}\n.spt-z:has(input:not(:checked)){opacity:.45;text-decoration:line-through;}\n.spt-zi{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:900;font-size:14px;background:rgba(255,255,255,.1);}\n.spt-z b{display:block;font-size:15px;}\n.spt-z small{display:block;color:var(--ink3);font-size:13px;margin-top:2px;}\n.spt-passt{font-size:16px;}\n.spt-trans{margin-top:10px;color:var(--ink3);font-size:13.5px;}\n.spt-trans p{margin:6px 0 0;color:var(--ink2);}\n.spt-denkt{display:flex;gap:6px;margin-bottom:8px;}\n.spt-denkt span{width:9px;height:9px;border-radius:50%;background:#5b9bff;animation:sptDenkt 1.1s infinite ease-in-out;}\n.spt-denkt span:nth-child(2){animation-delay:.18s} .spt-denkt span:nth-child(3){animation-delay:.36s}\n@keyframes sptDenkt{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}\n/* Checkliste mit großen Kreisen */\n.spt-lh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;}\n.spt-lh h3{margin:0 0 4px;font-size:19px;}\n.spt-lh .note{margin:0;}\n.spt-liste h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);display:flex;gap:8px;align-items:center;}\n.spt-liste h4 em,.spt-wt h4 em{font-style:normal;background:rgba(255,255,255,.1);border-radius:999px;padding:1px 8px;font-size:12px;color:var(--ink2);}\n.spt-p{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 12px;margin:0 0 6px;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));color:var(--ink);cursor:pointer;font:inherit;-webkit-tap-highlight-color:transparent;transition:transform .12s var(--ease),opacity .2s;}\n.spt-p:active{transform:scale(.985);}\n.spt-kreis{width:38px;height:38px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);display:grid;place-items:center;font-weight:900;font-size:19px;color:#fff;transition:background .2s,border-color .2s;}\n.spt-p.ok .spt-kreis{background:linear-gradient(135deg,#22c55e,#15803d);border-color:transparent;box-shadow:0 6px 16px -6px rgba(34,197,94,.7);}\n.spt-p.ok .spt-pt b{text-decoration:line-through;color:var(--ink3);}\n.spt-pt b{display:block;font-size:16px;line-height:1.3;}\n.spt-pt small{display:block;color:var(--ink3);font-size:13px;margin-top:2px;}\n.spt-fertig{font-size:17px;margin:10px 0;}\n.spt-ok{margin-top:8px;color:var(--ink3);font-size:14px;}\n.spt-ok summary{cursor:pointer;padding:6px 0;}\n.spt-ok .spt-p{opacity:.7;}\n/* Weitere Heimspiele */\n.spt-k{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:15px;}\n.spt-k:last-child{border-bottom:0;}\n.spt-k span{color:var(--ink2);text-align:right;}\n/* Wissen */\n.spt-wt{margin-top:12px;}\n.spt-wt h4{margin:0 0 6px;font-size:15px;display:flex;gap:8px;align-items:center;}\n.spt-w{padding:10px 12px;margin-bottom:6px;border-radius:12px;background:linear-gradient(160deg,rgba(251,213,106,.1),rgba(251,213,106,.02));border:1px solid rgba(251,191,36,.18);cursor:pointer;}\n.spt-w p{margin:0;font-size:15.5px;line-height:1.4;}\n.spt-w small{display:block;color:var(--ink3);font-size:12.5px;margin-top:4px;}\n.spt-leer{color:var(--ink2);font-size:15px;}\n.spt-ueb textarea{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:13px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--ink);}\n/* Zahlen */\n.spt-zahlen{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 20px;}\n.spt-zahlen div{padding:12px;border-radius:14px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);text-align:center;}\n.spt-zahlen b{display:block;font-size:24px;letter-spacing:-.02em;background:linear-gradient(90deg,#fff,#cfe0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-zahlen span{display:block;font-size:12px;color:var(--ink3);margin-top:2px;line-height:1.3;}\n/* Übersicht-Karte */\n.spt-home{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;}\n.spt-home-mic{width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:var(--grad-brand,#3b7bff);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 12px 26px -10px rgba(59,123,255,.7);}\n.spt-home-mic svg{width:26px;height:26px;}\n.spt-home-t h3{margin:0 0 3px;font-size:17px;}\n.spt-home-t p{margin:0;font-size:14px;color:var(--ink2);line-height:1.35;}\n.spt-home-t p b{color:var(--ink);}\n@media (max-width:620px){\n  .spt-kopf h2{font-size:26px;}\n  .spt-mic-karte{grid-template-columns:1fr;justify-items:center;text-align:center;}\n  .spt-mic{width:112px;height:112px;} .spt-mic svg{width:52px;height:52px;}\n  .spt-zahlen{grid-template-columns:1fr 1fr;}\n  .spt-home{grid-template-columns:auto 1fr;} .spt-home .og-ring{display:none;} .spt-home #sptHomeGo{grid-column:1/-1;justify-self:start;}\n}\n@media (prefers-reduced-motion:reduce){ .spt-puls,.spt-denkt span{animation:none!important;} }\n"; document.head.appendChild(s); }catch(e){} })();
 
 /* ================= INIT ================= */
 renderWeights();
