@@ -348,7 +348,6 @@ const DB_COLS=[
   {k:'proj',l:'KLA-Prog.',num:1,get:p=>scores(p).proj},
   {k:'km',l:'km',num:1,get:p=>p.km},
   {k:'status',l:'Status',get:p=>p.status||'Neu'},
-  {k:'mvp',l:'MVP',num:1,get:p=>scores(p).mvp},
   {k:'score',l:'MScore',num:1,get:p=>scores(p).total},
 ];
 function renderDB(){
@@ -1142,7 +1141,6 @@ function openModal(id){
           <input type="range" min="1" max="10" value="${p.scout[k]}" data-sc="${k}"><output>${p.scout[k]}</output></div>`).join('')}
       </div>
       <div class="field" style="margin-top:12px"><label>Notizen</label><textarea id="e_note">${kEsc(p.note||'')}</textarea></div>
-      <div class="field" style="margin-top:10px"><label>FuPa-MVP 26/27 in % (0–100, aus der FuPa-Spielerstatistik · leer = keiner)</label><input type="number" id="e_mvp" min="0" max="100" step="1" inputmode="numeric" value="${(()=>{const m=mvpOf(p);return m?m.v:'';})()}" placeholder="–"></div>
       <div class="btnrow" style="margin-top:12px">
         <button class="btn" id="saveP">Speichern</button>
         <button class="btn ghost" id="starP">${p.star?'★ Von Shortlist entfernen':'☆ Auf die Shortlist'}</button>
@@ -2101,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.41', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.42', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -4524,7 +4522,6 @@ function vrViewAllTime(B){
   const stand=VR.at.reduce((a,r)=>r.stand&&r.stand>a?r.stand:a,'');
   const active=L.filter(x=>{ const p=x.pid&&trP(x.pid); return p&&p.own&&!p.verzicht&&!p.isJugend; });
   const ms=active.map(x=>({x,p:trP(x.pid),m:TRS.nextMilestones(x.tot).filter(m=>(m.lab==='Spiele'&&m.rest<=10)||(m.lab==='Tore'&&m.rest<=5)||(m.lab==='Vorlagen'&&m.rest<=3))})).filter(o=>o.m.length).sort((a,b)=>a.m[0].rest-b.m[0].rest);
-  const back=L.filter(x=>{ const p=x.pid&&trP(x.pid); return p&&!p.own&&x.tot.sp>=25&&!(typeof crmOf==='function'&&crmOf(p).s==='no'); }).sort((a,b)=>b.tot.sp-a.tot.sp).slice(0,12);   // „Kein Interesse“ fliegt raus
   const legends=L.filter(x=>x.tot.sp>=200||x.tot.tore>=75).sort((a,b)=>b.tot.sp-a.tot.sp);
   const q=TRC.N(VR.atQ||''), key={sp:x=>x.tot.sp,tore:x=>x.tot.tore,vor:x=>x.tot.vor,siege:x=>x.tot.siege,quote:x=>x.tot.sp>=30?x.tot.quote:-1}[VR.atSort];
   const rows=L.filter(x=>!q||TRC.N(vrAtName(x)).includes(q)||TRC.N(x.r.name).includes(q)).sort((a,b)=>key(b)-key(a)||b.tot.sp-a.tot.sp);
@@ -4533,7 +4530,7 @@ function vrViewAllTime(B){
   B.innerHTML=`<div class="vrgrid">
       <div class="card"><h3 class="trh">${SVI('trophy')} Meilensteine in Sicht</h3>${ms.length?ms.slice(0,8).map(o=>`<div class="tra l-mittel"><span class="tra-av" data-svp="${svEsc(o.p.id)}">${avaHtml(o.p)}</span><div class="tra-b"><b data-svp="${svEsc(o.p.id)}">${svEsc(o.p.name)}</b><span>${o.m.map(m=>`noch ${m.rest} bis ${m.ziel} ${m.lab}`).join(' · ')}</span></div></div>`).join('')+'<div class="note">Rechtzeitig Ehrung vorbereiten: Stadionsprecher, Social-Media-Post, Erinnerungstrikot, so etwas bindet.</div>':'<div class="note">Gerade niemand kurz vor einem runden Jubiläum.</div>'}</div>
       <div class="card"><h3 class="trh">${SVI('star')} Vereinslegenden <small>(200+ Spiele oder 75+ Tore)</small></h3><div class="vrchips">${legends.map(x=>`<span ${x.pid?`data-svp="${svEsc(x.pid)}"`:''}>${svEsc(vrAtName(x))} <small>${x.tot.sp} Sp. · ${x.tot.tore} T.</small></span>`).join('')||'<span class="note">–</span>'}</div>
-        ${back.length?`<h3 class="trh" style="margin-top:14px">${SVI('refresh')} Rückkehrer-Radar</h3><div class="note" style="margin-top:0">Ehemalige mit vielen Spielen für uns, die laut Datenbestand jetzt woanders spielen.${canScout()?' Nach rechts wischen: kein Interesse, nach links: interessiert (Merkliste).':''}</div><div class="vrbackl">${back.map(x=>{ const p=trP(x.pid); return `<div class="tra vrback${p.star?' vrfav':''}"><span class="tra-av" data-svp="${svEsc(x.pid)}">${avaHtml(p)}</span><div class="tra-b"><b data-svp="${svEsc(x.pid)}">${svEsc(vrAtName(x))}${p.star?' ⭐':''}</b><span>${x.tot.sp} Spiele für uns · jetzt ${svEsc(p.club||'?')}${p.cur&&p.cur.tore?' · '+p.cur.tore+' Tore 26/27':''}</span></div></div>`; }).join('')}</div>`:''}</div>
+        </div>
     </div>
     <div class="card"><div class="vrat-h"><h3 class="trh" style="margin:0">${SVI('chart')} Ewige Liste seit 2013/14</h3><input class="search" id="vrAtQ" type="search" placeholder="Name suchen …" value="${svEsc(VR.atQ)}"></div>
       <div class="trtw"><table class="trtab vrat"><thead><tr><th>#</th><th>Spieler</th>${th('sp','Spiele')}${th('tore','Tore')}${th('vor','Vorl.')}${th('siege','Siege')}${th('quote','Quote')}<th>Abzeichen</th></tr></thead><tbody>
@@ -6386,6 +6383,7 @@ function svScoutPopup(){
   const seen=rdSeen(), N=VR.radar.filter(r=>r.created_at>seen&&r.lvl!=='info'); if(!N.length)return;
   const last=N.map(r=>r.created_at).sort().pop(); let shown=''; try{ shown=localStorage.getItem('sv_spop')||''; }catch(e){}
   if(shown>=last||window.__svSPop===last)return; window.__svSPop=last;
+  try{ localStorage.setItem('sv_spop',last); }catch(e){}   // 0.42: gilt als gesehen, sobald es einmal erschienen ist
   svModal(`<div class="kbpop"><div class="kbpop-ic scout">${SVI('radar')}</div><span class="trpill">Scouting</span><h2>${N.length} neue Radar-Meldung${N.length>1?'en':''}</h2>
     <p class="note">${seen?'Seit deinem letzten Besuch':'Aktuell'} hat das Radar das hier gefunden:</p><div class="onb-rd">${N.slice(0,3).map(rdItem).join('')}</div>
     <button class="btn kbpop-go" id="svSpGo">${SVI('radar')} Zum Radar</button><div class="btnrow"><button class="btn ghost sm" id="svSpL">Später</button></div></div>`);
@@ -6674,12 +6672,16 @@ async function sc2JobView(id){
   document.getElementById('sc2JExp').onclick=()=>sxExport('job',{job:j});
   const pr=document.getElementById('sc2JProf'); if(pr)pr.onclick=()=>openModal(e.player_id);
   document.getElementById('sc2JCl').onclick=()=>closeOverlay();
-  const mm=SC2.meld.filter(m=>m.data&&m.data.job===id&&!m.gelesen_at); if(mm.length){ SVB.sb.rpc('meldungen_gelesen',{p_ids:mm.map(m=>m.id)}); mm.forEach(m=>m.gelesen_at=new Date().toISOString()); }
+  const mm=SC2.meld.filter(m=>m.data&&String(m.data.job)===String(id)&&!m.gelesen_at); if(mm.length){ SVB.sb.rpc('meldungen_gelesen',{p_ids:mm.map(m=>m.id)}); mm.forEach(m=>m.gelesen_at=new Date().toISOString()); }
 }
 // fertiger Auftrag → Pop-up (einmal je Auftrag), wenn die App offen ist
 function sc2JobPopup(){
   if(typeof svPopOk==='function'&&!svPopOk())return; if(document.querySelector('#overlay.open')||document.getElementById('onb'))return;
-  const m=SC2.meld.find(x=>x.art==='scout_job'&&!x.gelesen_at&&x.data&&x.data.job); if(!m||window.__sc2Pop===m.id)return; window.__sc2Pop=m.id;
+  // 0.42: jeder fertige Auftrag erscheint höchstens EINMAL als Pop-up (auch nach Neustart, auch wenn per X geschlossen)
+  let gez=[]; try{ gez=JSON.parse(localStorage.getItem('sv_jpop')||'[]'); }catch(e){}
+  const offen=SC2.meld.filter(x=>x.art==='scout_job'&&!x.gelesen_at&&x.data&&x.data.job&&!gez.includes(x.id));
+  const m=offen[0]; if(!m||window.__sc2Pop===m.id)return; window.__sc2Pop=m.id;
+  try{ localStorage.setItem('sv_jpop',JSON.stringify(gez.concat(offen.map(x=>x.id)).slice(-200))); }catch(e){}
   svModal(`<div class="kbpop"><div class="kbpop-ic scout">${SVI('search')}</div><span class="trpill">KI-Scouting</span><h2>${svEsc(m.titel.replace(/^🔎 /,''))}</h2><p class="note">${svEsc(m.text||'')}</p>
     <button class="btn kbpop-go" id="sc2PGo">${SVI('eye')} Bericht ansehen</button><div class="btnrow"><button class="btn ghost sm" id="sc2PL">Später</button></div></div>`);
   document.getElementById('sc2PGo').onclick=()=>{ closeOverlay(); setTimeout(()=>sc2JobView(m.data.job),120); };
@@ -7643,7 +7645,6 @@ function pf4ScoreHtml(p,s){
   return `<div class="pf4-sc">${s.comps.map(c=>`<div class="sc4r${c.w?'':' off'}"><span>${sv4Esc(c.t)} ${sv4I(c.t,{art:c.art,basis:c.basis,rows:[['Wert',c.v==null?'–':c.v+' / 100'],['Gewicht',c.w?Math.round(c.w/s.sum*100)+' %':'zählt nicht']]})}</span>
       <i><u style="width:${c.v||0}%;background:${tierColor(c.v||0)}"></u></i><b>${c.v==null?'–':c.v}</b><em>${c.w?Math.round(c.w/s.sum*100)+' %':'–'}</em></div>`).join('')}
     ${s.sdsB?`<div class="sc4r add"><span>Elf der Woche</span><i></i><b>+${s.sdsB}</b><em></em></div>`:''}
-    ${s.mvpAdj?`<div class="sc4r add"><span>FuPa-MVP ${s.mvp} %</span><i></i><b>${s.mvpAdj>0?'+':''}${s.mvpAdj}</b><em></em></div>`:''}
     ${s.adjD?`<div class="sc4r add"><span>Insider-Rating (manuell)</span><i></i><b>${s.adjD>0?'+':''}${s.adjD}</b><em></em></div>`:''}
     <div class="sc4r tot"><span>MScore</span><i></i><b>${sv4Num(s.total,1)}</b><em></em></div></div>
     <p class="note small">Gewichte anpassen: Wissen → Modell. Bausteine ohne Daten zählen nicht mit, ihr Gewicht wird auf die anderen verteilt.</p>`;
@@ -7738,7 +7739,7 @@ function sv4ModelCard(){
   const sum=Object.values(W).reduce((a,b)=>a+(+b||0),0)||1;
   c.innerHTML=`<h3>MScore 2.0, so entsteht der Wert</h3><p class="note">Ein Gesamtwert ist nur so gut wie seine Nachvollziehbarkeit: Jeder Baustein steht im Spielerprofil mit ⓘ (Quelle, automatisch oder manuell, Stand, Grundlage). Die Gewichte stellst du unten live ein; mit mehr Daten wird das Modell besser.</p>
     <table class="pf4-st"><thead><tr><th>Baustein</th><th>Gewicht</th><th>So wird gerechnet</th></tr></thead><tbody>${SV4_MODEL.map(([k,t,d])=>`<tr><th>${sv4Esc(t)}</th><td><b>${Math.round((W[k]||0)/sum*100)} %</b></td><td>${sv4Esc(d)}</td></tr>`).join('')}</tbody></table>
-    <p class="note small">Dazu (falls vorhanden): Elf der Woche +2 je Nominierung (max. +6) · FuPa-MVP ±6 % · Insider-Rating der Sportlichen Leitung überschreibt transparent.</p>`;
+    <p class="note small">Dazu (falls vorhanden): Elf der Woche +2 je Nominierung (max. +6) · Insider-Rating der Sportlichen Leitung überschreibt transparent.</p>`;
 }
 { const _gt44=goTab; goTab=function(tab){ const r=_gt44.apply(this,arguments); try{ if(svCurTab()==='model')sv4ModelCard(); }catch(e){ console.warn(e); } return r; }; }
 
@@ -11281,8 +11282,8 @@ function sv94Jugend(p,r){
     {k:'trn',t:'Trainingsleistung',v:qv(Q&&Q.trn),w:0,art:'manuell',basis:Q&&Q.trn&&Q.trn.n?`${Q.trn.n} Eindrücke im Training: ${Q.trn.pos} positiv, ${Q.trn.neu} neutral, ${Q.trn.neg} negativ`:'noch keine Eindrücke aus dem Training',warum:'Eindruck des Trainers je Einheit. Zählt ab drei echten Bewertungen, angenommene Werte zählen nicht.'},
     {k:'spl',t:'Spielleistung',v:qv(Q&&Q.spl),w:0,art:'manuell',basis:Q&&Q.spl&&Q.spl.n?`${Q.spl.n} Eindrücke im Spiel: ${Q.spl.pos} positiv, ${Q.spl.neu} neutral, ${Q.spl.neg} negativ`:'noch keine Eindrücke aus Spielen',warum:'Eindruck des Trainers je Spiel, nur wenn er gespielt hat.'});
   o.sum=100;
-  const known={liga:true,level:!m.qEst,prod:m.pct!=null&&m.n>=6,scout:r.eye!=null,mvp:S.mvp!=null};
-  const wk={liga:20,level:20,prod:25,scout:20,mvp:15}; let a=0,k=0; Object.keys(wk).forEach(x=>{ a+=wk[x]; if(known[x])k+=wk[x]; });
+  const known={liga:true,level:!m.qEst,prod:m.pct!=null&&m.n>=6,scout:r.eye!=null};
+  const wk={liga:25,level:25,prod:25,scout:25}; let a=0,k=0; Object.keys(wk).forEach(x=>{ a+=wk[x]; if(known[x])k+=wk[x]; });
   o.basis=Math.round(k/a*100); o.basisK=known;
   SV94.cache.set(ck,o); return o;
 }; }
@@ -11303,7 +11304,7 @@ function sv94AltTxt(S,p){ if(p.alter==null)return 'Alter unbekannt'; const r=S.r
 { const _ph94=pf4ScoreHtml; pf4ScoreHtml=function(p,s){
   const o=scores(p), S=o&&o.m4; if(!S)return _ph94.apply(this,arguments);
   const tc=tierColor(o.total), pot=S.pot!=null&&S.pot-S.total>=1?S.pot:null;
-  const mvpCan=typeof crmSet==='function'&&typeof canScout==='function'&&canScout()&&!p.isJugend;
+  const mvpCan=false;   // 0.42: FuPa-MVP ist raus
   return `<div class="pf4-sc m94">
     <div class="m94-top"><div><small>Spielstärke</small><b style="color:${tc}">${sv94N(o.total)}</b></div>${pot?`<div><small>Potenzial</small><b style="color:${tierColor(pot)}">${sv94N(pot)}</b></div>`:''}${S.prog!=null&&Math.abs(S.prog-S.total)>=0.5&&S.man==null?`<div><small>Prognose ${sv94Next()}</small><b style="color:${tierColor(S.prog)}">${sv94N(S.prog)}</b></div>`:''}<div class="m94-age"><small>Alter</small><span>${svEsc(sv94AltTxt(S,p))}</span></div></div>
     <div class="m94-h">Woraus sich der Wert ergibt</div>
@@ -11317,7 +11318,7 @@ function sv94AltTxt(S,p){ if(p.alter==null)return 'Alter unbekannt'; const r=S.r
     <div class="m94-line tot"><span>MScore</span><b style="color:${tc}">${sv94N(o.total)}</b></div>
     ${mvpCan?`<div class="m94-mvp"><label for="m94mvp">MVP von Hand ${svEsc(S.mvpK==='cur'?sv4SL(sv4S()):'25/26')} <small>Eigener Eintrag (z. B. von FuPa → Team → Spielerstatistik abgeschrieben), hat Vorrang vor dem MVP der Quelle. Leer lassen, wenn die Quelle den Wert liefert.</small></label><div><input type="number" min="0" max="100" step="1" inputmode="numeric" id="m94mvp" value="${S.mvp==null?'':S.mvp}" placeholder="leer"><button class="btn sm" id="m94mvpGo" data-pid="${svEsc(p.id)}">Speichern</button></div></div>`:''}
     </div>
-    <p class="bs70 b-${typeof sv70BasisTxt==='function'?sv70BasisTxt(o.basis):'mittel'}"><b>Datenbasis ${o.basis} %</b>${!o.basisK.scout?' · noch kein Eye-Test':''}${!o.basisK.mvp?' · kein FuPa-MVP':''}${!o.basisK.level?' · Einsatzzeit geschätzt':''}</p>
+    <p class="bs70 b-${typeof sv70BasisTxt==='function'?sv70BasisTxt(o.basis):'mittel'}"><b>Datenbasis ${o.basis} %</b>${!o.basisK.scout?' · noch kein Eye-Test':''}${!o.basisK.level?' · Einsatzzeit geschätzt':''}</p>
     <p class="note small">Wie bei FIFA beschreibt der Wert, wie gut ein Spieler ist, nicht wo er gerade spielt. Jede Saison ist ein Beleg, ältere zählen weniger und werden mit der Alterskurve auf heute gerechnet. Vereinstreue zählt nicht in den MScore.</p>`;
 }; }
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('#m94mvpGo'); if(!b)return;
@@ -11551,7 +11552,7 @@ const IMP_ART={verbindung:['Verbindung','Die Quelle war nicht erreichbar. Meist 
   begrenzt:['Begrenzt','Die Quelle bremst gerade wegen zu vieler Abrufe. Später klappt es wieder.'],
   abbruch:['Abgebrochen','Der Lauf wurde unterbrochen. Der nächste Abgleich macht an derselben Stelle weiter.'],
   konflikt:['Konflikt','Ein anderer Abgleich war gleichzeitig dran. Es ist nichts verloren gegangen, der nächste Abgleich lädt den gespeicherten Stand neu.']};
-const IMP_KIND={team_firstRound:'Hinrundentabelle',team_secondRound:'Rückrundentabelle',match_summary:'Spiele (eigene und Gegner)',match_lineup:'Aufstellungen mit Einzelwerten',match_events:'Spiel-Highlights',match_coverage:'Abdeckung Spielplan',player_stats:'Spielerstatistik',player_mvp:'MVP der Quelle je Saison',team_total:'Tabelle gesamt',team_home:'Heimtabelle',team_away:'Auswärtstabelle',team_form:'Form',
+const IMP_KIND={team_firstRound:'Hinrundentabelle',team_secondRound:'Rückrundentabelle',match_summary:'Spiele (eigene und Gegner)',match_lineup:'Aufstellungen mit Einzelwerten',match_events:'Spiel-Highlights',match_coverage:'Abdeckung Spielplan',player_stats:'Spielerstatistik',team_total:'Tabelle gesamt',team_home:'Heimtabelle',team_away:'Auswärtstabelle',team_form:'Form',
   league_history:'Saisonchronik der Ligen',stats_coverage:'Abdeckung der Statistik',team_table:'Tabelle',team_stats:'Mannschaftsstatistik',screenshot:'Screenshot'};
 const IMP_LIGA={'herren-gruppenliga-darmstadt':'Gruppenliga Darmstadt','herren-kreisoberliga-bergstrasse':'Kreisoberliga Bergstraße','kla-bergstrasse':'Kreisliga A Bergstraße',
   'klb-bergstrasse':'Kreisliga B Bergstraße','klc-bergstrasse':'Kreisliga C Bergstraße','kreisliga-d-1-bergstrasse':'Kreisliga D Bergstraße 1','kld2-bergstrasse':'Kreisliga D Bergstraße 2'};
@@ -11646,16 +11647,15 @@ function impAbdeckung(a){ if(!a)return '';
   return `<details class="imp-abd"><summary>${a.vollstaendig?'<span class="imp-okt">Datenbestand der Quelle vollständig</span>':'<span class="imp-warn">Datenbestand der Quelle noch unvollständig</span>'}${a.stand?' <span class="imp-mute">(Stand '+impZeit(a.stand,true)+')</span>':''}</summary>
     ${off.length?`<div>Noch offen bei der Quelle: ${off.map(([k,n])=>impN(n)+' '+impE(IMP_QKIND[k]||k)).join(', ')}</div>`:''}
     ${feh.length?`<div class="imp-warn">Fehler bei der Quelle: ${feh.map(([k,n])=>impN(n)+' '+impE(IMP_QKIND[k]||k)).join(', ')}</div>`:''}
-    ${a.mvp_datensaetze?`<div>MVP-Werte: ${impN(a.mvp_datensaetze)}, davon ${impN(a.mvp_ueber_null||0)} über 0</div>`:''}
     ${(a.grenzen||[]).length?`<ul>${a.grenzen.map(g=>`<li>${impE(g)}</li>`).join('')}</ul>`:''}</details>`; }
-function impModell(m){ if(!m)return '';
+function impModell(m){ return ''; if(!m)return '';
   return `<details class="imp-modell"><summary><b>Experimentelle MVP-Näherung</b> <span class="badge imp-syn">kein FuPa-Wert</span></summary>
     <p>${impE(m.bezeichnung)}. Status: ${impE(m.status==='experimental_only'?'nur experimentell':m.status)}. Stichprobe ${impN(m.stichprobe)} Spieler-Saisons aus ${impN(m.mannschaften)} Mannschaften${m.mittlerer_fehler!=null?', mittlere Abweichung '+String(m.mittlerer_fehler).replace('.',',')+' MVP-Punkte':''}.</p>
     <p class="imp-mute">Der Originalwert heißt überall „MVP der Quelle“ und bleibt unverändert. Die Näherung ersetzt ihn nicht und ist kein Stärke-Rating.</p>
     ${(m.grenzen||[]).length?`<ul>${m.grenzen.map(g=>`<li>${impE(g)}</li>`).join('')}</ul>`:''}</details>`; }
 function impQuelleHtml(q){
   const l0=(q.laeufe||[])[0];
-  const arten=(q.arten||[]).map(a=>{ const fe=(a.fehlend||[]).filter(x=>!impTech(x.feld)); const ftxt=fe.length?fe.slice(0,4).map(x=>`${impE(impFeld(x.feld,a.kind))} <b>${impN(x.fehlt)}×</b>`).join(', ')+(fe.length>4?' …':''):'<span class="imp-okt">vollständig</span>';
+  const arten=(q.arten||[]).filter(a=>!/mvp/i.test(a.kind||'')).map(a=>{ const fe=(a.fehlend||[]).filter(x=>!impTech(x.feld)); const ftxt=fe.length?fe.slice(0,4).map(x=>`${impE(impFeld(x.feld,a.kind))} <b>${impN(x.fehlt)}×</b>`).join(', ')+(fe.length>4?' …':''):'<span class="imp-okt">vollständig</span>';
     const auf=IMP.offen&&IMP.offen.q===q.id&&IMP.offen.k===a.kind;
     return `<button class="imp-art${auf?' auf':''}" data-q="${impE(q.id)}" data-k="${impE(a.kind)}"><span class="imp-an">${impE(impKind(a.kind))}</span><span class="imp-num">${impN(a.anzahl)}</span><span class="imp-fe">Fehlende Werte: ${ftxt}</span></button>${auf?`<div class="imp-liste" id="impListe">${impFilterHtml(q)}<div id="impTreffer"><p class="note">Lädt …</p></div></div>`:''}`; }).join('');
   return `<div class="imp-q" data-q="${impE(q.id)}">
@@ -11775,7 +11775,7 @@ async function impListe(P){
   const qa=(((IMP.st&&IMP.st.quellen)||[]).find(x=>x.id===q)||{}).arten||[], art=qa.find(a=>a.kind===k)||{}, nie=new Set((art.fehlend||[]).filter(x=>x.fehlt===art.anzahl).map(x=>x.feld));
   box.innerHTML=rows.length?`<p class="imp-mute" style="margin:4px 0 6px">${impN(n)} ${n===1?'Datensatz':'Datensätze'}${n>IMP_SEITE?`, zeige ${impN(von+1)} bis ${impN(bis)}`:''}</p>
     <ul class="imp-recs">${rows.map((r,i)=>{ const d=r.data||{}, nk=Object.keys(d).filter(x=>x!=='synthetisch'&&x!=='_name'&&x!=='_spiel'&&!impTech(x)&&!nie.has(x)), fehlt=nk.filter(x=>d[x]===null).length;
-      const kurz=d.goals!=null||d.assists!=null?` · ${d.goals??'?'} T, ${d.assists??'?'} V`:d.points!=null?` · Platz ${d.rank??'?'}, ${d.points} Pkt`:d.fupa_mvp!=null?` · MVP ${d.fupa_mvp}`:'';
+      const kurz=d.goals!=null||d.assists!=null?` · ${d.goals??'?'} T, ${d.assists??'?'} V`:d.points!=null?` · Platz ${d.rank??'?'}, ${d.points} Pkt`:'';
       const team=d.team_name&&(d.firstName||d.lastName||d._name)?d.team_name+' · ':'';
       return `<li><button class="imp-rec" data-i="${i}"><span class="imp-rn">${impE(impTitel(r))}</span><span class="imp-mute">${impE(team+[r.league?impLiga(r.league):'',impSaison(r.season)].filter(Boolean).join(' · ')+kurz)}${fehlt?` · <span class="imp-warn">${fehlt} fehlt</span>`:''}</span></button></li>`; }).join('')}</ul>
     ${n>IMP_SEITE?`<div class="imp-blaettern"><button class="btn sm ghost" id="impZur"${IMP.seite?'':' disabled'}>Zurück</button><button class="btn sm ghost" id="impVor"${bis<n?'':' disabled'}>Weiter</button></div>`:''}`:'<p class="note">Keine Datensätze für diese Auswahl.</p>';
@@ -11788,7 +11788,7 @@ function impDetail(P,r){
   const q=((IMP.st&&IMP.st.quellen)||[]).find(x=>x.id===IMP.offen.q)||{};
   const d=r.data||{};
   const rang=k=>{ const i=IMP_ORD.indexOf(k); return impIstMvp(k)?90:k==='mvp_updated_at'?91:i<0?60:i; };
-  const keys=Object.keys(d).filter(x=>x!=='synthetisch'&&x!=='_name'&&x!=='_spiel'&&!['homeTeam','awayTeam','events','home_team','away_team'].includes(x)&&!impTech(x)).sort((x,y)=>rang(x)-rang(y)||x.localeCompare(y));
+  const keys=Object.keys(d).filter(x=>x!=='synthetisch'&&x!=='_name'&&x!=='_spiel'&&!['homeTeam','awayTeam','events','home_team','away_team'].includes(x)&&!impTech(x)&&!impIstMvp(x)&&!impIstSim(x)&&x!=='mvp_updated_at').sort((x,y)=>rang(x)-rang(y)||x.localeCompare(y));
   const tech=Object.keys(d).filter(impTech).sort();
   const url=r.source_url||'', http=/^https?:\/\//i.test(url);
   box.querySelector('.imp-det')?.remove();
@@ -11904,11 +11904,11 @@ function klaProfilHtml(p){ const K=KLAW.by[p.id]; if(!K)return '';
   const rows=Object.keys(K).sort().reverse().map(s=>K[s]);
   const z=v=>v==null?'<i class="imp-fehlt">fehlt</i>':v;
   return `<div class="kla-pf"><div class="m94-h">Zahlen von FuPa</div>
-    <div class="imp-tab"><table class="kla-t"><thead><tr><th>Saison</th><th>Einsätze</th><th>Min.</th><th>Startelf</th><th>Tore</th><th>Vorl.</th><th>Karten</th><th>Elf d. W.</th><th>MVP</th></tr></thead><tbody>
+    <div class="imp-tab"><table class="kla-t"><thead><tr><th>Saison</th><th>Einsätze</th><th>Min.</th><th>Startelf</th><th>Tore</th><th>Vorl.</th><th>Karten</th><th>Elf d. W.</th></tr></thead><tbody>
     ${rows.map(k=>`<tr><td>${klaSaisonKurz(k.season)}<small>${svEsc(k.mannschaft||'')}${k.teams>1?' + '+(k.teams-1)+' weitere':''}</small></td><td>${z(k.einsaetze)}</td><td>${k.minuten==null?z(null):k.minuten.toLocaleString('de-DE')}</td><td>${z(k.startelf)}</td><td>${z(k.tore)}</td><td>${z(k.vorlagen)}</td>
-      <td>${k.gelb==null&&k.rot==null?z(null):`${k.gelb||0}/${k.gelbrot||0}/${k.rot||0}`}</td><td>${z(k.elf)}</td><td>${k.mvp==null?z(null):k.mvp===0?'0<small>ohne Wert?</small>':k.mvp}</td></tr>`).join('')}
+      <td>${k.gelb==null&&k.rot==null?z(null):`${k.gelb||0}/${k.gelbrot||0}/${k.rot||0}`}</td><td>${z(k.elf)}</td></tr>`).join('')}
     </tbody></table></div>
-    <p class="note small">Quelle: FuPa über die KLA-Datenquelle${KLAW.stand?', geprüft bis '+new Date(KLAW.stand).toLocaleDateString('de-DE'):''}. Automatisch zugeordnet über Name, Verein und Liga. Karten: gelb/gelb-rot/rot. MVP ist der Wert von FuPa, die Formel ist nicht veröffentlicht.${rows[0]&&rows[0].url?` <a href="${svEsc(rows[0].url)}" target="_blank" rel="noopener noreferrer">Seite bei FuPa</a>`:''}</p></div>`; }
+    <p class="note small">Quelle: FuPa über die KLA-Datenquelle${KLAW.stand?', geprüft bis '+new Date(KLAW.stand).toLocaleDateString('de-DE'):''}. Automatisch zugeordnet über Name, Verein und Liga. Karten: gelb/gelb-rot/rot.${rows[0]&&rows[0].url?` <a href="${svEsc(rows[0].url)}" target="_blank" rel="noopener noreferrer">Seite bei FuPa</a>`:''}</p></div>`; }
 { const _ph=pf4ScoreHtml; pf4ScoreHtml=function(p,s){ let h=_ph.apply(this,arguments); try{ h+=klaProfilHtml(p); }catch(e){} return h; }; }
 // Saison-Zeile im MScore: Herkunft der Einsatzzahlen nennen
 { const _sh=sv94SeasonHtml; sv94SeasonHtml=function(s){ let h=_sh.apply(this,arguments); if(s&&s.kla&&!s.app)h=h.replace(/<\/div>\s*$/,'')+`<p class="m94-note kla-hk">${s.kla.minuten!=null?s.kla.minuten.toLocaleString('de-DE')+' Minuten. ':''}Einsätze, Minuten und Vorlagen laut FuPa.</p></div>`; return h; }; }
@@ -11926,7 +11926,7 @@ function klaGegnerHtml(v){ if(!v||!v.gegner)return '';
   return `<div class="card kla-gv" id="klaGegner"><div class="kla-gv-h"><div><small>Nächstes Spiel laut FuPa${v.spieltag?' · '+svEsc(v.spieltag)+'. Spieltag':''}</small><h3>${v.heim?'gegen':'bei'} ${svEsc(v.gegner)}</h3><span class="imp-mute">${svEsc(wann)}${v.wettbewerb?' · '+svEsc(v.wettbewerb):''}</span></div></div>
     <div class="adm-stats">${t.platz!=null?`<div class="adm-stat"><b>${t.platz}.</b><span>Platz${t.mannschaften?' von '+t.mannschaften:''}</span></div>`:''}${t.punkte!=null?`<div class="adm-stat"><b>${t.punkte}</b><span>Punkte aus ${t.spiele??'?'} Spielen</span></div>`:''}${t.tore!=null?`<div class="adm-stat"><b>${t.tore}:${t.gegentore}</b><span>Tore</span></div>`:''}${Array.isArray(f.letzte)&&f.letzte.length?`<div class="adm-stat"><b class="kla-form">${f.letzte.map(x=>`<i class="${x}">${klaErg(x)}</i>`).join('')}</b><span>Form, letzte Spiele</span></div>`:''}</div>
     ${(v.spieler||[]).length?`<div class="m94-h" style="margin-top:12px">Auffällige Spieler beim Gegner</div><ul class="kla-gv-l">${v.spieler.map(s=>`<li${s.app_id&&typeof players!=='undefined'&&players.some(p=>p.id===s.app_id)?` data-pid="${svEsc(s.app_id)}"`:''}><b>${svEsc(s.name.trim())}</b><span>${s.tore} Tor${s.tore===1?'':'e'}${s.vorlagen!=null?', '+s.vorlagen+' Vorl.':''}${s.einsaetze!=null?' · '+s.einsaetze+' Einsätze':''}${s.minuten!=null?', '+s.minuten.toLocaleString('de-DE')+' Min.':''}${s.mvp?' · MVP '+s.mvp:''}</span></li>`).join('')}</ul>`:''}
-    <p class="note small">${svEsc(v.hinweis||'')} MVP ist der Wert von FuPa.</p></div>`; }
+    <p class="note small">${svEsc(v.hinweis||'')}</p></div>`; }
 if(typeof spRender==='function'){ const _sp=spRender; spRender=async function(){ const r=await _sp.apply(this,arguments);
   try{ const P=document.getElementById('panel-gegner'); if(!P||!canScout())return r; const v=await klaGegnerLaden(); const h=klaGegnerHtml(v); if(!h)return r;
     P.querySelector('#klaGegner')?.remove(); const box=document.createElement('div'); box.innerHTML=h; const el=box.firstElementChild;
@@ -12380,7 +12380,7 @@ Object.assign(SV50_INFO,{
   'training:players':{w:'Alle internen Spieler in einer Liste: 1. und 2. Mannschaft, A-Jugend und Umfeld.',f:'Filtern, sortieren und die Spalten zeigen, die du gerade brauchst.',
     h:'Statt fester Ansichten legst du dir eigene an: Spalten, Filter und Sortierung werden für dich gespeichert und stehen auf jedem Gerät bereit.',
     s:'Oben eine Ansicht wählen, über „Filter“ und „Spalten“ anpassen und als eigene Ansicht speichern. Auf einen Namen tippen öffnet das Profil.',
-    b:['Vor dem Spieltag: Filter „verfügbar“, sortiert nach Beteiligung.','Kontaktliste: Spalten Handy und E-Mail, Filter „Lücken“.']},
+    b:['Vor dem Spieltag: Filter „verfügbar“, sortiert nach Beteiligung.','Kontaktliste: Spalten Handy und E-Mail.']},
   'training:gstat':{w:'Die Auswertung der Spiele dieser Saison: Bilanz, Form, Einsätze, Minuten, Tore und Vorlagen.',f:'Sehen, wer trägt und wer kaum Spielzeit bekommt.',
     h:'Nur Auswertung, erfasst wird unter „Spiele“.',s:'Auf eine Spalte tippen zum Sortieren, auf einen Namen für das Profil.',b:[]},
   'training:urlaub':{w:'Wer wann nicht kann: Urlaub, Arbeit, Uni, Familie.',f:'Für jedes Training im Zeitraum ist der Spieler automatisch abgemeldet und wird nicht erinnert.',
@@ -12560,10 +12560,9 @@ function mnFilterRow(p,f){
   if(f.status){ const inj=trInjury(p.id), abw=typeof sv91Abw==='function'&&SV91.loaded?sv91Abw(p.id,trToday()):null;
     if(f.status==='fit'&&(inj||abw))return false; if(f.status==='verletzt'&&!inj)return false; if(f.status==='weg'&&!abw)return false; }
   if(f.eye){ let e=null; try{ e=sv4EyeVal(p.id,p.pos); }catch(x){} if(f.eye==='hat'&&!e)return false; if(f.eye==='fehlt'&&e)return false; }
-  if(f.luecken&&!sv50Luecken(p).length)return false;
   return true;
 }
-function mnFCount(f){ return ['team','fuss','alter','status','eye'].filter(k=>f[k]).length+(f.pos&&f.pos.length?1:0)+(f.luecken?1:0); }
+function mnFCount(f){ return ['team','fuss','alter','status','eye'].filter(k=>f[k]).length+(f.pos&&f.pos.length?1:0); }
 function mnViewPlayers(B){
   mnSpInit();
   if(!MN.viewsLoaded)mnLoadOnce('views',()=>mnViewsLoad(),mnRerender('players'));
@@ -12578,7 +12577,7 @@ function mnViewPlayers(B){
   rows.sort((a,b)=>{ if(sk){ const va=SV50_COLS[sk].v(a.p,a.s), vb=SV50_COLS[sk].v(b.p,b.s); if(va!==vb)return (va<vb?-1:1)*S.dir; }
     const pi=p=>{ const i=TR_POS.indexOf(p.pos); return i<0?99:i; }; return (pi(a.p)-pi(b.p))||a.p.name.localeCompare(b.p.name,'de'); });
   const table=L=>`<div class="trtw"><table class="trtab t50"><thead><tr><th class="nm50"><button data-s50="">Spieler</button></th>${cols.map(c=>`<th><button data-s50="${c}" class="${sk===c?'on':''}">${SV50_COLS[c].t}${sk===c?(S.dir>0?' ▲':' ▼'):''}</button></th>`).join('')}</tr></thead>
-    <tbody>${L.map(({p,s})=>{ const lk=sv50Luecken(p); return `<tr data-svp="${svEsc(p.id)}"><td class="nm50"><b>${svEsc(p.name)}</b>${lk.length&&!cols.includes('luecken')?` <i class="gap50" title="Es fehlt: ${svEsc(lk.join(', '))}">${lk.length}</i>`:''}</td>${cols.map(c=>{ let h='–'; try{ h=SV50_COLS[c].h(p,s); }catch(e){} return `<td>${h}</td>`; }).join('')}</tr>`; }).join('')}</tbody></table></div>`;
+    <tbody>${L.map(({p,s})=>{ const lk=sv50Luecken(p); return `<tr data-svp="${svEsc(p.id)}"><td class="nm50"><b>${svEsc(p.name)}</b></td>${cols.map(c=>{ let h='–'; try{ h=SV50_COLS[c].h(p,s); }catch(e){} return `<td>${h}</td>`; }).join('')}</tr>`; }).join('')}</tbody></table></div>`;
   const groups=S.group?[...MN_TEAMS.map(t=>[t,MN_TEAM[t]]),['-','Ohne Mannschaft']]:[['*','']];
   const fc=mnFCount(f), dirty=mnSpDirty(), cur=mnViewDef(S.vid);
   const chips=(k,L)=>`<div class="mn-fg"><span>${{team:'Mannschaft',fuss:'Starker Fuß',alter:'Alter',status:'Verfügbar',eye:'Eye-Test'}[k]}</span><div class="chips4">${L.map(([v,t])=>`<button type="button" class="${(f[k]||'')===v?'on':''}" data-mnf="${k}:${v}">${t}</button>`).join('')}</div></div>`;
@@ -12590,12 +12589,11 @@ function mnViewPlayers(B){
         <div class="mn-fg"><span>Position</span><div class="chips4">${TR_POS.map(x=>`<button type="button" class="${(f.pos||[]).includes(x)?'on':''}" data-mnpos="${x}">${x}</button>`).join('')}</div></div>
         ${(f.pos||[]).length?`<label class="mn-chk"><input type="checkbox" data-mnt2pos ${f.t2pos?'checked':''}> auch Nebenpositionen</label>`:''}
         ${chips('fuss',MN_F.fuss)}${chips('alter',MN_F.alter)}${chips('status',MN_F.status)}${chips('eye',MN_F.eye)}
-        <div class="mn-fg"><span>Angaben</span><div class="chips4"><button type="button" class="${f.luecken?'on':''}" data-mnluecken>nur mit Lücken</button></div></div>
         ${fc?'<div class="btnrow"><button type="button" class="btn ghost sm" data-mnfx>Filter zurücksetzen</button></div>':''}</div>`:''}
       ${dirty||S.vid!=='std'?`<div class="mn-vbar">${dirty?`<span>Ansicht „${svEsc(cur.name)}“ geändert</span>${S.vid!=='std'?'<button type="button" class="btn sm" data-mnvsave>Speichern</button>':''}<button type="button" class="btn ${S.vid==='std'?'':'ghost '}sm" data-mnnew>Als neue Ansicht</button><button type="button" class="btn ghost sm" data-mnvreset>Zurücksetzen</button>`
         :`<span>Eigene Ansicht „${svEsc(cur.name)}“</span><button type="button" class="btn ghost sm" data-mnvren>Umbenennen</button><button type="button" class="btn ghost sm" data-mnvdel>Löschen</button>`}</div>`:''}
       ${groups.map(([t,l])=>{ const L=t==='*'?rows:rows.filter(x=>(MN_TEAMS.includes(x.t)?x.t:'-')===t); return L.length?`${l?`<h3 class="trh sp50-h">${l} <small>${L.length}</small></h3>`:''}${table(L)}`:''; }).join('')||'<div class="empty">Keine Spieler für diese Auswahl.</div>'}
-      <div class="note">${rows.length} von ${mnIntern().length} internen Spielern. Beteiligung und Noten zählen ab ${TRC.fmt(sv50Start())}${sv50Start().slice(2,4)}. Die Zahl am Namen zeigt fehlende Angaben, gepflegt wird in der <a href="#" data-mngo>Massenpflege</a>.</div>
+      <div class="note">${rows.length} von ${mnIntern().length} internen Spielern. Beteiligung und Noten zählen ab ${TRC.fmt(sv50Start())}${sv50Start().slice(2,4)}. Fehlende Angaben pflegst du in der <a href="#" data-mngo>Massenpflege</a>.</div>
     </div>`;
   const re=()=>trRender(), $=s=>B.querySelector(s), all=(s,fn)=>B.querySelectorAll(s).forEach(b=>b.onclick=e=>{ e.preventDefault(); e.stopPropagation(); fn(b); });
   all('[data-mnv]',b=>{ mnSpUse(b.dataset.mnv); re(); });
@@ -13283,7 +13281,7 @@ function svqDetail(){ svModal(`<div class="mhead"><div class="rm-ic" style="widt
 /* ---------- Stationen und aktuelle Zuordnung (Profil) ---------- */
 function svqZeile(x){ const kb=x.nur_kader?'nur Kader':x.kader?'Kader belegt':'Statistik';
   return `<tr><td>${svqS(x.saison)}</td><td>${svqE(x.verein||x.mannschaft||'?')}<small>${svqMannschaft(x.squad)}</small></td><td title="${svqE(x.liga||'')}">${svqE(svqLigaName(x.liga))}</td>
-    <td>${svqNv(x.sp)}</td><td>${svqNum(x.mi)}</td><td>${svqNv(x.t)}</td><td>${svqNv(x.v)}</td><td>${x.mvp==null?svqNv(null):x.mvp===0?'<span title="0 kann heißen: nicht veröffentlicht">0?</span>':x.mvp}</td><td><small>${kb}</small></td></tr>`; }
+    <td>${svqNv(x.sp)}</td><td>${svqNum(x.mi)}</td><td>${svqNv(x.t)}</td><td>${svqNv(x.v)}</td><td><small>${kb}</small></td></tr>`; }
 function svqAktuellHtml(P){ const A=P&&P.aktuell, s=svqS(P&&P.saison);
   if(!A||!A.length)return `<div class="svq-akt na"><b>Saison ${s}: unbekannt</b><span>Keine belegte Mannschaftszugehörigkeit in den FuPa-Daten dieser Saison (kein Kader, keine Einsätze). Nichts wird aus Vorjahren übernommen.</span></div>`;
   return `<div class="svq-akt">${A.length>1?`<p class="note small">In ${s} bei ${A.length} Mannschaften erfasst.</p>`:''}${A.map(x=>`<div><b>${svqE(x.verein||'?')} · ${svqMannschaft(x.squad)}</b>
@@ -13313,9 +13311,8 @@ function svqProfilHtml(P,p){
   return `<div class="svq-prof"><div class="svq-prof-q">${svqChips(svqTore(SVQ.q),true)}</div>
     <h5>Aktuelle Zuordnung</h5>${svqAktuellHtml(P)}
     ${(P.moerlenbach&&P.moerlenbach.length)||(p&&typeof vrTotals==='function'&&vrTotals(p.id).row)?`<h5>Erfasste Einsätze für den SV/BSC Mörlenbach</h5>${svqMoerlenbachHtml(P,p)}`:''}
-    <h5>MVP</h5>${svqMvpHtml(P,p)}
     <h5>Stationen laut FuPa <small>je Mannschaft und Saison</small></h5>
-    <div class="trtw"><table class="trtab svq-st"><thead><tr><th>Saison</th><th>Verein</th><th>Liga</th><th>Sp.</th><th>Min.</th><th>T</th><th>V</th><th>MVP</th><th>Beleg</th></tr></thead><tbody>${st.map(svqZeile).join('')}</tbody></table></div>
+    <div class="trtw"><table class="trtab svq-st"><thead><tr><th>Saison</th><th>Verein</th><th>Liga</th><th>Sp.</th><th>Min.</th><th>T</th><th>V</th><th>Beleg</th></tr></thead><tbody>${st.map(svqZeile).join('')}</tbody></table></div>
     <p class="note small">Quelle: FuPa über die KLA-Datenquelle, je Zeile eigene Saison und Mannschaft. „k. A.“ heißt unbekannt, 0 ist ein belegter Wert. ${P.profil&&P.profil.url?`<a href="${svqE(P.profil.url)}" target="_blank" rel="noopener noreferrer">Seite bei FuPa</a> · geprüft ${svqD(P.profil.geprueft)}`:st[0]&&st[0].url?`<a href="${svqE(st[0].url)}" target="_blank" rel="noopener noreferrer">Seite bei FuPa</a> · geprüft ${svqD(st[0].geprueft)}`:''}. ${svqE(P.hinweis||'')}</p></div>`; }
 async function svqProfilLaden(pid,force){
   const c=SVQ.prof.get(pid); if(c&&!force&&Date.now()-c.t<300000)return c.P;
@@ -18192,6 +18189,14 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.42',v:'0.42',datum:'2026-10-13',titel:'Aufgeräumt und abgeglichen',kurz:'Ruhigeres Spielerprofil, kein FuPa-MVP mehr, der Rückkehrer-Radar im Scouting und eine Datenprüfung, die doppelte Spieler und widersprüchliche Spieldaten findet.',
+   punkte:[
+    {ic:'🧹',t:'Spielerprofil aufgeräumt',d:'Oben vier Kacheln, darunter Statistik, Vereinswerte, Training und Kaderplanung. Die All-Time-Werte stehen jetzt unter „Vereinswerte“, nicht mehr beim Training. Alles Weitere liegt abgesetzt unter „Hintergrund & Daten“.'},
+    {ic:'🔁',r:'scout',t:'Rückkehrer-Radar im Scouting',d:'Ehemalige mit vielen Spielen für uns, die jetzt woanders spielen, findest du unter Scouting → Radar.',go:'radar'},
+    {ic:'🧩',r:'admin',go:'pruefung',t:'Datenprüfung für den Admin',d:'Doppelte Spieler (auch mit Zwischennamen oder anderer Schreibweise), Namensvarianten aus fussball.de und der Vereinsstatistik und Spiele, bei denen App, FuPa und fussball.de nicht zusammenpassen. Mit Annahme und einem Tipp zum Bestätigen.'},
+    {ic:'⚽',t:'Spieldaten aus allen Quellen',d:'Fehlt ein Spieler bei FuPa, steht aber im Spielbericht von fussball.de, wird er ergänzt. Widersprüche bleiben sichtbar, im Spiel unter „Quellenvergleich“.'},
+    {ic:'✂️',t:'Weniger ist mehr',d:'Der FuPa-MVP ist überall raus, ebenso die „Lücken“ in der Spielerliste der Mannschaften. Der Scouting-Bericht meldet sich nur noch einmal.'}
+   ]},
   {id:'0.41',v:'0.41',datum:'2026-10-06',titel:'Mein Spieltag: Aufgabenpaket und Interview',kurz:'Der Spieltag hat jetzt einen eigenen Eintrag links, das ganze Aufgabenpaket aus dem Konzept und ein Interview, das Frage für Frage das Wissen für später festhält.',
    punkte:[
     {ic:'🗂️',t:'Das ganze Aufgabenpaket',d:'Heimspiel, Sportplatzkasse, Schiedsrichter, Bewirtung, Spielbetrieb, Spielverlegungen, DFBnet, Sportgelände, Schlüssel und Kontakte. Jede Aufgabe zeigt, wie viel schon festgehalten ist.',go:'sptag'},
@@ -18737,11 +18742,11 @@ function sv40HubFade(){ const bar=document.getElementById('hubbar'), inn=bar&&ba
    ===================================================================== */
 // Spalten, die nicht mehr gepflegt werden oder doppelt sind: Schwacher Fuß, Datenbasis (steht im Profil), Zuletzt da (steckt in Beteiligung und Status),
 // Mannschaft (die Liste ist schon je Mannschaft), Rolle und Charakter (seit 0.22 durch PlayStyles ersetzt, werden nicht mehr gepflegt)
-const SV40_WEG=['wf','basis','last','team','rolle','charakter'];
+const SV40_WEG=['wf','basis','last','team','rolle','charakter','luecken'];   // 0.42: Lücken raus aus der Spielerübersicht
 { const _co40=mnColOk; mnColOk=function(c){ return !SV40_WEG.includes(c)&&_co40.apply(this,arguments); }; }
 MN_STD.cols.splice(0,MN_STD.cols.length,'pos','alter','fuss','status','bet','note','ein','min','tore'); MN_STD.group=false;
 MN_COLGRP.splice(0,MN_COLGRP.length,['Spielerdaten',['pos','pos2','alter','geb','fuss','groesse','gewicht']],['Verfügbarkeit & Training',['status','bet','r28','note']],['Spiele',['ein','min','tore']],
-  ['Bewertung',['mscore','eye','skills','treue']],['Planung',['zuk']],['Kontakt',['tel','mail','luecken']]);
+  ['Bewertung',['mscore','eye','skills','treue']],['Planung',['zuk']],['Kontakt',['tel','mail']]);
 if(SV50_COLS.skills)SV50_COLS.skills.t='PlayStyles';
 if(SV50_COLS.status)SV50_COLS.status.t='Verfügbar';
 { const _vp40=trViewPlayers; trViewPlayers=function(B){ try{ if(typeof MN!=='undefined'&&MN.sp){ MN.sp.group=false; MN.sp.cols=MN.sp.cols.filter(mnColOk); } }catch(e){}
@@ -19498,6 +19503,433 @@ async function sptHome(){
     try{ document.querySelectorAll('#modal [data-svzspt]').forEach(b=>b.onclick=()=>{ closeOverlay(); const id=b.dataset.svzspt; goTab('sptag'); const warte=()=>{ if(SPT.C){ if(!SPT.an)sptStart(id||(SPT.C.naechste?SPT.C.naechste.id:null)); } else setTimeout(warte,300); }; setTimeout(warte,300); }); }catch(e){} return r; }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm42css'; s.textContent="/* Beta 0.40 · Mein Spieltag: große Knöpfe, ein Mikrofon, wenig Text. Für Leute, die nicht jeden Tag Apps bedienen. */\n.spt-kopf{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:4px 0 14px;}\n.spt-kopf h2{margin:0 0 6px;font-size:30px;letter-spacing:-.02em;line-height:1.1;text-wrap:balance;}\n.spt-kopf h2 span{background:linear-gradient(90deg,#9cc3ff 0%,#5b9bff 45%,#b9adff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-kopf p{margin:0;font-size:16px;color:var(--ink2);max-width:62ch;line-height:1.45;}\n.spt-kopf p b{color:var(--ink);}\n.spt-wer{font-size:12.5px;color:var(--ink3);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 11px;white-space:nowrap;}\n/* Hinweis für den Admin */\n.spt-hinweis{font-size:14.5px;line-height:1.45;color:var(--ink2);border-color:rgba(251,191,36,.35)!important;}\n.spt-hinweis b{color:var(--ink);}\n/* Mikrofon-Karte */\n.spt-mic-karte{display:grid;grid-template-columns:auto 1fr;gap:16px 18px;align-items:center;padding:20px 18px;overflow:hidden;}\n.spt-mic{position:relative;width:96px;height:96px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:var(--grad-brand,linear-gradient(135deg,#3b7bff,#7c6cf6));color:#fff;cursor:pointer;display:grid;place-items:center;\n  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 18px 40px -12px rgba(59,123,255,.7),0 2px 6px -2px rgba(0,0,0,.6);transition:transform .15s var(--ease),box-shadow .2s;-webkit-tap-highlight-color:transparent;}\n.spt-mic svg{width:44px;height:44px;position:relative;z-index:1;}\n.spt-mic:active{transform:scale(.96);}\n.spt-puls{position:absolute;inset:-6px;border-radius:50%;border:3px solid rgba(255,255,255,.0);pointer-events:none;}\n.spt-mic-karte.an .spt-mic{background:linear-gradient(135deg,#ff5f6d,#e0245e 60%,#b4175a);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 18px 44px -10px rgba(224,36,94,.75);}\n.spt-mic-karte.an .spt-puls{border-color:rgba(255,95,109,.7);animation:sptPuls 1.4s ease-out infinite;}\n@keyframes sptPuls{0%{transform:scale(.92);opacity:.9}100%{transform:scale(1.45);opacity:0}}\n.spt-mic-txt b{display:block;font-size:22px;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px;}\n.spt-mic-txt small{display:block;font-size:15px;color:var(--ink2);line-height:1.4;}\n.spt-live{grid-column:1/-1;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;min-height:54px;}\n.spt-live p{margin:0;font-size:17px;line-height:1.45;color:var(--ink);}\n.spt-live i{color:var(--ink3);font-style:normal;}\n.spt-warte{color:var(--ink3);font-size:14.5px;}\n.spt-tipp{grid-column:1/-1;display:grid;gap:10px;} .spt-tipp[hidden],.spt-live[hidden]{display:none;}\n.spt-tipp textarea{width:100%;font:inherit;font-size:16px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--ink);resize:vertical;}\n.spt-mic-fuss{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--ink3);font-size:13.5px;}\n.spt-schalter{display:flex;align-items:center;gap:8px;cursor:pointer;}\n.spt-schalter input{width:18px;height:18px;accent-color:#5b9bff;}\n.spt-link{background:none;border:0;color:var(--brand2,#5b9bff);font:inherit;font-size:13.5px;cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:3px;}\n/* Ergebnis der Ansage */\n.spt-erg{border-color:rgba(91,155,255,.35)!important;}\n.spt-erg.fehler{border-color:rgba(245,158,11,.4)!important;}\n.spt-antwort{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}\n.spt-av{flex:none;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--grad-brand,#3b7bff);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.3);}\n.spt-av svg{width:20px;height:20px;}\n.spt-antwort p{margin:0;font-size:17px;line-height:1.45;}\n.spt-antwort em{color:var(--ink2);font-style:normal;}\n.spt-zeilen{display:grid;gap:6px;margin:6px 0 10px;}\n.spt-z{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);cursor:pointer;}\n.spt-z input{width:20px;height:20px;accent-color:#22c55e;}\n.spt-z:has(input:not(:checked)){opacity:.45;text-decoration:line-through;}\n.spt-zi{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:900;font-size:14px;background:rgba(255,255,255,.1);}\n.spt-z b{display:block;font-size:15px;}\n.spt-z small{display:block;color:var(--ink3);font-size:13px;margin-top:2px;}\n.spt-passt{font-size:16px;}\n.spt-trans{margin-top:10px;color:var(--ink3);font-size:13.5px;}\n.spt-trans p{margin:6px 0 0;color:var(--ink2);}\n.spt-denkt{display:flex;gap:6px;margin-bottom:8px;}\n.spt-denkt span{width:9px;height:9px;border-radius:50%;background:#5b9bff;animation:sptDenkt 1.1s infinite ease-in-out;}\n.spt-denkt span:nth-child(2){animation-delay:.18s} .spt-denkt span:nth-child(3){animation-delay:.36s}\n@keyframes sptDenkt{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}\n/* Checkliste mit großen Kreisen */\n.spt-lh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;}\n.spt-lh h3{margin:0 0 4px;font-size:19px;}\n.spt-lh .note{margin:0;}\n.spt-liste h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);display:flex;gap:8px;align-items:center;}\n.spt-liste h4 em,.spt-wt h4 em{font-style:normal;background:rgba(255,255,255,.1);border-radius:999px;padding:1px 8px;font-size:12px;color:var(--ink2);}\n.spt-p{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;width:100%;text-align:left;padding:10px 12px;margin:0 0 6px;border-radius:14px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));color:var(--ink);cursor:pointer;font:inherit;-webkit-tap-highlight-color:transparent;transition:transform .12s var(--ease),opacity .2s;}\n.spt-p:active{transform:scale(.985);}\n.spt-kreis{width:38px;height:38px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);display:grid;place-items:center;font-weight:900;font-size:19px;color:#fff;transition:background .2s,border-color .2s;}\n.spt-p.ok .spt-kreis{background:linear-gradient(135deg,#22c55e,#15803d);border-color:transparent;box-shadow:0 6px 16px -6px rgba(34,197,94,.7);}\n.spt-p.ok .spt-pt b{text-decoration:line-through;color:var(--ink3);}\n.spt-pt b{display:block;font-size:16px;line-height:1.3;}\n.spt-pt small{display:block;color:var(--ink3);font-size:13px;margin-top:2px;}\n.spt-fertig{font-size:17px;margin:10px 0;}\n.spt-ok{margin-top:8px;color:var(--ink3);font-size:14px;}\n.spt-ok summary{cursor:pointer;padding:6px 0;}\n.spt-ok .spt-p{opacity:.7;}\n/* Weitere Heimspiele */\n.spt-k{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:15px;}\n.spt-k:last-child{border-bottom:0;}\n.spt-k span{color:var(--ink2);text-align:right;}\n/* Wissen */\n.spt-wt{margin-top:12px;}\n.spt-wt h4{margin:0 0 6px;font-size:15px;display:flex;gap:8px;align-items:center;}\n.spt-w{padding:10px 12px;margin-bottom:6px;border-radius:12px;background:linear-gradient(160deg,rgba(251,213,106,.1),rgba(251,213,106,.02));border:1px solid rgba(251,191,36,.18);cursor:pointer;}\n.spt-w p{margin:0;font-size:15.5px;line-height:1.4;}\n.spt-w small{display:block;color:var(--ink3);font-size:12.5px;margin-top:4px;}\n.spt-leer{color:var(--ink2);font-size:15px;}\n.spt-ueb textarea{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:13px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--ink);}\n/* Zahlen */\n.spt-zahlen{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 20px;}\n.spt-zahlen div{padding:12px;border-radius:14px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.09);text-align:center;}\n.spt-zahlen b{display:block;font-size:24px;letter-spacing:-.02em;background:linear-gradient(90deg,#fff,#cfe0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-zahlen span{display:block;font-size:12px;color:var(--ink3);margin-top:2px;line-height:1.3;}\n/* Übersicht-Karte */\n.spt-home{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;}\n.spt-home-mic{width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:var(--grad-brand,#3b7bff);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 12px 26px -10px rgba(59,123,255,.7);}\n.spt-home-mic svg{width:26px;height:26px;}\n.spt-home-t h3{margin:0 0 3px;font-size:17px;}\n.spt-home-t p{margin:0;font-size:14px;color:var(--ink2);line-height:1.35;}\n.spt-home-t p b{color:var(--ink);}\n@media (max-width:620px){\n  .spt-kopf h2{font-size:26px;}\n  .spt-mic-karte{grid-template-columns:1fr;justify-items:center;text-align:center;}\n  .spt-mic{width:112px;height:112px;} .spt-mic svg{width:52px;height:52px;}\n  .spt-zahlen{grid-template-columns:1fr 1fr;}\n  .spt-home{grid-template-columns:auto 1fr;} .spt-home .og-ring{display:none;} .spt-home #sptHomeGo{grid-column:1/-1;justify-self:start;}\n}\n@media (prefers-reduced-motion:reduce){ .spt-puls,.spt-denkt span{animation:none!important;} }\n/* 0.41 · Aufgabenpaket & Interview */\n.spt-stand{text-align:right;flex:none;}\n.spt-stand b{display:block;font-size:26px;letter-spacing:-.02em;line-height:1;background:linear-gradient(90deg,#fff,#cfe0ff);-webkit-background-clip:text;background-clip:text;color:transparent;}\n.spt-stand span{font-size:11.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;}\n.spt-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin:10px 0 14px;}\n.spt-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#22c55e,#5b9bff 70%,#7c6cf6);transition:width .6s var(--ease);}\n.spt-iv{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:16px;cursor:pointer;font:inherit;color:var(--ink);\n  border:1px solid rgba(91,155,255,.4);background:radial-gradient(400px 120px at 0% 0%,rgba(59,123,255,.25),transparent 70%),linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));box-shadow:inset 0 1px 0 rgba(255,255,255,.1);}\n.spt-iv-mic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--grad-brand,#3b7bff);color:#fff;box-shadow:0 8px 20px -8px rgba(59,123,255,.7);}\n.spt-iv-mic svg{width:22px;height:22px;}\n.spt-iv b{display:block;font-size:16px;}\n.spt-iv small{display:block;color:var(--ink2);font-size:13.5px;margin-top:2px;line-height:1.35;}\n.spt-iv i{color:var(--ink3);}\n.spt-paket h4{margin:14px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);}\n.spt-as{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;}\n.spt-a{position:relative;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:left;padding:10px 12px;border-radius:14px;cursor:pointer;font:inherit;color:var(--ink);\n  border:1px solid rgba(255,255,255,.09);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));transition:border-color .15s,transform .12s;}\n.spt-a:hover{border-color:rgba(91,155,255,.45);} .spt-a:active{transform:scale(.985);}\n.spt-a-ic{font-size:22px;width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:rgba(255,255,255,.07);}\n.spt-a-t b{display:block;font-size:14.5px;line-height:1.25;}\n.spt-a-t small{display:block;color:var(--ink3);font-size:12.5px;margin-top:2px;}\n.spt-a-dot{width:12px;height:12px;border-radius:50%;border:2px solid rgba(255,255,255,.3);}\n.spt-a.halb .spt-a-dot{background:#f59e0b;border-color:#f59e0b;box-shadow:0 0 10px -2px #f59e0b;}\n.spt-a.ok .spt-a-dot{background:#22c55e;border-color:#22c55e;box-shadow:0 0 10px -2px #22c55e;}\n.spt-mic-karte.interview{border-color:rgba(124,108,246,.45)!important;}\n.spt-mic-karte.interview .spt-mic-txt small{color:var(--ink);font-size:17px;}\n.spt-aufg h4{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);}\n.spt-fr{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;width:100%;text-align:left;padding:10px 12px;margin-bottom:6px;border-radius:12px;cursor:pointer;font:inherit;font-size:15px;color:var(--ink);\n  border:1px solid rgba(91,155,255,.3);background:linear-gradient(160deg,rgba(59,123,255,.12),rgba(255,255,255,.02));}\n.spt-fr svg{width:20px;height:20px;color:#9cc3ff;}\n.spt-weiter p{font-size:16px;margin:0 0 8px;}\n.spt-home-st{font-style:normal;font-size:11.5px;font-weight:700;color:#bbf7d0;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle;}\n@media (max-width:620px){ .spt-as{grid-template-columns:1fr;} .spt-stand b{font-size:22px;} }\n.spt-mehr{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;margin:2px 0 6px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);background:none;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer;}\n.spt-mehr:hover{border-color:rgba(91,155,255,.5);color:var(--ink);} .spt-mehr svg{width:16px;height:16px;}\n"; document.head.appendChild(s); }catch(e){} })();
+/* =====================================================================
+   Sportzentrale Beta 0.42
+   - FuPa-MVP ist raus: kein Wert mehr im MScore, im Wechsel-Index, im Profil, in Tabellen oder in der Datenbank-Pflege.
+   - Rückkehrer-Radar wohnt jetzt im Scouting (Radar), nicht mehr unter Rankings & Verein.
+   ===================================================================== */
+
+/* ---------- FuPa-MVP: überall abgeschaltet. Alle Stellen fragen mvpOf, also liefert es nichts mehr. ---------- */
+try{ mvpOf=function(){ return null; }; }catch(e){}
+try{ if(typeof renderMvpCard==='function')renderMvpCard=function(){ const el=document.getElementById('mvpCard'); if(el)el.remove(); }; }catch(e){}
+try{ if(typeof players!=='undefined'&&Array.isArray(players))players.forEach(p=>{ if(p&&'mvp' in p)delete p.mvp; }); }catch(e){}
+try{ if(typeof applyMvpSeed==='function')applyMvpSeed=function(){}; }catch(e){}
+try{ if(typeof SV4_CL!=='undefined'&&SV4_CL)delete SV4_CL.mvp; }catch(e){}
+
+/* ---------- Rückkehrer-Radar im Scouting ---------- */
+const RK43={offen:false};
+function rk43Liste(){
+  if(typeof VR==='undefined'||!VR.atLoaded||typeof vrRanks!=='function')return null;
+  const {L}=vrRanks();
+  return L.filter(x=>{ const p=x.pid&&trP(x.pid); return p&&!p.own&&x.tot.sp>=25&&!(typeof crmOf==='function'&&crmOf(p).s==='no'); })
+    .sort((a,b)=>b.tot.sp-a.tot.sp).slice(0,12);
+}
+function rk43Html(){
+  const back=rk43Liste();
+  if(back==null)return `<div class="card rk43"><h3 class="trh">${SVI('refresh')} Rückkehrer-Radar</h3><div class="empty">Lade Vereinsstatistik …</div></div>`;
+  if(!back.length)return '';
+  const zeig=RK43.offen?back:back.slice(0,5);
+  return `<div class="card rk43"><h3 class="trh">${SVI('refresh')} Rückkehrer-Radar <small>${back.length} Ehemalige</small></h3>
+    <div class="note" style="margin-top:0">Ehemalige mit vielen Spielen für uns, die laut Datenbestand jetzt woanders spielen. Nach rechts wischen: kein Interesse, nach links: interessiert (Merkliste).</div>
+    <div class="vrbackl">${zeig.map(x=>{ const p=trP(x.pid); return `<div class="tra vrback${p.star?' vrfav':''}"><span class="tra-av" data-svp="${svEsc(x.pid)}">${avaHtml(p)}</span><div class="tra-b"><b data-svp="${svEsc(x.pid)}">${svEsc(typeof vrAtName==='function'?vrAtName(x):p.name)}${p.star?' ⭐':''}</b><span>${x.tot.sp} Spiele für uns · jetzt ${svEsc(p.club||'?')}${p.cur&&p.cur.tore?' · '+p.cur.tore+' Tore in dieser Saison':''}</span></div></div>`; }).join('')}</div>
+    ${back.length>5?`<button class="btn ghost sm rk43mehr" type="button">${RK43.offen?'Weniger zeigen':'Alle '+back.length+' zeigen'}</button>`:''}</div>`;
+}
+{ const _rr43=rdRender; rdRender=function(){ const r=_rr43.apply(this,arguments);
+  try{
+    const P=document.getElementById('panel-radar'); if(!P||!canScout()||!VR.radarLoaded)return r;
+    if(VR.rf&&VR.rf!=='alle')return r;
+    if(!VR.atLoaded&&!RK43.lade){ RK43.lade=1; vrLoadAllTime(); }
+    P.querySelector('.rk43')?.remove();
+    const h=rk43Html(); if(!h)return r;
+    const t=document.createElement('div'); t.innerHTML=h; const card=t.firstElementChild;
+    const tabs=P.querySelector('.trtabs.rdf'); if(tabs)tabs.after(card); else P.prepend(card);
+    card.querySelectorAll('[data-svp]').forEach(x=>x.onclick=()=>openModal(x.dataset.svp));
+    const m=card.querySelector('.rk43mehr'); if(m)m.onclick=()=>{ RK43.offen=!RK43.offen; rdRender(); };
+  }catch(e){ console.warn('Rückkehrer',e); }
+  return r; }; }
+
+/* ---------- Spielerprofil aufgeräumt: Wichtiges zuerst, jede Info an ihrem Platz ----------
+   Eigene Spieler: Statistik, Vereinswerte (All-Time), Training & Fitness, Kaderplanung. Darunter, abgesetzt: Hintergrund & Daten.
+   All-Time-Werte, Vereinstreue und Mit/Ohne stehen jetzt unter „Vereinswerte“, nicht mehr unter Training.
+   Die Beteiligungstabelle (Training je Saison) wandert von der Statistik ins Training. Oben bleiben vier Kacheln. */
+function pf43Sec(secs,k,t){
+  let d=secs.querySelector(`:scope > .pf4-sec[data-k="${k}"]`); if(d)return d;
+  d=document.createElement('details'); d.className='pf4-sec'; d.dataset.k=k; if(typeof PF4!=='undefined'&&PF4.open.has(k))d.open=true;
+  d.innerHTML=`<summary><span>${t}</span></summary><div class="pf4-b"></div>`;
+  d.addEventListener('toggle',()=>{ try{ if(d.open)PF4.open.add(k); else PF4.open.delete(k); }catch(e){} });
+  secs.appendChild(d); return d;
+}
+function pf43Ordnen(id){
+  const M=document.getElementById('modal'), root=M&&M.querySelector('.pf4'), secs=root&&root.querySelector('.pf4-secs'); if(!secs)return;
+  const p=typeof sv4P==='function'?sv4P(id):trP(id); if(!p)return;
+  const own=!!(typeof sv4Team==='function'?sv4Team(p):p.own);
+  const G=root.querySelector('.pf4-glance');
+  if(G){ let ein=0;
+    [...G.querySelectorAll(':scope > .g4')].forEach(t=>{ const l=((t.querySelector('span')||{}).textContent||'').trim();
+      if(/^Letztes Gespräch/.test(l))t.remove();
+      else if(/^Einsätze/.test(l)){ ein++; if(ein>1)t.remove(); } }); }
+  if(own){
+    const treue=G&&G.querySelector('.g4.tr70'), vr=M.querySelector('.card.vrprof');
+    if(treue||vr){
+      const b=pf43Sec(secs,'verein','Vereinswerte (All-Time)').querySelector('.pf4-b');
+      if(treue){ treue.classList.add('pf43-treue'); b.prepend(treue); }
+      if(vr){ const h=vr.querySelector(':scope > h3.trh'); if(h)h.remove(); vr.classList.add('pf43-vr'); b.appendChild(vr);
+        const ts=[...vr.querySelectorAll('.vrsc3 > button')].find(x=>/Trainings-Score/.test(x.textContent));
+        const trb=secs.querySelector(':scope > [data-k="train"] .pf4-b');
+        if(ts&&trb){ const w=document.createElement('div'); w.className='vrsc3 pf43-ts'; w.appendChild(ts); trb.appendChild(w); }
+        if(treue){ const lo=[...vr.querySelectorAll('.vrsc3 > button')].find(x=>/^\s*Loyalität/.test(x.textContent)); if(lo)lo.remove(); }
+        const rest=vr.querySelector('.vrsc3'); if(rest&&!rest.children.length)rest.remove(); }
+    }
+    const st=secs.querySelector(':scope > [data-k="stat"] .pf4-b'), h5=st&&st.querySelector('h5.pf41h'), tb=st&&st.querySelector('table.pf41');
+    if(h5&&tb){ const trb=pf43Sec(secs,'train','Training & Fitness').querySelector('.pf4-b'); trb.appendChild(h5); trb.appendChild(tb); }
+    const tr=secs.querySelector(':scope > [data-k="train"]'); if(tr&&!tr.querySelector('.pf4-b').textContent.trim())tr.remove();
+  }
+  const vorn=own?['stat','verein','train','kader']:['kand','stat','score','wechsel'];
+  const hinten=own?['score','fupa','bogen','kontakt','presse','mehr']:['fupa','bogen','presse','kontakt','mehr'];
+  const alle=[...secs.children].filter(x=>x.matches('details.pf4-sec'));
+  const by=k=>alle.find(x=>x.dataset.k===k);
+  secs.querySelector(':scope > .pf43-sep')?.remove();
+  const A=vorn.map(by).filter(Boolean), Bh=hinten.map(by).filter(Boolean), E=by('edit');
+  const sonst=alle.filter(x=>!A.includes(x)&&!Bh.includes(x)&&x!==E);
+  A.forEach(x=>secs.appendChild(x));
+  if(Bh.length||sonst.length){ const s=document.createElement('div'); s.className='pf43-sep'; s.textContent='Hintergrund & Daten'; secs.appendChild(s); }
+  Bh.forEach(x=>secs.appendChild(x)); sonst.forEach(x=>secs.appendChild(x)); if(E)secs.appendChild(E);
+}
+{ const _om43b=openModal; openModal=function(id){ const r=_om43b.apply(this,arguments); try{ pf43Ordnen(id); }catch(e){ console.warn('Profil 0.42',e); } return r; }; }
+
+/* =====================================================================
+   Sportzentrale Beta 0.42 · Datenprüfung (nur Admin, Verwaltung → Datenprüfung)
+   1. Doppelte Spieler: erkennt Zwischennamen, Schreibweisen (ü/ue, Tippfehler), Kurzformen und vertauschte Namen.
+      Zeigt, worin sich die Einträge widersprechen. Der Admin bestätigt, dann wird dauerhaft zu einem Spieler zusammengeführt
+      (Server: spieler_zusammenfuehren, hängt alle Einträge um und merkt sich den anderen Namen als frühere Schreibweise).
+   2. Namensvarianten: Namen aus fussball.de-Spielberichten und der Vereinsstatistik, die keinem Spieler zugeordnet sind,
+      aber einem eigenen Spieler sehr ähnlich sehen. Bestätigen hinterlegt die Schreibweise dauerhaft.
+   3. Spieldaten: je Spiel App, FuPa und fussball.de nebeneinander. Lücken werden aus der anderen Quelle gefüllt,
+      Widersprüche offen gezeigt, mit der plausibelsten Annahme. Der Admin bestätigt oder übernimmt die Annahme.
+   Entscheidungen liegen in daten_entscheide (Migration 080). Fehlt die Migration noch, merkt sich das Gerät sie vorläufig.
+   ===================================================================== */
+const DP={sicht:'dub',team:'1',ent:null,entLade:false,ohneDb:false,alle:{},sure:{},busy:false,zeigAlle:{}};
+const dpE=s=>svEsc(s==null?'':String(s));
+
+/* ---------- Entscheidungen ---------- */
+function dpEntLokal(){ try{ return JSON.parse(localStorage.getItem('sv_dp_ent')||'{}')||{}; }catch(e){ return {}; } }
+async function dpEntLaden(force){
+  if(DP.entLade||(DP.ent&&!force))return; DP.entLade=true;
+  try{ const {data,error}=await SVB.sb.rpc('daten_entscheide_liste'); if(error)throw error;
+    DP.ent=new Map((data||[]).map(x=>[x.art+'§'+x.s,x])); DP.ohneDb=false; }
+  catch(e){ DP.ohneDb=true; const L=dpEntLokal(); DP.ent=new Map(Object.entries(L)); }
+  DP.entLade=false; dpRender();
+}
+function dpEnt(art,s){ return DP.ent?DP.ent.get(art+'§'+s)||null:null; }
+async function dpEntscheiden(art,s,e,d){
+  const x={art,s,e,d:d||{},am:new Date().toISOString(),wer:(typeof SVU!=='undefined'&&SVU.name)||''};
+  if(!DP.ohneDb){ try{ const {error}=await SVB.sb.rpc('daten_entscheiden',{p_art:art,p_schluessel:s,p_entscheid:e||'',p_details:d||{}}); if(error)throw error; }
+    catch(err){ if(/daten_entscheiden|function|schema cache/i.test(err.message||''))DP.ohneDb=true; else throw err; } }
+  if(DP.ohneDb){ const L=dpEntLokal(); if(e)L[art+'§'+s]=x; else delete L[art+'§'+s]; try{ localStorage.setItem('sv_dp_ent',JSON.stringify(L)); }catch(err){} }
+  if(!DP.ent)DP.ent=new Map(); if(e)DP.ent.set(art+'§'+s,x); else DP.ent.delete(art+'§'+s);
+}
+
+/* ---------- Namen vergleichen ---------- */
+function dpN(s){ return String(s||'').toLowerCase().replace(/ß/g,'ss').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue')
+  .normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z\s-]/g,' ').replace(/-/g,' ').replace(/\s+/g,' ').trim(); }
+function dpLoose(s){ return dpN(s).replace(/ae/g,'a').replace(/oe/g,'o').replace(/ue/g,'u').replace(/ss/g,'s').replace(/ph/g,'f').replace(/th/g,'t').replace(/(.)\1+/g,'$1').replace(/\s/g,''); }
+function dpTeile(name){ const w=dpN(name).split(' ').filter(Boolean); return {w,f:w[0]||'',l:w[w.length-1]||'',mid:w.slice(1,-1)}; }
+function dpLev(a,b){ if(a===b)return 0; if(Math.abs(a.length-b.length)>2)return 9; const m=a.length,n=b.length; let p=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[n]; }
+const DP_KURZ={alex:'alexander',sascha:'alexander',max:'maximilian',maxi:'maximilian',flo:'florian',tobi:'tobias',basti:'sebastian',sebi:'sebastian',chris:'christian',
+  christoph:'christopher',dani:'daniel',domi:'dominik',hannes:'johannes',jojo:'johannes',jo:'johannes',nico:'nicolas',niko:'nikolas',nick:'nicolas',tim:'timo',tom:'thomas',tommy:'thomas',
+  mike:'michael',micha:'michael',michi:'michael',matze:'matthias',matti:'matthias',ben:'benjamin',benni:'benjamin',fabi:'fabian',luki:'lukas',luke:'lukas',olli:'oliver',
+  phil:'philipp',pippo:'philipp',steffi:'stefan',stef:'stefan',kevin:'kevin',dennis:'dennis',manu:'manuel',jan:'jannik',jannick:'jannik',yannick:'jannik',
+  joe:'josef',sepp:'josef',willi:'wilhelm',rudi:'rudolf',andi:'andreas',andy:'andreas',tobias:'tobias',robin:'robin',patte:'patrick',paddy:'patrick',pat:'patrick',
+  marc:'marcel',marco:'marcel',mo:'mohammed',mohamed:'mohammed',muhammed:'mohammed',mehmet:'mehmet',leo:'leon',lenny:'leonard',noah:'noah',jonny:'jonathan',johnny:'jonathan'};
+function dpVorname(a,b){ // gleicher Vorname in Kurz- oder Langform?
+  if(!a||!b)return false; if(a===b)return true; const la=dpLoose(a), lb=dpLoose(b); if(la===lb)return true;
+  const ka=DP_KURZ[a]||a, kb=DP_KURZ[b]||b; if(ka===kb)return true;
+  if(Math.min(a.length,b.length)>=3&&(a.startsWith(b)||b.startsWith(a)))return true; return false; }
+function dpRegel(a,b){ // a,b: dpTeile; liefert Regel oder null
+  if(!a.f||!b.f||!a.l||!b.l)return null;
+  const lastGleich=a.l===b.l, lastLoose=dpLoose(a.l)===dpLoose(b.l), lastTipp=a.l.length>=5&&b.l.length>=5&&dpLev(a.l,b.l)<=1;
+  if(a.f===b.f&&lastGleich&&a.mid.join(' ')!==b.mid.join(' '))return {k:'zwischen',t:'Zwischenname',p:62};
+  if(a.f===b.f&&lastGleich)return {k:'gleich',t:'Gleicher Name',p:70};
+  if(dpLoose(a.f)===dpLoose(b.f)&&(lastLoose||lastTipp))return {k:'schreib',t:'Schreibweise',p:58};
+  if(lastGleich&&a.f.length>=4&&b.f.length>=4&&dpLev(a.f,b.f)===1)return {k:'schreib',t:'Schreibweise',p:52};
+  if((lastGleich||lastLoose)&&dpVorname(a.f,b.f))return {k:'kurz',t:'Kurzform',p:48};
+  if(a.f===b.l&&a.l===b.f)return {k:'tausch',t:'Vor- und Nachname vertauscht',p:50};
+  return null;
+}
+function dpAlter(p){ if(p.geb){ const g=new Date(p.geb); if(!isNaN(g))return (Date.now()-g)/31557600000; } return typeof p.alter==='number'?p.alter:null; }
+function dpClub(p){ return dpLoose((p.club||'').replace(/\b(sv|fc|tsv|sg|spvgg|fv|tv|sc|vfr|vfb|vfl|ssv|jsg|fsv|e\.?v\.?|ii|iii|1\.)\b/gi,' ')); }
+function dpFde(p){ const m=String(p.fdeUrl||'').match(/(player-id|userid)\/([0-9A-Z]{20,40})/); return m?m[2]:null; }
+function dpDaten(p){ // grobe Menge an Einträgen in der App, für den Vorschlag „bleibt“
+  let n=0; try{ n+=Object.keys((typeof CRM!=='undefined'&&CRM[p.id])||{}).length; }catch(e){}
+  try{ (TR.st.sessions||[]).forEach(s=>{ if((s.a||[]).some(a=>a[0]===p.id))n++; }); }catch(e){}
+  try{ if(typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id])n+=3; }catch(e){}
+  if(p.fdeUrl)n+=2; return n; }
+function dpTyp(p){ const id=String(p.id); return p.own?'Eigener Spieler':p.exSvbc?'Ehemaliger':id.startsWith('fupa-')?'FuPa':id.startsWith('m')?'Von Hand angelegt':id.startsWith('n')?'Neu aus Datenupdate':'Datenbestand'; }
+
+/* ---------- 1) Doppelte Spieler ---------- */
+function dpDubletten(){
+  const L=players.filter(p=>p&&p.name&&!p.isJugend&&String(p.name).trim().length>=5).map(p=>({p,t:dpTeile(p.name)}));
+  const byL=new Map(), byF=new Map(), add=(m,k,x)=>{ if(!k)return; if(!m.has(k))m.set(k,[]); m.get(k).push(x); };
+  L.forEach(x=>{ add(byL,dpLoose(x.t.l),x); add(byF,dpLoose(x.t.f),x); });
+  const seen=new Set(), out=[];
+  const pruef=(x,y)=>{ if(x.p.id===y.p.id)return; const key=[x.p.id,y.p.id].sort().join('|'); if(seen.has(key))return; seen.add(key);
+    const r=dpRegel(x.t,y.t); if(!r)return;
+    const a=x.p, b=y.p, eig=a.own||b.own||a.exSvbc||b.exSvbc, gleichClub=dpClub(a)&&dpClub(a)===dpClub(b);
+    if(!eig&&!gleichClub)return;   // Namensvettern in fremden Vereinen sind meist zwei Menschen
+    let p=r.p; const bel=[r.t];
+    if(gleichClub){ p+=20; bel.push('gleicher Verein'); }
+    if(a.own&&b.own){ p+=15; bel.push('beide eigene Spieler'); }
+    const aa=dpAlter(a), ab=dpAlter(b); if(aa!=null&&ab!=null){ if(Math.abs(aa-ab)<=1.1){ p+=12; bel.push('gleiches Alter'); } else p-=45; }
+    if(a.pos&&b.pos&&a.pos===b.pos){ p+=5; bel.push('gleiche Position'); }
+    const fa=dpFde(a), fb=dpFde(b); if(fa&&fb){ if(fa===fb){ p+=40; bel.push('gleiches fussball.de-Profil'); } else p-=60; }
+    if(p<55)return;
+    out.push({key,a,b,r,p:Math.min(99,p),bel}); };
+  byL.forEach(G=>{ if(G.length>60)return; for(let i=0;i<G.length;i++)for(let j=i+1;j<G.length;j++)pruef(G[i],G[j]); });
+  byF.forEach(G=>{ if(G.length>400)return; for(let i=0;i<G.length;i++){ const x=G[i]; if(x.t.l.length<5)continue; for(let j=i+1;j<G.length;j++){ const y=G[j];
+    if(y.t.l.length>=5&&Math.abs(x.t.l.length-y.t.l.length)<=1&&x.t.l!==y.t.l&&dpLev(x.t.l,y.t.l)<=1)pruef(x,y); } } });
+  L.forEach(x=>{ const G=byL.get(dpLoose(x.t.f))||[]; G.forEach(y=>{ if(y.t.f===x.t.l)pruef(x,y); }); });
+  const eig=d=>d.a.own||d.b.own?2:d.a.exSvbc||d.b.exSvbc?1:0;
+  return out.filter(d=>{ const e=dpEnt('dublette',d.key); return !e; }).sort((x,y)=>eig(y)-eig(x)||y.p-x.p||String(x.a.name).localeCompare(String(y.a.name),'de'));
+}
+function dpBleibt(d){ const s=p=>(p.own?100:0)+(p.exSvbc?20:0)+(p.fdeUrl?15:0)+dpDaten(p)*2+(String(p.id).startsWith('svbc-')?5:0)+Math.min(10,String(p.name).length/3);
+  return s(d.a)>=s(d.b)?d.a.id:d.b.id; }
+function dpFelder(a,b){ const F=[['Alter',p=>{ const x=dpAlter(p); return x==null?'':String(Math.floor(x)); }],['Geburtsdatum',p=>p.geb?TRC.fmt(p.geb)+String(p.geb).slice(2,4):''],
+    ['Verein',p=>p.club||''],['Mannschaft',p=>p.kader?p.kader+'. Mannschaft':''],['Position',p=>[p.pos,p.pos2].filter(Boolean).join(', ')],['Fuß',p=>p.fuss||''],['fussball.de-Profil',p=>dpFde(p)?'verknüpft':'']];
+  return F.map(([l,f])=>({l,a:f(a),b:f(b)})).filter(x=>x.a||x.b); }
+function dpDubHtml(D){
+  if(!D.length)return `<div class="card"><p class="note"><b>✓ Keine doppelten Spieler gefunden.</b> Geprüft werden Zwischennamen, Schreibweisen (ü und ue, Tippfehler), Kurzformen wie Flo und Florian und vertauschte Namen.</p></div>`;
+  return `<p class="note dp-intro">${D.length} mögliche Doppelung${D.length>1?'en':''}. Wähle, welcher Eintrag bleibt. Vorgeschlagen ist der eigene Spieler mit den meisten Daten. Zusammenführen ist dauerhaft: alle Einträge wandern zum bleibenden Spieler, der andere Name bleibt als frühere Schreibweise erhalten.</p>
+    ${(()=>{ const karte=(d,i)=>{ const keep=DP.alle['k'+d.key]||dpBleibt(d), F=dpFelder(d.a,d.b), wid=F.filter(x=>x.a&&x.b&&x.a!==x.b);
+      const col=p=>`<label class="dp-p${p.id===keep?' on':''}"><input type="radio" name="dpk${i}" value="${dpE(p.id)}" ${p.id===keep?'checked':''}>
+          <span class="dp-pn"><b data-svp="${dpE(p.id)}">${dpE(p.name)}</b><small>${dpE(dpTyp(p))}${p.club?' · '+dpE(p.club):''}</small><em>${p.id===keep?'bleibt':'wird übernommen'}</em></span></label>`;
+      return `<div class="card dp-d" data-dk="${dpE(d.key)}"><div class="dp-dh"><span class="dp-sc">${d.p}</span><span>${d.bel.map(dpE).join(' · ')}</span></div>
+        <div class="dp-pp">${col(d.a)}${col(d.b)}</div>
+        ${F.length?`<div class="dp-tw"><table class="dp-t"><thead><tr><th></th><th>${dpE(d.a.name)}</th><th>${dpE(d.b.name)}</th></tr></thead><tbody>${F.map(x=>`<tr class="${x.a&&x.b&&x.a!==x.b?'dp-wid':''}"><th>${dpE(x.l)}</th><td>${dpE(x.a)||'–'}</td><td>${dpE(x.b)||'–'}</td></tr>`).join('')}</tbody></table></div>`:''}
+        ${wid.length?`<p class="note small dp-w">${SVI('info')} Widerspruch bei ${wid.map(x=>x.l).join(', ')}. Es gilt der Wert des bleibenden Spielers, Lücken werden aus dem anderen ergänzt.</p>`:''}
+        <div class="btnrow"><button type="button" class="btn sm${DP.sure[d.key]?' sure':''}" data-dgo="${dpE(d.key)}">${DP.sure[d.key]?'Ja, endgültig zusammenführen':'Zusammenführen'}</button><button type="button" class="btn sm ghost" data-dno="${dpE(d.key)}">Kein Duplikat</button></div></div>`; };
+      const E=D.filter(d=>d.a.own||d.b.own||d.a.exSvbc||d.b.exSvbc), X=D.filter(d=>!E.includes(d));
+      return (E.length?E.map(d=>karte(d,D.indexOf(d))).join(''):'<div class="card"><p class="note"><b>✓ Bei eigenen und ehemaligen Spielern keine Doppelung.</b></p></div>')
+        +(X.length?`<details class="pf4-sec dp-erl"${DP.xOffen?' open':''} data-dpx><summary><span>Spielermarkt (andere Vereine)</span><em>${X.length}</em></summary><div class="pf4-b">${X.map(d=>karte(d,D.indexOf(d))).join('')}</div></details>`:''); })()}`;
+}
+
+/* ---------- 2) Namensvarianten ---------- */
+function dpAehnlich(name,kand){ const t=dpTeile(name); const out=[];
+  kand.forEach(p=>{ const r=dpRegel(t,dpTeile(p.name)); if(r&&r.k!=='gleich')out.push({p,r}); });
+  return out.sort((x,y)=>y.r.p-x.r.p).slice(0,3); }
+function dpVarianten(){
+  const out=[], eigen=players.filter(p=>p.own&&!p.isJugend);
+  // a) fussball.de-Spielberichte: Spieler ohne Zuordnung
+  try{ if(typeof FB!=='undefined'&&FB.loaded&&FB.pl){ const M=fbMap(), keys=new Map();
+      mn31FbAlle().forEach(g=>{ const tm=g.team; g.apps.concat(g.bank.map(k=>({p:k}))).forEach(a=>{ if(!a.p||M.has(a.p))return; const x=keys.get(a.p)||{n:0,tm}; x.n++; keys.set(a.p,x); }); });
+      keys.forEach((x,k)=>{ const nm=FB.pl.get(k); if(!nm)return; const e=dpEnt('variante','fde:'+k); if(e)return;
+        const vor=dpAehnlich(nm,eigen); if(vor.length)out.push({art:'fde',key:'fde:'+k,name:nm,quelle:'fussball.de-Spielbericht',info:`${x.n} Spiel${x.n>1?'e':''} ${x.tm==='D2'?'der 2. Mannschaft':''}`.trim(),vor}); }); } }catch(e){ console.warn('Varianten fussball.de',e); }
+  // b) Vereinsstatistik (Allzeit): Zeilen ohne Spieler
+  try{ if(typeof VR!=='undefined'&&VR.atLoaded&&(VR.at||[]).length){ const idx=vrIdx(), frei=eigen.filter(p=>!idx.byPlayer.has(p.id));
+      VR.at.filter(r=>!idx.used.has(r.key)&&(r.spiele||0)>=3).forEach(r=>{ const e=dpEnt('variante','at:'+r.key); if(e)return;
+        const vor=dpAehnlich(r.name,frei); if(vor.length)out.push({art:'at',key:'at:'+r.key,atKey:r.key,name:r.name,quelle:'Vereinsstatistik',info:`${r.spiele} Spiele, ${r.tore||0} Tore`,vor}); }); } }catch(e){ console.warn('Varianten Allzeit',e); }
+  return out;
+}
+function dpVarHtml(V){
+  const lade=(typeof FB!=='undefined'&&!FB.loaded)||(typeof VR!=='undefined'&&!VR.atLoaded);
+  if(!V.length)return `<div class="card"><p class="note">${lade?'Lade Spielberichte und Vereinsstatistik …':'<b>✓ Keine offenen Namensvarianten.</b> Alle Namen aus den fussball.de-Spielberichten und der Vereinsstatistik sind einem Spieler zugeordnet oder geprüft.'}</p></div>`;
+  return `<p class="note dp-intro">Diese Namen stehen in einer Quelle, passen aber zu keinem Spieler genau. Ist es derselbe Mensch, merkt sich die App die Schreibweise dauerhaft und ordnet ihn ab dann überall richtig zu. Die Zuordnung zu FuPa läuft weiter über den Spieler-Abgleich.</p>
+    ${V.map(v=>`<div class="card dp-v" data-vk="${dpE(v.key)}"><div class="dp-dh"><span class="dp-q">${dpE(v.quelle)}</span><span><b>„${dpE(v.name)}“</b> ${dpE(v.info)}</span></div>
+      <div class="dp-vv">${v.vor.map((x,i)=>`<label class="dp-p${i===0?' on':''}"><input type="radio" name="dpv${dpE(v.key)}" value="${dpE(x.p.id)}" ${i===0?'checked':''}><span class="dp-pn"><b data-svp="${dpE(x.p.id)}">${dpE(x.p.name)}</b><small>${dpE(x.r.t)}${x.p.kader?' · '+x.p.kader+'. Mannschaft':''}</small></span></label>`).join('')}</div>
+      <div class="btnrow"><button type="button" class="btn sm" data-vgo="${dpE(v.key)}">Ist derselbe Spieler</button><button type="button" class="btn sm ghost" data-vno="${dpE(v.key)}">Ist jemand anderes</button></div></div>`).join('')}`;
+}
+
+/* ---------- 3) Spieldaten aus allen Quellen ---------- */
+const DP_ST={da:'Startelf',spaet:'Eingewechselt',bank:'Bank',zuschauer:'Zugeschaut',weg:'Nicht da'};
+const dpPlay=s=>s==='da'||s==='spaet';
+function dpHash(s){ let h=5381; for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0; return (h>>>0).toString(36); }
+function dpSpiel(g){
+  const trainer=src=>['manuell','ki'].includes(src||'manuell');
+  const app=new Map(); ((g.app&&g.app.a)||[]).forEach(x=>app.set(x[0],{st:x[1],t:x[6]!=null?+x[6]:null,src:x[10]||'manuell'}));
+  const fuL=!!(g.fq&&g.fq.aufstellung), fu=new Map(), fuOhne=[];
+  if(fuL)(g.fq.spieler||[]).forEach(x=>{ const st=x.start?'da':(x.min||0)>0?'spaet':'bank'; if(!x.app_id||!trP(x.app_id)){ if(dpPlay(st))fuOhne.push(x.name||'?'); return; } fu.set(x.app_id,{st,t:x.tore!=null?+x.tore:0}); });
+  let fbR=null; try{ fbR=g.fb&&g.fb.bericht?fbSpielAm(g.d):null; }catch(e){}
+  const fbL=!!fbR, fb=new Map(); if(fbL)Object.entries(fbR.rows).forEach(([id,r])=>fb.set(id,{st:r.status,t:r.tore!=null?+r.tore:0}));
+  const fbOhne=[]; if(fbL&&fbR.fehlt){ try{ const M=fbMap(); g.fb.apps.forEach(a=>{ if(!M.has(a.p))fbOhne.push((FB.pl&&FB.pl.get(a.p))||'?'); }); }catch(e){} }
+  const anz=m=>[...m.values()].filter(x=>x.st==='da').length, sum=m=>[...m.values()].reduce((s,x)=>s+(dpPlay(x.st)?(x.t||0):0),0);
+  const S={app:anz(app),fu:fuL?anz(fu):null,fb:fbL?anz(fb):null}, T={fu:fuL?sum(fu):null,fb:fbL?sum(fb):null};
+  const ids=new Set(); [app,fu,fb].forEach(m=>m.forEach((v,k)=>{ if(dpPlay(v.st))ids.add(k); }));
+  const rows=[];
+  ids.forEach(id=>{ const a=app.get(id)||null, f=fuL?(fu.get(id)||null):undefined, b=fbL?(fb.get(id)||null):undefined, fl=[];
+    const fP=f&&dpPlay(f.st), bP=b&&dpPlay(b.st), aP=a&&dpPlay(a.st);
+    if(fuL&&fbL){ if(fP&&!bP)fl.push('fehlt bei fussball.de'); if(bP&&!fP)fl.push('fehlt bei FuPa');
+      if(fP&&bP&&f.st!==b.st)fl.push('Startelf oder Wechsel uneinig'); if(fP&&bP&&(f.t||0)!==(b.t||0))fl.push('Tore uneinig'); }
+    if(g.app&&!aP&&(fP||bP))fl.push('fehlt in der App');
+    if(aP&&!fP&&!bP&&(fuL||fbL)&&trainer(a.src))fl.push('nur in der App');
+    if(aP&&trainer(a.src)&&(fP||bP)){ const off=fP?f:b; if(off.st!==a.st)fl.push('App weicht ab'); }
+    // Annahme: zwei amtliche Quellen einig > Trainereintrag > eine Quelle > Startelf-Zahl > fussball.de (amtlicher Spielbericht)
+    let st=null, t=null, warum='';
+    if(fP&&bP&&f.st===b.st){ st=f.st; warum='FuPa und fussball.de einig'; }
+    else if(aP&&trainer(a.src)){ st=a.st; warum='Eintrag des Trainerteams'; }
+    else if(fP&&!bP){ st=f.st; warum=fbL?'nur FuPa kennt ihn':'nur FuPa'; }
+    else if(bP&&!fP){ st=b.st; warum=fuL?'nur fussball.de kennt ihn':'nur fussball.de'; }
+    else if(fP&&bP){ if(S.fu===11&&S.fb!==11){ st=f.st; warum='FuPa hat eine vollständige Startelf'; } else if(S.fb===11&&S.fu!==11){ st=b.st; warum='fussball.de hat eine vollständige Startelf'; } else { st=b.st; warum='amtlicher Spielbericht'; } }
+    else if(aP){ st=a.st; warum='nur in der App'; }
+    const tF=fP?(f.t||0):null, tB=bP?(b.t||0):null;
+    if(tF!=null&&tB!=null&&tF!==tB){ const fbPasst=g.tw!=null&&T.fb===g.tw&&T.fu!==g.tw; t=fbPasst?tB:tF; warum+=fbPasst?', Tore laut fussball.de (passt zum Ergebnis)':', Tore laut FuPa'; }
+    else t=tF!=null?tF:tB!=null?tB:(a&&a.t!=null?a.t:null);
+    if(aP&&trainer(a.src)&&a.t!=null&&!(tF!=null&&tB!=null&&tF===tB))t=a.t;
+    const sicher=!fl.length;
+    rows.push({id,name:(trP(id)||{}).name||id,a,f,b,ann:{st,t,warum},fl,sicher}); });
+  rows.sort((x,y)=>(y.fl.length?1:0)-(x.fl.length?1:0)||['da','spaet'].indexOf(x.ann.st)-['da','spaet'].indexOf(y.ann.st)||String(x.name).localeCompare(String(y.name),'de'));
+  const hw=[];
+  if(!g.app&&(fuL||fbL))hw.push('Spiel fehlt in der App');
+  const voll=Math.max(S.fu||0,S.fb||0,S.app||0);
+  if(voll>=11){ if(fuL&&S.fu<11)hw.push(`FuPa nennt nur ${S.fu} Spieler in der Startelf`); if(fbL&&S.fb<11)hw.push(`fussball.de nennt nur ${S.fb} Spieler in der Startelf`); if(g.app&&S.app<11&&S.app>0)hw.push(`In der App stehen nur ${S.app} Spieler in der Startelf`); }
+  if(T.fu!=null&&T.fb!=null&&T.fu!==T.fb)hw.push(`Tore: FuPa ${T.fu}, fussball.de ${T.fb}${g.tw!=null?', Ergebnis '+g.tw+':'+g.tg:''}`);
+  if(fuOhne.length)hw.push(`FuPa: ${fuOhne.length} ohne Zuordnung (${fuOhne.slice(0,3).join(', ')}${fuOhne.length>3?' …':''})`);
+  if(fbOhne.length)hw.push(`fussball.de: ${fbOhne.length} ohne Zuordnung (${fbOhne.slice(0,3).join(', ')}${fbOhne.length>3?' …':''})`);
+  (g.hw||[]).forEach(h=>{ if(h.k==='erg')hw.push(h.t); });
+  const offen=rows.filter(r=>r.fl.length);
+  const fp=dpHash(JSON.stringify([hw,offen.map(r=>[r.id,r.fl,r.ann.st,r.ann.t])]));
+  return {g,rows,offen,hw,S,T,fuL,fbL,fp,n:offen.length+hw.length};
+}
+function dpSpielStatus(r){ const e=dpEnt('spiel',DP.team+'|'+r.g.d); if(!e)return null; return (e.d&&e.d.fp)===r.fp?e:{alt:true,e}; }
+function dpZelle(x,lad){ if(x===undefined)return `<td class="dp-na">${lad?'kein Bericht':'–'}</td>`; if(!x)return '<td class="dp-leer">fehlt</td>';
+  return `<td>${dpE(DP_ST[x.st]||x.st)}${x.t?` <b>${x.t} T</b>`:''}${x.src&&!['import','default'].includes(x.src)?' <small>Trainer</small>':''}</td>`; }
+function dpSpielTabelle(r,alle){
+  const L=alle?r.rows:r.offen;
+  return L.length?`<div class="dp-tw"><table class="dp-t dp-sp"><thead><tr><th>Spieler</th><th>App</th><th>FuPa</th><th>fussball.de</th><th>Annahme</th></tr></thead><tbody>
+    ${L.map(x=>`<tr class="${x.fl.length?'dp-wid':''}"><th><b data-svp="${dpE(x.id)}">${dpE(x.name)}</b>${x.fl.length?`<small>${x.fl.map(dpE).join(' · ')}</small>`:''}</th>${dpZelle(x.a||(r.g.app?null:undefined))}${dpZelle(x.f)}${dpZelle(x.b)}
+      <td class="dp-ann"><b>${dpE(DP_ST[x.ann.st]||'–')}${x.ann.t?' · '+x.ann.t+' T':''}</b><small>${dpE(x.ann.warum)}</small></td></tr>`).join('')}</tbody></table></div>`:'';
+}
+function dpSpieleHtml(R){
+  const team=`<div class="trtabs dp-team">${[['1','1. Mannschaft'],['2','2. Mannschaft']].map(([k,t])=>`<button type="button" class="${DP.team===k?'on':''}" data-dpt="${k}">${t}</button>`).join('')}</div>`;
+  const lade=!TR.loaded||(typeof FB!=='undefined'&&!FB.loaded)||(DP.team==='1'&&!SVM.q31);
+  const offen=R.filter(r=>r.n&&!(dpSpielStatus(r)&&!dpSpielStatus(r).alt)), erledigt=R.filter(r=>r.n&&dpSpielStatus(r)&&!dpSpielStatus(r).alt);
+  const karte=r=>{ const st=dpSpielStatus(r), g=r.g, alle=!!DP.zeigAlle[g.d];
+    return `<div class="card dp-s" data-sd="${dpE(g.d)}"><div class="dp-sh"><span class="gm50-d">${TRC.fmt(g.d)}</span><b>${g.heim===false?'@':'vs'} ${dpE(g.gegner)}</b>${g.tw!=null?`<i class="res ${g.tw>g.tg?'w':g.tw===g.tg?'d':'l'}">${g.tw}:${g.tg}</i>`:''}
+        <span class="dp-src">${['App','FuPa','fussball.de'].map((q,i)=>`<i class="src50 ${[!!g.app,r.fuL,r.fbL][i]?'i':'off'}">${q}</i>`).join('')}</span></div>
+      ${r.hw.length?`<ul class="dp-hw">${r.hw.map(h=>`<li>${dpE(h)}</li>`).join('')}</ul>`:''}
+      ${dpSpielTabelle(r,alle)}
+      ${st&&st.alt?`<p class="note small">Früher geprüft (${dpE(st.e.e==='annahme'?'Annahme übernommen':'passt so')}), seitdem hat sich etwas geändert.</p>`:st?`<p class="note small dp-ok">✓ ${st.e==='annahme'?'Annahme übernommen':'Bestätigt'}${st.wer?' von '+dpE(st.wer):''} am ${dpE(String(st.am||'').slice(0,10).split('-').reverse().join('.'))}</p>`:''}
+      ${st&&!st.alt?`<div class="btnrow"><button type="button" class="btn sm ghost" data-sback="${dpE(g.d)}">Wieder öffnen</button></div>`
+        :`<div class="btnrow"><button type="button" class="btn sm" data-sann="${dpE(g.d)}">Annahme übernehmen</button><button type="button" class="btn sm ghost" data-sok="${dpE(g.d)}">Passt so</button><button type="button" class="btn sm ghost" data-sall="${dpE(g.d)}">${alle?'Nur Abweichungen':'Alle Spieler'}</button></div>`}</div>`; };
+  return team+`<p class="note dp-intro">Je Spiel stehen App, FuPa und der amtliche Spielbericht von fussball.de nebeneinander. Fehlt ein Spieler in einer Quelle, füllt die andere die Lücke (das passiert inzwischen auch automatisch, ohne etwas zu überschreiben). Widersprechen sich die Quellen, steht rechts die plausibelste Annahme. „Annahme übernehmen“ schreibt sie ins Spiel, „Passt so“ lässt alles, wie es ist.</p>
+    ${lade?'<div class="card"><div class="empty">Lade Spiele aus App, FuPa und fussball.de …</div></div>':offen.length?offen.map(karte).join(''):`<div class="card"><p class="note"><b>✓ Keine offenen Abweichungen</b> in ${R.length===1?'einem Spiel':R.length+' Spielen'} dieser Saison.</p></div>`}
+    ${erledigt.length?`<details class="pf4-sec dp-erl"><summary><span>Geprüfte Spiele</span><em>${erledigt.length}</em></summary><div class="pf4-b">${erledigt.map(karte).join('')}</div></details>`:''}`;
+}
+function dpSpieleLaden(){
+  if(mnCtx()!==DP.team){ try{ mnCtxSet(DP.team); }catch(e){} }
+  const nach=()=>{ if(svCurTab()==='pruefung')dpRender(); };
+  try{ if(!TR.loaded&&!TR.loading){ const r=trLoad(); if(r&&r.then)r.then(nach,nach); } else if(TR.loading&&TR.loading.then)TR.loading.then(nach,nach); }catch(e){}
+  try{ if(typeof FB!=='undefined'&&!FB.loaded&&!FB.loading){ const r=fbLoad(); if(r&&r.then)r.then(nach,nach); } }catch(e){}
+  try{ if(DP.team==='1'){ if(!SVM.plan&&typeof svmPlanLoad==='function')svmPlanLoad(nach); if(!SVM.q31)mn31QLoad(nach); } }catch(e){}
+  try{ if(!SVM.q31&&DP.team==='1')setTimeout(nach,2500); }catch(e){}
+}
+function dpSpiele(){ if(!TR.loaded)return []; try{ return mn31Spiele().map(dpSpiel); }catch(e){ console.warn('Datenprüfung Spiele',e); return []; } }
+async function dpAnnahme(r){
+  const g=r.g, sp=[];
+  r.rows.forEach(x=>{ if(!x.ann.st)return; const a=x.a; if(a&&a.st===x.ann.st&&(x.ann.t==null||a.t===x.ann.t))return;
+    const o={player_id:x.id,status:x.ann.st,status_src:'manuell'}; if(x.ann.t!=null)o.tore=x.ann.t; sp.push(o); });
+  const hinw=String((g.app&&g.app.hw)||'').replace(/\s*Abgleich geprüft am [0-9.]+\./g,'');
+  const p={datum:g.d,typ:'spiel',team:DP.team,daten_status:'korrigiert',hinweise:(hinw+' Abgleich geprüft am '+TRC.fmt(trToday())+trToday().slice(2,4)+'.').trim().slice(0,1000),spieler:sp.slice(0,80)};
+  if(!g.app){ Object.assign(p,{gegner:String(g.gegner||'').slice(0,80),heim:g.heim}); if(g.tw!=null){ p.tore_wir=g.tw; p.tore_gegner=g.tg; } }
+  const {error}=await SVB.sb.rpc('training_save',{p}); if(error)throw new Error(error.message);
+  await dpEntscheiden('spiel',DP.team+'|'+g.d,'annahme',{fp:null,n:sp.length,gegner:g.gegner});
+  await trLoad(true);
+  // nach dem Speichern neu vergleichen und den neuen Stand als geprüft merken
+  const n=mn31Spiele().find(x=>x.d===g.d); if(n){ const r2=dpSpiel(n); await dpEntscheiden('spiel',DP.team+'|'+g.d,'annahme',{fp:r2.fp,n:sp.length,gegner:g.gegner}); }
+  return sp.length;
+}
+async function dpPasst(r){
+  const g=r.g;
+  if(g.app){ try{ await SVB.sb.rpc('training_save',{p:{datum:g.d,typ:'spiel',team:DP.team,daten_status:'bestaetigt',spieler:[]}}); }catch(e){} }
+  await dpEntscheiden('spiel',DP.team+'|'+g.d,'passt',{fp:r.fp,gegner:g.gegner});
+}
+
+/* ---------- Bereich ---------- */
+SV_TBL.pruefung=['check','Datenprüfung'];
+Object.assign(SV_PAGES,{pruefung:['Datenprüfung','Doppelte Spieler, Namensvarianten und Spieldaten aus allen Quellen prüfen']});
+{ const _ta=svTabAllowed; svTabAllowed=function(t){ if(t==='pruefung')return isAdmin(); return _ta.apply(this,arguments); }; }
+function dpNavVis(){ try{ document.querySelectorAll('.snav button[data-tab="pruefung"],.sgrid [data-sheet="pruefung"]').forEach(b=>b.style.display=isAdmin()?'':'none'); }catch(e){} }
+if(typeof sv4NavVis==='function'){ const _nv=sv4NavVis; sv4NavVis=function(){ const r=_nv.apply(this,arguments); dpNavVis(); return r; }; }
+function dpPanel(){ let P=document.getElementById('panel-pruefung'); if(P)return P;
+  const ref=document.getElementById('panel-home')||document.querySelector('.panel'); if(!ref)return null;
+  P=document.createElement('section'); P.className='panel'; P.id='panel-pruefung'; ref.parentNode.insertBefore(P,ref.nextSibling); return P; }
+{ const _gt=goTab; goTab=function(tab){ if(tab==='pruefung')dpPanel(); const r=_gt.apply(this,arguments);
+  try{ if(svCurTab()==='pruefung')dpRender(); }catch(e){ console.warn('Datenprüfung',e); } return r; }; }
+
+function dpRender(){
+  const P=document.getElementById('panel-pruefung'); if(!P||svCurTab()!=='pruefung')return;
+  if(!isAdmin()){ P.innerHTML='<div class="card"><div class="empty">Die Datenprüfung ist nur für den Admin.</div></div>'; return; }
+  if(!DP.ent){ P.innerHTML='<div class="card"><div class="empty">Lade …</div></div>'; dpEntLaden(); return; }
+  if(typeof FB!=='undefined'&&!FB.loaded&&!FB.loading){ try{ const r=fbLoad(); if(r&&r.then)r.then(()=>dpRender(),()=>{}); }catch(e){} }
+  if(typeof VR!=='undefined'&&!VR.atLoaded&&!DP.atLade){ DP.atLade=1; try{ vrLoadAllTime().then(()=>dpRender(),()=>{}); }catch(e){} }
+  const D=dpDubletten(), V=dpVarianten(); let R=[];
+  if(DP.sicht==='spiel'){ dpSpieleLaden(); R=dpSpiele(); }
+  const nSp=DP.sicht==='spiel'?R.filter(r=>r.n&&!(dpSpielStatus(r)&&!dpSpielStatus(r).alt)).length:null;
+  const seg=[['dub','Doppelte Spieler',D.length],['var','Namensvarianten',V.length],['spiel','Spieldaten',nSp]];
+  P.innerHTML=`<div class="dp">
+    ${DP.ohneDb?`<div class="note dp-warn">${SVI('info')} Die Datenbank-Erweiterung 080 fehlt noch. Prüfen und Zusammenführen geht trotzdem, Entscheidungen wie „Kein Duplikat“ merkt sich bis dahin nur dieses Gerät.</div>`:''}
+    <div class="trtabs dp-seg">${seg.map(([k,t,n])=>`<button type="button" class="${DP.sicht===k?'on':''}" data-dps="${k}">${t}${n?` <em>${n}</em>`:''}</button>`).join('')}</div>
+    <div class="dp-b">${DP.sicht==='dub'?dpDubHtml(D):DP.sicht==='var'?dpVarHtml(V):dpSpieleHtml(R)}</div></div>`;
+  P.querySelectorAll('[data-dps]').forEach(b=>b.onclick=()=>{ DP.sicht=b.dataset.dps; dpRender(); });
+  const dx=P.querySelector('[data-dpx]'); if(dx)dx.addEventListener('toggle',()=>{ DP.xOffen=dx.open; });
+  P.querySelectorAll('[data-svp]').forEach(x=>x.onclick=e=>{ e.preventDefault(); e.stopPropagation(); openModal(x.dataset.svp); });
+  // Doppelte
+  P.querySelectorAll('.dp-d input[type=radio]').forEach(i=>i.onchange=()=>{ const k=i.closest('.dp-d').dataset.dk; DP.alle['k'+k]=i.value; DP.sure[k]=false; dpRender(); });
+  P.querySelectorAll('[data-dgo]').forEach(b=>b.onclick=async()=>{ const k=b.dataset.dgo, d=D.find(x=>x.key===k); if(!d)return;
+    if(!DP.sure[k]){ DP.sure[k]=true; dpRender(); return; }
+    const neu=DP.alle['k'+k]||dpBleibt(d), alt=neu===d.a.id?d.b:d.a; b.disabled=true; b.textContent='Führt zusammen …';
+    try{ const {data,error}=await SVB.sb.rpc('spieler_zusammenfuehren',{p_alt:alt.id,p_neu:neu}); if(error)throw error;
+      if(DP.ohneDb)await dpEntscheiden('dublette',k,'zusammengefuehrt',{bleibt:neu});
+      else if(DP.ent)DP.ent.set('dublette§'+k,{art:'dublette',s:k,e:'zusammengefuehrt',d:{bleibt:neu}});
+      const n=data&&data.umgehaengt?Object.values(data.umgehaengt).reduce((s,x)=>s+x,0):0;
+      kToast(`✓ ${alt.name} ist jetzt Teil von ${trP(neu)?trP(neu).name:'dem Spieler'}${n?` · ${n} Einträge umgehängt`:''}`);
+      try{ if(typeof svDatenNeuLaden==='function')await svDatenNeuLaden(); }catch(e){}
+      delete DP.sure[k]; dpRender(); }
+    catch(e){ b.disabled=false; b.textContent='Zusammenführen'; DP.sure[k]=false; kToast('⚠️ '+(e.message||e)); } });
+  P.querySelectorAll('[data-dno]').forEach(b=>b.onclick=async()=>{ const k=b.dataset.dno, d=D.find(x=>x.key===k); b.disabled=true;
+    try{ await dpEntscheiden('dublette',k,'kein_duplikat',{a:d&&d.a.name,b:d&&d.b.name}); kToast('Gemerkt: zwei verschiedene Spieler'); dpRender(); }catch(e){ b.disabled=false; kToast('⚠️ '+(e.message||e)); } });
+  // Varianten
+  P.querySelectorAll('[data-vgo]').forEach(b=>b.onclick=async()=>{ const k=b.dataset.vgo, v=V.find(x=>x.key===k); if(!v)return; const sel=P.querySelector(`.dp-v[data-vk="${CSS.escape(k)}"] input:checked`), pid=sel&&sel.value; if(!pid)return;
+    b.disabled=true;
+    try{ if(v.art==='fde'){ const {error}=await SVB.sb.rpc('spieler_alias',{p_id:pid,p_name:v.name}); if(error)throw error; const p=trP(pid); if(p){ p.alias=(p.alias||[]).concat([v.name]); } try{ FB.map=null; }catch(e){} }
+      else if(v.art==='at'){ crmSet(pid,{at:v.atKey}); try{ crmApply(); }catch(e){} VR._idx=null; VR._rk=null; }
+      await dpEntscheiden('variante',k,'bestaetigt',{pid,name:v.name}); kToast('✓ '+v.name+' gehört jetzt zu '+((trP(pid)||{}).name||'dem Spieler')); dpRender(); }
+    catch(e){ b.disabled=false; kToast('⚠️ '+(/spieler_alias|function|schema cache/i.test(e.message||'')?'Dafür fehlt noch die Datenbank-Erweiterung 080.':(e.message||e))); } });
+  P.querySelectorAll('[data-vno]').forEach(b=>b.onclick=async()=>{ const k=b.dataset.vno, v=V.find(x=>x.key===k); b.disabled=true;
+    try{ await dpEntscheiden('variante',k,'abgelehnt',{name:v&&v.name}); kToast('Gemerkt'); dpRender(); }catch(e){ b.disabled=false; kToast('⚠️ '+(e.message||e)); } });
+  // Spiele
+  P.querySelectorAll('[data-dpt]').forEach(b=>b.onclick=()=>{ DP.team=b.dataset.dpt; dpRender(); });
+  const rOf=d=>R.find(r=>r.g.d===d);
+  P.querySelectorAll('[data-sall]').forEach(b=>b.onclick=()=>{ DP.zeigAlle[b.dataset.sall]=!DP.zeigAlle[b.dataset.sall]; dpRender(); });
+  P.querySelectorAll('[data-sann]').forEach(b=>b.onclick=async()=>{ const r=rOf(b.dataset.sann); if(!r||DP.busy)return; DP.busy=true; b.disabled=true; b.textContent='Speichert …';
+    try{ const n=await dpAnnahme(r); kToast(`✓ Annahme übernommen${n?` · ${n} Spieler angepasst`:''}`); }catch(e){ kToast('⚠️ '+(e.message||e)); } DP.busy=false; dpRender(); });
+  P.querySelectorAll('[data-sok]').forEach(b=>b.onclick=async()=>{ const r=rOf(b.dataset.sok); if(!r)return; b.disabled=true;
+    try{ await dpPasst(r); kToast('✓ Als geprüft gemerkt'); }catch(e){ kToast('⚠️ '+(e.message||e)); } dpRender(); });
+  P.querySelectorAll('[data-sback]').forEach(b=>b.onclick=async()=>{ try{ await dpEntscheiden('spiel',DP.team+'|'+b.dataset.sback,''); }catch(e){} dpRender(); });
+}
+
+/* ---------- Im geöffneten Spiel: Quellenvergleich für alle sichtbar ---------- */
+if(typeof mn31SpielInfo==='function'){ const _si=mn31SpielInfo; mn31SpielInfo=function(E,d){ const r0=_si.apply(this,arguments);
+  const zeig=()=>{ try{ if(!E||!E.isConnected)return; const g=mn31Spiele().find(x=>x.d===d); let box=E.parentNode&&E.parentNode.querySelector(':scope > .dp-mv'); if(!g){ if(box)box.remove(); return; }
+      const r=dpSpiel(g); if(!r.n){ if(box)box.remove(); return; }
+      if(!box){ box=document.createElement('details'); box.className='dp-mv pf4-sec'; E.after(box); }
+      const st=DP.ent&&DP.team===mnCtx()?dpSpielStatus(r):null;
+      box.innerHTML=`<summary><span>Quellenvergleich</span><em>${r.n} Abweichung${r.n>1?'en':''}</em></summary><div class="pf4-b">
+        ${r.hw.length?`<ul class="dp-hw">${r.hw.map(h=>`<li>${dpE(h)}</li>`).join('')}</ul>`:''}${dpSpielTabelle(r,false)}
+        <p class="note small">${st&&!st.alt?'✓ Vom Admin geprüft.':'Die Annahme rechts ist der plausibelste Stand aus allen Quellen. Sie wird vom Admin unter Verwaltung → Datenprüfung bestätigt.'}</p></div>`; }catch(e){ console.warn('Quellenvergleich',e); } };
+  zeig(); setTimeout(zeig,1800); return r0; }; }
+
+/* ---------- fussball.de-Zuordnung wie auf dem Server: auch frühere Schreibweisen und Vor- plus Nachname ---------- */
+if(typeof fbMap==='function'){ const _fm=fbMap; fbMap=function(){ const M=_fm.apply(this,arguments);
+  try{ if(M.__dp43===FB.mapK)return M; M.__dp43=FB.mapK;
+    const own=players.filter(p=>p.own&&!p.isJugend), used=new Set(M.values()), byA=new Map(), byFL=new Map(), put=(m,k,id)=>{ if(!k)return; m.set(k,m.has(k)&&m.get(k)!==id?null:id); };
+    own.forEach(p=>{ [p.name].concat(p.alias||[]).forEach(n=>{ put(byA,dpN(n).replace(/\s/g,''),p.id); const t=dpTeile(n); if(t.f&&t.l&&(t.f+t.l).length>=6)put(byFL,t.f+'|'+t.l,p.id); }); });
+    const keys=new Set(); mn31FbAlle().forEach(g=>{ g.apps.forEach(a=>keys.add(a.p)); g.bank.forEach(k=>keys.add(k)); });
+    keys.forEach(k=>{ if(M.has(k))return; const nm=FB.pl&&FB.pl.get(k); if(!nm)return; const t=dpTeile(nm);
+      const id=byA.get(dpN(nm).replace(/\s/g,''))||byFL.get(t.f+'|'+t.l); if(id&&!used.has(id)){ M.set(k,id); used.add(id); } });
+  }catch(e){ console.warn('fbMap 0.42',e); }
+  return M; }; }
+
+(function(){ try{ const s=document.createElement('style'); s.id='svm43css'; s.textContent="/* Beta 0.42 */\n.pf43-sep{margin:18px 2px 6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}\n.pf4-sec .pf43-treue{margin:0 0 12px;max-width:360px}\n.pf4-sec .card.pf43-vr{background:none;border:0;box-shadow:none;padding:0;margin:0}\n.pf4-sec .pf43-ts{margin:10px 0 0}\n.pf4-sec h5.pf41h{margin-top:16px}\n.rk43 .rk43mehr{margin-top:8px}\n.pf4-sec[data-k=\"train\"] .trprof .trprof-h{justify-content:flex-end}\n.pf4-sec[data-k=\"train\"] .trprof .trprof-h h3.trh{display:none}\n.pf4-sec .card.trprof{background:none;border:0;box-shadow:none;padding:0;margin:0}\n/* Datenprüfung */\n.dp .dp-seg{margin:0 0 14px}\n.dp .dp-seg em,.dp .dp-team em{font-style:normal;font-weight:800;margin-left:4px;color:var(--warn,#f5b44a)}\n.dp .dp-team{margin:0 0 12px}\n.dp-intro{margin:0 0 12px}\n.dp-warn{margin:0 0 12px}\n.dp-d,.dp-v,.dp-s{margin-bottom:12px}\n.dp-dh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin-bottom:10px}\n.dp-sc{font-weight:800;font-size:13px;min-width:34px;text-align:center;padding:3px 8px;border-radius:999px;background:var(--line2);color:var(--ink)}\n.dp-q{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3)}\n.dp-pp,.dp-vv{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-bottom:10px}\n.dp-p{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}\n.dp-p.on{border-color:var(--accent,#3d7bff)}\n.dp-p input{margin-top:3px}\n.dp-pn{display:grid;gap:2px;min-width:0}\n.dp-pn b{cursor:pointer;overflow-wrap:anywhere}\n.dp-pn small{color:var(--ink3);font-size:12px}\n.dp-pn em{font-style:normal;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}\n.dp-p.on .dp-pn em{color:var(--accent,#3d7bff)}\n.dp-tw{overflow-x:auto;margin:0 0 8px}\n.dp-t{width:100%;border-collapse:collapse;font-size:13px}\n.dp-t th,.dp-t td{padding:6px 8px;border-bottom:1px solid var(--line2);text-align:left;vertical-align:top}\n.dp-t thead th{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;font-weight:700}\n.dp-t tbody th{font-weight:600;color:var(--ink2);white-space:nowrap}\n.dp-t tbody th small{display:block;font-weight:500;color:var(--warn,#f5b44a);font-size:11px;white-space:normal}\n.dp-t tr.dp-wid td,.dp-t tr.dp-wid th{background:rgba(245,180,74,.06)}\n.dp-t td.dp-leer{color:var(--bad,#ff8a8a);font-weight:600}\n.dp-t td.dp-na{color:var(--ink3)}\n.dp-t td small{color:var(--ink3);font-size:11px}\n.dp-t td.dp-ann small{display:block;font-weight:500}\n.dp-sp tbody th b{cursor:pointer}\n.dp-sh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}\n.dp-sh .dp-src{margin-left:auto;display:flex;gap:4px}\n.dp-sh .src50.off{opacity:.35;text-decoration:line-through}\n.dp-hw{margin:0 0 10px;padding-left:18px;font-size:13px;color:var(--ink2)}\n.dp-ok{color:var(--good,#5fe09b)}\n.dp-erl{margin-top:8px}\n.dp-mv{margin-top:10px}\n"; document.head.appendChild(s); }catch(e){} })();
 
 /* ================= INIT ================= */
 renderWeights();
