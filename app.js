@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.42.1', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.43', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18189,6 +18189,14 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.43',v:'0.43',datum:'2026-10-13',titel:'Studio',kurz:'Präsentationen und Dokumente im Vereinsdesign gemeinsam bearbeiten, mit KI-Hilfe, Kommentaren und Versionen.',
+   punkte:[
+    {ic:'🎨',r:'studio',t:'Neu: das Studio',d:'Alle Präsentationen und Dokumente des Vereins liegen jetzt in der App, zum Beispiel das Konzept mit allen Folien. Ansehen, präsentieren und kommentieren kann jeder mit Zugang, ändern dürfen Vorstand und Planer.',go:'studio'},
+    {ic:'✏️',r:'studio',t:'Bearbeiten wie gewohnt',d:'Folien hinzufügen, verschieben, duplizieren. Texte direkt anklicken und ändern, Bilder tauschen und zuschneiden, Bausteine wie Personenkarten oder Termin-Zeilen einfügen. Strg+Z macht alles rückgängig.'},
+    {ic:'👥',r:'studio',t:'Gemeinsam gleichzeitig',d:'Ihr seht, wer gerade mitarbeitet und was markiert ist. Zwei Leute können an derselben Folie arbeiten, ohne dass etwas verloren geht. Kommentare mit @Namen, Versionen mit Namen und Wiederherstellen.'},
+    {ic:'✦',r:'studio',t:'KI-Assistent',d:'Neue Folie aus einem Satz, Folie kürzen, Text umformulieren oder eine ganze Präsentation aus Stichpunkten. Die KI nutzt nur unsere Bausteine, erfindet keine Namen oder Zahlen und du siehst vorher, was sich ändert.'},
+    {ic:'📄',r:'studio',t:'Export als PDF und PNG',d:'Eine Seite je Folie in exakter Größe, Text bleibt markierbar, fertig zum Herunterladen.'}
+   ]},
   {id:'0.42',v:'0.42',datum:'2026-10-13',titel:'Aufgeräumt und abgeglichen',kurz:'Ruhigeres Spielerprofil, kein FuPa-MVP mehr, der Rückkehrer-Radar im Scouting und eine Datenprüfung, die doppelte Spieler und widersprüchliche Spieldaten findet.',
    punkte:[
     {ic:'🧹',t:'Spielerprofil aufgeräumt',d:'Oben vier Kacheln, darunter Statistik, Vereinswerte, Training und Kaderplanung. Die All-Time-Werte stehen jetzt unter „Vereinswerte“, nicht mehr beim Training. Alles Weitere liegt abgesetzt unter „Hintergrund & Daten“.'},
@@ -18559,7 +18567,7 @@ const SV_PATCHES=[
 const SV_PATCH_LATEST=SV_PATCHES[0].id;
 const spV=p=>'Beta '+((p&&(p.v||p.id))||'');
 const SV_PATCH_LABEL=spV(SV_PATCHES[0]);
-function spFor(p){ return (p.punkte||[]).filter(x=>!x.r||(x.r==='team'&&canTraining())||(x.r==='scout'&&canScout())||(x.r==='admin'&&isAdmin())||(x.r==='partner'&&typeof spoDarf==='function'&&spoDarf('sponsoring'))); }
+function spFor(p){ return (p.punkte||[]).filter(x=>!x.r||(x.r==='team'&&canTraining())||(x.r==='scout'&&canScout())||(x.r==='admin'&&isAdmin())||(x.r==='partner'&&typeof spoDarf==='function'&&spoDarf('sponsoring'))||(x.r==='studio'&&typeof svTabAllowed==='function'&&svTabAllowed('studio'))); }
 function spDate(d){ try{ return new Date(d+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }catch(e){ return d; } }
 function spSeen(){ let l=''; try{ l=localStorage.getItem('sv_patch')||''; }catch(e){} return (SV_PREFS&&SV_PREFS.patch_seen)||l||''; }
 function spUnseen(){ const s=spSeen(), i=SV_PATCHES.findIndex(p=>p.id===s); return i<0?(s?SV_PATCHES.slice(0,1):SV_PATCHES.slice(0,1)):SV_PATCHES.slice(0,i); }
@@ -19929,6 +19937,873 @@ if(typeof fbMap==='function'){ const _fm=fbMap; fbMap=function(){ const M=_fm.ap
   }catch(e){ console.warn('fbMap 0.42',e); }
   return M; }; }
 
+/* =====================================================================
+   Sportzentrale Beta 0.43 · SV/BSC Studio (Teil 1: Daten, Darstellung, Projektliste)
+   Präsentationen und Dokumente im Vereinsdesign, gemeinsam bearbeiten.
+   - Jede Folie ist eine HTML-Seite (aus den .dc.html-Dateien 1:1 übernommen) in einem eigenen Shadow-Root,
+     damit das App-Design nichts verschiebt. Jedes Element hat eine feste ID (data-st-id).
+   - Änderungen sind kleine Schritte (Stil, Text, neu, weg). Beim Speichern werden sie auf den neuesten Stand
+     auf dem Server gelegt: zwei Personen können gleichzeitig an derselben Folie arbeiten, ohne dass etwas verloren geht.
+   - Bilder liegen privat im Speicher „studio“ (assets/…), angezeigt über kurzlebige signierte Adressen.
+   ===================================================================== */
+const ST={rechte:null,projekte:null,laedt:false,p:null,folien:[],cur:0,sel:[],urls:new Map(),rev:new Map(),ohneSpeicher:false,
+  q:new Map(),basis:new Map(),undo:[],redo:[],speichert:false,timer:null,ansicht:'liste',medien:null,filter:'',zoom:0,edit:null,archivOffen:false};
+const ST_TOK={navy:'#1d2760',orange:'#e8741f',hellblau:'#8fc9ec',creme:'#f7f4ee',sand:'#e9e5dc',eisblau:'#d9e6f1',text:'#1c1c22',grau:'#5b5b66',weiss:'#ffffff'};
+const ST_FONTS='https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap';
+const stE=s=>svEsc(s==null?'':String(s));
+const stId=()=>'n'+Date.now().toString(36).slice(-5)+Math.random().toString(36).slice(2,6);
+function stKann(){ return !!(ST.rechte&&ST.rechte.bearbeiten); }
+
+/* ---------- Schriften einmal in die Seite holen (gelten auch im Shadow-Root) ---------- */
+function stFonts(){ if(document.getElementById('stFonts'))return; const l=document.createElement('link'); l.id='stFonts'; l.rel='stylesheet'; l.href=ST_FONTS; document.head.appendChild(l); }
+
+/* ---------- CSS der Vorlage für den Shadow-Root aufbereiten ---------- */
+function stCssSauber(css){
+  let c=String(css||'');
+  // @media print { … } und @page entfernen (verschachtelte Klammern zählen)
+  const weg=(re)=>{ let m; while((m=re.exec(c))){ let i=c.indexOf('{',m.index), d=0, j=i; for(;j<c.length;j++){ if(c[j]==='{')d++; else if(c[j]==='}'){ d--; if(!d)break; } } c=c.slice(0,m.index)+c.slice(j+1); re.lastIndex=0; } };
+  weg(/@media\s+print/g); weg(/@page\b/g);
+  c=c.replace(/x-dc\s*\{[^}]*\}/g,'').replace(/html,\s*body\s*\{[^}]*\}/g,'').replace(/#dc-root[^{]*\{[^}]*\}/g,'');
+  c=c.replace(/(^|[\s,}])(html|body)(?=\s*[,{])/g,'$1:host');
+  return c;
+}
+function stBaseCss(p){ const W=p.breite, H=p.hoehe, doc=p.art==='doc';
+  return `:host{display:block;position:relative;width:${W}px;height:${H}px;font-family:'Barlow',sans-serif;color:#1c1c22;contain:layout paint}
+  .st-root{position:relative;width:${W}px;height:${H}px;overflow:hidden}
+  .st-root>section{position:relative !important;inset:auto !important;width:${W}px !important;height:${H}px !important;min-height:0 !important;max-height:none !important;box-sizing:border-box !important;overflow:hidden !important;margin:0 !important;${doc?'container-type:size;':''}}
+  ${doc?'.st-root>section:not([style*="background"]){background:#fff}':''}
+  [data-st-slot]{min-height:40px}
+  .st-edit [data-st-slot]:empty{outline:2px dashed rgba(29,39,96,.35);outline-offset:-2px;background:repeating-linear-gradient(45deg,rgba(29,39,96,.04) 0 12px,transparent 12px 24px)}
+  .st-edit [data-st-slot]:empty::after{content:attr(data-st-ph);display:flex;height:100%;align-items:center;justify-content:center;font:600 22px Barlow,sans-serif;color:rgba(29,39,96,.55);text-align:center;padding:12px}
+  .st-edit [contenteditable="true"]{outline:2px solid #e8741f;outline-offset:3px;cursor:text}
+  .st-edit [data-st-sel]{outline:2px solid #3d7bff;outline-offset:2px}
+  .st-edit [data-st-sel2]{outline:2px dashed #3d7bff;outline-offset:2px}
+  .st-edit [data-st-remote]{outline:2px solid var(--st-rc,#e8741f);outline-offset:4px}
+  .st-edit *{cursor:default}
+  img{user-select:none;-webkit-user-drag:none}`;
+}
+
+/* ---------- Bilder: assets/… ↔ signierte Adressen ---------- */
+function stAssets(html){ const s=new Set(); String(html||'').replace(/assets\/([A-Za-z0-9._-]+)/g,(m,n)=>{ s.add('assets/'+n); return m; }); return [...s]; }
+async function stUrlsLaden(pfade){
+  const neu=pfade.filter(p=>!ST.urls.has(p)); if(!neu.length||ST.ohneSpeicher)return;
+  try{
+    for(let i=0;i<neu.length;i+=80){ const {data,error}=await SVB.sb.storage.from('studio').createSignedUrls(neu.slice(i,i+80),6*3600); if(error)throw error;
+      (data||[]).forEach(d=>{ if(d.signedUrl&&!d.error){ ST.urls.set(d.path,d.signedUrl); ST.rev.set(d.signedUrl,d.path); } }); }
+  }catch(e){ console.warn('Studio-Bilder',e); ST.ohneSpeicher=true; }
+}
+function stUrl(p){ return ST.urls.get(p)||(ST.ohneSpeicher?'studio-assets/'+p.slice(7):p); }
+function stHtmlRein(html){ return String(html||'').replace(/(&quot;|["'(=\s])assets\/([A-Za-z0-9._-]+)/g,(m,q,n)=>q+stUrl('assets/'+n)); }
+function stHtmlRaus(html){ let h=String(html||'');
+  ST.rev.forEach((p,u)=>{ if(h.includes(u))h=h.split(u).join(p); const a=u.replace(/&/g,'&amp;'); if(a!==u&&h.includes(a))h=h.split(a).join(p); });
+  h=h.replace(/studio-assets\/([A-Za-z0-9._-]+)/g,'assets/$1');
+  return h; }
+
+/* ---------- Eine Folie darstellen ---------- */
+function stMount(host,f,opt,pp){ opt=opt||{}; const p=pp||ST.p;
+  const root=host.shadowRoot||host.attachShadow({mode:'open'});
+  root.innerHTML=`<style>${stBaseCss(p)}\n${stCssSauber(p.css)}</style><div class="st-root${opt.edit?' st-edit':''}">${stHtmlRein(f.html||'<section></section>')}</div>`;
+  root.querySelectorAll('[contenteditable]').forEach(e=>e.removeAttribute('contenteditable'));
+  return root; }
+function stSection(root){ return root&&root.querySelector('.st-root>section'); }
+function stSkalaBox(box,f,breite,pp){ const p=pp||ST.p, s=breite/p.breite; box.style.width=Math.round(p.breite*s)+'px'; box.style.height=Math.round(p.hoehe*s)+'px';
+  let h=box.querySelector('.st-host'); if(!h){ h=document.createElement('div'); h.className='st-host'; box.appendChild(h); }
+  h.style.transform=`scale(${s})`; stMount(h,f,{},p); return h; }
+
+/* ---------- Laden ---------- */
+async function stRechte(){ if(ST.rechte)return ST.rechte;
+  try{ const {data,error}=await SVB.sb.rpc('studio_rechte'); if(error)throw error; ST.rechte=data||{}; }
+  catch(e){ ST.rechte={lesen:isAdmin(),bearbeiten:isAdmin(),admin:isAdmin(),fehlt:true}; }
+  return ST.rechte; }
+async function stProjekteLaden(){
+  ST.laedt=true;
+  try{ const {data,error}=await SVB.sb.from('studio_projekte').select('id,titel,art,ordner,breite,hoehe,css,geaendert_am,erstellt_am').is('geloescht_am',null).order('geaendert_am',{ascending:false}); if(error)throw error;
+    ST.projekte=data||[];
+    const ids=ST.projekte.map(p=>p.id); ST.ersteFolie=new Map(); ST.anzahl=new Map();
+    if(ids.length){ const {data:F}=await SVB.sb.from('studio_folien').select('id,projekt_id,pos,skip').in('projekt_id',ids).order('pos');
+      (F||[]).forEach(f=>{ ST.anzahl.set(f.projekt_id,(ST.anzahl.get(f.projekt_id)||0)+(f.skip?0:1)); if(!ST.ersteFolie.has(f.projekt_id))ST.ersteFolie.set(f.projekt_id,f.id); }); }
+  }catch(e){ console.warn('Studio',e); ST.projekte=[]; ST.fehler=e.message||String(e); }
+  ST.laedt=false; }
+async function stProjektLaden(id){
+  const [{data:p,error:e1},{data:F,error:e2}]=await Promise.all([SVB.sb.from('studio_projekte').select('*').eq('id',id).single(),
+    SVB.sb.from('studio_folien').select('id,pos,label,notiz,skip,html,version').eq('projekt_id',id).order('pos')]);
+  if(e1)throw e1; if(e2)throw e2;
+  ST.p=p; ST.folien=F||[]; ST.cur=0; ST.sel=[]; ST.undo=[]; ST.redo=[]; ST.q=new Map(); ST.basis=new Map(ST.folien.map(f=>[f.id,f.version]));
+  ST.folien.forEach(f=>{ f.html=stIdsSichern(f.html); });
+  await stUrlsLaden([...new Set(ST.folien.flatMap(f=>stAssets(f.html)))]);
+}
+// Jedes Element braucht eine ID, sonst lassen sich Änderungen nicht zusammenführen
+function stIdsSichern(html){ const t=document.createElement('template'); t.innerHTML=html||'<section></section>'; const s=t.content.firstElementChild; if(!s)return '<section></section>';
+  let neu=false; s.querySelectorAll('*').forEach(e=>{ if(!e.dataset.stId){ e.dataset.stId=stId(); neu=true; } }); return neu?s.outerHTML:html; }
+
+/* ---------- Bereich ---------- */
+SV_TBL.studio=['layers','Studio'];
+Object.assign(SV_PAGES,{studio:['Studio','Präsentationen und Dokumente im Vereinsdesign, gemeinsam bearbeiten']});
+{ const _ta=svTabAllowed; svTabAllowed=function(t){ if(t==='studio')return !ST.rechte||ST.rechte.lesen!==false||isAdmin(); return _ta.apply(this,arguments); }; }
+function stNavVis(){ try{ if(!ST.rechte&&!ST.rechteLaedt&&typeof SVB!=='undefined'&&SVB.sb&&SVB.user){ ST.rechteLaedt=true; stRechte().then(()=>{ ST.rechteLaedt=false; stNavVis(); }); }
+  const ok=!ST.rechte?isAdmin():!!ST.rechte.lesen; document.querySelectorAll('.snav button[data-tab="studio"],.sgrid [data-sheet="studio"]').forEach(b=>b.style.display=ok?'':'none'); }catch(e){} }
+if(typeof sv4NavVis==='function'){ const _nv=sv4NavVis; sv4NavVis=function(){ const r=_nv.apply(this,arguments); stNavVis(); return r; }; }
+function stPanel(){ let P=document.getElementById('panel-studio'); if(P)return P;
+  const ref=document.getElementById('panel-home')||document.querySelector('.panel'); if(!ref)return null;
+  P=document.createElement('section'); P.className='panel'; P.id='panel-studio'; ref.parentNode.insertBefore(P,ref.nextSibling); return P; }
+{ const _gt=goTab; goTab=function(tab){ if(tab==='studio')stPanel(); const war=svCurTab(); const r=_gt.apply(this,arguments);
+  try{ const jetzt=svCurTab(); document.body.classList.toggle('st-voll',jetzt==='studio'&&ST.ansicht==='editor');
+    if(jetzt==='studio'&&war!=='studio')stStart(); if(jetzt!=='studio'&&war==='studio')stSpeichernJetzt(); }catch(e){ console.warn('Studio',e); } return r; }; }
+async function stStart(){ stFonts(); const P=stPanel(); if(!P)return; await stRechte(); stNavVis();
+  if(ST.rechte.lesen===false&&!isAdmin()){ P.innerHTML='<div class="card"><div class="empty">Für das Studio fehlt dir die Berechtigung.</div></div>'; return; }
+  if(ST.ansicht==='editor'&&ST.p){ stEditorRender(); return; }
+  ST.ansicht='liste'; P.innerHTML='<div class="card"><div class="empty">Lade Projekte …</div></div>'; await stProjekteLaden(); stListe(); }
+
+/* ---------- Projektliste ---------- */
+function stListe(){
+  const P=stPanel(); if(!P)return; ST.ansicht='liste'; document.body.classList.remove('st-voll');
+  const L=(ST.projekte||[]).filter(p=>!ST.filter||p.titel.toLowerCase().includes(ST.filter.toLowerCase()));
+  const haupt=L.filter(p=>!p.ordner), archiv=L.filter(p=>p.ordner);
+  const art={deck:'Präsentation 16:9',doc:'Dokument A4',frei:'Freies Format'};
+  const karte=p=>`<button type="button" class="st-pk" data-stp="${stE(p.id)}"><span class="st-pk-bild" data-stt="${stE(p.id)}"></span><span class="st-pk-t"><b>${stE(p.titel)}</b><small>${stE(art[p.art]||p.art)}${p.art==='doc'&&p.breite>p.hoehe?' quer':''} · ${ST.anzahl&&ST.anzahl.get(p.id)||0} ${p.art==='deck'?'Folien':'Seiten'} · ${TRC.fmt(String(p.geaendert_am).slice(0,10))}${String(p.geaendert_am).slice(2,4)}</small></span></button>`;
+  P.innerHTML=`<div class="st-liste">
+    ${ST.rechte&&ST.rechte.fehlt?`<div class="note st-warn">${SVI('info')} Das Studio braucht noch die Datenbank-Erweiterung 082. Bis dahin sieht nur der Admin diesen Bereich.</div>`:''}
+    <div class="st-lk"><div class="st-such"><input type="search" id="stSuch" placeholder="Projekt suchen" value="${stE(ST.filter)}"></div>
+      ${stKann()?`<div class="btnrow"><button type="button" class="btn sm" data-stneu="deck">${SVI('plus')} Präsentation</button><button type="button" class="btn sm ghost" data-stneu="doc">${SVI('plus')} Dokument A4</button><button type="button" class="btn sm ghost" data-stneu="docq">A4 quer</button><label class="btn sm ghost st-imp">${SVI('upload')} .dc.html importieren<input type="file" id="stImp" accept=".html,.htm,image/*" multiple hidden></label><button type="button" class="btn sm ghost" id="stMed">${SVI('layers')} Mediathek</button><button type="button" class="btn sm ghost" id="stPers">${SVI('users')} Personen</button></div>`:''}</div>
+    ${ST.fehler?`<div class="note">Laden nicht möglich: ${stE(ST.fehler)}</div>`:''}
+    ${haupt.length?`<div class="st-pks">${haupt.map(karte).join('')}</div>`:`<div class="card"><div class="empty">${ST.projekte&&ST.projekte.length?'Kein Projekt passt zur Suche.':'Noch keine Projekte.'}</div></div>`}
+    ${archiv.length?`<details class="pf4-sec st-arch"${ST.archivOffen?' open':''}><summary><span>Archiv und ältere Stände</span><em>${archiv.length}</em></summary><div class="pf4-b"><div class="st-pks">${archiv.map(karte).join('')}</div></div></details>`:''}
+  </div>`;
+  const s=P.querySelector('#stSuch'); if(s)s.oninput=()=>{ ST.filter=s.value; const pos=s.selectionStart; stListe(); const n=document.getElementById('stSuch'); n.focus(); try{ n.setSelectionRange(pos,pos); }catch(e){} };
+  P.querySelectorAll('[data-stp]').forEach(b=>b.onclick=()=>stOeffnen(b.dataset.stp));
+  P.querySelectorAll('[data-stneu]').forEach(b=>b.onclick=()=>stNeuesProjekt(b.dataset.stneu));
+  const ar=P.querySelector('.st-arch'); if(ar)ar.addEventListener('toggle',()=>{ ST.archivOffen=ar.open; if(ar.open)stVorschauen(ar); });
+  const im=P.querySelector('#stImp'); if(im)im.onchange=()=>stImportDateien([...im.files]);
+  const md=P.querySelector('#stMed'); if(md)md.onclick=()=>stMediathek();
+  const pe=P.querySelector('#stPers'); if(pe)pe.onclick=()=>stPersonen();
+  stVorschauen(P.querySelector('.st-pks'));
+}
+// Vorschaubild = erste Folie, klein gerendert
+async function stVorschauen(box){ if(!box)return; const els=[...box.querySelectorAll('[data-stt]')].filter(e=>!e.dataset.ok); if(!els.length)return;
+  const ids=els.map(e=>ST.ersteFolie&&ST.ersteFolie.get(e.dataset.stt)).filter(Boolean); if(!ids.length)return;
+  const {data}=await SVB.sb.from('studio_folien').select('id,projekt_id,html').in('id',ids);
+  const PJ=new Map((ST.projekte||[]).map(p=>[p.id,p]));
+  await stUrlsLaden([...new Set((data||[]).flatMap(f=>stAssets(f.html)))]);
+  (data||[]).forEach(f=>{ const el=box.querySelector(`[data-stt="${f.projekt_id}"]`); const p=PJ.get(f.projekt_id); if(!el||!p)return; el.dataset.ok=1;
+    stSkalaBox(el,f,el.clientWidth||260,p); }); }
+
+async function stOeffnen(id){ const P=stPanel(); P.innerHTML='<div class="card"><div class="empty">Öffne …</div></div>';
+  try{ await stProjektLaden(id); ST.ansicht='editor'; document.body.classList.add('st-voll'); stEditorRender(); }
+  catch(e){ P.innerHTML=`<div class="card"><div class="empty">Projekt lässt sich nicht öffnen: ${stE(e.message||e)}</div></div>`; } }
+
+const ST_CSS_STD=`body{margin:0;font-family:'Barlow',sans-serif;color:#1c1c22}\na{color:#1d2760}a:hover{color:#e8741f}\nsection p,section span,section div{text-wrap:balance}`;
+async function stNeuesProjekt(art){
+  const typ=art==='docq'?'doc':art, quer=art==='docq', W=typ==='deck'?1920:(quer?1123:794), H=typ==='deck'?1080:(quer?794:1123);
+  const titel=(typ==='deck'?'Neue Präsentation':'Neues Dokument')+' '+TRC.fmt(trToday())+trToday().slice(2,4);
+  try{ const {data:p,error}=await SVB.sb.from('studio_projekte').insert({titel,art:typ,breite:W,hoehe:H,css:ST_CSS_STD}).select().single(); if(error)throw error;
+    const html=typ==='deck'?stVorlageFolie('titel',{}):stVorlageSeite();
+    const {error:e2}=await SVB.sb.from('studio_folien').insert({projekt_id:p.id,pos:1,label:typ==='deck'?'Titel':'Seite 1',html}); if(e2)throw e2;
+    await stOeffnen(p.id); }
+  catch(e){ kToast('⚠️ '+(e.message||e)); } }
+
+/* =====================================================================
+   SV/BSC Studio (Teil 2: Editor, Änderungsschritte, Speichern mit Zusammenführen)
+   ===================================================================== */
+const stF=()=>ST.folien[ST.cur]||null;
+const stFind=(sec,id)=>!sec?null:(id==='@'?sec:sec.querySelector(`[data-st-id="${CSS.escape(id)}"]`));
+const stIdOf=(sec,el)=>el===sec?'@':(el.dataset.stId||(el.dataset.stId=stId()));
+function stHost(){ return document.getElementById('stHost'); }
+function stSec(){ const h=stHost(); return h&&h.shadowRoot?stSection(h.shadowRoot):null; }
+
+/* ---------- Änderungsschritte ---------- */
+function stOpAnwenden(sec,op){
+  if(!sec||!op)return false;
+  if(typeof ShadowRoot!=='undefined'&&sec.getRootNode()instanceof ShadowRoot){ op=Object.assign({},op);   // auf der Bühne: Bildpfade in Adressen umsetzen
+    if(op.t==='attr'&&typeof op.v==='string'&&/assets\//.test(op.v))op.v=stHtmlRein(' '+op.v).slice(1);
+    if(op.html)op.html=stHtmlRein(op.html); if(op.t==='html'&&typeof op.v==='string')op.v=stHtmlRein(op.v); }
+  if(op.t==='attr'){ const el=stFind(sec,op.id); if(!el)return false; if(op.v==null)el.removeAttribute(op.k); else el.setAttribute(op.k,op.v); return true; }
+  if(op.t==='html'){ const el=stFind(sec,op.id); if(!el)return false; el.innerHTML=op.v; return true; }
+  if(op.t==='del'){ const el=stFind(sec,op.id); if(!el)return false; el.remove(); return true; }
+  if(op.t==='add'){ if(stFind(sec,op.id))return true; const par=stFind(sec,op.parent||'@')||sec; const t=document.createElement('template'); t.innerHTML=op.html; const n=t.content.firstElementChild; if(!n)return false;
+    const vor=op.before?stFind(sec,op.before):null; if(vor&&vor.parentElement===par)par.insertBefore(n,vor); else par.appendChild(n); return true; }
+  return false; }
+function stUmkehr(op){
+  if(op.t==='attr')return {t:'attr',id:op.id,k:op.k,v:op.old,old:op.v};
+  if(op.t==='html')return {t:'html',id:op.id,v:op.old,old:op.v};
+  if(op.t==='add')return {t:'del',id:op.id,parent:op.parent,before:op.before,html:op.html};
+  if(op.t==='del')return {t:'add',id:op.id,parent:op.parent,before:op.before,html:op.html};
+  return null; }
+// Mehrere Schritte als einen Tun (rückgängig machbar, wird gespeichert und an andere gesendet)
+function stTun(ops,opt){ opt=opt||{}; const f=stF(), sec=stSec(); if(!f||!sec||!ops.length)return;
+  if(!opt.schonAngewandt)ops.forEach(o=>stOpAnwenden(sec,o));
+  stQueue(f.id,ops);
+  if(!opt.ohneUndo){ ST.undo.push({fid:f.id,ops}); if(ST.undo.length>200)ST.undo.shift(); ST.redo=[]; }
+  f.html=stHtmlRaus(sec.outerHTML);
+  try{ stLiveSenden(f.id,ops); }catch(e){}
+  stNachAenderung(); }
+function stQueue(fid,ops){ const q=ST.q.get(fid)||[]; ops.forEach(o=>q.push(o)); ST.q.set(fid,q); stSpeichernBald(); }
+function stUndo(red){ const S=red?ST.redo:ST.undo, T=red?ST.undo:ST.redo; const g=S.pop(); if(!g)return;
+  const i=ST.folien.findIndex(f=>f.id===g.fid); if(i<0)return; if(i!==ST.cur){ ST.cur=i; stCanvas(); }
+  const ops=red?g.ops:g.ops.slice().reverse().map(stUmkehr).filter(Boolean);
+  const sec=stSec(); ops.forEach(o=>stOpAnwenden(sec,o)); stQueue(g.fid,ops); T.push(g);
+  const f=stF(); f.html=stHtmlRaus(sec.outerHTML); try{ stLiveSenden(f.id,ops); }catch(e){}
+  ST.sel=ST.sel.filter(id=>stFind(sec,id)); stNachAenderung(); }
+let stNachT=null;
+function stNachAenderung(){ stOverlay(); stToolbar(); clearTimeout(stNachT); stNachT=setTimeout(()=>{ stThumb(ST.cur); stStatus(); },500); }
+
+/* ---------- Speichern: auf den neuesten Stand legen, nie überschreiben ---------- */
+function stSpeichernBald(){ clearTimeout(ST.timer); ST.timer=setTimeout(stSpeichernJetzt,700); stStatus('ungespeichert'); }
+async function stSpeichernJetzt(){ clearTimeout(ST.timer); if(ST.speichert){ ST.nochmal=true; return; } if(!ST.p)return;
+  const ids=ST.folien.filter(f=>(ST.q.get(f.id)||[]).length||(f.meta&&f.meta.size)).map(f=>f.id); if(!ids.length){ stStatus(); return; }
+  ST.speichert=true; stStatus('speichert');
+  let fehler=null;
+  for(const fid of ids){ try{ await stSpeichernFolie(fid); }catch(e){ fehler=e; console.warn('Studio speichern',e); } }
+  ST.speichert=false; stStatus(fehler?'fehler':'');
+  if(fehler)ST.timer=setTimeout(stSpeichernJetzt,5000);
+  if(ST.nochmal){ ST.nochmal=false; stSpeichernBald(); } }
+async function stSpeichernFolie(fid){
+  const f=ST.folien.find(x=>x.id===fid); if(!f)return;
+  const ops=ST.q.get(fid)||[]; const meta=f.meta||new Set(); ST.q.set(fid,[]); f.meta=new Set();
+  const felder=o=>{ const r={}; meta.forEach(k=>r[k]=f[k]); return r; };
+  try{
+    let base=ST.basis.get(fid);
+    let {data,error}=await SVB.sb.from('studio_folien').update(Object.assign({html:f.html},felder())).eq('id',fid).eq('version',base).select('version');
+    if(error)throw error;
+    if(data&&data.length){ ST.basis.set(fid,data[0].version); return; }
+    // Jemand war schneller: neuesten Stand holen, eigene Schritte darauflegen
+    for(let i=0;i<4;i++){
+      const {data:s,error:e2}=await SVB.sb.from('studio_folien').select('html,version,label,notiz,skip').eq('id',fid).single(); if(e2)throw e2;
+      const t=document.createElement('template'); t.innerHTML=s.html||'<section></section>'; const sec=t.content.firstElementChild;
+      ops.forEach(o=>{ try{ stOpAnwenden(sec,o); }catch(x){} });
+      const html=sec.outerHTML, upd=Object.assign({html},felder());
+      const r=await SVB.sb.from('studio_folien').update(upd).eq('id',fid).eq('version',s.version).select('version');
+      if(r.error)throw r.error;
+      if(r.data&&r.data.length){ ST.basis.set(fid,r.data[0].version); ['label','notiz','skip'].forEach(k=>{ if(!meta.has(k))f[k]=s[k]; });
+        const vorher=f.html; f.html=html; if(ST.folien[ST.cur]&&ST.folien[ST.cur].id===fid&&vorher!==html&&!ST.edit)stCanvas(true); stThumb(ST.folien.indexOf(f)); return; }
+    }
+    throw new Error('Folie wird gerade von anderen geändert, neuer Versuch gleich');
+  }catch(e){ const q=ST.q.get(fid)||[]; ST.q.set(fid,ops.concat(q)); meta.forEach(k=>{ (f.meta=f.meta||new Set()).add(k); }); throw e; } }
+function stMeta(f,k,v){ f[k]=v; (f.meta=f.meta||new Set()).add(k); stSpeichernBald(); }
+function stStatus(z){ const el=document.getElementById('stStat'); if(!el)return; const offen=ST.folien.some(f=>(ST.q.get(f.id)||[]).length||(f.meta&&f.meta.size));
+  z=z||(ST.speichert?'speichert':offen?'ungespeichert':'ok');
+  el.className='st-stat '+z; el.textContent={ok:'Gespeichert',speichert:'Speichert …',ungespeichert:'Änderungen …',fehler:'Nicht gespeichert, neuer Versuch …'}[z]||''; }
+window.addEventListener('beforeunload',e=>{ if(ST.p&&ST.folien.some(f=>(ST.q.get(f.id)||[]).length)){ stSpeichernJetzt(); e.preventDefault(); e.returnValue=''; } });
+
+/* ---------- Editor-Gerüst ---------- */
+function stEditorRender(){
+  const P=stPanel(); if(!P||!ST.p)return; const kann=stKann(), p=ST.p;
+  P.innerHTML=`<div class="st-ed${kann?'':' st-nur'}">
+    <div class="st-top">
+      <button type="button" class="iconbtn" id="stZur" title="Zur Projektliste">${SVI('chev')}</button>
+      <input class="st-titel" id="stTitel" value="${stE(p.titel)}" ${kann?'':'readonly'} aria-label="Titel">
+      <span class="st-stat ok" id="stStat">Gespeichert</span>
+      <span class="sp"></span>
+      <span class="st-live" id="stLive"></span>
+      ${kann?`<button type="button" class="iconbtn" id="stUndo" title="Rückgängig (Strg+Z)">↶</button><button type="button" class="iconbtn" id="stRedo" title="Wiederholen (Strg+Umschalt+Z)">↷</button>
+      <button type="button" class="btn sm ghost" id="stBau">${SVI('plus')} Bausteine</button><button type="button" class="btn sm ghost" id="stMed2">${SVI('layers')} Medien</button><button type="button" class="btn sm ghost" id="stKi">✦ KI</button>`:''}
+      <button type="button" class="btn sm ghost" id="stKom">${SVI('chat')} Kommentare</button>
+      ${kann?`<button type="button" class="btn sm ghost" id="stVer">${SVI('clock')} Versionen</button>`:''}
+      <button type="button" class="btn sm ghost" id="stExp">${SVI('download')} Export</button>
+      <button type="button" class="btn sm" id="stPraes">▶ Präsentieren</button>
+    </div>
+    <div class="st-main">
+      <aside class="st-side"><div class="st-fl" id="stFl"></div>${kann?`<button type="button" class="btn sm ghost st-neuf" id="stNeuF">${SVI('plus')} Folie</button>`:''}</aside>
+      <div class="st-mitte">
+        <div class="st-tools" id="stTools"></div>
+        <div class="st-canvas" id="stCanvas"><div class="st-buehne" id="stBuehne"><div class="st-host" id="stHost"></div><div class="st-ov" id="stOv"></div></div></div>
+        <div class="st-notiz"><label>Sprechernotizen</label><textarea id="stNotiz" rows="2" ${kann?'':'readonly'} placeholder="Was du zu dieser Folie sagen willst …"></textarea></div>
+      </div>
+      <aside class="st-rechts" id="stRechts" hidden></aside>
+    </div></div>`;
+  P.querySelector('#stZur').onclick=async()=>{ await stSpeichernJetzt(); stLiveEnde(); ST.p=null; ST.ansicht='liste'; await stProjekteLaden(); stListe(); };
+  const ti=P.querySelector('#stTitel'); if(kann)ti.onchange=async()=>{ const t=ti.value.trim().slice(0,160); if(!t)return; ST.p.titel=t; const {error}=await SVB.sb.from('studio_projekte').update({titel:t}).eq('id',ST.p.id); if(error)kToast('⚠️ '+error.message); };
+  const b=id=>P.querySelector(id);
+  if(kann){ b('#stUndo').onclick=()=>stUndo(false); b('#stRedo').onclick=()=>stUndo(true); b('#stBau').onclick=()=>stRechts('bau'); b('#stMed2').onclick=()=>stRechts('med'); b('#stKi').onclick=()=>stRechts('ki'); b('#stNeuF').onclick=e=>stFolieNeuMenue(e.currentTarget); b('#stVer').onclick=()=>stRechts('ver'); }
+  b('#stKom').onclick=()=>stRechts('kom'); b('#stExp').onclick=()=>stExportDialog(); b('#stPraes').onclick=()=>stPraesentieren();
+  const no=b('#stNotiz'); no.oninput=()=>{ const f=stF(); if(f)stMeta(f,'notiz',no.value); };
+  stFolienliste(); stCanvas(); stLiveStart();
+  if(!stEditorRender._k){ stEditorRender._k=1; document.addEventListener('keydown',stTasten,true); window.addEventListener('resize',()=>{ if(ST.ansicht==='editor')stSkalieren(); }); }
+}
+function stRechts(art){ const R=document.getElementById('stRechts'); if(!R)return; if(!R.hidden&&R.dataset.art===art){ R.hidden=true; R.dataset.art=''; stSkalieren(); return; }
+  R.hidden=false; R.dataset.art=art; R.innerHTML='';
+  ({bau:stBausteinePanel,med:stMedienPanel,ki:stKiPanel,kom:stKommentarePanel,ver:stVersionenPanel}[art]||(()=>{}))(R); stSkalieren(); }
+
+/* ---------- Folienliste ---------- */
+function stFolienliste(){ const L=document.getElementById('stFl'); if(!L)return; const kann=stKann();
+  L.innerHTML=ST.folien.map((f,i)=>`<div class="st-fi${i===ST.cur?' on':''}${f.skip?' skip':''}" data-fi="${i}" ${kann?'draggable="true"':''}>
+    <span class="st-fn">${i+1}</span><div class="st-ft" data-ft="${i}"></div><div class="st-fl-l">${stE(f.label||'')}${f.skip?' <i>Backup</i>':''}</div>
+    ${kann?`<div class="st-fa"><button type="button" title="Duplizieren" data-fd="${i}">⧉</button><button type="button" title="${f.skip?'Wieder zeigen':'Als Backup ausblenden'}" data-fs="${i}">${f.skip?'◐':'◑'}</button><button type="button" title="Löschen" data-fx="${i}">✕</button></div>`:''}</div>`).join('')||'<div class="empty">Noch keine Folie.</div>';
+  ST.folien.forEach((f,i)=>stThumb(i));
+  L.querySelectorAll('[data-fi]').forEach(el=>{ el.onclick=e=>{ if(e.target.closest('button'))return; stGeheZu(+el.dataset.fi); };
+    if(kann){ el.ondragstart=e=>{ e.dataTransfer.setData('text/st-folie',el.dataset.fi); el.classList.add('drag'); };
+      el.ondragend=()=>el.classList.remove('drag');
+      el.ondragover=e=>{ if([...e.dataTransfer.types].includes('text/st-folie')){ e.preventDefault(); el.classList.add('ziel'); } };
+      el.ondragleave=()=>el.classList.remove('ziel');
+      el.ondrop=e=>{ el.classList.remove('ziel'); const von=+e.dataTransfer.getData('text/st-folie'), nach=+el.dataset.fi; if(isNaN(von)||von===nach)return; e.preventDefault(); stFolieVerschieben(von,nach); }; } });
+  L.querySelectorAll('[data-fd]').forEach(x=>x.onclick=()=>stFolieDuplizieren(+x.dataset.fd));
+  L.querySelectorAll('[data-fs]').forEach(x=>x.onclick=()=>{ const f=ST.folien[+x.dataset.fs]; stMeta(f,'skip',!f.skip); stFolienliste(); });
+  L.querySelectorAll('[data-fx]').forEach(x=>x.onclick=()=>{ if(!x.classList.contains('sure')){ x.classList.add('sure'); x.textContent='Wirklich?'; setTimeout(()=>{ x.classList.remove('sure'); x.textContent='✕'; },3000); return; } stFolieLoeschen(+x.dataset.fx); }); }
+function stThumb(i){ const L=document.getElementById('stFl'); const el=L&&L.querySelector(`[data-ft="${i}"]`); const f=ST.folien[i]; if(!el||!f)return; stSkalaBox(el,f,172); }
+function stGeheZu(i){ if(i<0||i>=ST.folien.length)return; stEditEnde(); ST.cur=i; ST.sel=[]; stCanvas(); document.querySelectorAll('#stFl .st-fi').forEach(el=>el.classList.toggle('on',+el.dataset.fi===i));
+  const el=document.querySelector(`#stFl [data-fi="${i}"]`); if(el)el.scrollIntoView({block:'nearest'}); try{ stLivePraesenz(); }catch(e){} }
+function stPos(i){ const a=ST.folien[i-1], b=ST.folien[i]; return a&&b?(a.pos+b.pos)/2:a?a.pos+1:b?b.pos-1:1; }
+async function stFolieEinfuegen(nach,html,label){ await stSpeichernJetzt();
+  const pos=stPos(nach+1), row={projekt_id:ST.p.id,pos,label:label||'',html:stIdsSichern(html)};
+  const {data,error}=await SVB.sb.from('studio_folien').insert(row).select('id,pos,label,notiz,skip,html,version').single(); if(error){ kToast('⚠️ '+error.message); return; }
+  ST.folien.splice(nach+1,0,data); ST.basis.set(data.id,data.version); await stUrlsLaden(stAssets(data.html)); ST.cur=nach+1; ST.sel=[]; stFolienliste(); stCanvas(); try{ stLiveSenden(null,[{t:'folien'}]); }catch(e){} }
+function stFolieDuplizieren(i){ const f=ST.folien[i]; stFolieEinfuegen(i,f.html,(f.label||'Folie')+' (Kopie)'); }
+async function stFolieLoeschen(i){ const f=ST.folien[i]; const {error}=await SVB.sb.from('studio_folien').delete().eq('id',f.id); if(error){ kToast('⚠️ '+error.message); return; }
+  ST.folien.splice(i,1); ST.q.delete(f.id); ST.cur=Math.min(ST.cur,ST.folien.length-1); ST.sel=[]; stFolienliste(); stCanvas(); kToast('Folie gelöscht'); try{ stLiveSenden(null,[{t:'folien'}]); }catch(e){} }
+async function stFolieVerschieben(von,nach){ const [f]=ST.folien.splice(von,1); ST.folien.splice(nach,0,f);
+  const pos=stPos(nach); f.pos=pos; stMeta(f,'pos',pos); ST.cur=nach; stFolienliste(); stCanvas(); try{ stLiveSenden(null,[{t:'folien'}]); }catch(e){} }
+
+/* ---------- Bühne ---------- */
+function stCanvas(behalten){ const f=stF(), host=stHost(), no=document.getElementById('stNotiz'); if(!host)return;
+  if(!f){ host.innerHTML=''; if(host.shadowRoot)host.shadowRoot.innerHTML=''; return; }
+  const sel=behalten?ST.sel.slice():[];
+  stMount(host,f,{edit:true}); ST.sel=sel.filter(id=>stFind(stSec(),id)); stMarkieren();
+  if(no&&document.activeElement!==no)no.value=f.notiz||'';
+  stSkalieren(); stToolbar();
+  if(!host._st){ host._st=1; stBuehneEvents(host); } }
+function stSkalieren(){ const C=document.getElementById('stCanvas'), B=document.getElementById('stBuehne'), host=stHost(); if(!C||!B||!ST.p)return;
+  const W=ST.p.breite, H=ST.p.hoehe; const cw=C.clientWidth-48, ch=C.clientHeight-48; let s=Math.min(cw/W, ch/H); if(!(s>0))s=0.4;
+  if(ST.p.art!=='deck'&&ch<H*s+10)s=Math.min(s,cw/W);
+  ST.s=s; B.style.width=Math.round(W*s)+'px'; B.style.height=Math.round(H*s)+'px'; host.style.transform=`scale(${s})`; stOverlay(); }
+function stMarkieren(){ const sec=stSec(); if(!sec)return; sec.querySelectorAll('[data-st-sel],[data-st-sel2]').forEach(e=>{ e.removeAttribute('data-st-sel'); e.removeAttribute('data-st-sel2'); });
+  ST.sel.forEach((id,i)=>{ const el=stFind(sec,id); if(el&&el!==sec)el.setAttribute(i?'data-st-sel2':'data-st-sel',''); }); }
+// Markierungs-Attribute nie speichern
+const _stRaus=stHtmlRaus; stHtmlRaus=function(h){ return _stRaus(h).replace(/\sdata-st-(sel2?|remote)(="[^"]*")?/g,'').replace(/\scontenteditable="[^"]*"/g,'').replace(/\sstyle="--st-rc:[^"]*"/g,''); };
+
+/* ---------- Auswahl, Ziehen, Größe, Drehen ---------- */
+function stBuehneEvents(host){
+  host.addEventListener('pointerdown',e=>{ if(!stKann()&&!ST.kommentarModus)return; const sec=stSec(); if(!sec)return;
+    const path=e.composedPath(); const iSec=path.indexOf(sec); if(iSec<0)return;
+    if(ST.edit&&path.includes(ST.edit.el))return;   // im Text tippen
+    stEditEnde();
+    const tiefst=path[0]&&path[0].nodeType===1&&path[0]!==sec?path[0]:null;
+    if(ST.kommentarModus){ e.preventDefault(); stKommentarAn(tiefst?stIdOf(sec,tiefst):'@'); return; }
+    if(!tiefst){ ST.sel=[]; stMarkieren(); stNachAenderung(); return; }
+    const kette=path.slice(0,iSec).filter(n=>n.nodeType===1).reverse();   // [oberstes Kind der Folie, …, tiefstes]
+    let ziel;
+    if(e.altKey)ziel=tiefst;
+    else{ const akt=ST.sel.length===1?stFind(sec,ST.sel[0]):null; const ia=akt?kette.indexOf(akt):-1;
+      ziel=ia>=0?(ST.sel.length===1&&ST.drill?kette[Math.min(ia+1,kette.length-1)]:akt):kette[0]; ST.drill=false; }
+    const id=stIdOf(sec,ziel);
+    if(e.shiftKey){ ST.sel=ST.sel.includes(id)?ST.sel.filter(x=>x!==id):ST.sel.concat(id); }
+    else if(!ST.sel.includes(id))ST.sel=[id];
+    stMarkieren(); stNachAenderung(); try{ stLivePraesenz(); }catch(x){}
+    if(e.button===0&&!e.shiftKey)stZiehStart(e,'move'); });
+  host.addEventListener('dblclick',e=>{ if(!stKann())return; const sec=stSec(); const path=e.composedPath(); const iSec=path.indexOf(sec); if(iSec<0)return;
+    const tiefst=path[0]&&path[0].nodeType===1?path[0]:null; if(!tiefst||tiefst===sec)return;
+    const kette=path.slice(0,iSec).filter(n=>n.nodeType===1).reverse();
+    const akt=ST.sel.length===1?stFind(sec,ST.sel[0]):null;
+    // Doppelklick: bis zum Text hinunter, dann tippen
+    const text=kette.slice().reverse().find(n=>stIstText(n))||null;
+    if(text&&(!akt||akt===text||akt.contains(text))){ ST.sel=[stIdOf(sec,text)]; stMarkieren(); stEditStart(text); return; }
+    const ia=akt?kette.indexOf(akt):-1; if(ia>=0&&ia<kette.length-1){ ST.sel=[stIdOf(sec,kette[ia+1])]; stMarkieren(); stNachAenderung(); } });
+  host.addEventListener('dragover',e=>{ if(stKann()&&[...e.dataTransfer.types].some(t=>t==='Files'||t==='text/st-medium'))e.preventDefault(); });
+  host.addEventListener('drop',e=>{ if(!stKann())return; e.preventDefault(); stBildDrop(e); });
+}
+function stIstText(el){ if(!el||el.tagName==='IMG'||el.tagName==='SECTION')return false; const t=(el.textContent||'').trim(); if(!t)return false;
+  return ![...el.children].some(c=>!['SPAN','B','STRONG','I','EM','BR','A','SMALL','SUP','SUB','U','MARK'].includes(c.tagName)); }
+function stEditStart(el){ stEditEnde(); ST.edit={el,id:el.dataset.stId,vor:el.innerHTML}; el.setAttribute('contenteditable','true'); el.focus();
+  try{ const r=document.createRange(); r.selectNodeContents(el); r.collapse(false); const sel=el.getRootNode().getSelection?el.getRootNode().getSelection():window.getSelection(); sel.removeAllRanges(); sel.addRange(r); }catch(e){}
+  el.addEventListener('blur',stEditEnde,{once:true}); stOverlay(); stToolbar(); }
+function stEditEnde(){ const E=ST.edit; if(!E)return; ST.edit=null; const el=E.el; el.removeAttribute('contenteditable');
+  el.querySelectorAll('*').forEach(c=>{ if(!c.dataset.stId)c.dataset.stId=stId(); });
+  const neu=el.innerHTML; if(neu!==E.vor)stTun([{t:'html',id:E.id,v:stHtmlRaus(neu),old:stHtmlRaus(E.vor)}],{schonAngewandt:true}); else stOverlay(); }
+
+function stRect(el){ const B=document.getElementById('stBuehne').getBoundingClientRect(), r=el.getBoundingClientRect(); return {x:r.left-B.left,y:r.top-B.top,w:r.width,h:r.height}; }
+function stTrans(el){ const t=(el.style.translate||'').trim().split(/\s+/); return {x:parseFloat(t[0])||0,y:parseFloat(t[1])||0}; }
+function stOverlay(){ const O=document.getElementById('stOv'); const sec=stSec(); if(!O)return; O.innerHTML=''; if(!sec)return;
+  ST.sel.forEach((id,i)=>{ const el=stFind(sec,id); if(!el||el===sec)return; const r=stRect(el); const d=document.createElement('div'); d.className='st-box'+(i?' zwei':''); Object.assign(d.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px'}); O.appendChild(d);
+    if(i===0&&ST.sel.length===1&&stKann()&&!ST.edit){ ['nw','n','ne','e','se','s','sw','w'].forEach(k=>{ const h=document.createElement('span'); h.className='st-h st-h-'+k; h.dataset.h=k; d.appendChild(h); h.onpointerdown=ev=>{ ev.stopPropagation(); stZiehStart(ev,'size',k); }; });
+      const ro=document.createElement('span'); ro.className='st-rot'; ro.title='Drehen'; ro.onpointerdown=ev=>{ ev.stopPropagation(); stZiehStart(ev,'rot'); }; d.appendChild(ro);
+      const lab=document.createElement('span'); lab.className='st-lab'; lab.textContent=stName(el); d.appendChild(lab); } });
+  stRemoteZeichnen(); }
+function stName(el){ if(el.tagName==='IMG')return 'Bild'; if(el.dataset.stSlot!=null)return 'Bildplatz'; if(stIstText(el))return 'Text'; return el.children.length?'Gruppe':'Form'; }
+
+function stZiehStart(e,art,griff){ const sec=stSec(); if(!sec||!stKann())return; const s=ST.s||1;
+  const els=ST.sel.map(id=>stFind(sec,id)).filter(x=>x&&x!==sec); if(!els.length)return;
+  const start={x:e.clientX,y:e.clientY}, alt=els.map(el=>({el,style:el.getAttribute('style'),t:stTrans(el),w:el.offsetWidth,h:el.offsetHeight,r:parseFloat(el.style.rotate)||0,rect:stRect(el)}));
+  let bewegt=false; const andere=[...sec.children].filter(c=>!els.includes(c)&&!els.some(x=>x.contains(c)||c.contains(x))).map(c=>stRect(c));
+  const W=ST.p.breite*s, H=ST.p.hoehe*s;
+  const mv=ev=>{ let dx=ev.clientX-start.x, dy=ev.clientY-start.y; if(!bewegt&&Math.hypot(dx,dy)<4)return; bewegt=true; ev.preventDefault();
+    if(art==='move'){ // Einrasten an Folienrand/-mitte und anderen Elementen
+      const u=alt.reduce((a,o)=>({x1:Math.min(a.x1,o.rect.x),y1:Math.min(a.y1,o.rect.y),x2:Math.max(a.x2,o.rect.x+o.rect.w),y2:Math.max(a.y2,o.rect.y+o.rect.h)}),{x1:1e9,y1:1e9,x2:-1e9,y2:-1e9});
+      const X=[0,W/2,W].concat(...andere.map(r=>[r.x,r.x+r.w/2,r.x+r.w])), Y=[0,H/2,H].concat(...andere.map(r=>[r.y,r.y+r.h/2,r.y+r.h]));
+      const lin=[]; const snap=(werte,kand,achse)=>{ let best=null; kand.forEach(k=>werte.forEach(v=>{ const d=v-k; if(Math.abs(d)<=6&&(!best||Math.abs(d)<Math.abs(best.d)))best={d,v}; })); if(best)lin.push({achse,v:best.v}); return best?best.d:0; };
+      if(!ev.altKey){ dx+=snap(X,[u.x1+dx,(u.x1+u.x2)/2+dx,u.x2+dx],'x'); dy+=snap(Y,[u.y1+dy,(u.y1+u.y2)/2+dy,u.y2+dy],'y'); }
+      alt.forEach(o=>{ o.el.style.translate=`${Math.round(o.t.x+dx/s)}px ${Math.round(o.t.y+dy/s)}px`; }); stOverlay(); stHilfslinien(lin); }
+    else if(art==='size'){ const o=alt[0], el=o.el; let w=o.w, h=o.h, tx=o.t.x, ty=o.t.y; const ddx=dx/s, ddy=dy/s;
+      if(griff.includes('e'))w=o.w+ddx; if(griff.includes('w')){ w=o.w-ddx; tx=o.t.x+ddx; } if(griff.includes('s'))h=o.h+ddy; if(griff.includes('n')){ h=o.h-ddy; ty=o.t.y+ddy; }
+      if((el.tagName==='IMG'||ev.shiftKey)&&griff.length===2){ const r=o.w/o.h; if(Math.abs(w-o.w)/o.w>Math.abs(h-o.h)/o.h)h=w/r; else w=h*r; if(griff.includes('n'))ty=o.t.y+(o.h-h); if(griff.includes('w'))tx=o.t.x+(o.w-w); }
+      w=Math.max(8,Math.round(w)); h=Math.max(8,Math.round(h));
+      if(/[ew]/.test(griff)){ el.style.width=w+'px'; el.style.maxWidth='none'; el.style.flex='0 0 auto'; }
+      if(/[ns]/.test(griff)){ el.style.height=h+'px'; el.style.maxHeight='none'; }
+      el.style.translate=`${Math.round(tx)}px ${Math.round(ty)}px`; stOverlay(); }
+    else if(art==='rot'){ const o=alt[0], r=o.rect, cx=r.x+r.w/2, cy=r.y+r.h/2, B=document.getElementById('stBuehne').getBoundingClientRect();
+      let a=Math.atan2(ev.clientY-B.top-cy, ev.clientX-B.left-cx)*180/Math.PI+90; if(ev.shiftKey)a=Math.round(a/15)*15; else a=Math.round(a);
+      if(Math.abs(a)<3)a=0; o.el.style.rotate=a?a+'deg':''; stOverlay(); } };
+  const up=()=>{ window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); stHilfslinien([]);
+    if(!bewegt)return; const ops=alt.map(o=>({t:'attr',id:stIdOf(sec,o.el),k:'style',v:o.el.getAttribute('style'),old:o.style})).filter(o=>o.v!==o.old);
+    if(ops.length)stTun(ops,{schonAngewandt:true}); };
+  window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up); }
+function stHilfslinien(L){ const O=document.getElementById('stOv'); if(!O)return; O.querySelectorAll('.st-hl').forEach(x=>x.remove());
+  L.forEach(l=>{ const d=document.createElement('div'); d.className='st-hl '+l.achse; d.style[l.achse==='x'?'left':'top']=l.v+'px'; O.appendChild(d); }); }
+
+/* ---------- Stil ändern (immer als ein Schritt) ---------- */
+function stStil(props,els){ const sec=stSec(); if(!sec)return; els=els||ST.sel.map(id=>stFind(sec,id)).filter(Boolean);
+  const ops=els.map(el=>{ const old=el.getAttribute('style'); Object.entries(props).forEach(([k,v])=>{ if(v==null||v==='')el.style.removeProperty(k); else el.style.setProperty(k,v); }); return {t:'attr',id:stIdOf(sec,el),k:'style',v:el.getAttribute('style'),old}; }).filter(o=>o.v!==o.old);
+  if(ops.length)stTun(ops,{schonAngewandt:true}); }
+function stAttr(el,k,v){ const sec=stSec(); const old=el.getAttribute(k); if(old===v)return; stTun([{t:'attr',id:stIdOf(sec,el),k,v,old}]); }
+function stLoeschen(){ const sec=stSec(); const ops=ST.sel.map(id=>stFind(sec,id)).filter(el=>el&&el!==sec).map(el=>{ const n=el.nextElementSibling; return {t:'del',id:el.dataset.stId,parent:stIdOf(sec,el.parentElement),before:n?stIdOf(sec,n):null,html:stHtmlRaus(el.outerHTML)}; });
+  ST.sel=[]; stTun(ops); }
+function stDuplizieren(){ const sec=stSec(); const neu=[]; const ops=ST.sel.map(id=>stFind(sec,id)).filter(el=>el&&el!==sec).map(el=>{ const c=el.cloneNode(true); c.removeAttribute('data-st-sel'); c.removeAttribute('data-st-sel2');
+    [c,...c.querySelectorAll('[data-st-id]')].forEach(x=>x.dataset.stId=stId()); const t=stTrans(el); c.style.translate=`${t.x+24}px ${t.y+24}px`; neu.push(c.dataset.stId);
+    const n=el.nextElementSibling; return {t:'add',id:c.dataset.stId,parent:stIdOf(sec,el.parentElement),before:n?stIdOf(sec,n):null,html:stHtmlRaus(c.outerHTML)}; });
+  stTun(ops); ST.sel=neu; stMarkieren(); stNachAenderung(); }
+function stEbene(richtung){ const sec=stSec(); const els=ST.sel.map(id=>stFind(sec,id)).filter(el=>el&&el!==sec); if(!els.length)return;
+  const z=els.map(el=>parseInt(getComputedStyle(el).zIndex)||0); stStil({},[]);
+  const ops=els.map((el,i)=>{ const old=el.getAttribute('style'); if(getComputedStyle(el).position==='static')el.style.position='relative'; el.style.zIndex=String(Math.max(0,z[i]+richtung*(Math.abs(richtung)>1?50:1))); return {t:'attr',id:stIdOf(sec,el),k:'style',v:el.getAttribute('style'),old}; });
+  stTun(ops,{schonAngewandt:true}); }
+function stGruppieren(){ const sec=stSec(); const els=ST.sel.map(id=>stFind(sec,id)).filter(el=>el&&el!==sec); if(els.length<2)return kToast('Mit Umschalt mehrere Elemente wählen, dann gruppieren');
+  const par=els[0].parentElement; if(els.some(e=>e.parentElement!==par))return kToast('Nur Elemente auf derselben Ebene lassen sich gruppieren');
+  if(els.some(e=>getComputedStyle(e).position!=='absolute'))return kToast('Gruppieren geht bei frei platzierten Elementen. Im Layout einfach die Gruppe darüber wählen (Klick).');
+  const box=els.map(e=>({e,l:e.offsetLeft,t:e.offsetTop,w:e.offsetWidth,h:e.offsetHeight}));
+  const L=Math.min(...box.map(b=>b.l)), T=Math.min(...box.map(b=>b.t)), R=Math.max(...box.map(b=>b.l+b.w)), B=Math.max(...box.map(b=>b.t+b.h));
+  const g=document.createElement('div'); g.dataset.stId=stId(); g.setAttribute('style',`position:absolute;left:${L}px;top:${T}px;width:${R-L}px;height:${B-T}px`);
+  g.innerHTML=box.map(b=>{ const c=b.e.cloneNode(true); c.removeAttribute('data-st-sel'); c.removeAttribute('data-st-sel2'); ['right','bottom','inset'].forEach(k=>c.style.removeProperty(k)); c.style.left=(b.l-L)+'px'; c.style.top=(b.t-T)+'px'; return c.outerHTML; }).join('');
+  const ops=els.map(el=>{ const nx=el.nextElementSibling; return {t:'del',id:el.dataset.stId,parent:stIdOf(sec,par),before:nx?stIdOf(sec,nx):null,html:stHtmlRaus(el.outerHTML)}; });
+  const nachLetztem=els[els.length-1].nextElementSibling; const vor=nachLetztem&&!els.includes(nachLetztem)?stIdOf(sec,nachLetztem):null;
+  ops.push({t:'add',id:g.dataset.stId,parent:stIdOf(sec,par),before:vor,html:stHtmlRaus(g.outerHTML)});
+  stTun(ops); ST.sel=[g.dataset.stId]; stMarkieren(); stNachAenderung(); }
+function stAufloesen(){ const sec=stSec(); const g=ST.sel.length===1?stFind(sec,ST.sel[0]):null; if(!g||g===sec||!g.children.length)return;
+  const par=g.parentElement, nx=g.nextElementSibling; const kinder=[...g.children];
+  const ops=[{t:'del',id:g.dataset.stId,parent:stIdOf(sec,par),before:nx?stIdOf(sec,nx):null,html:stHtmlRaus(g.outerHTML)}];
+  const abs=getComputedStyle(g).position==='absolute', gt=stTrans(g);
+  kinder.forEach(c=>{ const k=c.cloneNode(true); k.removeAttribute('data-st-sel'); if(abs&&getComputedStyle(c).position==='absolute'){ k.style.left=(c.offsetLeft+g.offsetLeft)+'px'; k.style.top=(c.offsetTop+g.offsetTop)+'px'; const t=stTrans(c); if(gt.x||gt.y||t.x||t.y)k.style.translate=`${t.x+gt.x}px ${t.y+gt.y}px`; } ops.push({t:'add',id:c.dataset.stId,parent:stIdOf(sec,par),before:nx?stIdOf(sec,nx):null,html:stHtmlRaus(k.outerHTML)}); });
+  // Reihenfolge: erst Gruppe weg, dann Kinder an ihre Stelle
+  stTun(ops); ST.sel=kinder.map(c=>c.dataset.stId); stMarkieren(); stNachAenderung(); }
+
+/* ---------- Tastatur ---------- */
+function stTasten(e){ if(svCurTab()!=='studio'||ST.ansicht!=='editor')return; if(ST.praes)return;
+  const tippt=ST.edit||/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||'');
+  const mod=e.metaKey||e.ctrlKey, k=e.key;
+  if(ST.edit&&k==='Escape'){ e.preventDefault(); const el=ST.edit.el; el.blur(); stEditEnde(); return; }
+  if(tippt)return; if(!stKann()){ if(k==='ArrowRight'||k==='PageDown')stGeheZu(ST.cur+1); if(k==='ArrowLeft'||k==='PageUp')stGeheZu(ST.cur-1); return; }
+  if(mod&&k.toLowerCase()==='z'){ e.preventDefault(); stUndo(e.shiftKey); return; }
+  if(mod&&k.toLowerCase()==='y'){ e.preventDefault(); stUndo(true); return; }
+  if(mod&&k.toLowerCase()==='s'){ e.preventDefault(); stSpeichernJetzt(); return; }
+  if(!ST.sel.length){ if(k==='ArrowDown'||k==='PageDown'){ e.preventDefault(); stGeheZu(ST.cur+1); } if(k==='ArrowUp'||k==='PageUp'){ e.preventDefault(); stGeheZu(ST.cur-1); } return; }
+  if(k==='Delete'||k==='Backspace'){ e.preventDefault(); stLoeschen(); return; }
+  if(k==='Escape'){ ST.sel=[]; stMarkieren(); stNachAenderung(); return; }
+  if(k==='Enter'){ const sec=stSec(), el=stFind(sec,ST.sel[0]); if(el&&stIstText(el)){ e.preventDefault(); stEditStart(el); } else { ST.drill=true; } return; }
+  if(mod&&k.toLowerCase()==='d'){ e.preventDefault(); stDuplizieren(); return; }
+  if(mod&&k.toLowerCase()==='g'){ e.preventDefault(); if(e.shiftKey)stAufloesen(); else stGruppieren(); return; }
+  if(k===']'||k==='['){ e.preventDefault(); stEbene(k===']'?(mod?2:1):(mod?-2:-1)); return; }
+  if(k.startsWith('Arrow')){ e.preventDefault(); const st=e.shiftKey?10:1; const d={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[k];
+    const sec=stSec(); const ops=ST.sel.map(id=>stFind(sec,id)).filter(el=>el&&el!==sec).map(el=>{ const old=el.getAttribute('style'), t=stTrans(el); el.style.translate=`${t.x+d[0]}px ${t.y+d[1]}px`; return {t:'attr',id:el.dataset.stId,k:'style',v:el.getAttribute('style'),old}; });
+    stTun(ops,{schonAngewandt:true}); } }
+
+/* ---------- Werkzeugleiste ---------- */
+function stFarbe(c){ const m=String(c||'').match(/rgba?\(([^)]+)\)/); if(!m)return c||''; const [r,g,b]=m[1].split(',').map(x=>parseFloat(x)); return '#'+[r,g,b].map(x=>Math.round(x).toString(16).padStart(2,'0')).join(''); }
+function stLum(hex){ const h=stFarbe(hex).replace('#',''); if(h.length<6)return 1; const c=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)); return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]; }
+function stKontrast(el){ const fg=getComputedStyle(el).color; let n=el, bg=null; while(n&&n.nodeType===1){ const b=getComputedStyle(n).backgroundColor; if(b&&!/rgba?\(0, 0, 0, 0\)|transparent/.test(b)){ bg=b; break; } if(n.tagName==='SECTION')break; n=n.parentElement; }
+  if(!bg)return null; const a=stLum(fg), b=stLum(bg); return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05); }
+function stToolbar(){ const T=document.getElementById('stTools'); if(!T)return; const sec=stSec(); const kann=stKann();
+  const el=ST.sel.length?stFind(sec,ST.sel[0]):null;
+  if(!el||el===sec||!kann){ const f=stF(); T.innerHTML=kann&&f?`<span class="st-tl">Folie</span><input class="st-in st-lbl" id="stLbl" value="${stE(f.label||'')}" placeholder="Folienname">
+      <span class="st-tl">Hintergrund</span>${Object.entries(ST_TOK).map(([k,v])=>`<button type="button" class="st-sw" style="background:${v}" title="${k}" data-bg="${v}"></button>`).join('')}
+      <span class="sp"></span><span class="st-tip">Klicken wählt, Doppelklick geht tiefer und öffnet Text. Umschalt für mehrere, Alt für das innerste Element.</span>`:`<span class="st-tip">${f?stE(f.label||''):''}</span>`;
+    const lb=T.querySelector('#stLbl'); if(lb)lb.onchange=()=>{ const f=stF(); stMeta(f,'label',lb.value.trim()); stFolienliste(); };
+    T.querySelectorAll('[data-bg]').forEach(b=>b.onclick=()=>stStil({background:b.dataset.bg},[sec]));
+    return; }
+  const cs=getComputedStyle(el), istBild=el.tagName==='IMG', text=stIstText(el)||!!ST.edit, fs=Math.round(parseFloat(cs.fontSize)), kon=text?stKontrast(el):null;
+  const fam=/Caveat/.test(cs.fontFamily)?'Caveat':/Condensed/.test(cs.fontFamily)?'Barlow Condensed':'Barlow';
+  const kette=[]; for(let n=el;n&&n!==sec;n=n.parentElement)kette.unshift(n);
+  T.innerHTML=`<span class="st-bc">${kette.map((n,i)=>`<button type="button" data-bc="${stE(n.dataset.stId||'')}" class="${n===el?'on':''}">${stE(stName(n))}</button>`).join('›')}</span>
+    ${text?`<select class="st-in" id="stFam">${['Barlow','Barlow Condensed','Caveat'].map(f=>`<option ${f===fam?'selected':''}>${f}</option>`).join('')}</select>
+    <input class="st-in st-num" id="stFs" type="number" min="8" max="400" value="${fs}" title="Schriftgröße in px">${ST.p.art==='deck'&&fs<24?'<span class="st-warnb" title="Auf Folien mindestens 24 px">klein</span>':''}
+    <button type="button" class="st-tb${parseInt(cs.fontWeight)>=700?' on':''}" id="stB" title="Fett"><b>F</b></button>
+    <button type="button" class="st-tb${cs.textTransform==='uppercase'?' on':''}" id="stUp" title="Versalien">AA</button>
+    ${['left','center','right'].map(a=>`<button type="button" class="st-tb${cs.textAlign===a||(a==='left'&&cs.textAlign==='start')?' on':''}" data-al="${a}" title="${{left:'Links',center:'Mitte',right:'Rechts'}[a]}">${{left:'⇤',center:'↔',right:'⇥'}[a]}</button>`).join('')}
+    <span class="st-tl">Farbe</span>${Object.entries(ST_TOK).map(([k,v])=>`<button type="button" class="st-sw" style="background:${v}" title="${k}" data-c="${v}"></button>`).join('')}<input type="color" class="st-col" id="stCol" value="${stFarbe(cs.color)||'#1c1c22'}" title="Freie Farbe">
+    ${kon!=null?`<span class="${kon<4.5?'st-warnb':'st-okb'}" title="Kontrast zum Hintergrund (Ziel mindestens 4,5:1)">${kon.toFixed(1).replace('.',',')}:1</span>`:''}`:''}
+    ${istBild?`<button type="button" class="btn sm ghost" id="stErs">${SVI('upload')} Bild ersetzen</button>
+      <span class="st-tl">Ausschnitt</span><input type="range" id="stOx" min="0" max="100" value="${parseInt((cs.objectPosition||'50% 50%').split(' ')[0])||50}" title="links/rechts"><input type="range" id="stOy" min="0" max="100" value="${parseInt((cs.objectPosition||'50% 50%').split(' ')[1])||50}" title="oben/unten">
+      <span class="st-tl">Zoom</span><input type="range" id="stZm" min="100" max="300" value="${Math.round((parseFloat(el.style.scale)||1)*100)}">
+      <button type="button" class="st-tb${cs.borderRadius==='50%'?' on':''}" id="stRund" title="Rund">◯</button>`:''}
+    ${!text&&!istBild?`<span class="st-tl">Fläche</span>${Object.entries(ST_TOK).map(([k,v])=>`<button type="button" class="st-sw" style="background:${v}" title="${k}" data-f="${v}"></button>`).join('')}<button type="button" class="st-sw st-sw0" data-f="" title="ohne">⌀</button>`:''}
+    <span class="sp"></span>
+    <button type="button" class="st-tb" id="stVor" title="Nach vorn ( ] )">⬆</button><button type="button" class="st-tb" id="stHin" title="Nach hinten ( [ )">⬇</button>
+    <button type="button" class="st-tb" id="stDup" title="Duplizieren (Strg+D)">⧉</button>${ST.sel.length>1?'<button type="button" class="st-tb" id="stGrp" title="Gruppieren (Strg+G)">▣</button>':''}
+    <button type="button" class="st-tb" id="stKomEl" title="Kommentar zu diesem Element">💬</button>
+    <button type="button" class="st-tb st-rot" id="stDel" title="Löschen (Entf)">🗑</button>`;
+  const q=s=>T.querySelector(s);
+  T.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>{ if(!b.dataset.bc)return; ST.sel=[b.dataset.bc]; stMarkieren(); stNachAenderung(); });
+  if(q('#stFam'))q('#stFam').onchange=()=>{ const v=q('#stFam').value; stStil({'font-family':v==='Barlow'?"'Barlow', sans-serif":v==='Caveat'?"'Caveat', cursive":"'Barlow Condensed', sans-serif",'font-weight':v==='Barlow Condensed'?'800':v==='Caveat'?'700':null}); };
+  if(q('#stFs'))q('#stFs').onchange=()=>stStil({'font-size':Math.max(8,+q('#stFs').value)+'px'});
+  if(q('#stB'))q('#stB').onclick=()=>stStil({'font-weight':parseInt(cs.fontWeight)>=700?'400':'700'});
+  if(q('#stUp'))q('#stUp').onclick=()=>stStil({'text-transform':cs.textTransform==='uppercase'?'none':'uppercase'});
+  T.querySelectorAll('[data-al]').forEach(b=>b.onclick=()=>stStil({'text-align':b.dataset.al}));
+  T.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>stStil({color:b.dataset.c}));
+  if(q('#stCol'))q('#stCol').onchange=()=>stStil({color:q('#stCol').value});
+  T.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>stStil({background:b.dataset.f||null}));
+  if(q('#stErs'))q('#stErs').onclick=()=>stMediathek(p=>stBildSetzen(el,p));
+  const pos=()=>stStil({'object-position':q('#stOx').value+'% '+q('#stOy').value+'%','object-fit':'cover'});
+  if(q('#stOx')){ q('#stOx').onchange=pos; q('#stOy').onchange=pos; q('#stZm').onchange=()=>{ const z=+q('#stZm').value/100; stStil({scale:z>1?String(z):null}); };
+    q('#stRund').onclick=()=>stStil({'border-radius':cs.borderRadius==='50%'?null:'50%','aspect-ratio':cs.borderRadius==='50%'?null:'1','object-fit':'cover'}); }
+  q('#stVor').onclick=()=>stEbene(1); q('#stHin').onclick=()=>stEbene(-1); q('#stDup').onclick=stDuplizieren; q('#stDel').onclick=stLoeschen;
+  if(q('#stGrp'))q('#stGrp').onclick=stGruppieren; q('#stKomEl').onclick=()=>{ stRechts('kom'); setTimeout(()=>stKommentarAn(ST.sel[0]),50); };
+}
+
+/* =====================================================================
+   SV/BSC Studio (Teil 3: Vorlagen und Bausteine im Vereinsdesign, Mediathek, Präsentieren, Import)
+   ===================================================================== */
+const STV={kick:"font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;letter-spacing:0.14em;text-transform:uppercase",
+  h:"font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:96px;line-height:0.9;text-transform:uppercase;margin:10px 0 0",
+  hand:"font-family:'Caveat',cursive;font-weight:700;font-size:40px;transform:rotate(-2deg)",
+  body:"font-family:'Barlow',sans-serif;font-size:30px;line-height:1.4",
+  fuss:"position:absolute;left:110px;right:110px;bottom:34px;display:flex;justify-content:space-between;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px;letter-spacing:0.12em;text-transform:uppercase"};
+const stX=s=>stE(s==null||s===''?'XX':s);
+function stFussHtml(dunkel,nr){ return `<div data-st-bau="fuss" style="${STV.fuss};color:${dunkel?'rgba(255,255,255,.6)':'#5b5b66'}"><span>SV/BSC Mörlenbach · Konzept</span><span>${nr!=null?stE(nr):''}</span></div>`; }
+function stKopfHtml(k,dunkel){ return `<div data-st-bau="kopf" style="position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:40px"><div><div style="${STV.kick};color:${dunkel?'#8fc9ec':'#5b5b66'}">${stX(k.kicker)}</div><h2 style="${STV.h};color:${dunkel?'#ffffff':'#1c1c22'}">${stX(k.titel)}${k.akzent?` <span style="color:${dunkel?'#e8741f':'#1d2760'}">${stE(k.akzent)}</span>`:''}</h2></div>${k.hand?`<div style="${STV.hand};color:${dunkel?'#8fc9ec':'#e8741f'}">${stE(k.hand)}</div>`:''}</div>`; }
+function stSecHtml(bg,inner,fg){ return `<section style="position:relative;background:${bg};color:${fg||'#1c1c22'};font-family:'Barlow',sans-serif;padding:80px 110px 70px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden">${inner}</section>`; }
+function stPersonKarte(p,dunkel){ const vak=!p.name||/vakant/i.test(p.name);
+  return `<div data-st-bau="person" ${p.person?`data-st-person="${stE(p.person)}"`:''} style="display:flex;align-items:center;gap:22px;padding:18px 22px;background:${dunkel?'rgba(255,255,255,.06)':'#ffffff'};border-left:6px solid #1d2760">
+    ${vak?`<div style="width:96px;height:96px;border-radius:50%;flex:0 0 auto;border:3px dashed #e8741f"></div>`:`<img src="${stE(p.foto||'assets/logo-svbsc.png')}" alt="" style="width:96px;height:96px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:3px solid #ffffff;box-shadow:0 0 0 2px #1d2760">`}
+    <div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px;letter-spacing:0.08em;text-transform:uppercase;color:${dunkel?'#8fc9ec':'#5b5b66'}">${stX(p.rolle)}</div>
+    ${vak?`<div style="display:inline-block;margin-top:8px;padding:4px 14px;border:3px solid #e8741f;color:#e8741f;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:34px;letter-spacing:0.06em">VAKANT</div>`:`<div style="margin-top:6px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:40px;line-height:1">${stE(p.name)}</div>`}</div></div>`; }
+function stVorlageFolie(art,k){ k=k||{};
+  if(art==='titel')return stSecHtml('#1d2760',`<div style="display:flex;align-items:center;gap:26px"><img src="assets/logo-svbsc.png" alt="SV/BSC Mörlenbach" style="height:120px;width:auto;display:block"></div>
+    <div style="margin-top:auto"><div style="${STV.kick};color:#8fc9ec">${stX(k.kicker||'SV/BSC Mörlenbach · Fußball')}</div><h1 style="${STV.h};font-size:150px;color:#ffffff">${stX(k.titel)}</h1>${k.hand?`<div style="${STV.hand};font-size:52px;color:#e8741f;margin-top:18px">${stE(k.hand)}</div>`:''}</div>${stFussHtml(true,k.datum||'')}`,'#ffffff');
+  if(art==='kapitel')return stSecHtml('#f7f4ee',`<div style="position:absolute;left:0;top:0;width:640px;height:100%;background:#1d2760;overflow:hidden"><div style="position:absolute;left:70px;bottom:50px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:240px;line-height:0.8;color:#ffffff;letter-spacing:-0.05em">${stX(k.nr||'01')}</div></div>
+    <div style="margin-left:620px;margin-top:auto;margin-bottom:auto"><div style="${STV.kick};color:#5b5b66">Kapitel</div><h2 style="${STV.h};font-size:120px">${stX(k.titel)}</h2>${k.hand?`<div style="${STV.hand};color:#e8741f;margin-top:16px">${stE(k.hand)}</div>`:''}</div>`);
+  if(art==='inhalt')return stSecHtml('#f7f4ee',`<div style="position:absolute;left:0;top:0;width:22px;height:100%;background:#1d2760"></div>${stKopfHtml(k)}
+    <div style="margin-top:60px;max-width:1400px;display:flex;flex-direction:column;gap:22px">${(k.punkte&&k.punkte.length?k.punkte:['XX']).map(p=>`<div style="display:flex;gap:22px;align-items:baseline"><span style="width:14px;height:14px;background:#e8741f;flex:0 0 auto;transform:translateY(-4px)"></span><p style="margin:0;${STV.body}">${stE(p)}</p></div>`).join('')}</div>${stFussHtml(false,k.nr)}`);
+  if(art==='personen')return stSecHtml('#f7f4ee',`${stKopfHtml(k)}<div style="margin-top:56px;display:grid;grid-template-columns:repeat(${Math.min(3,Math.max(1,(k.personen||[]).length||3))},minmax(0,1fr));gap:24px">${(k.personen&&k.personen.length?k.personen:[{rolle:'XX'},{rolle:'XX'},{rolle:'XX'}]).map(p=>stPersonKarte(p)).join('')}</div>${stFussHtml(false,k.nr)}`);
+  if(art==='aufgaben')return stSecHtml('#f7f4ee',`${stKopfHtml(k)}<div style="margin-top:56px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 60px">${(k.punkte&&k.punkte.length?k.punkte:['XX','XX','XX','XX']).map((p,i)=>`<div style="display:flex;gap:24px;align-items:baseline;border-top:2px solid #d8d2c4;padding-top:18px"><span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:56px;line-height:0.9;color:#e8741f;min-width:64px">${String(i+1).padStart(2,'0')}</span><p style="margin:0;${STV.body}">${stE(p)}</p></div>`).join('')}</div>${stFussHtml(false,k.nr)}`);
+  if(art==='termine')return stSecHtml('#1d2760',`${stKopfHtml(Object.assign({kicker:'Termine',titel:'Die nächsten Schritte.'},k),true)}<div style="margin-top:60px;display:flex;flex-direction:column">${(k.termine&&k.termine.length?k.termine:[{datum:'XX',text:'XX'}]).map(t=>`<div data-st-bau="termin" style="display:grid;grid-template-columns:320px 1fr;gap:40px;align-items:baseline;padding:26px 0;border-top:2px solid rgba(255,255,255,.25)"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:60px;line-height:1;color:#e8741f">${stX(t.datum)}</div><div style="font-size:34px;line-height:1.3;color:#ffffff">${stX(t.text)}</div></div>`).join('')}</div>${stFussHtml(true,k.nr)}`,'#ffffff');
+  if(art==='kennzahlen')return stSecHtml('#1d2760',`${stKopfHtml(k,true)}<div data-st-bau="zahlen" style="margin-top:70px;display:grid;grid-template-columns:repeat(${Math.max(1,(k.zahlen||[1,2,3]).length)},minmax(0,1fr));gap:28px">${(k.zahlen&&k.zahlen.length?k.zahlen:[{wert:'XX',label:'XX'},{wert:'XX',label:'XX'},{wert:'XX',label:'XX'}]).map((z,i,a)=>`<div style="border-top:3px solid ${i===a.length-1?'#e8741f':'rgba(255,255,255,.5)'};padding-top:30px"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:150px;line-height:0.85;letter-spacing:-0.03em;color:#ffffff">${stX(z.wert)}</div><div style="margin-top:22px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:36px;text-transform:uppercase;color:#8fc9ec">${stX(z.label)}</div>${z.text?`<p style="margin:14px 0 0;font-size:28px;line-height:1.4;color:#e6ecf5">${stE(z.text)}</p>`:''}</div>`).join('')}</div>${stFussHtml(true,k.nr)}`,'#ffffff');
+  if(art==='foto')return `<section style="position:relative;background:#1d2760;color:#ffffff;font-family:'Barlow',sans-serif;padding:80px 110px 70px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden"><img src="${stE(k.foto||'assets/foto-jubel.jpg')}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(29,39,96,.94) 0%,rgba(29,39,96,.7) 45%,rgba(29,39,96,.15) 100%)"></div>
+    <div style="position:relative;margin-top:auto;max-width:1100px"><div style="${STV.kick};color:#8fc9ec">${stX(k.kicker)}</div><h2 style="${STV.h};font-size:120px;color:#ffffff">${stX(k.titel)}</h2>${k.hand?`<div style="${STV.hand};color:#e8741f;margin-top:16px">${stE(k.hand)}</div>`:''}</div></section>`;
+  if(art==='ideen')return stSecHtml('#f7f4ee',`${stKopfHtml(k)}<div style="margin-top:56px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px">${(k.ideen&&k.ideen.length?k.ideen:[{titel:'XX',text:'XX'},{titel:'XX',text:'XX'},{titel:'XX',text:'XX'}]).map(x=>`<div data-st-bau="idee" style="background:#ffffff;padding:30px 28px;border-top:6px solid #1d2760"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:40px;line-height:1;text-transform:uppercase;color:#1d2760">${stX(x.titel)}</div><p style="margin:14px 0 0;font-size:26px;line-height:1.4">${stX(x.text)}</p></div>`).join('')}<div style="border:3px dashed #e8741f;padding:30px 28px;display:flex;align-items:center;justify-content:center;${STV.hand};color:#e8741f;transform:none">Weitere Ideen …</div></div>${stFussHtml(false,k.nr)}`);
+  return stSecHtml('#f7f4ee',stFussHtml(false,''));
+}
+function stVorlageSeite(){ const p=ST.p||{breite:794,hoehe:1123};
+  return `<section class="page" style="position:relative;display:flex;flex-direction:column;background:#ffffff;color:#1c1c22;font-family:'Barlow',sans-serif;box-sizing:border-box;overflow:hidden;padding:${p.breite>p.hoehe?'18mm 20mm':'20mm 20mm 18mm 25mm'}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start"><img src="assets/logo-svbsc.png" alt="SV/BSC Mörlenbach" style="height:22mm;width:auto;display:block"><div style="text-align:right"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:19pt;line-height:1;text-transform:uppercase;color:#1d2760">SV/BSC Mörlenbach</div><div style="margin-top:1.8mm;font-size:8.5pt;letter-spacing:0.16em;text-transform:uppercase;color:#5b5b66">Abteilung Fußball · seit 1896</div></div></div>
+    <div style="height:0.5mm;background:#1d2760;margin-top:6mm;position:relative"><div style="position:absolute;left:0;top:0;width:22mm;height:0.5mm;background:#e8741f"></div></div>
+    <h1 style="margin:12mm 0 4mm;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26pt;line-height:1;text-transform:uppercase;color:#1d2760">Überschrift</h1>
+    <p style="margin:0;font-size:11pt;line-height:1.5">Text …</p></section>`; }
+
+/* Bausteine für die aktuelle Folie (frei platziert, alles danach bearbeitbar) */
+const ST_BAU=[
+  ['text','Text',()=>`<p style="position:absolute;left:110px;top:420px;width:900px;margin:0;${STV.body}">Text …</p>`],
+  ['ueber','Überschrift',()=>`<h2 style="position:absolute;left:110px;top:300px;${STV.h}">Überschrift</h2>`],
+  ['hand','Handschrift',()=>`<div style="position:absolute;left:1100px;top:200px;${STV.hand};color:#e8741f">Notiz am Rand</div>`],
+  ['kopf','Kapitel-Kopf',()=>`<div style="position:absolute;left:110px;top:80px;width:1700px">${stKopfHtml({kicker:'Kapitel',titel:'Überschrift',akzent:'Akzent.',hand:'Handschrift'})}</div>`],
+  ['person','Personenkarte',()=>`<div style="position:absolute;left:110px;top:420px;width:540px">${stPersonKarte({rolle:'Rolle'})}</div>`],
+  ['aufgaben','Aufgabenpakete',()=>`<div style="position:absolute;left:110px;top:380px;width:1200px;display:flex;flex-direction:column;gap:18px">${['Aufgabe','Aufgabe','Aufgabe'].map((t,i)=>`<div style="display:flex;gap:24px;align-items:baseline"><span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:56px;line-height:0.9;color:#e8741f;min-width:64px">${String(i+1).padStart(2,'0')}</span><p style="margin:0;${STV.body}">${t}</p></div>`).join('')}</div>`],
+  ['orga','Organigramm-Knoten',()=>`<div style="position:absolute;left:710px;top:380px;width:500px"><div style="background:#1d2760;color:#ffffff;padding:14px 22px;display:flex;align-items:center;gap:18px"><img src="assets/logo-svbsc.png" alt="" style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid #ffffff;background:#fff"><div><div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:24px;letter-spacing:0.07em;text-transform:uppercase;color:#8fc9ec">Rolle</div><div style="margin-top:6px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:40px;line-height:1">Name</div></div></div><div style="width:3px;height:60px;background:#1d2760;margin:0 auto"></div></div>`],
+  ['idee','Ideenkarte',()=>`<div data-st-bau="idee" style="position:absolute;left:110px;top:400px;width:400px;background:#ffffff;padding:30px 28px;border-top:6px solid #1d2760"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:40px;line-height:1;text-transform:uppercase;color:#1d2760">Idee</div><p style="margin:14px 0 0;font-size:26px;line-height:1.4">Kurz beschreiben …</p></div>`],
+  ['weitere','„Weitere Ideen …“',()=>`<div style="position:absolute;left:560px;top:400px;width:400px;height:220px;border:3px dashed #e8741f;display:flex;align-items:center;justify-content:center;${STV.hand};color:#e8741f;transform:none">Weitere Ideen …</div>`],
+  ['termin','Termin-Zeile',()=>`<div data-st-bau="termin" style="position:absolute;left:110px;top:520px;width:1700px;display:grid;grid-template-columns:320px 1fr;gap:40px;align-items:baseline;padding:26px 0;border-top:2px solid #d8d2c4"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:60px;line-height:1;color:#e8741f">TT.MM.JJJJ</div><div style="font-size:34px;line-height:1.3">Was passiert</div></div>`],
+  ['zahlen','Kennzahlen-Leiste',()=>`<div data-st-bau="zahlen" style="position:absolute;left:110px;top:440px;width:1700px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px">${['XX','XX','XX'].map((z,i)=>`<div style="border-top:3px solid ${i===2?'#e8741f':'#1d2760'};padding-top:24px"><div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:120px;line-height:0.85;color:#1d2760">${z}</div><div style="margin-top:16px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:32px;text-transform:uppercase;color:#5b5b66">Bezeichnung</div></div>`).join('')}</div>`],
+  ['foto','Vollbild-Foto mit Overlay',()=>`<div style="position:absolute;inset:0"><img src="assets/foto-jubel.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(29,39,96,.94) 0%,rgba(29,39,96,.6) 50%,rgba(29,39,96,.1) 100%)"></div></div>`],
+  ['bild','Bild',()=>`<img src="assets/foto-team-blau.jpg" alt="" style="position:absolute;left:1100px;top:300px;width:640px;height:480px;object-fit:cover;display:block">`],
+  ['platz','Bildplatz',()=>`<div data-st-slot="bild" data-st-ph="Bild hier ablegen" style="position:absolute;left:1100px;top:300px;width:640px;height:480px;display:block;overflow:hidden"></div>`],
+  ['fuss','Fußzeile mit Seitenzahl',()=>stFussHtml(false,String(ST.cur+1))],
+  ['rechteck','Fläche',()=>`<div style="position:absolute;left:200px;top:300px;width:480px;height:280px;background:#d9e6f1"></div>`],
+  ['kreis','Kreis',()=>`<div style="position:absolute;left:300px;top:300px;width:220px;height:220px;border-radius:50%;background:#e8741f"></div>`],
+  ['linie','Linie',()=>`<div style="position:absolute;left:110px;top:540px;width:800px;height:4px;background:#1d2760"></div>`]];
+const ST_FV=[['titel','Titel'],['kapitel','Kapitel'],['inhalt','Inhalt mit Punkten'],['personen','Personen'],['aufgaben','Aufgabenpakete'],['termine','Termine'],['kennzahlen','Kennzahlen'],['ideen','Ideen / Projekte'],['foto','Vollbild-Foto'],['leer','Leere Folie']];
+function stBauEinfuegen(key){ const b=ST_BAU.find(x=>x[0]===key); const sec=stSec(); if(!b||!sec)return;
+  const html=b[2](); const s=(ST.p.breite/1920);
+  const t=document.createElement('template'); t.innerHTML=html.trim(); const n=t.content.firstElementChild; [n,...n.querySelectorAll('*')].forEach(e=>e.dataset.stId=stId());
+  if(s<0.98)n.style.zoom=s.toFixed(4);   // Bausteine sind für 1920 px gebaut, auf A4 maßstäblich verkleinern
+  if(key==='fuss'||key==='foto'){ if(key==='foto'){ stTun([{t:'add',id:n.dataset.stId,parent:'@',before:sec.firstElementChild?stIdOf(sec,sec.firstElementChild):null,html:n.outerHTML}]); } else stTun([{t:'add',id:n.dataset.stId,parent:'@',before:null,html:n.outerHTML}]); }
+  else stTun([{t:'add',id:n.dataset.stId,parent:'@',before:null,html:n.outerHTML}]);
+  ST.sel=[n.dataset.stId]; stMarkieren(); stNachAenderung(); }
+function stBausteinePanel(R){ R.innerHTML=`<h4>Bausteine</h4><p class="note small">Einfügen, dann ziehen und Text per Doppelklick ändern. Fehlende Angaben stehen als XX.</p>
+  <div class="st-baul">${ST_BAU.map(b=>`<button type="button" class="st-bau" data-bau="${b[0]}">${stE(b[1])}</button>`).join('')}</div>
+  <h4>Neue Folie aus Vorlage</h4><div class="st-baul">${(ST.p.art==='deck'?ST_FV:[['seite','Briefbogen-Seite'],['leer','Leere Seite']]).map(v=>`<button type="button" class="st-bau" data-fv="${v[0]}">${stE(v[1])}</button>`).join('')}</div>`;
+  R.querySelectorAll('[data-bau]').forEach(b=>b.onclick=()=>stBauEinfuegen(b.dataset.bau));
+  R.querySelectorAll('[data-fv]').forEach(b=>b.onclick=()=>stFolieNeu(b.dataset.fv)); }
+function stFolieNeuMenue(anker){ stRechts('bau'); }
+function stFolieNeu(art){ const html=ST.p.art==='deck'?stVorlageFolie(art,{nr:String(ST.cur+2)}):(art==='seite'?stVorlageSeite():`<section class="page" style="position:relative;background:#ffffff;box-sizing:border-box;overflow:hidden"></section>`);
+  stFolieEinfuegen(ST.cur,html,(ST_FV.find(v=>v[0]===art)||[0,art==='seite'?'Seite':'Folie'])[1]); }
+
+/* ---------- Mediathek ---------- */
+async function stMedienLaden(neu){ if(ST.medien&&!neu)return ST.medien;
+  const {data,error}=await SVB.sb.from('studio_medien').select('pfad,name,tags,breite,hoehe').order('pfad'); ST.medien=error?[]:(data||[]);
+  await stUrlsLaden(ST.medien.map(m=>m.pfad)); return ST.medien; }
+const ST_TAGS=[['person','Person'],['logo','Logo'],['foto','Foto'],['stadion','Stadion']];
+function stMedienHtml(L,auswahl){ const f=ST.mfilter||'';
+  const M=L.filter(m=>!f||(m.tags||[]).includes(f));
+  return `<div class="st-mf"><button type="button" class="${!f?'on':''}" data-mf="">Alle</button>${ST_TAGS.map(([k,t])=>`<button type="button" class="${f===k?'on':''}" data-mf="${k}">${t}</button>`).join('')}</div>
+    ${stKann()?`<label class="st-drop"><input type="file" accept="image/*" multiple hidden data-mup>${SVI('upload')} Bilder hochladen oder hierher ziehen</label>`:''}
+    <div class="st-mg">${M.map(m=>`<button type="button" class="st-m" draggable="true" data-m="${stE(m.pfad)}" title="${stE(m.name||m.pfad)}"><img src="${stE(stUrl(m.pfad))}" alt="" loading="lazy"><span>${stE((m.name||m.pfad.slice(7)).replace(/\.\w+$/,''))}</span></button>`).join('')||'<p class="note">Noch keine Bilder.</p>'}</div>`; }
+function stMedienBinden(box,L,wahl,neu){ box.querySelectorAll('[data-mf]').forEach(b=>b.onclick=()=>{ ST.mfilter=b.dataset.mf; neu(); });
+  box.querySelectorAll('[data-m]').forEach(b=>{ b.onclick=()=>wahl&&wahl(b.dataset.m); b.ondragstart=e=>e.dataTransfer.setData('text/st-medium',b.dataset.m); });
+  const up=box.querySelector('[data-mup]'); if(up)up.onchange=async()=>{ await stHochladen([...up.files]); neu(); };
+  const dr=box.querySelector('.st-drop'); if(dr){ dr.ondragover=e=>{ e.preventDefault(); dr.classList.add('over'); }; dr.ondragleave=()=>dr.classList.remove('over'); dr.ondrop=async e=>{ e.preventDefault(); dr.classList.remove('over'); await stHochladen([...e.dataTransfer.files].filter(f=>/^image\//.test(f.type))); neu(); }; } }
+async function stMedienPanel(R){ R.innerHTML='<h4>Medien</h4><div class="empty">Lade …</div>'; const L=await stMedienLaden(); const neu=async()=>{ const L2=await stMedienLaden(); R.innerHTML='<h4>Medien</h4><p class="note small">Auf ein Bild auf der Folie ziehen ersetzt es, auf freie Fläche ziehen fügt es ein.</p>'+stMedienHtml(L2); stMedienBinden(R,L2,p=>stBildEinfuegen(p),neu); }; neu(); }
+async function stMediathek(wahl){ const M=svModal('<h2>Mediathek</h2><div id="stMd"><div class="empty">Lade …</div></div>'); M.classList.add('st-modal');
+  const box=M.querySelector('#stMd'); const neu=async()=>{ const L=await stMedienLaden(); box.innerHTML=stMedienHtml(L); stMedienBinden(box,L,wahl?p=>{ closeOverlay(); wahl(p); }:null,neu); }; neu(); }
+function stSlug(n){ return String(n).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').replace(/[^a-z0-9.]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80)||'bild'; }
+async function stHochladen(files){ const out=[]; for(const f of files){ if(!/^image\//.test(f.type))continue;
+    let blob=f, ext=(f.name.split('.').pop()||'png').toLowerCase(); try{ const r=await stVerkleinern(f); if(r){ blob=r.blob; ext=r.ext; } }catch(e){}
+    const name=f.name.replace(/\.\w+$/,''); const pfad='assets/'+stSlug(name)+'-'+Date.now().toString(36).slice(-4)+'.'+ext;
+    const {error}=await SVB.sb.storage.from('studio').upload(pfad,blob,{contentType:blob.type||f.type,upsert:false}); if(error){ kToast('⚠️ '+error.message); continue; }
+    const tags=/logo|wappen/i.test(name)?['logo']:/^p-|portrait|person/i.test(name)?['person']:/stadion|platz/i.test(name)?['stadion','foto']:['foto'];
+    await SVB.sb.from('studio_medien').insert({pfad,name,tags}); out.push(pfad); }
+  ST.medien=null; if(out.length){ await stUrlsLaden(out); kToast(`✓ ${out.length} Bild${out.length>1?'er':''} hochgeladen`); } return out; }
+function stVerkleinern(f){ return new Promise(res=>{ const u=URL.createObjectURL(f), im=new Image(); im.onload=()=>{ const max=2400, s=Math.min(1,max/Math.max(im.width,im.height)); if(s===1&&f.size<1.5e6){ URL.revokeObjectURL(u); return res(null); }
+    const c=document.createElement('canvas'); c.width=Math.round(im.width*s); c.height=Math.round(im.height*s); c.getContext('2d').drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(u);
+    const png=f.type==='image/png'&&f.size<800000; c.toBlob(b=>res(b?{blob:b,ext:png?'png':'jpg'}:null),png?'image/png':'image/jpeg',0.88); }; im.onerror=()=>res(null); im.src=u; }); }
+function stBildSetzen(el,pfad){ if(!el)return; const sec=stSec(); if(el.tagName==='IMG')stAttr(el,'src',pfad);
+  else if(el.dataset.stSlot!=null){ const old=el.innerHTML; const n=`<img src="${pfad}" alt="" data-st-id="${stId()}" style="width:100%;height:100%;object-fit:cover;display:block">`; stTun([{t:'html',id:stIdOf(sec,el),v:n,old}]); }
+  stCanvas(true); }
+async function stBildEinfuegen(pfad){ await stUrlsLaden([pfad]); const sec=stSec(); const el=ST.sel.length===1?stFind(sec,ST.sel[0]):null;
+  if(el&&(el.tagName==='IMG'||el.dataset.stSlot!=null))return stBildSetzen(el,pfad);
+  const id=stId(), W=ST.p.breite, H=ST.p.hoehe; stTun([{t:'add',id,parent:'@',before:null,html:`<img src="${pfad}" alt="" data-st-id="${id}" style="position:absolute;left:${Math.round(W*0.55)}px;top:${Math.round(H*0.25)}px;width:${Math.round(W*0.33)}px;height:${Math.round(H*0.45)}px;object-fit:cover;display:block">`}]); stCanvas(true); ST.sel=[id]; stMarkieren(); stNachAenderung(); }
+async function stBildDrop(e){ const sec=stSec(); const path=e.composedPath(); const ziel=path.find(n=>n.nodeType===1&&(n.tagName==='IMG'||(n.dataset&&n.dataset.stSlot!=null))&&sec.contains(n));
+  let pfad=e.dataTransfer.getData('text/st-medium');
+  if(!pfad&&e.dataTransfer.files.length){ const r=await stHochladen([...e.dataTransfer.files]); pfad=r[0]; }
+  if(!pfad)return; await stUrlsLaden([pfad]);
+  if(ziel){ ST.sel=[stIdOf(sec,ziel)]; stBildSetzen(ziel,pfad); } else stBildEinfuegen(pfad); }
+
+/* ---------- Präsentieren mit Referentenansicht ---------- */
+function stPraesentieren(start){ const V=ST.folien.map((f,i)=>i).filter(i=>!ST.folien[i].skip); if(!V.length)return kToast('Keine sichtbare Folie');
+  let k=Math.max(0,V.indexOf(start!=null?start:ST.cur)); if(k<0)k=0;
+  const O=document.createElement('div'); O.className='st-praes'; O.innerHTML='<div class="st-pb"><div class="st-host"></div></div><div class="st-pz"></div><button type="button" class="st-px" title="Beenden (Esc)">✕</button><button type="button" class="st-pr" title="Referentenansicht">Referentenansicht</button>';
+  document.body.appendChild(O); ST.praes={O,V,k,t0:Date.now()};
+  const bc=('BroadcastChannel' in window)?new BroadcastChannel('st-praes'):null; ST.praes.bc=bc;
+  const zeig=()=>{ const f=ST.folien[V[k]], s=Math.min(innerWidth/ST.p.breite,innerHeight/ST.p.hoehe), B=O.querySelector('.st-pb'), h=B.querySelector('.st-host');
+    B.style.width=ST.p.breite*s+'px'; B.style.height=ST.p.hoehe*s+'px'; h.style.transform=`scale(${s})`; stMount(h,f,{}); O.querySelector('.st-pz').textContent=`${k+1} / ${V.length}`;
+    if(bc)bc.postMessage({k,n:V.length,cur:V[k],next:V[k+1]!=null?V[k+1]:null,t0:ST.praes.t0}); };
+  const go=d=>{ k=Math.max(0,Math.min(V.length-1,k+d)); ST.praes.k=k; zeig(); };
+  const end=()=>{ document.removeEventListener('keydown',key,true); window.removeEventListener('resize',zeig); O.remove(); try{ document.exitFullscreen(); }catch(e){} if(bc)bc.close(); ST.praes=null; };
+  const key=e=>{ if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){ e.preventDefault(); go(1); } else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){ e.preventDefault(); go(-1); } else if(e.key==='Escape'){ e.preventDefault(); end(); } else if(e.key==='Home')go(-1e3); else if(e.key==='End')go(1e3); };
+  document.addEventListener('keydown',key,true); window.addEventListener('resize',zeig);
+  O.querySelector('.st-pb').onclick=()=>go(1); O.querySelector('.st-px').onclick=end; O.querySelector('.st-pr').onclick=()=>stReferent();
+  if(bc)bc.onmessage=m=>{ if(m.data&&m.data.go)go(m.data.go); if(m.data&&m.data.hallo)zeig(); };
+  try{ O.requestFullscreen&&O.requestFullscreen(); }catch(e){} zeig(); }
+function stReferent(){ const w=window.open('','st-referent','width=1100,height=700'); if(!w)return kToast('Bitte Pop-ups für diese Seite erlauben');
+  const css=stBaseCss(ST.p)+'\n'+stCssSauber(ST.p.css), folien=ST.folien.map(f=>({html:stHtmlRein(f.html),notiz:f.notiz||'',label:f.label||''}));
+  w.document.open(); w.document.write(`<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Referentenansicht</title><link rel="stylesheet" href="${ST_FONTS}"><style>
+    body{margin:0;background:#101532;color:#fff;font-family:Barlow,sans-serif;display:grid;grid-template-columns:3fr 2fr;grid-template-rows:auto 1fr;gap:16px;padding:16px;height:100vh;box-sizing:border-box}
+    .k{grid-column:1/-1;display:flex;gap:16px;align-items:center;font:700 22px 'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase}.k b{font-size:40px;color:#e8741f}.k button{font:inherit;font-size:16px;padding:8px 16px;border-radius:8px;border:0;background:#1d2760;color:#fff;cursor:pointer}
+    .bx{position:relative;overflow:hidden;background:#000}.bx>div{position:absolute;left:0;top:0;transform-origin:0 0}.n{font-size:24px;line-height:1.5;overflow:auto;white-space:pre-wrap;background:rgba(255,255,255,.06);padding:16px;border-radius:10px}
+    .r{display:grid;grid-template-rows:auto 1fr;gap:12px;min-height:0}.l{opacity:.7;font-size:14px;text-transform:uppercase;letter-spacing:.1em}</style></head><body>
+    <div class="k"><span id="z">–</span><span>⏱ <b id="t">00:00</b></span><span style="flex:1"></span><button id="p">◀ Zurück</button><button id="nx">Weiter ▶</button></div>
+    <div class="r"><div class="l">Aktuelle Folie</div><div class="bx" id="a"><div></div></div></div><div class="r"><div class="l">Als Nächstes</div><div class="bx" id="b" style="max-height:40vh"><div></div></div><div class="l">Notizen</div><div class="n" id="no"></div></div></body></html>`);
+  w.document.close();
+  const F=folien, W=ST.p.breite, H=ST.p.hoehe;
+  const setz=(box,f)=>{ const d=box.firstElementChild; const r=d.shadowRoot||d.attachShadow({mode:'open'}); const s=box.clientWidth/W; box.style.height=H*s+'px'; d.style.transform=`scale(${s})`; d.style.width=W+'px'; d.style.height=H+'px'; r.innerHTML=f?`<style>${css}</style><div class="st-root">${f.html}</div>`:''; };
+  const bc=new BroadcastChannel('st-praes'); let t0=Date.now();
+  bc.onmessage=m=>{ const x=m.data; if(!x||x.cur==null)return; t0=x.t0||t0; w.document.getElementById('z').textContent=`Folie ${x.k+1} / ${x.n}`; setz(w.document.getElementById('a'),F[x.cur]); setz(w.document.getElementById('b'),x.next!=null?F[x.next]:null); w.document.getElementById('no').textContent=F[x.cur].notiz||'Keine Notizen.'; };
+  w.document.getElementById('p').onclick=()=>bc.postMessage({go:-1}); w.document.getElementById('nx').onclick=()=>bc.postMessage({go:1});
+  w.addEventListener('keydown',e=>{ if(['ArrowRight',' ','PageDown'].includes(e.key))bc.postMessage({go:1}); if(['ArrowLeft','PageUp'].includes(e.key))bc.postMessage({go:-1}); });
+  const tick=setInterval(()=>{ if(w.closed){ clearInterval(tick); bc.close(); return; } const s=Math.floor((Date.now()-t0)/1000); w.document.getElementById('t').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); },1000);
+  setTimeout(()=>bc.postMessage({hallo:1}),300); }
+
+/* ---------- Import von .dc.html (Claude Design) ---------- */
+async function stImportDateien(files){ const html=files.filter(f=>/\.html?$/i.test(f.name)), bilder=files.filter(f=>/^image\//.test(f.type));
+  if(!html.length&&bilder.length){ await stHochladen(bilder); return; }
+  // Bilder mit ihrem Originalnamen (assets/name) hochladen, damit die Verweise in der Datei passen
+  for(const b of bilder){ const pfad='assets/'+stSlug(b.name); const {error}=await SVB.sb.storage.from('studio').upload(pfad,b,{contentType:b.type,upsert:true}); if(!error)await SVB.sb.from('studio_medien').upsert({pfad,name:b.name.replace(/\.\w+$/,''),tags:['foto']}); }
+  let n=0; for(const f of html){ try{ const id=await stImportEine(await f.text(),f.name.replace(/\.dc\.html?$|\.html?$/i,'')); if(id)n++; }catch(e){ kToast('⚠️ '+f.name+': '+(e.message||e)); } }
+  if(n){ kToast(`✓ ${n} Projekt${n>1?'e':''} importiert`); await stProjekteLaden(); stListe(); } }
+async function stImportEine(text,titel){ const d=new DOMParser().parseFromString(text,'text/html');
+  const deck=d.querySelector('deck-stage,x-import[component-from-global-scope="deck-stage"]'), doc=d.querySelector('doc-page');
+  let art='frei', W=1280, H=1800;
+  if(deck){ art='deck'; W=+(deck.getAttribute('width')||1920); H=+(deck.getAttribute('height')||1080); }
+  else if(doc){ art='doc'; const q=doc.getAttribute('orientation')==='landscape'; W=q?1123:794; H=q?794:1123; }
+  if(d.querySelector('sc-for,sc-if'))kToast('Hinweis: Diese Datei nutzt Platzhalter-Listen. Sie werden so übernommen, wie sie in der Datei stehen.');
+  const css=[...d.querySelectorAll('helmet style, head style')].map(s=>s.textContent).join('\n');
+  let S=[...d.querySelectorAll('section')].filter(s=>!s.parentElement.closest('section'));
+  const seiten=S.map(s=>{ const c=s.cloneNode(true); c.querySelectorAll('script').forEach(x=>x.remove());
+    c.querySelectorAll('image-slot').forEach(x=>{ const v=document.createElement('div'); v.setAttribute('data-st-slot',x.id||'bild'); v.setAttribute('data-st-ph',x.getAttribute('placeholder')||'Bild'); v.setAttribute('style',(x.getAttribute('style')||'')+';display:block;overflow:hidden'); x.replaceWith(v); });
+    const r={label:s.dataset.label||s.dataset.screenLabel||'',notiz:s.dataset.speakerNotes||'',skip:s.hasAttribute('data-deck-skip')};
+    [c,...c.querySelectorAll('*')].forEach(e=>{ [...e.attributes].forEach(a=>{ if(/^data-(dc-|om-|deck-|screen-label|speaker-notes)/.test(a.name))e.removeAttribute(a.name); }); });
+    let i=0; c.querySelectorAll('*').forEach(e=>e.setAttribute('data-st-id','i'+(i++).toString(36)));
+    r.html=c.outerHTML.replace(/\bsrc="\.\/assets\//g,'src="assets/').replace(/url\(['"]?\.\/assets\//g,"url('assets/"); return r; });
+  if(!seiten.length){ const body=d.querySelector('x-dc')||d.body; const wrap=document.createElement('section'); [...body.children].filter(x=>!/^(HELMET|TEMPLATE|SCRIPT|STYLE|LINK)$/.test(x.tagName)).forEach(x=>wrap.appendChild(x.cloneNode(true)));
+    if(!wrap.textContent.trim()&&!wrap.querySelector('img'))return null; let i=0; wrap.querySelectorAll('*').forEach(e=>e.setAttribute('data-st-id','i'+(i++).toString(36))); seiten.push({label:'Seite 1',notiz:'',skip:false,html:wrap.outerHTML}); }
+  const {data:p,error}=await SVB.sb.from('studio_projekte').insert({titel:titel.slice(0,160),art,breite:W,hoehe:H,css:css.slice(0,60000),quelle:'import'}).select('id').single(); if(error)throw error;
+  const rows=seiten.map((s,i)=>Object.assign({projekt_id:p.id,pos:i+1},s));
+  for(let i=0;i<rows.length;i+=10){ const {error:e2}=await SVB.sb.from('studio_folien').insert(rows.slice(i,i+10)); if(e2)throw e2; }
+  return p.id; }
+
+/* =====================================================================
+   SV/BSC Studio (Teil 4: Live-Zusammenarbeit, Kommentare, Versionen, Export, KI-Assistent, Personen)
+   ===================================================================== */
+const ST_FARBEN=['#e8741f','#2f9e6b','#c2410c','#7c3aed','#0891b2','#be185d','#65a30d','#b45309'];
+function stMeinName(){ return (typeof SVU!=='undefined'&&(SVU.name||SVU.email))||'Ich'; }
+function stMeineId(){ return (SVB.user&&SVB.user.id)||(typeof SVU!=='undefined'&&SVU.id)||'ich'; }
+function stFarbeFuer(id){ let h=0; for(const c of String(id))h=(h*31+c.charCodeAt(0))|0; return ST_FARBEN[Math.abs(h)%ST_FARBEN.length]; }
+
+/* ---------- Live: wer ist da, Mauszeiger, Auswahl, Änderungen sofort ---------- */
+function stLiveStart(){ stLiveEnde(); if(!ST.p||!SVB.sb.channel)return;
+  try{ const ch=SVB.sb.channel('studio-'+ST.p.id,{config:{broadcast:{self:false},presence:{key:stMeineId()}}});
+    ST.live={ch,andere:new Map(),maus:new Map()};
+    ch.on('broadcast',{event:'ops'},({payload})=>stLiveEmpfang(payload));
+    ch.on('broadcast',{event:'maus'},({payload})=>{ if(!payload)return; ST.live.maus.set(payload.u,payload); stRemoteZeichnen(); });
+    ch.on('presence',{event:'sync'},()=>{ const s=ch.presenceState(); ST.live.andere=new Map(); Object.entries(s).forEach(([k,v])=>{ if(k!==stMeineId()&&v&&v[0])ST.live.andere.set(k,v[0]); }); stLiveLeiste(); stRemoteZeichnen(); });
+    ch.subscribe(st=>{ if(st==='SUBSCRIBED')stLivePraesenz(); });
+    const B=document.getElementById('stBuehne'); let t=0;
+    if(B)B.addEventListener('pointermove',e=>{ if(!ST.live||Date.now()-t<70)return; t=Date.now(); const r=B.getBoundingClientRect(), s=ST.s||1; const f=stF(); if(!f)return;
+      ST.live.ch.send({type:'broadcast',event:'maus',payload:{u:stMeineId(),n:stMeinName(),f:f.id,x:Math.round((e.clientX-r.left)/s),y:Math.round((e.clientY-r.top)/s)}}); });
+  }catch(e){ console.warn('Studio live',e); ST.live=null; } }
+function stLiveEnde(){ try{ if(ST.live&&ST.live.ch)SVB.sb.removeChannel(ST.live.ch); }catch(e){} ST.live=null; }
+function stLivePraesenz(){ if(!ST.live)return; const f=stF(); try{ ST.live.ch.track({n:stMeinName(),f:f&&f.id,sel:ST.sel.slice(0,5),c:stFarbeFuer(stMeineId())}); }catch(e){} }
+function stLiveSenden(fid,ops){ if(!ST.live)return; try{ ST.live.ch.send({type:'broadcast',event:'ops',payload:{u:stMeineId(),fid,ops}}); }catch(e){} }
+async function stLiveEmpfang(x){ if(!x||!ST.p)return;
+  if(x.ops&&x.ops[0]&&x.ops[0].t==='folien'){ await stFolienNachladen(); return; }
+  const f=ST.folien.find(y=>y.id===x.fid); if(!f)return;
+  await stUrlsLaden([...new Set(x.ops.flatMap(o=>stAssets(o.html||o.v||'')))]);
+  if(stF()&&stF().id===f.id){ const sec=stSec(); x.ops.forEach(o=>{ if(ST.edit&&o.id===ST.edit.id)return; stOpAnwenden(sec,o); }); f.html=stHtmlRaus(sec.outerHTML); stMarkieren(); stOverlay(); }
+  else { const t=document.createElement('template'); t.innerHTML=f.html; const sec=t.content.firstElementChild; x.ops.forEach(o=>stOpAnwenden(sec,o)); f.html=sec.outerHTML; }
+  stThumb(ST.folien.indexOf(f)); }
+async function stFolienNachladen(){ const {data}=await SVB.sb.from('studio_folien').select('id,pos,label,notiz,skip,html,version').eq('projekt_id',ST.p.id).order('pos'); if(!data)return;
+  const akt=stF()&&stF().id; const alt=new Map(ST.folien.map(f=>[f.id,f]));
+  ST.folien=data.map(d=>{ const a=alt.get(d.id); if(a&&((ST.q.get(d.id)||[]).length||(a.meta&&a.meta.size)))return a; ST.basis.set(d.id,d.version); return d; });
+  await stUrlsLaden([...new Set(ST.folien.flatMap(f=>stAssets(f.html)))]);
+  const i=ST.folien.findIndex(f=>f.id===akt); ST.cur=i>=0?i:Math.min(ST.cur,ST.folien.length-1); stFolienliste(); stCanvas(true); }
+function stLiveLeiste(){ const L=document.getElementById('stLive'); if(!L||!ST.live)return; const A=[...ST.live.andere.entries()];
+  L.innerHTML=A.map(([k,v])=>`<span class="st-av" style="background:${stE(v.c||stFarbeFuer(k))}" title="${stE(v.n||'')}${v.f&&ST.folien.findIndex(f=>f.id===v.f)>=0?' · Folie '+(ST.folien.findIndex(f=>f.id===v.f)+1):''}">${stE(svIni(v.n||'?'))}</span>`).join('');
+  L.querySelectorAll('.st-av').forEach((el,i)=>el.onclick=()=>{ const v=A[i][1]; const j=ST.folien.findIndex(f=>f.id===v.f); if(j>=0)stGeheZu(j); }); }
+function stRemoteZeichnen(){ const O=document.getElementById('stOv'); const sec=stSec(); const f=stF(); if(!O||!sec||!f)return; O.querySelectorAll('.st-rm,.st-rz,.st-kp').forEach(x=>x.remove()); const s=ST.s||1;
+  if(ST.live){ ST.live.andere.forEach((v,k)=>{ if(v.f!==f.id)return; (v.sel||[]).forEach(id=>{ const el=stFind(sec,id); if(!el||el===sec)return; const r=stRect(el); const d=document.createElement('div'); d.className='st-rm'; Object.assign(d.style,{left:r.x+'px',top:r.y+'px',width:r.w+'px',height:r.h+'px',borderColor:v.c}); d.innerHTML=`<span style="background:${stE(v.c)}">${stE(v.n||'')}</span>`; O.appendChild(d); }); });
+    ST.live.maus.forEach(m=>{ if(m.f!==f.id||!ST.live.andere.has(m.u))return; const v=ST.live.andere.get(m.u); const d=document.createElement('div'); d.className='st-rz'; d.style.left=m.x*s+'px'; d.style.top=m.y*s+'px'; d.style.color=v.c; d.innerHTML=`<svg width="18" height="18" viewBox="0 0 18 18"><path d="M2 2l13 6-6 1.5L7 16z" fill="currentColor" stroke="#fff" stroke-width="1.2"/></svg><span style="background:${stE(v.c)}">${stE(m.n||'')}</span>`; O.appendChild(d); }); }
+  // Kommentar-Pins
+  (ST.kom||[]).filter(k=>k.folie_id===f.id&&!k.erledigt&&!k.eltern_id).forEach((k,i)=>{ const el=k.element_id?stFind(sec,k.element_id):null; const r=el?stRect(el):{x:12,y:12,w:0,h:0}; const d=document.createElement('button'); d.type='button'; d.className='st-kp'; d.style.left=(r.x+r.w-10)+'px'; d.style.top=(r.y-10)+'px'; d.textContent='💬'; d.title=k.text; d.onclick=()=>{ stRechts('kom'); }; O.appendChild(d); }); }
+
+/* ---------- Kommentare ---------- */
+async function stKommentareLaden(){ const {data}=await SVB.sb.from('studio_kommentare').select('*').eq('projekt_id',ST.p.id).order('am'); ST.kom=data||[];
+  if(!ST.leute){ try{ const {data:L}=await SVB.sb.from('profiles').select('id,name').eq('active',true).order('name'); ST.leute=(L||[]).filter(x=>x.name); }catch(e){ ST.leute=[]; } } }
+async function stKommentarePanel(R){ R.innerHTML='<h4>Kommentare</h4><div class="empty">Lade …</div>'; await stKommentareLaden(); stKomZeichnen(R); stRemoteZeichnen(); }
+function stKomZeichnen(R){ R=R||document.getElementById('stRechts'); if(!R||R.dataset.art!=='kom')return; const f=stF(); const nur=ST.komFilter||'folie';
+  const L=(ST.kom||[]).filter(k=>!k.eltern_id&&(nur==='alle'||(nur==='offen'?!k.erledigt:k.folie_id===(f&&f.id))));
+  const name=id=>{ const p=(ST.leute||[]).find(x=>x.id===id); return p?p.name:'Jemand'; };
+  const txt=t=>stE(t).replace(/@([A-ZÄÖÜa-zäöüß][\wäöüß]+(?:\s[A-ZÄÖÜ][\wäöüß]+)?)/g,'<b class="st-at">@$1</b>');
+  R.innerHTML=`<h4>Kommentare</h4><div class="st-mf">${[['folie','Diese Folie'],['offen','Offen'],['alle','Alle']].map(([k,t])=>`<button type="button" class="${nur===k?'on':''}" data-kf="${k}">${t}</button>`).join('')}</div>
+    <div class="st-kn"><div class="st-kz" id="stKz">${ST.komZiel&&ST.komZiel!=='@'?'Zum gewählten Element':'Zur ganzen Folie'} <button type="button" class="btn sm ghost" id="stKw">Element wählen</button></div>
+      <textarea id="stKt" rows="3" placeholder="Kommentar … mit @Name jemanden erwähnen"></textarea><div class="st-ksug" id="stKs"></div><button type="button" class="btn sm" id="stKs2">Kommentieren</button></div>
+    <div class="st-kl">${L.map(k=>{ const ant=(ST.kom||[]).filter(a=>a.eltern_id===k.id); const fi=ST.folien.findIndex(x=>x.id===k.folie_id);
+      return `<div class="st-k${k.erledigt?' erl':''}"><div class="st-kh"><b>${stE(name(k.von))}</b><small>${fi>=0?'Folie '+(fi+1)+' · ':''}${TRC.fmt(String(k.am).slice(0,10))}</small></div><p>${txt(k.text)}</p>
+        ${ant.map(a=>`<div class="st-ka"><b>${stE(name(a.von))}</b> ${txt(a.text)}</div>`).join('')}
+        <div class="st-kb"><button type="button" data-kerl="${k.id}">${k.erledigt?'Wieder öffnen':'✓ Erledigt'}</button><button type="button" data-kant="${k.id}">Antworten</button>${fi>=0&&fi!==ST.cur?`<button type="button" data-kgo="${fi}">Zur Folie</button>`:''}</div></div>`; }).join('')||'<p class="note">Keine Kommentare.</p>'}</div>`;
+  R.querySelectorAll('[data-kf]').forEach(b=>b.onclick=()=>{ ST.komFilter=b.dataset.kf; stKomZeichnen(R); });
+  R.querySelector('#stKw').onclick=()=>{ ST.kommentarModus=true; kToast('Jetzt auf ein Element der Folie klicken'); };
+  const ta=R.querySelector('#stKt'), sug=R.querySelector('#stKs');
+  ta.oninput=()=>{ const m=ta.value.slice(0,ta.selectionStart).match(/@([\wäöüß]*)$/i); if(!m){ sug.innerHTML=''; return; }
+    const L2=(ST.leute||[]).filter(p=>p.name.toLowerCase().includes(m[1].toLowerCase())).slice(0,6); sug.innerHTML=L2.map(p=>`<button type="button" data-ku="${stE(p.id)}">${stE(p.name)}</button>`).join('');
+    sug.querySelectorAll('[data-ku]').forEach(b=>b.onclick=()=>{ const p=ST.leute.find(x=>x.id===b.dataset.ku); const pos=ta.selectionStart; const vor=ta.value.slice(0,pos).replace(/@[\wäöüß]*$/i,'@'+p.name+' '); ta.value=vor+ta.value.slice(pos); sug.innerHTML=''; ta.focus(); }); };
+  R.querySelector('#stKs2').onclick=async()=>{ const t=ta.value.trim(); if(!t)return; const f=stF();
+    const erw=(ST.leute||[]).filter(p=>t.includes('@'+p.name)).map(p=>p.id);
+    const row={projekt_id:ST.p.id,folie_id:f&&f.id,element_id:ST.komZiel&&ST.komZiel!=='@'?ST.komZiel:null,eltern_id:ST.komAntwort||null,text:t,erwaehnt:erw,von:stMeineId()};
+    const {error}=await SVB.sb.from('studio_kommentare').insert(row); if(error)return kToast('⚠️ '+error.message);
+    ST.komZiel=null; ST.komAntwort=null; await stKommentareLaden(); stKomZeichnen(R); stRemoteZeichnen(); try{ stLiveSenden(null,[{t:'kommentar'}]); }catch(e){} };
+  R.querySelectorAll('[data-kerl]').forEach(b=>b.onclick=async()=>{ const k=ST.kom.find(x=>x.id===b.dataset.kerl); await SVB.sb.from('studio_kommentare').update({erledigt:!k.erledigt}).eq('id',k.id); await stKommentareLaden(); stKomZeichnen(R); stRemoteZeichnen(); });
+  R.querySelectorAll('[data-kant]').forEach(b=>b.onclick=()=>{ ST.komAntwort=b.dataset.kant; ta.placeholder='Antwort …'; ta.focus(); });
+  R.querySelectorAll('[data-kgo]').forEach(b=>b.onclick=()=>stGeheZu(+b.dataset.kgo)); }
+function stKommentarAn(id){ ST.kommentarModus=false; ST.komZiel=id; const R=document.getElementById('stRechts'); if(!R||R.dataset.art!=='kom'){ stRechts('kom'); return; } const z=R.querySelector('#stKz'); if(z)z.firstChild.textContent=id&&id!=='@'?'Zum gewählten Element ':'Zur ganzen Folie '; const ta=R.querySelector('#stKt'); if(ta)ta.focus(); }
+
+/* ---------- Versionen ---------- */
+async function stVersionenPanel(R){ R.innerHTML='<h4>Versionen</h4><div class="empty">Lade …</div>';
+  const {data}=await SVB.sb.from('studio_versionen').select('id,name,am,von').eq('projekt_id',ST.p.id).order('am',{ascending:false}); const L=data||[];
+  const vor=`v${L.length+1} – ${TRC.fmt(trToday())}${trToday().slice(0,4)}`;
+  R.innerHTML=`<h4>Versionen</h4><p class="note small">Ein Stand speichert alle Folien so, wie sie jetzt sind. Wiederherstellen legt vorher automatisch einen Sicherungsstand an.</p>
+    <div class="st-vn"><input class="st-in" id="stVn" value="${stE(vor)}"><button type="button" class="btn sm" id="stVs">Stand speichern</button></div>
+    <div class="st-vl">${L.map(v=>`<div class="st-v"><b>${stE(v.name)}</b><small>${TRC.fmt(String(v.am).slice(0,10))}${String(v.am).slice(2,4)} ${String(new Date(v.am).toTimeString()).slice(0,5)}</small><button type="button" class="btn sm ghost" data-vw="${v.id}">Wiederherstellen</button></div>`).join('')||'<p class="note">Noch keine gespeicherten Stände.</p>'}</div>`;
+  R.querySelector('#stVs').onclick=async()=>{ await stVersionAnlegen(R.querySelector('#stVn').value.trim()||vor); stVersionenPanel(R); };
+  R.querySelectorAll('[data-vw]').forEach(b=>b.onclick=async()=>{ if(!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent='Ja, wiederherstellen'; return; } b.disabled=true; await stVersionHerstellen(b.dataset.vw); stVersionenPanel(R); }); }
+async function stVersionAnlegen(name){ await stSpeichernJetzt();
+  const stand={projekt:{titel:ST.p.titel,css:ST.p.css,art:ST.p.art,breite:ST.p.breite,hoehe:ST.p.hoehe},folien:ST.folien.map(f=>({id:f.id,pos:f.pos,label:f.label,notiz:f.notiz,skip:f.skip,html:f.html}))};
+  const {error}=await SVB.sb.from('studio_versionen').insert({projekt_id:ST.p.id,name:name.slice(0,120),stand}); if(error)kToast('⚠️ '+error.message); else kToast('✓ Stand „'+name+'“ gespeichert'); }
+async function stVersionHerstellen(id){ const {data:v,error}=await SVB.sb.from('studio_versionen').select('*').eq('id',id).single(); if(error)return kToast('⚠️ '+error.message);
+  await stVersionAnlegen('Sicherung vor Wiederherstellen von „'+v.name+'“');
+  const soll=new Set(v.stand.folien.map(f=>f.id)); const weg=ST.folien.filter(f=>!soll.has(f.id)).map(f=>f.id);
+  if(weg.length)await SVB.sb.from('studio_folien').delete().in('id',weg);
+  for(const f of v.stand.folien){ const row={id:f.id,projekt_id:ST.p.id,pos:f.pos,label:f.label||'',notiz:f.notiz||'',skip:!!f.skip,html:f.html}; const {error:e}=await SVB.sb.from('studio_folien').upsert(row); if(e){ kToast('⚠️ '+e.message); break; } }
+  if(v.stand.projekt&&v.stand.projekt.css!=null)await SVB.sb.from('studio_projekte').update({css:v.stand.projekt.css}).eq('id',ST.p.id);
+  await stProjektLaden(ST.p.id); stFolienliste(); stCanvas(); try{ stLiveSenden(null,[{t:'folien'}]); }catch(e){} kToast('✓ „'+v.name+'“ wiederhergestellt'); }
+
+/* ---------- Export (PDF, PNG, ZIP) über den Server ---------- */
+function stExportDialog(){ const M=svModal(`<h2>Exportieren</h2><p class="note">Der Server erzeugt die Datei mit einem echten Browser: jede Folie eine Seite in genau ${ST.p.breite}×${ST.p.hoehe} px, Text bleibt markierbar. Fertig zum Herunterladen, ohne Druckdialog.</p>
+    <div class="st-exp">${[['pdf','PDF','alle sichtbaren Folien, eine Seite je Folie'],['png','PNG je Folie','als ZIP'],['zip','Alles als ZIP','PDF und alle PNG']].map(([k,t,d])=>`<label class="st-ex"><input type="radio" name="stEx" value="${k}" ${k==='pdf'?'checked':''}><b>${t}</b><small>${d}</small></label>`).join('')}</div>
+    <label class="st-chk"><input type="checkbox" id="stExB"> Backup-Folien mit exportieren</label>
+    <div class="btnrow" style="margin-top:14px"><button type="button" class="btn" id="stExGo">${SVI('download')} Exportieren</button></div><div id="stExS" class="note"></div>`);
+  M.querySelector('#stExGo').onclick=async e=>{ const b=e.currentTarget; const fmt=M.querySelector('input[name=stEx]:checked').value, S=M.querySelector('#stExS'); b.disabled=true;
+    try{ await stSpeichernJetzt(); S.textContent='Wird erzeugt …';
+      const {data,error}=await SVB.sb.functions.invoke('studio-export',{body:{projekt:ST.p.id,format:fmt,backup:M.querySelector('#stExB').checked}});
+      if(error)throw error; if(data&&data.error)throw new Error(data.error);
+      const job=data&&data.id; if(!job)throw new Error('Kein Auftrag'); const warte=data.server===false?'Der Export-Server ist gerade nicht erreichbar. Der Auftrag bleibt gespeichert und wird erledigt, sobald er wieder läuft.':'Wartet auf den Export-Server …';
+      for(let i=0;i<120;i++){ await new Promise(r=>setTimeout(r,i<5?2000:4000)); const {data:j}=await SVB.sb.from('studio_exporte').select('status,datei,fehler,ueberstand').eq('id',job).single();
+        if(j&&j.status==='fertig'){ const ue=(j.ueberstand||[]).map((x,i)=>x>0?i+1:0).filter(Boolean); const name=(ST.p.titel||'Studio').replace(/[^\wäöüÄÖÜß .-]+/g,'').trim()+'.'+(fmt==='pdf'?'pdf':'zip');
+          const {data:u}=await SVB.sb.storage.from('studio').createSignedUrl(j.datei,600,{download:name}); if(u&&u.signedUrl){ const a=document.createElement('a'); a.href=u.signedUrl; a.download=name; document.body.appendChild(a); a.click(); a.remove(); }
+          S.innerHTML=(ue.length?`⚠️ Auf Seite ${ue.join(', ')} ragt Text über den Rand. `:'')+`✓ Fertig. Falls der Download nicht startet: <a href="${stE(u&&u.signedUrl||'#')}" target="_blank" rel="noopener">hier herunterladen</a>.`; b.disabled=false; return; }
+        if(j&&j.status==='fehler')throw new Error(j.fehler||'Export fehlgeschlagen');
+        S.textContent=j&&j.status==='laeuft'?'Der Server erzeugt die Seiten …':warte; }
+      throw new Error('Das dauert ungewöhnlich lange. Bitte später nochmal versuchen.'); }
+    catch(x){ S.textContent='⚠️ '+(x.message||x); b.disabled=false; } }; }
+
+/* ---------- KI-Assistent ---------- */
+function stKiPanel(R){ const f=stF(); const sec=stSec(); const el=ST.sel.length===1?stFind(sec,ST.sel[0]):null;
+  const modi=[['neu','Neue Folie'],['folie','Diese Folie überarbeiten'],['element','Markierten Text umformulieren'],['deck','Präsentation aus Stichpunkten']];
+  ST.kiModus=ST.kiModus||'neu'; if(ST.kiModus==='element'&&!el)ST.kiModus='folie';
+  R.innerHTML=`<h4>✦ KI-Assistent</h4><p class="note small">Die KI baut nur aus den Vereins-Bausteinen und ändert nur, was du verlangst. Fehlende Angaben setzt sie als XX oder VAKANT, sie erfindet keine Namen oder Zahlen.</p>
+    <div class="st-mf st-kim">${modi.map(([k,t])=>`<button type="button" class="${ST.kiModus===k?'on':''}" data-kim="${k}" ${k==='element'&&!el?'disabled':''}>${t}</button>`).join('')}</div>
+    <textarea id="stKiP" rows="5" placeholder="${{neu:'z. B. Neue Folie: Termine 21.11.2026, 19.12.2026, 24.01.2027',folie:'z. B. Kürze den Text auf dieser Folie',element:'z. B. Sag das freundlicher und kürzer',deck:'Stichpunkte, eine Zeile pro Folie …'}[ST.kiModus]}"></textarea>
+    <button type="button" class="btn sm" id="stKiGo">Vorschlag holen</button><div id="stKiE"></div>`;
+  R.querySelectorAll('[data-kim]').forEach(b=>b.onclick=()=>{ ST.kiModus=b.dataset.kim; stKiPanel(R); });
+  R.querySelector('#stKiGo').onclick=async e=>{ const b=e.currentTarget, out=R.querySelector('#stKiE'); const prompt=R.querySelector('#stKiP').value.trim(); if(!prompt)return;
+    b.disabled=true; out.innerHTML='<p class="note">Denkt nach …</p>';
+    const texte=sec?[...sec.querySelectorAll('*')].filter(stIstText).map(x=>({id:x.dataset.stId,tag:x.tagName.toLowerCase(),text:x.textContent.replace(/\s+/g,' ').trim()})).slice(0,80):[];
+    try{ const {data,error}=await SVB.sb.functions.invoke('studio-ki',{body:{modus:ST.kiModus,prompt,art:ST.p.art,folie:{label:f&&f.label,texte},element:el?{id:el.dataset.stId,text:el.textContent.trim()}:null}});
+      if(error)throw error; if(!data||data.ok===false)throw new Error((data&&data.error)||'Keine Antwort'); stKiVorschau(out,data); }
+    catch(x){ out.innerHTML=`<p class="note">⚠️ ${stE(x.message||x)}</p>`; }
+    b.disabled=false; }; }
+function stKiVorschau(out,d){
+  if(d.folien&&d.folien.length){ const neu=d.folien.map(x=>({label:x.label||'',notiz:x.notiz||'',html:stIdsSichern(stVorlageFolie(x.vorlage,x.felder||{}))}));
+    out.innerHTML=`<h5>Vorschlag: ${neu.length} Folie${neu.length>1?'n':''}</h5><div class="st-kiv">${neu.map((x,i)=>`<div class="st-kivf" data-kv="${i}"></div>`).join('')}</div><div class="btnrow"><button type="button" class="btn sm" id="stKiJa">Annehmen</button><button type="button" class="btn sm ghost" id="stKiNein">Verwerfen</button></div>`;
+    out.querySelectorAll('[data-kv]').forEach(el=>stSkalaBox(el,neu[+el.dataset.kv],260));
+    out.querySelector('#stKiNein').onclick=()=>{ out.innerHTML=''; };
+    out.querySelector('#stKiJa').onclick=async()=>{ for(let i=0;i<neu.length;i++){ await stFolieEinfuegen(ST.cur,neu[i].html,neu[i].label); if(neu[i].notiz){ stMeta(stF(),'notiz',neu[i].notiz); } } out.innerHTML='<p class="note">✓ Übernommen.</p>'; };
+    return; }
+  if(d.aenderungen&&d.aenderungen.length){ const sec=stSec(); const A=d.aenderungen.filter(a=>stFind(sec,a.id));
+    out.innerHTML=`<h5>Vorschlag: ${A.length} Änderung${A.length>1?'en':''}</h5><div class="st-diff">${A.map(a=>`<div><del>${stE(stFind(sec,a.id).textContent.trim())}</del><ins>${stE(a.text)}</ins></div>`).join('')}</div><div class="btnrow"><button type="button" class="btn sm" id="stKiJa">Annehmen</button><button type="button" class="btn sm ghost" id="stKiNein">Verwerfen</button></div>`;
+    out.querySelector('#stKiNein').onclick=()=>{ out.innerHTML=''; };
+    out.querySelector('#stKiJa').onclick=()=>{ const ops=A.map(a=>{ const el=stFind(sec,a.id); return {t:'html',id:a.id,v:stE(a.text),old:stHtmlRaus(el.innerHTML)}; }); stTun(ops); out.innerHTML='<p class="note">✓ Übernommen. Rückgängig mit Strg+Z.</p>'; };
+    return; }
+  out.innerHTML=`<p class="note">${stE(d.hinweis||'Die KI hatte keinen Vorschlag.')}</p>`; }
+
+/* ---------- Personenverzeichnis ---------- */
+async function stPersonen(){ const M=svModal('<h2>Personen</h2><div id="stPe"><div class="empty">Lade …</div></div>'); M.classList.add('st-modal'); const box=M.querySelector('#stPe');
+  const zeich=async()=>{ const {data}=await SVB.sb.from('studio_personen').select('*').order('sort').order('name'); const L=data||[]; await stUrlsLaden(L.map(p=>p.foto).filter(Boolean));
+    box.innerHTML=`<p class="note small">Name, Rolle und Foto an einer Stelle. Änderst du hier etwas, kann das Studio alle Folien anpassen, auf denen die Person vorkommt (mit Rückfrage).</p>
+      <div class="st-pl">${L.map(p=>`<div class="st-pe" data-pe="${p.id}"><span class="st-pf">${p.foto?`<img src="${stE(stUrl(p.foto))}" alt="">`:''}</span><input class="st-in" data-k="name" value="${stE(p.name)}"><input class="st-in" data-k="rolle" value="${stE(p.rolle)}" placeholder="Rolle"><label class="st-chk"><input type="checkbox" data-k="vakant" ${p.vakant?'checked':''}> vakant</label><button type="button" class="btn sm ghost" data-pf="${p.id}">Foto</button><button type="button" class="btn sm" data-ps="${p.id}">Speichern</button></div>`).join('')}</div>
+      ${stKann()?'<button type="button" class="btn sm ghost" id="stPeNeu">+ Person</button>':''}`;
+    const neu=box.querySelector('#stPeNeu'); if(neu)neu.onclick=async()=>{ await SVB.sb.from('studio_personen').insert({name:'Neue Person',rolle:'',sort:L.length}); zeich(); };
+    box.querySelectorAll('[data-pf]').forEach(b=>b.onclick=()=>{ const p=L.find(x=>x.id===b.dataset.pf); stMediathek(pfad=>{ stPersonSpeichern(p,{foto:pfad}).then(()=>stPersonen()); }); });
+    box.querySelectorAll('[data-ps]').forEach(b=>b.onclick=async()=>{ const p=L.find(x=>x.id===b.dataset.ps), row=b.closest('[data-pe]'); const v={}; row.querySelectorAll('[data-k]').forEach(i=>v[i.dataset.k]=i.type==='checkbox'?i.checked:i.value.trim());
+      await stPersonSpeichern(p,v,b); zeich(); }); };
+  zeich(); }
+async function stPersonSpeichern(p,v,btn){ const alt={name:p.name,rolle:p.rolle,foto:p.foto};
+  const {error}=await SVB.sb.from('studio_personen').update(Object.assign({},v,{geaendert_am:new Date().toISOString()})).eq('id',p.id); if(error)return kToast('⚠️ '+error.message);
+  const ersetz=[]; if(v.name&&v.name!==alt.name&&alt.name)ersetz.push([alt.name,v.name]); if(v.rolle!=null&&v.rolle!==alt.rolle&&alt.rolle)ersetz.push([alt.rolle,v.rolle]); if(v.foto&&alt.foto&&v.foto!==alt.foto)ersetz.push([alt.foto,v.foto]);
+  if(!ersetz.length){ kToast('✓ Gespeichert'); return; }
+  const {data:F}=await SVB.sb.from('studio_folien').select('id,projekt_id,html,version').or(ersetz.map(([a])=>`html.ilike.*${a.replace(/[,()*]/g,'')}*`).join(','));
+  const treffer=(F||[]).filter(f=>ersetz.some(([a])=>f.html.includes(a)));
+  if(!treffer.length){ kToast('✓ Gespeichert'); return; }
+  const ok=await stFrage(`„${alt.name}“ kommt auf ${treffer.length} Folie${treffer.length>1?'n':''} vor. Überall anpassen?`,'Ja, überall anpassen','Nein');
+  if(!ok){ kToast('✓ Gespeichert, Folien unverändert'); return; }
+  let n=0; for(const f of treffer){ let h=f.html; ersetz.forEach(([a,b])=>{ h=a.startsWith('assets/')?h.split(a).join(b):h.replace(new RegExp('(>[^<]*?)'+a.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),'$1'+b.replace(/\$/g,'$$$$')); });
+    const {data:r}=await SVB.sb.from('studio_folien').update({html:h}).eq('id',f.id).eq('version',f.version).select('id'); if(r&&r.length)n++; }
+  kToast(`✓ ${n} Folie${n>1?'n':''} angepasst`); if(ST.p){ await stProjektLaden(ST.p.id); if(ST.ansicht==='editor'){ stFolienliste(); stCanvas(); } } }
+function stFrage(text,ja,nein){ return new Promise(res=>{ const M=svModal(`<h2>Rückfrage</h2><p>${stE(text)}</p><div class="btnrow"><button type="button" class="btn" id="stFj">${stE(ja)}</button><button type="button" class="btn ghost" id="stFn">${stE(nein)}</button></div>`);
+  M.querySelector('#stFj').onclick=()=>{ closeOverlay(); res(true); }; M.querySelector('#stFn').onclick=()=>{ closeOverlay(); res(false); }; }); }
+
+(function(){ try{ const s=document.createElement('style'); s.id='svstcss'; s.textContent="/* SV/BSC Studio */\nbody.st-voll main{max-width:none!important;padding:10px 14px 10px!important}\nbody.st-voll .ptitle,body.st-voll #hubbar{display:none!important}\n.st-warn{margin-bottom:12px}\n.st-lk{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px}\n.st-such input{min-width:260px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit}\n.st-imp{cursor:pointer}\n.st-pks{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}\n.st-pk{display:flex;flex-direction:column;gap:10px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;color:var(--ink);font:inherit}\n.st-pk:hover{border-color:var(--accent,#3d7bff)}\n.st-pk-bild{display:block;width:100%;aspect-ratio:16/9;background:#0e1330;border-radius:8px;overflow:hidden;position:relative}\n.st-pk-bild .st-host,.st-ft .st-host,.st-kivf .st-host{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none}\n.st-pk-t{display:grid;gap:2px}.st-pk-t b{font-size:15px;line-height:1.25}.st-pk-t small{color:var(--ink3);font-size:12px}\n.st-arch{margin-top:18px}\n/* Editor */\n.st-ed{display:flex;flex-direction:column;height:calc(100vh - 92px);min-height:560px}\n.st-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:4px 2px 10px;border-bottom:1px solid var(--line)}\n.st-top #stZur svg{transform:rotate(180deg)}\n.st-titel{font:800 20px/1.2 'Barlow Condensed',var(--font,sans-serif);text-transform:uppercase;letter-spacing:.02em;background:transparent;border:1px solid transparent;border-radius:8px;color:var(--ink);padding:4px 8px;min-width:280px}\n.st-titel:hover,.st-titel:focus{border-color:var(--line);outline:none}\n.st-stat{font-size:12px;color:var(--ink3);white-space:nowrap}.st-stat.speichert,.st-stat.ungespeichert{color:var(--warn,#f5b44a)}.st-stat.fehler{color:var(--red,#ff6b6b)}\n.st-live{display:flex;gap:4px}.st-av{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:700 11px sans-serif;color:#fff;cursor:pointer;border:2px solid var(--surface)}\n.st-main{flex:1;display:flex;min-height:0;gap:10px;padding-top:10px}\n.st-side{width:212px;flex:0 0 auto;display:flex;flex-direction:column;min-height:0}\n.st-fl{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}\n.st-fi{position:relative;display:grid;grid-template-columns:20px 1fr;gap:4px 6px;padding:6px;border-radius:10px;border:2px solid transparent;cursor:pointer}\n.st-fi.on{border-color:var(--accent,#3d7bff);background:var(--surface2)}.st-fi.skip .st-ft{opacity:.45}.st-fi.drag{opacity:.4}.st-fi.ziel{border-top:3px solid #e8741f}\n.st-fn{font-size:11px;color:var(--ink3);text-align:right;padding-top:2px}\n.st-ft{position:relative;overflow:hidden;border-radius:4px;background:#0e1330;box-shadow:0 1px 3px rgba(0,0,0,.25)}\n.st-fl-l{grid-column:2;font-size:11px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.st-fl-l i{font-style:normal;color:var(--warn,#f5b44a)}\n.st-fa{position:absolute;right:8px;top:8px;display:none;gap:3px}.st-fi:hover .st-fa{display:flex}\n.st-fa button{background:rgba(14,19,48,.85);color:#fff;border:0;border-radius:6px;font-size:12px;padding:3px 6px;cursor:pointer}.st-fa button.sure{background:#c0392b}\n.st-neuf{margin-top:8px}\n.st-mitte{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}\n.st-tools{min-height:44px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-size:13px}\n.st-tools .sp{flex:1}\n.st-tl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-left:6px}\n.st-tip{color:var(--ink3);font-size:12px}\n.st-in{background:var(--bg,#0b0f24);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:inherit;font-size:13px}\n.st-num{width:64px}.st-lbl{min-width:200px}\n.st-tb{min-width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer;font-size:13px;padding:0 6px}\n.st-tb.on{background:var(--accent,#3d7bff);border-color:var(--accent,#3d7bff);color:#fff}.st-tb.st-rot:hover{background:#c0392b;color:#fff}\n.st-sw{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}.st-sw0{background:transparent;color:var(--ink3);font-size:12px}\n.st-col{width:30px;height:28px;border:0;background:none;padding:0;cursor:pointer}\n.st-warnb{font-size:11px;font-weight:700;color:#1c1c22;background:#f5b44a;border-radius:6px;padding:2px 6px}.st-okb{font-size:11px;font-weight:700;color:#0e3d24;background:#7ee2a8;border-radius:6px;padding:2px 6px}\n.st-bc{display:flex;gap:2px;align-items:center;color:var(--ink3)}.st-bc button{background:none;border:0;color:var(--ink2);cursor:pointer;font:inherit;font-size:12px;padding:2px 4px;border-radius:6px}.st-bc button.on{color:var(--ink);font-weight:700;background:var(--surface2)}\n.st-canvas{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(rgba(127,127,127,.06) 0 25%,transparent 0 50%) 0 0/24px 24px;border-radius:12px;overflow:auto;padding:20px}\n.st-buehne{position:relative;flex:0 0 auto;box-shadow:0 10px 40px rgba(0,0,0,.35)}\n.st-buehne>.st-host{position:absolute;left:0;top:0;transform-origin:0 0}\n.st-ov{position:absolute;inset:0;pointer-events:none}\n.st-box{position:absolute;border:1.5px solid #3d7bff;pointer-events:none}.st-box.zwei{border-style:dashed}\n.st-h{position:absolute;width:10px;height:10px;background:#fff;border:1.5px solid #3d7bff;border-radius:2px;pointer-events:auto}\n.st-h-nw{left:-6px;top:-6px;cursor:nwse-resize}.st-h-n{left:calc(50% - 5px);top:-6px;cursor:ns-resize}.st-h-ne{right:-6px;top:-6px;cursor:nesw-resize}.st-h-e{right:-6px;top:calc(50% - 5px);cursor:ew-resize}\n.st-h-se{right:-6px;bottom:-6px;cursor:nwse-resize}.st-h-s{left:calc(50% - 5px);bottom:-6px;cursor:ns-resize}.st-h-sw{left:-6px;bottom:-6px;cursor:nesw-resize}.st-h-w{left:-6px;top:calc(50% - 5px);cursor:ew-resize}\n.st-rot{position:absolute;left:calc(50% - 7px);top:-30px;width:14px;height:14px;border-radius:50%;background:#fff;border:1.5px solid #3d7bff;pointer-events:auto;cursor:grab}\n.st-lab{position:absolute;left:-1px;top:-20px;background:#3d7bff;color:#fff;font:600 10px sans-serif;padding:2px 6px;border-radius:4px 4px 4px 0;white-space:nowrap}\n.st-hl{position:absolute;background:#e8741f}.st-hl.x{top:0;bottom:0;width:1px}.st-hl.y{left:0;right:0;height:1px}\n.st-rm{position:absolute;border:2px solid;pointer-events:none}.st-rm span{position:absolute;left:-2px;top:-18px;color:#fff;font:600 10px sans-serif;padding:1px 5px;border-radius:3px;white-space:nowrap}\n.st-rz{position:absolute;pointer-events:none;transition:left .08s linear,top .08s linear}.st-rz span{position:absolute;left:14px;top:14px;color:#fff;font:600 10px sans-serif;padding:1px 5px;border-radius:3px;white-space:nowrap}\n.st-kp{position:absolute;pointer-events:auto;width:24px;height:24px;border-radius:50% 50% 50% 0;border:0;background:#e8741f;color:#fff;font-size:12px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)}\n.st-notiz{display:flex;flex-direction:column;gap:4px}.st-notiz label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3)}\n.st-notiz textarea{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:14px;resize:vertical}\n.st-rechts{width:320px;flex:0 0 auto;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}\n.st-rechts h4{margin:6px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2)}.st-rechts h5{margin:10px 0 6px}\n.st-baul{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}\n.st-bau{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px 8px;font:inherit;font-size:12.5px;text-align:left;cursor:pointer}.st-bau:hover{border-color:#e8741f}\n.st-mf{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}.st-mf button{background:var(--surface2);border:1px solid var(--line);color:var(--ink2);border-radius:999px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}.st-mf button.on{background:var(--accent,#3d7bff);border-color:var(--accent,#3d7bff);color:#fff}.st-mf button:disabled{opacity:.4}\n.st-drop{display:flex;align-items:center;gap:8px;justify-content:center;border:2px dashed var(--line);border-radius:10px;padding:12px;font-size:13px;color:var(--ink2);cursor:pointer;margin-bottom:10px}.st-drop.over{border-color:#e8741f;color:var(--ink)}\n.st-mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}\n.st-m{display:flex;flex-direction:column;gap:4px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:4px;cursor:pointer;color:var(--ink2);font:inherit;font-size:10.5px}\n.st-m img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:5px;background:repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/12px 12px}.st-m span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}\n#modal.st-modal{max-width:920px}\n.st-kn{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}.st-kn textarea{background:var(--bg,#0b0f24);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px}\n.st-kz{font-size:12px;color:var(--ink3);display:flex;align-items:center;justify-content:space-between}\n.st-ksug{display:flex;flex-wrap:wrap;gap:4px}.st-ksug button{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:3px 9px;font-size:12px;cursor:pointer}\n.st-k{border-top:1px solid var(--line2);padding:10px 0}.st-k.erl{opacity:.55}.st-kh{display:flex;justify-content:space-between;font-size:12px}.st-kh small{color:var(--ink3)}\n.st-k p{margin:4px 0;font-size:13px;line-height:1.45}.st-at{color:#e8741f}.st-ka{margin:4px 0 0 10px;padding-left:8px;border-left:2px solid var(--line);font-size:12.5px}\n.st-kb{display:flex;gap:8px}.st-kb button{background:none;border:0;color:var(--accent,#3d7bff);cursor:pointer;font-size:12px;padding:0}\n.st-vn{display:flex;gap:6px;margin-bottom:12px}.st-vn .st-in{flex:1}\n.st-v{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;border-top:1px solid var(--line2);padding:8px 0}.st-v small{color:var(--ink3);font-size:11px}.st-v button{grid-row:1/3;grid-column:2}\n.st-exp{display:grid;gap:8px;margin:12px 0}.st-ex{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}.st-ex small{grid-column:2;color:var(--ink3)}\n.st-chk{display:flex;gap:6px;align-items:center;font-size:13px}\n.st-kim{margin:8px 0}.st-rechts textarea#stKiP{width:100%;box-sizing:border-box;background:var(--bg,#0b0f24);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;margin-bottom:8px}\n.st-kiv{display:flex;flex-direction:column;gap:8px;margin:8px 0}.st-kivf{position:relative;overflow:hidden;border-radius:6px;background:#0e1330}\n.st-diff{display:flex;flex-direction:column;gap:8px;margin:8px 0;font-size:13px}.st-diff del{display:block;color:#ff8a8a;text-decoration:line-through}.st-diff ins{display:block;color:#7ee2a8;text-decoration:none}\n.st-pl{display:flex;flex-direction:column;gap:8px;margin:12px 0}.st-pe{display:grid;grid-template-columns:48px 1fr 1fr auto auto auto;gap:8px;align-items:center}\n.st-pf{width:44px;height:44px;border-radius:50%;overflow:hidden;background:var(--surface2)}.st-pf img{width:100%;height:100%;object-fit:cover}\n.st-nur .st-tools .st-tb,.st-nur .st-tools .st-sw{display:none}\n/* Präsentieren */\n.st-praes{position:fixed;inset:0;z-index:10000;background:#000;display:flex;align-items:center;justify-content:center}\n.st-pb{position:relative;overflow:hidden;cursor:pointer}.st-pb .st-host{position:absolute;left:0;top:0;transform-origin:0 0}\n.st-pz{position:fixed;right:18px;bottom:14px;color:rgba(255,255,255,.55);font:600 13px sans-serif}\n.st-px,.st-pr{position:fixed;top:14px;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;opacity:.25;transition:opacity .2s}.st-px{right:14px}.st-pr{right:60px}\n.st-praes:hover .st-px,.st-praes:hover .st-pr{opacity:.9}\n@media(max-width:1100px){.st-rechts{position:fixed;right:10px;top:120px;bottom:20px;z-index:50;box-shadow:0 10px 40px rgba(0,0,0,.4)}.st-side{width:150px}}\n@media(max-width:760px){.st-side{display:none}.st-ed{height:auto}.st-canvas{min-height:50vh}}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm43css'; s.textContent="/* Beta 0.42 */\n.pf43-sep{margin:18px 2px 6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}\n.pf4-sec .pf43-treue{margin:0 0 12px;max-width:360px}\n.pf4-sec .card.pf43-vr{background:none;border:0;box-shadow:none;padding:0;margin:0}\n.pf4-sec .pf43-ts{margin:10px 0 0}\n.pf4-sec h5.pf41h{margin-top:16px}\n.rk43 .rk43mehr{margin-top:8px}\n.pf4-sec[data-k=\"train\"] .trprof .trprof-h{justify-content:flex-end}\n.pf4-sec[data-k=\"train\"] .trprof .trprof-h h3.trh{display:none}\n.pf4-sec .card.trprof{background:none;border:0;box-shadow:none;padding:0;margin:0}\n/* Datenprüfung */\n.dp .dp-seg{margin:0 0 14px}\n.dp .dp-seg em,.dp .dp-team em{font-style:normal;font-weight:800;margin-left:4px;color:var(--warn,#f5b44a)}\n.dp .dp-team{margin:0 0 12px}\n.dp-intro{margin:0 0 12px}\n.dp-warn{margin:0 0 12px}\n.dp-d,.dp-v,.dp-s{margin-bottom:12px}\n.dp-dh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin-bottom:10px}\n.dp-sc{font-weight:800;font-size:13px;min-width:34px;text-align:center;padding:3px 8px;border-radius:999px;background:var(--line2);color:var(--ink)}\n.dp-q{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3)}\n.dp-pp,.dp-vv{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-bottom:10px}\n.dp-p{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}\n.dp-p.on{border-color:var(--accent,#3d7bff)}\n.dp-p input{margin-top:3px}\n.dp-pn{display:grid;gap:2px;min-width:0}\n.dp-pn b{cursor:pointer;overflow-wrap:anywhere}\n.dp-pn small{color:var(--ink3);font-size:12px}\n.dp-pn em{font-style:normal;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)}\n.dp-p.on .dp-pn em{color:var(--accent,#3d7bff)}\n.dp-tw{overflow-x:auto;margin:0 0 8px}\n.dp-t{width:100%;border-collapse:collapse;font-size:13px}\n.dp-t th,.dp-t td{padding:6px 8px;border-bottom:1px solid var(--line2);text-align:left;vertical-align:top}\n.dp-t thead th{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;font-weight:700}\n.dp-t tbody th{font-weight:600;color:var(--ink2);white-space:nowrap}\n.dp-t tbody th small{display:block;font-weight:500;color:var(--warn,#f5b44a);font-size:11px;white-space:normal}\n.dp-t tr.dp-wid td,.dp-t tr.dp-wid th{background:rgba(245,180,74,.06)}\n.dp-t td.dp-leer{color:var(--bad,#ff8a8a);font-weight:600}\n.dp-t td.dp-na{color:var(--ink3)}\n.dp-t td small{color:var(--ink3);font-size:11px}\n.dp-t td.dp-ann small{display:block;font-weight:500}\n.dp-sp tbody th b{cursor:pointer}\n.dp-sh{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}\n.dp-sh .dp-src{margin-left:auto;display:flex;gap:4px}\n.dp-sh .src50.off{opacity:.35;text-decoration:line-through}\n.dp-hw{margin:0 0 10px;padding-left:18px;font-size:13px;color:var(--ink2)}\n.dp-ok{color:var(--good,#5fe09b)}\n.dp-erl{margin-top:8px}\n.dp-mv{margin-top:10px}\n"; document.head.appendChild(s); }catch(e){} })();
 
 /* ================= INIT ================= */
