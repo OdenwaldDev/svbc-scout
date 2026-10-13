@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.42', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.42.1', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -19630,7 +19630,7 @@ async function dpEntscheiden(art,s,e,d){
 }
 
 /* ---------- Namen vergleichen ---------- */
-function dpN(s){ return String(s||'').toLowerCase().replace(/ß/g,'ss').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue')
+function dpN(s){ return String(s||'').replace(/\s*\([^)]*\)\s*$/,'').toLowerCase().replace(/ß/g,'ss').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue')
   .normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z\s-]/g,' ').replace(/-/g,' ').replace(/\s+/g,' ').trim(); }
 function dpLoose(s){ return dpN(s).replace(/ae/g,'a').replace(/oe/g,'o').replace(/ue/g,'u').replace(/ss/g,'s').replace(/ph/g,'f').replace(/th/g,'t').replace(/(.)\1+/g,'$1').replace(/\s/g,''); }
 function dpTeile(name){ const w=dpN(name).split(' ').filter(Boolean); return {w,f:w[0]||'',l:w[w.length-1]||'',mid:w.slice(1,-1)}; }
@@ -19890,7 +19890,7 @@ function dpRender(){
   // Varianten
   P.querySelectorAll('[data-vgo]').forEach(b=>b.onclick=async()=>{ const k=b.dataset.vgo, v=V.find(x=>x.key===k); if(!v)return; const sel=P.querySelector(`.dp-v[data-vk="${CSS.escape(k)}"] input:checked`), pid=sel&&sel.value; if(!pid)return;
     b.disabled=true;
-    try{ if(v.art==='fde'){ const {error}=await SVB.sb.rpc('spieler_alias',{p_id:pid,p_name:v.name}); if(error)throw error; const p=trP(pid); if(p){ p.alias=(p.alias||[]).concat([v.name]); } try{ FB.map=null; }catch(e){} }
+    try{ if(v.art==='fde'){ const {error}=await SVB.sb.rpc('spieler_alias',{p_id:pid,p_name:String(v.name).replace(/\s*\([^)]*\)\s*$/,'')}); if(error)throw error; const p=trP(pid); if(p){ p.alias=(p.alias||[]).concat([v.name]); } try{ FB.map=null; }catch(e){} }
       else if(v.art==='at'){ crmSet(pid,{at:v.atKey}); try{ crmApply(); }catch(e){} VR._idx=null; VR._rk=null; }
       await dpEntscheiden('variante',k,'bestaetigt',{pid,name:v.name}); kToast('✓ '+v.name+' gehört jetzt zu '+((trP(pid)||{}).name||'dem Spieler')); dpRender(); }
     catch(e){ b.disabled=false; kToast('⚠️ '+(/spieler_alias|function|schema cache/i.test(e.message||'')?'Dafür fehlt noch die Datenbank-Erweiterung 080.':(e.message||e))); } });
