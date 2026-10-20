@@ -406,7 +406,7 @@
       if(d.handy&&d.handy.replace(/[^0-9]/g,'').length<7)return fehler([$('#mmH')],'Die Handynummer stimmt noch nicht. Beispiel: 0171 2345678');
       if(!d.einwilligung)return fehler([$('#mmOkL')],'Bitte hier zustimmen, sonst dürfen wir deine Angaben nicht speichern.');
       busy=true; const b=$('#mmGo'); b.disabled=true; b.textContent='Wird gespeichert …';
-      try{ const r=await rpc('helfer_anmelden',{p_code:code,p:d}); const f={vorname:r.vorname,wa:r.wa_link,titel:r.titel,nicht:!!r.nicht,v2:1}; ls.set('mm_fertig_'+code,JSON.stringify(f)); danke(f); window.scrollTo(0,0); }
+      try{ const r=await rpc('helfer_anmelden',{p_code:code,p:d}); const f={vorname:r.vorname,wa:r.wa_link,titel:r.titel,nicht:!!r.nicht,v2:1,k:r.k||null}; ls.set('mm_fertig_'+code,JSON.stringify(f)); danke(f); window.scrollTo(0,0); }
       catch(x){ busy=false; b.disabled=false; b.textContent=knopf(); $('#mmErr').textContent=x.message||'Das hat nicht geklappt. Bitte nochmal versuchen.'; } };
     function danke(f){
       let kopf, text, mehr='';
@@ -420,6 +420,8 @@
           <p class="note" style="margin-top:0">${text}</p>${mehr}
           ${f.nicht?'':'<p class="mm-hand mm-schluss">Gemeinsam bringen wir den SV/BSC wieder nach vorne.</p>'}
           <p class="note">Etwas vergessen oder falsch vertippt? <a href="#" id="mmNeu" style="color:inherit">Nochmal eintragen</a></p></div>`;
+      // Tipp auf den Gruppenknopf festhalten (WhatsApp selbst meldet keinen Beitritt). keepalive: die Anfrage geht auch raus, wenn WhatsApp sofort öffnet.
+      const w=$('#mmWa'); if(w&&f.k)w.addEventListener('click',()=>{ try{ fetch(C.url+'/rest/v1/rpc/helfer_gruppe_geklickt',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:C.anon,Authorization:'Bearer '+C.anon},body:JSON.stringify({p_k:f.k})}).catch(()=>{}); }catch(e){} });
       const n=$('#mmNeu'); if(n)n.onclick=ev=>{ ev.preventDefault(); ls.del('mm_fertig_'+code); location.reload(); };
     }
   }
