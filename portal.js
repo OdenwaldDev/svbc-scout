@@ -338,12 +338,16 @@
       .mm-wa{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:16px;padding:18px;border-radius:16px;background:linear-gradient(180deg,#25d366,#128c7e);color:#fff;font-weight:800;font-size:18px;text-decoration:none;box-shadow:0 10px 24px rgba(37,211,102,.25)}
       .mm-steps{display:grid;gap:8px;margin-top:14px;text-align:left}.mm-steps div{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--s3);font-size:14.5px}.mm-steps b{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#3b78ff;color:#fff;font-size:13px}
       .mm-err{color:#fca5a5;font-size:14px;margin-top:10px;min-height:1em}
-      .mm-hand{margin:2px 0 0;font:700 22px/1.2 Caveat,'Segoe Script',cursive;color:#e8741f;transform:rotate(-1.5deg);transform-origin:left}.mm-mehr summary{cursor:pointer;color:var(--ink2);font-size:14px;margin-top:6px}
+      .mm-hand{margin:4px 0 0;font-style:italic;font-weight:800;font-size:18px;line-height:1.3;color:#e8741f}.mm-mehr summary{cursor:pointer;color:var(--ink2);font-size:14px;margin-top:6px}
       .mm-h{display:flex;gap:10px;align-items:baseline;margin:22px 0 4px;font-size:15px;text-transform:uppercase;letter-spacing:.02em}.mm-h i{font-style:normal;color:#e8741f;font-weight:900}.mm-f .mm-h:first-child{margin-top:4px}
       .mm-bs{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.mm-bs1{grid-template-columns:1fr;margin-top:2px}@media(max-width:520px){.mm-bs{grid-template-columns:1fr}}
       .mm-f label.mm-b{display:flex;gap:11px;align-items:center;margin:0;padding:11px 2px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600;color:var(--ink);cursor:pointer}.mm-f label.mm-b input{width:22px;height:22px;flex:none;accent-color:#3b78ff}
       .mm-f label.mm-b.or{font-weight:400;color:var(--ink2)}.mm-f label.mm-b.or input{accent-color:#e8741f}.mm-f label.mm-b.grau{font-weight:400;color:var(--ink3)}
-      .mm-f .mm-l{font-weight:400;font-size:14px;line-height:1.45}.mm-f textarea.txt{width:100%;box-sizing:border-box;resize:vertical;font:inherit;font-size:16px}`;
+      .mm-f .mm-l{font-weight:400;font-size:14px;line-height:1.45}.mm-f label small,.mm-h small{font-weight:400;font-size:12.5px;color:var(--ink3);text-transform:none;letter-spacing:0;margin-left:4px}
+      .mm-fakten{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}.mm-fakten span{font-size:13px;padding:5px 10px;border-radius:999px;background:var(--s3);color:var(--ink2)}
+      .mm-f .mm-bad{border-color:#f87171!important;box-shadow:0 0 0 2px rgba(248,113,113,.35)}.mm-f label.mm-ok.mm-bad{box-shadow:none;outline:2px solid rgba(248,113,113,.7);outline-offset:4px;border-radius:8px}
+      .mm-fe{color:#fca5a5;font-size:14px;margin:6px 0 0;font-weight:600}.mm-ds summary{cursor:pointer;color:var(--ink3);font-size:13px;margin:6px 0 0 34px}.mm-ds p{margin-left:34px}
+      .mm-schluss{text-align:center;margin:16px 0 4px;font-size:17px}.mm-danke .mm-steps{margin-bottom:4px}.mm-f textarea.txt{width:100%;box-sizing:border-box;resize:vertical;font:inherit;font-size:16px}`;
     document.head.appendChild(st);
     let info=null; try{ info=await rpc('helfer_info',{p_code:code}); }catch(e){}
     if(!info||!info.aktiv){ app.innerHTML=`<div class="card err empty"><h2>Anmeldung geschlossen</h2><p class="note">Diese Anmeldung ist nicht mehr offen. Sprich uns gern direkt an oder schreib an fussball@sv-moerlenbach.de.</p></div>`; return; }
@@ -354,53 +358,67 @@
     let fertig=null; try{ fertig=JSON.parse(ls.get('mm_fertig_'+code)||'null'); }catch(e){}
     if(fertig&&(fertig.wa||fertig.v2))return danke(fertig);
     const box=(k,l,kl)=>`<label class="mm-b${kl?' '+kl:''}"><input type="checkbox" data-mb="${k}"><span>${esc(l)}</span></label>`;
-    app.innerHTML=`<div class="card hero"><span class="pill">${esc(info.titel)} · Konzept 2030</span><h2 style="margin:12px 0 4px">Unterstütze den SV/BSC Mörlenbach und das neue Konzept 2030</h2>
+    app.innerHTML=`<div class="card hero"><span class="pill">Konzept 2030 · Mitmachen</span><h2 style="margin:12px 0 4px">Unterstütze den SV/BSC Mörlenbach und das neue Konzept 2030</h2>
         <p class="mm-hand">Dafür brauchen wir auch deine Unterstützung!</p>
-        <p class="note" style="margin-top:6px">Ganz egal, wie viel Zeit du einbringen kannst oder möchtest: Ob eine kleine Aufgabe rund um einen Heimspieltag, die Unterstützung bei einer Veranstaltung, ein eigenes Projekt oder eine feste Rolle in einem unserer Bereiche, jede helfende Hand ist wertvoll.</p>
-        <details class="mm-mehr"><summary>Mehr lesen</summary><p class="note">Wir hoffen, dass dir unser Konzept 2030, die neue Organisation und die Menschen dahinter gefallen. Wir sind hoch motiviert, den SV/BSC Mörlenbach gemeinsam wieder auf allen Ebenen nach vorne zu bringen und im Verein eine echte Aufbruchsstimmung zu schaffen.</p>
-          <p class="note">Uns ist wichtig, dass Aufgaben verlässlich übernommen werden. Gleichzeitig wissen wir aber auch: Ehrenamt muss zum eigenen Leben passen. Wenn sich deine zeitlichen Möglichkeiten ändern oder eine Aufgabe doch nicht zu dir passt, finden wir gemeinsam eine Lösung. Alles ist freiwillig. Niemand muss sich für immer festlegen.</p></details>
-        <p class="note" style="margin-bottom:0"><b>Du kannst dir vorstellen, uns zu unterstützen?</b> Dann trag dich einfach ein. Wir kommen anschließend auf dich zu und schauen gemeinsam, was zu dir, deinen Interessen und deiner verfügbaren Zeit passt.</p></div>
+        <p class="note" style="margin-top:8px">Ob zwei Stunden am Spieltag oder eine feste Aufgabe: Du entscheidest, wie viel. Jede Hand bringt uns ein Stück weiter.</p>
+        <div class="mm-fakten"><span>⏱ 2 Minuten</span><span>🤝 Alles freiwillig</span><span>🔁 Jederzeit änderbar</span></div>
+        <details class="mm-mehr"><summary>Warum wir das machen</summary><p class="note">Wir hoffen, dass dir unser Konzept 2030, die neue Organisation und die Menschen dahinter gefallen. Wir sind hoch motiviert, den SV/BSC Mörlenbach gemeinsam wieder auf allen Ebenen nach vorne zu bringen und im Verein eine echte Aufbruchsstimmung zu schaffen.</p>
+          <p class="note">Uns ist wichtig, dass Aufgaben verlässlich übernommen werden. Gleichzeitig wissen wir: Ehrenamt muss zum eigenen Leben passen. Ändert sich deine Zeit oder passt eine Aufgabe doch nicht, finden wir gemeinsam eine Lösung. Niemand muss sich für immer festlegen.</p></details></div>
       <form class="card mm-f" id="mmF" autocomplete="on" novalidate>
         <h3 class="mm-h"><i>01</i> Kontaktdaten</h3>
         <div class="mm-2"><div><label for="mmV">Vorname</label><input class="txt" id="mmV" autocomplete="given-name" maxlength="60" required></div><div><label for="mmN">Nachname</label><input class="txt" id="mmN" autocomplete="family-name" maxlength="60" required></div></div>
-        <label for="mmE">E-Mail</label><input class="txt" id="mmE" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="name@beispiel.de">
-        <label for="mmH">Handy-Nummer</label><input class="txt" id="mmH" type="tel" inputmode="tel" autocomplete="tel" maxlength="30" placeholder="0171 2345678">
+        <label for="mmH">Handy-Nummer <small>für die WhatsApp-Helfergruppe</small></label><input class="txt" id="mmH" type="tel" inputmode="tel" autocomplete="tel" maxlength="30" placeholder="0171 2345678">
+        <label for="mmE">E-Mail <small>freiwillig</small></label><input class="txt" id="mmE" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="name@beispiel.de">
         <h3 class="mm-h"><i>02</i> Hier möchte ich mitmachen</h3>
-        <p class="note" style="margin:4px 0 6px">Ich möchte in einem oder mehreren Bereichen unterstützen bzw. unterstütze bereits:</p>
-        <div class="mm-bs">${I.map(([k,l])=>box(k,l)).join('')}</div>
+        <p class="note" style="margin:4px 0 6px">Wo hättest du Lust? Kreuz an, was dich reizt. Mehrere gehen, auch wenn du dort schon hilfst.</p>
+        <div class="mm-bs" id="mmBs">${I.map(([k,l])=>box(k,l)).join('')}</div>
         <div class="mm-bs mm-bs1">${box('unsicher','Ich bin noch unsicher, sprecht mich einfach an','or')}${box('nicht','Ich möchte nicht mithelfen','grau')}</div>
-        <h3 class="mm-h"><i>03</i> Meine Idee</h3>
-        <label for="mmI" class="mm-l">Ich habe eine konkrete Idee oder ein Projekt im Kopf, mit dem wir die Fußballabteilung voranbringen könnten:</label><textarea class="txt" id="mmI" rows="4" maxlength="2000"></textarea>
-        <h3 class="mm-h"><i>04</i> Mit auf den Weg</h3>
-        <label for="mmM" class="mm-l">Das möchte ich der neuen Abteilungsleitung und den Verantwortlichen gerne mit auf den Weg geben:</label><textarea class="txt" id="mmM" rows="4" maxlength="2000"></textarea>
+        <h3 class="mm-h"><i>03</i> Meine Idee <small>freiwillig</small></h3>
+        <label for="mmI" class="mm-l">Du hast eine Idee oder ein Projekt, mit dem wir die Fußballabteilung voranbringen könnten? Raus damit.</label><textarea class="txt" id="mmI" rows="3" maxlength="2000"></textarea>
+        <h3 class="mm-h"><i>04</i> Mit auf den Weg <small>freiwillig</small></h3>
+        <label for="mmM" class="mm-l">Was möchtest du der neuen Abteilungsleitung und den Verantwortlichen mit auf den Weg geben?</label><textarea class="txt" id="mmM" rows="3" maxlength="2000"></textarea>
         <div class="mm-hp" aria-hidden="true"><label for="mmW">Website</label><input id="mmW" tabindex="-1" autocomplete="off"></div>
-        <label class="mm-ok"><input type="checkbox" id="mmOk"><span>Ich bin einverstanden, dass die Fußballabteilung des SV Mörlenbach 1896 e.V. meine Angaben speichert, um sich bei mir zu melden und mich, wenn ich mithelfen möchte, in die WhatsApp-Gruppe „Unterstützer und Helferpool“ aufzunehmen. Die Angaben sehen nur die Verantwortlichen im Verein, sie werden nicht weitergegeben. Widerruf jederzeit per Mail an fussball@sv-moerlenbach.de, dann löschen wir alles.</span></label>
-        <p class="mm-err" id="mmErr"></p>
-        <button class="pay mm-go" type="submit" id="mmGo">Absenden</button></form>`;
+        <label class="mm-ok" id="mmOkL"><input type="checkbox" id="mmOk"><span>Der Verein darf meine Angaben speichern, um sich bei mir zu melden und mich in die Helfergruppe aufzunehmen.</span></label>
+        <details class="mm-ds"><summary>Mehr zum Datenschutz</summary><p class="note">Deine Angaben sehen nur die Verantwortlichen der Fußballabteilung des SV Mörlenbach 1896 e.V. Sie werden nicht weitergegeben. Du kannst jederzeit widerrufen, eine Mail an fussball@sv-moerlenbach.de genügt, dann löschen wir alles.</p></details>
+        <p class="mm-err" id="mmErr" role="alert"></p>
+        <button class="pay mm-go" type="submit" id="mmGo">Ich bin dabei</button></form>`;
     const boxen=[...app.querySelectorAll('[data-mb]')];
+    const knopf=()=>gewaehlt.has('nicht')?'Absenden':'Ich bin dabei';
     boxen.forEach(c=>c.onchange=()=>{ const k=c.dataset.mb;
       if(c.checked){ gewaehlt.add(k); if(k==='nicht'){ boxen.forEach(x=>{ if(x!==c){ x.checked=false; gewaehlt.delete(x.dataset.mb); } }); } else { const n=boxen.find(x=>x.dataset.mb==='nicht'); if(n){ n.checked=false; gewaehlt.delete('nicht'); } } }
       else gewaehlt.delete(k);
-      $('#mmH').placeholder=gewaehlt.has('nicht')?'freiwillig':'0171 2345678'; });
+      $('#mmH').placeholder=gewaehlt.has('nicht')?'freiwillig':'0171 2345678'; $('#mmGo').textContent=knopf(); });
+    // Fehler direkt am Feld zeigen, hinscrollen, Feld markieren
+    const weg=()=>{ app.querySelectorAll('.mm-bad').forEach(x=>x.classList.remove('mm-bad')); app.querySelectorAll('.mm-fe').forEach(x=>x.remove()); $('#mmErr').textContent=''; };
+    const fehler=(els,text)=>{ weg(); els.forEach(x=>x.classList.add('mm-bad')); const ziel=els[els.length-1];
+      const p=document.createElement('p'); p.className='mm-fe'; p.textContent=text; (ziel.id==='mmOkL'?ziel:ziel).insertAdjacentElement('afterend',p);
+      $('#mmErr').textContent=text; try{ els[0].scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){ els[0].scrollIntoView(); }
+      const f=els[0].matches('input,textarea')?els[0]:els[0].querySelector('input'); if(f)setTimeout(()=>{ try{ f.focus({preventScroll:true}); }catch(e){} },350); };
+    app.querySelectorAll('#mmF input,#mmF textarea').forEach(x=>x.addEventListener('input',()=>{ if(app.querySelector('.mm-bad'))weg(); }));
+    $('#mmOk').addEventListener('change',()=>{ if(app.querySelector('.mm-bad'))weg(); });
     let busy=false;
-    $('#mmF').onsubmit=async e=>{ e.preventDefault(); if(busy)return; const err=$('#mmErr'); err.textContent='';
+    $('#mmF').onsubmit=async e=>{ e.preventDefault(); if(busy)return; weg();
       const d={vorname:$('#mmV').value.trim(),nachname:$('#mmN').value.trim(),handy:$('#mmH').value.trim(),email:$('#mmE').value.trim(),bereiche:[...gewaehlt],
         idee:$('#mmI').value.trim(),mitgeben:$('#mmM').value.trim(),hp:$('#mmW').value,einwilligung:$('#mmOk').checked};
       const nicht=gewaehlt.has('nicht');
-      if(!d.vorname||!d.nachname){ err.textContent='Bitte Vor- und Nachnamen eintragen.'; return; }
-      if(!nicht&&!d.handy&&!d.email){ err.textContent='Bitte Handynummer oder E-Mail eintragen, damit wir uns bei dir melden können.'; return; }
-      if(d.handy&&d.handy.replace(/[^0-9]/g,'').length<7){ err.textContent='Die Handynummer stimmt noch nicht. Beispiel: 0171 2345678'; return; }
-      if(!d.einwilligung){ err.textContent='Bitte unten der Speicherung zustimmen, sonst dürfen wir deine Angaben nicht speichern.'; return; }
+      if(!d.vorname||!d.nachname)return fehler([!d.vorname?$('#mmV'):$('#mmN')],'Bitte Vor- und Nachnamen eintragen.');
+      if(!nicht&&!d.handy&&!d.email)return fehler([$('#mmH')],'Bitte deine Handynummer eintragen (oder eine E-Mail), damit wir uns bei dir melden können.');
+      if(d.handy&&d.handy.replace(/[^0-9]/g,'').length<7)return fehler([$('#mmH')],'Die Handynummer stimmt noch nicht. Beispiel: 0171 2345678');
+      if(!d.einwilligung)return fehler([$('#mmOkL')],'Bitte hier zustimmen, sonst dürfen wir deine Angaben nicht speichern.');
       busy=true; const b=$('#mmGo'); b.disabled=true; b.textContent='Wird gespeichert …';
-      try{ const r=await rpc('helfer_anmelden',{p_code:code,p:d}); const f={vorname:r.vorname,wa:r.wa_link,titel:r.titel,nicht:!!r.nicht,v2:1}; ls.set('mm_fertig_'+code,JSON.stringify(f)); danke(f); }
-      catch(x){ busy=false; b.disabled=false; b.textContent='Absenden'; err.textContent=x.message||'Das hat nicht geklappt. Bitte nochmal versuchen.'; } };
+      try{ const r=await rpc('helfer_anmelden',{p_code:code,p:d}); const f={vorname:r.vorname,wa:r.wa_link,titel:r.titel,nicht:!!r.nicht,v2:1}; ls.set('mm_fertig_'+code,JSON.stringify(f)); danke(f); window.scrollTo(0,0); }
+      catch(x){ busy=false; b.disabled=false; b.textContent=knopf(); $('#mmErr').textContent=x.message||'Das hat nicht geklappt. Bitte nochmal versuchen.'; } };
     function danke(f){
-      const text=f.nicht?'Danke, dass du dir die Zeit genommen hast. Deine Gedanken kommen direkt bei der Abteilungsleitung an.'
-        :f.wa?'Du bist eingetragen. Jetzt nur noch der WhatsApp-Gruppe beitreten, dort kommen alle Infos zu den nächsten Einsätzen.'
-        :'Du bist eingetragen. Wir kommen auf dich zu und schauen gemeinsam, was zu dir passt.';
-      app.innerHTML=`<div class="card hero"><div style="font-size:52px;line-height:1">🙌</div><h2 style="margin:10px 0 6px">Danke, ${esc(f.vorname)}!</h2>
-          <p class="note" style="margin-top:0">${text}</p>
-          ${f.wa?`<a class="mm-wa" id="mmWa" href="${esc(f.wa)}" rel="noopener">💬 Jetzt der WhatsApp-Gruppe beitreten</a><p class="note">Beitreten mit derselben Handynummer, die du eingetragen hast.</p>`:''}
+      let kopf, text, mehr='';
+      if(f.nicht){ kopf=`Danke, ${esc(f.vorname)}!`; text='Schön, dass du dir die Zeit genommen hast. Deine Gedanken landen direkt bei der Abteilungsleitung.'; }
+      else if(f.wa){ kopf=`Stark, ${esc(f.vorname)}! Du bist dabei.`; text='Jetzt noch ab in unsere Helfergruppe. Dort erfährst du als Erstes, wann und wo es etwas zu tun gibt.';
+        mehr=`<div class="mm-steps"><div><b>1</b>Unten auf den grünen Knopf tippen</div><div><b>2</b>In WhatsApp auf „Gruppe beitreten“ tippen</div><div><b>3</b>Kurz warten, falls wir dich noch freischalten</div></div>
+          <a class="mm-wa" id="mmWa" href="${esc(f.wa)}" rel="noopener">💬 Zur WhatsApp-Helfergruppe</a>
+          <p class="note">Bitte mit derselben Handynummer beitreten, die du eingetragen hast. So wissen wir, dass du es bist.</p>`; }
+      else { kopf=`Stark, ${esc(f.vorname)}! Du bist dabei.`; text='Wir melden uns in den nächsten Tagen bei dir und schauen gemeinsam, was zu dir passt. Du willst auch in die WhatsApp-Helfergruppe? Einfach nochmal eintragen und die Handynummer dazuschreiben.'; }
+      app.innerHTML=`<div class="card hero mm-danke"><div style="font-size:52px;line-height:1">${f.nicht?'🙏':'🙌'}</div><h2 style="margin:10px 0 6px">${kopf}</h2>
+          <p class="note" style="margin-top:0">${text}</p>${mehr}
+          ${f.nicht?'':'<p class="mm-hand mm-schluss">Gemeinsam bringen wir den SV/BSC wieder nach vorne.</p>'}
           <p class="note">Etwas vergessen oder falsch vertippt? <a href="#" id="mmNeu" style="color:inherit">Nochmal eintragen</a></p></div>`;
       const n=$('#mmNeu'); if(n)n.onclick=ev=>{ ev.preventDefault(); ls.del('mm_fertig_'+code); location.reload(); };
     }
