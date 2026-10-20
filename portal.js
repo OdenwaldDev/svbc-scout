@@ -412,7 +412,7 @@
       let kopf, text, mehr='';
       if(f.nicht){ kopf=`Danke, ${esc(f.vorname)}!`; text='Schön, dass du dir die Zeit genommen hast. Deine Gedanken landen direkt bei der Abteilungsleitung.'; }
       else if(f.wa){ kopf=`Stark, ${esc(f.vorname)}! Du bist dabei.`; text='Jetzt noch ab in unsere Helfergruppe. Dort erfährst du als Erstes, wann und wo es etwas zu tun gibt.';
-        mehr=`<div class="mm-steps"><div><b>1</b>Unten auf den grünen Knopf tippen</div><div><b>2</b>In WhatsApp auf „Gruppe beitreten“ tippen</div><div><b>3</b>Kurz warten, falls wir dich noch freischalten</div></div>
+        mehr=`<div class="mm-steps"><div><b>1</b>Unten auf den grünen Knopf tippen</div><div><b>2</b>In WhatsApp auf „Gruppe beitreten“ tippen, fertig</div></div>
           <a class="mm-wa" id="mmWa" href="${esc(f.wa)}" rel="noopener">💬 Zur WhatsApp-Helfergruppe</a>
           <p class="note">Bitte mit derselben Handynummer beitreten, die du eingetragen hast. So wissen wir, dass du es bist.</p>`; }
       else { kopf=`Stark, ${esc(f.vorname)}! Du bist dabei.`; text='Wir melden uns in den nächsten Tagen bei dir und schauen gemeinsam, was zu dir passt. Du willst auch in die WhatsApp-Helfergruppe? Einfach nochmal eintragen und die Handynummer dazuschreiben.'; }
