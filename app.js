@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.48', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.48.1', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18260,7 +18260,8 @@ const SV_PATCHES=[
     {ic:'🚦',r:'planung',t:'Projektsteuerung',d:'Alle Projekte aller Bereiche mit Ampel, Fortschritt und Meilensteinen. „Braucht Aufmerksamkeit“ zeigt, wo es hakt. Dazu ein Zeitplan über die nächsten Monate.',go:'planung'},
     {ic:'🌱',r:'planung',t:'Vereinsentwicklung',d:'Die Ziele 2030 mit Live-Zahlen aus Helferpool, Partnern und Veranstaltungen. Ideen aus dem Helferpool übernimmst du mit einem Tipp in den Ideenspeicher.',go:'planung'},
     {ic:'📋',r:'planung',t:'Vorlagen und Erinnerungen',d:'Veranstaltung planen, Partner gewinnen, Zuschuss beantragen und mehr: ein Tipp legt das Projekt mit allen Schritten und Terminen an. Wer eine Aufgabe bekommt, wird benachrichtigt, am Vortag und am Fälligkeitstag erinnert und montags gibt es den Wochenüberblick.',go:'planung'},
-    {ic:'🗑️',r:'planung',t:'Nichts geht verloren',d:'Gelöschtes landet im Papierkorb und lässt sich zurückholen. Wer welchen Bereich sieht, stellt der Admin unter Verwaltung bei den Zugriffen ein.'}
+    {ic:'🗑️',r:'planung',t:'Nichts geht verloren',d:'Gelöschtes landet im Papierkorb und lässt sich zurückholen. Wer welchen Bereich sieht, stellt der Admin unter Verwaltung bei den Zugriffen ein.'},
+    {ic:'🔒',r:'admin',t:'Sicherheitscheck',d:'Datenbank, Funktionen, öffentliche Seiten und Schlüssel geprüft. Zusätzlich abgedichtet: interne Funktionen und Tabellen sind ohne Anmeldung zu, die Seiten lassen sich nicht mehr in fremde Seiten einbetten und haben einen Grundschutz gegen eingeschleuste Inhalte.'}
    ]},
   {id:'0.47',v:'0.47',datum:'2026-10-20',titel:'Helferpool nach Bereichen',kurz:'Wer sich für welchen Bereich interessiert, siehst du jetzt auf einen Blick. Einladen geht mit einem Tipp, die App merkt sich, wer schon eingeladen ist.',
    punkte:[
