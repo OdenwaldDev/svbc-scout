@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.51', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.52', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18252,6 +18252,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.52',v:'0.52',datum:'2026-10-23',titel:'Radar mit klarerem Blick',kurz:'Das Radar unter Scouting, Entdecken zeigt nur noch wirklich auffällige Entwicklungen. Die Liste ist dadurch etwa halb so lang.',
+   punkte:[
+    {ic:'📡',r:'scout',t:'Radar fokussiert',d:'Ein Aufstieg mit der ganzen Mannschaft allein ist kein Signal mehr. Es zählen ein Sprung um mindestens eine ganze Spielklasse als Stamm- oder Rotationsspieler, der Weg vom Ersatz zum Stammspieler, außergewöhnlicher Output über mindestens zwölf volle Spiele und ein klarer mehrjähriger Aufwärtstrend.',go:'entdecken'},
+    {ic:'🧹',r:'admin',t:'Datenprüfung genauer',d:'Unsichere Positionsangaben aus den Spieldaten erzeugen keinen falschen Widerspruch mehr.'}
+   ]},
   {id:'0.51',v:'0.51',datum:'2026-10-23',titel:'Kader, Scouting und Mannschaft neu geordnet',kurz:'Lukas’ Überarbeitung ist da: Kader plant die nächste Saison, Scouting löst die Bedarfe daraus, Mannschaft zeigt diese Woche. Alles mit der neuen Spielerstärke.',
    punkte:[
     {ic:'🗓️',r:'scout',t:'Kader: Planung',d:'Nächste Saison für die Erste und die Zweite: System, Ziel, Plan-Elf zum Antippen, offene Entscheidungen, Gespräche und die Jugend für die Herren. Fehlt etwas, entsteht automatisch ein Bedarf.',go:'kplan'},
