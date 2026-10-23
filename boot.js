@@ -3,6 +3,8 @@
    Die öffentliche Seite enthält KEINE Spielerdaten. Erst nach erfolgreicher
    Anmeldung werden Datenbestand + App-Code geladen.
    ===================================================================== */
+// Installieren (Android/Chrome): das Angebot des Browsers früh aufheben, die App fragt später dezent (svm50.js)
+window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); window.__svBip=e; });
 (function(){
 'use strict';
 const CFG=window.SVBC_CFG||{}, I=window.SVI;
