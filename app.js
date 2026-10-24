@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.58', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.58.1', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18256,7 +18256,7 @@ const SV_PATCHES=[
    punkte:[
     {ic:'✏️',r:'partner',t:'Eigener Einstieg',d:'Beim Bearbeiten eines Decks gibt es ein Feld für den Text ganz oben. Leer bleibt der Standardtext über unsere 260 Kinder und Jugendlichen.',go:'sponsoring'},
     {ic:'🔞',r:'partner',t:'Ohne Jugend-Trikot',d:'Bei Glücksspiel oder Alkohol einfach den Haken setzen: Die Trikotpatenschaft für die Jugend taucht im Deck dann nicht auf und kann auch nicht gebucht werden.'},
-    {ic:'🌙',r:'partner',t:'Helle Logos',d:'Ist ein Logo weiß oder hell, zeigt das Deck es auf dunklem Grund statt auf einer weißen Kachel.'}
+    {ic:'🌙',r:'partner',t:'Helle Logos',d:'Ist ein Logo weiß oder hell, zeigt das Deck es auf dunklem Grund statt auf einer weißen Kachel. Ohne Logo steht der Kurzname da.'}
    ]},
   {id:'0.57',v:'0.57',datum:'2026-10-24',titel:'Pitch-Decks für Partner',kurz:'Für jede Firma eine persönliche Präsentation zum Durchscrollen: Verein, Pakete mit freien Plätzen, Angebot per Mail und Antrag mit Unterschrift direkt auf dem Handy.',
    punkte:[

@@ -57,7 +57,7 @@
   <p>${P.hero?esc(P.hero):`Bei uns stehen jede Woche 260 Kinder und Jugendliche auf dem Platz. Kinder, die hier aufwachsen und morgen bei ${esc(kurz)} arbeiten könnten.`}</p>
   <div class="k" style="margin-top:26px;color:var(--hb)">Scrollen ↓</div></div></section>
 ${P.titel||P.text||(P.punkte||[]).length?`<section class="sec hell"><div class="w">
-  <div class="pa-kopf">${D.logo?logoImg('pl'):`<b class="c" style="font-size:34px;color:#1d2760">${esc(D.firma)}</b>`}<i>×</i><img class="sv" src="partner/svbsc.png" alt="SV/BSC Mörlenbach"></div>
+  <div class="pa-kopf">${D.logo?logoImg('pl'):`<b class="c" style="font-size:34px;color:#1d2760">${esc(kurz)}</b>`}<i>×</i><img class="sv" src="partner/svbsc.png" alt="SV/BSC Mörlenbach"></div>
   <div class="pa-t"><div class="hand" style="font-size:28px">Warum wir an Sie gedacht haben</div>
   ${P.titel?`<h2 class="g" style="color:var(--blau)">${esc(P.titel)}</h2>`:''}
   ${P.text?`<p class="pa-text">${esc(P.text)}</p>`:''}
