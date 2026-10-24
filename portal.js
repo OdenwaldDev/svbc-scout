@@ -169,7 +169,7 @@
   }
   window.addEventListener('hashchange',()=>location.reload());
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&S)load(); });
-  if(hp.has('mitmachen'))mitmachen(hp.get('mitmachen')||'helfer'); else if(hp.get('h'))helfer(hp.get('h')); else if(hp.get('b'))bestaetigen(hp.get('b')); else if(hp.get('m'))teamAbst(hp.get('m')); else load();
+  if(hp.has('mitmachen'))mitmachen(hp.get('mitmachen')||'helfer'); else if(hp.get('einsatz'))einsatz(hp.get('einsatz')); else if(hp.get('h'))helfer(hp.get('h')); else if(hp.get('b'))bestaetigen(hp.get('b')); else if(hp.get('m'))teamAbst(hp.get('m')); else load();
 
 
   /* Checkliste für Helfer ohne App (…/team.html#h=<code>): abhaken, Aufgabe übernehmen, Absprache, Foto in den Vereins-Drive */
@@ -325,6 +325,47 @@
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&T&&!offen)laden(); });
   }
 
+  /* Einsatzplan für Helfer aus dem Helferpool (…/#einsatz=<code>, persönlicher Link): offene Schichten, mit einem Tipp eintragen oder austragen */
+  function einsatz(tok){
+    const h=document.querySelector('header h1'), hs=document.querySelector('header p'), ft=document.querySelector('footer');
+    if(h)h.textContent='Helfen beim SV/BSC'; if(hs)hs.textContent='SV/BSC Mörlenbach · Fußball'; document.title='Helfen · SV/BSC Mörlenbach';
+    if(ft)ft.textContent='Dein persönlicher Link · bitte nicht weitergeben · SV Mörlenbach 1896 e.V.';
+    const st=document.createElement('style'); st.textContent=`.ez-t{margin-bottom:14px}.ez-t h2{font-size:19px;margin:6px 0 2px}.ez-t small{color:var(--ink2);font-size:14px}
+      .ez-pass{display:inline-block;padding:3px 10px;border-radius:99px;background:rgba(232,116,31,.18);color:#ffb27a;font-size:12.5px;font-weight:800;letter-spacing:.02em}
+      .ez-s{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}.ez-s>div{flex:1;min-width:0}.ez-s b{font-size:16.5px}.ez-s small{display:block;color:var(--ink2);font-size:14px;margin-top:3px}
+      .ez-s.mein b{color:var(--ok)}.ez-bar{height:6px;border-radius:99px;background:var(--s3);overflow:hidden;margin-top:7px;max-width:180px}.ez-bar i{display:block;height:100%;background:var(--ok)}
+      .ez-b{min-height:46px;padding:0 16px;border-radius:12px;border:0;background:var(--brand);color:#fff;font-weight:800;font-size:15.5px;cursor:pointer;flex:none}.ez-b.raus{background:var(--s3);color:var(--ink2);border:1px solid var(--line)}
+      .ez-voll{color:var(--ink3);font-size:14px;flex:none}.ez-mein{display:flex;flex-direction:column;gap:8px;margin-top:12px}.ez-mein div{padding:10px 12px;border-radius:12px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);font-size:15px}
+      .ez-regel{font-size:14px;color:var(--ink2);line-height:1.5}`;
+    document.head.appendChild(st);
+    let I=null;
+    const uhr=ts=>{ try{ return new Date(ts).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } };
+    const zeit=x=>x.von?uhr(x.von)+(x.bis?' bis '+uhr(x.bis):'')+' Uhr':'Zeit folgt';
+    async function laden(){
+      if(!/^[a-f0-9]{32}$/.test(tok)){ app.innerHTML='<div class="card err empty"><h2>Link ungültig</h2><p class="note">Bitte den Link aus der WhatsApp-Nachricht öffnen.</p></div>'; return; }
+      try{ I=await rpc('helfer_einsatz_info',{p_token:tok}); if(!I)throw new Error('Der Link ist ungültig. Bitte bei der Orga nachfragen.'); zeigen(); }
+      catch(e){ app.innerHTML=`<div class="card err empty"><h2>Link nicht verfügbar</h2><p class="note">${esc(e.message)}</p></div>`; }
+    }
+    function zeigen(){
+      const T=I.termine||[], meine=[]; T.forEach(t=>(t.schichten||[]).forEach(x=>{ if(x.mein)meine.push({t,x}); }));
+      app.innerHTML=`<div class="card hero"><span class="pill">Hallo ${esc(I.ich.vorname)}</span><h2 style="margin:12px 0 6px">Danke, dass du mithilfst!</h2>
+          <p class="note">Hier siehst du, wo gerade Hände gebraucht werden. Ein Tipp auf „Ich helfe“ genügt, die Orga sieht es sofort.</p>
+          ${meine.length?`<div class="ez-mein">${meine.map(m=>`<div>✓ <b>${esc(wd(m.t.datum))}</b>: ${esc(m.x.st)}, ${esc(zeit(m.x))}<br><small>${esc(m.t.titel)}</small></div>`).join('')}</div>`:''}</div>
+        ${T.length?T.map(t=>`<div class="card ez-t">${t.passt?'<span class="ez-pass">Passt zu dir</span>':''}<h2>${esc(t.titel)}</h2>
+            <small>${esc(wd(t.datum))}${t.zeit?' · '+esc(t.zeit)+' Uhr':''}${t.ort?' · '+esc(t.ort):''}${t.wer?' · Ansprechpartner: '+esc(t.wer):''}</small>
+            ${(t.schichten||[]).map(x=>{ const frei=Math.max(0,x.p-x.belegt);
+              return `<div class="ez-s${x.mein?' mein':''}"><div><b>${esc(x.st)}</b><small>${esc(zeit(x))} · ${x.mein?'Du'+(x.namen.length?' und '+esc(x.namen.join(', ')):''):x.namen.length?esc(x.namen.join(', ')):'noch niemand'}</small>
+                  <div class="ez-bar"><i style="width:${Math.round(x.belegt/x.p*100)}%"></i></div></div>
+                ${x.mein?`<button class="ez-b raus" data-ez="${esc(x.id)}" data-an="0">Austragen</button>`:frei>0?`<button class="ez-b" data-ez="${esc(x.id)}" data-an="1">Ich helfe</button>`:'<span class="ez-voll">voll</span>'}</div>`; }).join('')}</div>`).join('')
+          :'<div class="card empty"><h2>Gerade nichts offen</h2><p class="note">Im Moment sind keine Einsätze ausgeschrieben. Wir melden uns, sobald wieder Hilfe gebraucht wird.</p></div>'}
+        <div class="card"><p class="ez-regel">Bitte 15 Minuten vor Schichtbeginn an der Station sein und die Übergabe persönlich machen. Wenn etwas dazwischenkommt: hier austragen und kurz der Orga Bescheid geben.</p></div>`;
+      app.querySelectorAll('[data-ez]').forEach(b=>b.onclick=async()=>{ if(busy)return; busy=true; const an=b.dataset.an==='1';
+        try{ I=await rpc('helfer_einsatz_setzen',{p_token:tok,p_schicht:b.dataset.ez,p_an:an}); busy=false; try{ navigator.vibrate&&navigator.vibrate(15); }catch(e){} toast(an?'✓ Danke, du bist eingetragen':'✓ Ausgetragen'); zeigen(); }
+        catch(e){ busy=false; toast('⚠️ '+e.message); laden(); } });
+    }
+    laden();
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&I)laden(); });
+  }
   /* Helferpool (…/#mitmachen=<code>, QR-Code bei der Jahreshauptversammlung): erst anmelden, dann in die WhatsApp-Gruppe.
      Der Gruppenlink kommt erst nach der Anmeldung vom Server, er steht nicht im Code. */
   async function mitmachen(code){
