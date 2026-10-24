@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.57', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.58', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18252,6 +18252,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.58',v:'0.58',datum:'2026-10-24',titel:'Pitch-Decks verfeinert',kurz:'Jedes Deck kann jetzt einen eigenen Einstieg haben, einzelne Bausteine ausblenden und helle Logos auf dunklem Grund zeigen.',
+   punkte:[
+    {ic:'✏️',r:'partner',t:'Eigener Einstieg',d:'Beim Bearbeiten eines Decks gibt es ein Feld für den Text ganz oben. Leer bleibt der Standardtext über unsere 260 Kinder und Jugendlichen.',go:'sponsoring'},
+    {ic:'🔞',r:'partner',t:'Ohne Jugend-Trikot',d:'Bei Glücksspiel oder Alkohol einfach den Haken setzen: Die Trikotpatenschaft für die Jugend taucht im Deck dann nicht auf und kann auch nicht gebucht werden.'},
+    {ic:'🌙',r:'partner',t:'Helle Logos',d:'Ist ein Logo weiß oder hell, zeigt das Deck es auf dunklem Grund statt auf einer weißen Kachel.'}
+   ]},
   {id:'0.57',v:'0.57',datum:'2026-10-24',titel:'Pitch-Decks für Partner',kurz:'Für jede Firma eine persönliche Präsentation zum Durchscrollen: Verein, Pakete mit freien Plätzen, Angebot per Mail und Antrag mit Unterschrift direkt auf dem Handy.',
    punkte:[
     {ic:'🎯',r:'partner',t:'Pitch-Decks',d:'Unter Partner: Deck für eine Firma anlegen, mit Logo und warum es passt. Link kopieren, per WhatsApp schicken oder beim Termin direkt zeigen. Du siehst, ob der Kunde reingeschaut hat.',go:'sponsoring'},
@@ -22838,10 +22844,12 @@ function pdForm(d,vor){
       <label class="og-fl">Adresse<input id="pdAd" maxlength="160" value="${svEsc(x.adresse||'')}" placeholder="Straße, PLZ Ort"></label>
       <label class="og-fl">Branche<input id="pdBr" maxlength="80" value="${svEsc(x.branche||'')}"></label>
       <label class="og-fl">Website<input id="pdWe" maxlength="200" value="${svEsc(x.web||'')}" placeholder="https://"></label></div>
-    <label class="og-fl">Logo<input type="file" id="pdLo" accept="image/*"></label><div class="pd-lv" id="pdLv">${d&&d.logo?'Logo ist hinterlegt. Neues Bild ersetzt es.':'Noch kein Logo. Am besten PNG mit transparentem Hintergrund.'}</div>
+    <label class="og-fl">Logo<input type="file" id="pdLo" accept="image/*"></label><label class="jutog"><input type="checkbox" id="pdLd"${x.logo_hell===false?' checked':''}> Logo ist weiß oder hell (auf dunklem Grund zeigen)</label><div class="pd-lv" id="pdLv">${d&&d.logo?'Logo ist hinterlegt. Neues Bild ersetzt es.':'Noch kein Logo. Am besten PNG mit transparentem Hintergrund.'}</div>
     <label class="og-fl">Empfehlung<select id="pdEmpf"><option value="">keine</option>${Object.keys(PD_ST).map(k=>`<option value="${k}"${x.empfehlung===k?' selected':''}>${PD_ST[k]}</option>`).join('')}</select></label>
     <h3 class="pd-h">Warum es passt</h3>
     <label class="og-fl">Überschrift<input id="pdTi" maxlength="80" value="${svEsc(P.titel||'')}" placeholder="z.B. Handwerk mit Heimat."></label>
+    <label class="og-fl">Einstieg oben (leer = Standardtext über die 260 Kinder)<textarea id="pdHe" rows="2" maxlength="300">${svEsc(P.hero||'')}</textarea></label>
+    <label class="jutog"><input type="checkbox" id="pdOJ"${(P.ohne||[]).includes('trikot')?' checked':''}> Ohne Jugend-Trikotpatenschaft (z.B. bei Glücksspiel oder Alkohol)</label>
     <label class="og-fl">Text<textarea id="pdTx" rows="4" maxlength="700">${svEsc(P.text||'')}</textarea></label>
     <label class="og-fl">Punkte (eine Zeile je Punkt)<textarea id="pdPu" rows="4" maxlength="900">${svEsc((P.punkte||[]).join('\n'))}</textarea></label>
     <label class="og-fl">Zahlen (eine Zeile je Zahl: Zahl | Text)<textarea id="pdFa" rows="3" maxlength="400" placeholder="1865 | Gründung des Betriebs">${svEsc((P.fakten||[]).map(f=>f.z+' | '+f.t).join('\n'))}</textarea></label>
@@ -22853,9 +22861,9 @@ function pdForm(d,vor){
   M.querySelector('#pdSave').onclick=async()=>{
     const v=id=>(M.querySelector(id)||{}).value||'';
     const p={id:d?d.id:null,firma:v('#pdFi'),kurzname:v('#pdKu'),anrede:v('#pdAn'),ansprech:v('#pdAp'),email:v('#pdEm'),adresse:v('#pdAd'),branche:v('#pdBr'),web:v('#pdWe'),empfehlung:v('#pdEmpf'),notiz:v('#pdNo'),
-      passung:{titel:v('#pdTi').trim(),text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
+      passung:{titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
         fakten:v('#pdFa').split('\n').map(s=>s.split('|')).filter(a=>a.length>=2&&a[0].trim()).map(a=>({z:a[0].trim().slice(0,12),t:a.slice(1).join('|').trim().slice(0,80)})).slice(0,4)}};
-    if(logo)p.logo=logo; if(d)p.aktiv=M.querySelector('#pdAk').checked;
+    p.logo_hell=!M.querySelector('#pdLd').checked; if(logo)p.logo=logo; if(d)p.aktiv=M.querySelector('#pdAk').checked;
     if(/[–—]/.test(JSON.stringify(p.passung))){ kToast('Bitte keine Gedankenstriche, lieber Komma oder Doppelpunkt'); return; }
     try{ const r=await svtRpc('partner_deck_speichern',{p}); PD.d=null; closeOverlay(); kToast('✓ Deck gespeichert');
       if(!d){ try{ await navigator.clipboard.writeText(pdLink(r.code)); kToast('✓ Gespeichert, Link ist kopiert'); }catch(e){} }

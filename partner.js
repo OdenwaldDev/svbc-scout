@@ -43,18 +43,18 @@
     setInterval(async()=>{ if(document.visibilityState!=='visible')return; try{ K=await rpc('partner_kontingente'); karten(); auswahl(); }catch(e){} },20000);
   }
 
-  function logoImg(cls){ return D.logo?`<img class="${cls||''}" src="${esc(D.logo)}" alt="${esc(D.firma)}">`:''; }
+  function logoImg(cls){ return D.logo?`<img class="${(cls||'')+(D.logo_hell===false?' dk':'')}" src="${esc(D.logo)}" alt="${esc(D.firma)}">`:''; }
   function gerueste(){
     const P=D.passung||{}, kurz=D.kurzname||D.firma, nm=String(D.ansprech||'').trim().split(/\s+/), anr=D.ansprech?(D.anrede?`Hallo ${esc(D.anrede)} ${esc(nm[nm.length-1])},`:`Hallo ${esc(nm[0])},`):'Schön, dass Sie da sind.';
     const bande=[]; for(let i=0;i<2;i++)bande.push(`<div class="ba-t">${logoImg()||`<b class="c" style="font-size:22px;color:#1d2760">${esc(kurz)}</b>`}</div><div class="ba-t svm"><img src="partner/svbsc.png" alt=""></div><div class="ba-t leer">Ihr Platz</div><div class="ba-t">${logoImg()||''}</div><div class="ba-t svm"><img src="partner/svbsc.png" alt=""></div>`);
     app.innerHTML=`
-<div class="top"><div class="w"><div class="top-l"><img src="partner/svbsc.png" alt="SV/BSC Mörlenbach">${D.logo?`<span class="top-x">×</span><span class="top-p">${logoImg()}</span>`:''}</div>
+<div class="top"><div class="w"><div class="top-l"><img src="partner/svbsc.png" alt="SV/BSC Mörlenbach">${D.logo?`<span class="top-x">×</span><span class="top-p${D.logo_hell===false?' dk':''}">${logoImg()}</span>`:''}</div>
   <button class="top-b" type="button" data-zu="auswahl">Paket wählen</button></div></div>
 <section class="hero"><img src="partner/hero.jpg" alt=""><div class="w">
   <div class="hero-f"><span>Persönlich für ${esc(kurz)}</span></div>
   <div class="hand" style="margin-top:18px;font-size:30px">${anr}</div>
   <h1>Hier wächst Heimat.</h1>
-  <p>Bei uns stehen jede Woche 260 Kinder und Jugendliche auf dem Platz. Kinder, die hier aufwachsen und morgen bei ${esc(kurz)} arbeiten könnten.</p>
+  <p>${P.hero?esc(P.hero):`Bei uns stehen jede Woche 260 Kinder und Jugendliche auf dem Platz. Kinder, die hier aufwachsen und morgen bei ${esc(kurz)} arbeiten könnten.`}</p>
   <div class="k" style="margin-top:26px;color:var(--hb)">Scrollen ↓</div></div></section>
 ${P.titel||P.text||(P.punkte||[]).length?`<section class="sec hell"><div class="w">
   <div class="pa-kopf">${D.logo?logoImg('pl'):`<b class="c" style="font-size:34px;color:#1d2760">${esc(D.firma)}</b>`}<i>×</i><img class="sv" src="partner/svbsc.png" alt="SV/BSC Mörlenbach"></div>
@@ -110,7 +110,7 @@ ${P.titel||P.text||(P.punkte||[]).length?`<section class="sec hell"><div class="
           <div class="balken"><div><i class="${eng?'eng':''}" style="width:${pct}%"></i></div><span class="${eng?'eng':''}">${f0===0?'ausgebucht':`noch ${f0} von ${k.max} frei`}</span></div>
           ${f0>0&&f0<=3?`<div class="knapp">${f0===1?'Letzter Platz':'Nur noch '+f0+' Plätze'}</div>`:''}</button>`; }).join('')}</div>
       ${P?`<div class="k" style="color:var(--grau);margin-top:44px">Schritt 2</div><h2 class="g" style="font-size:44px;margin-top:8px">Bausteine dazu.</h2>
-        <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">${BS.map(b=>{ const pr=b.k==='sotd'?sotdPreis(P.id):b.preis;
+        <div style="margin-top:22px;display:flex;flex-direction:column;gap:10px">${BS.filter(b=>!(((D&&D.passung)||{}).ohne||[]).includes(b.k)).map(b=>{ const pr=b.k==='sotd'?sotdPreis(P.id):b.preis;
           return `<div class="bs"><div class="bs-t"><b>${esc(b.t)}</b><span>${esc(b.d)}</span></div>${b.k==='sotd'&&P.id==='p1896'?'<div class="inkl">1 × inklusive</div>':''}
             <div class="menge"><small>${b.k==='sotd'&&P.id==='p1896'?'weitere ':''}je ${eur(pr)}</small><button type="button" data-m="${b.k}" data-d="-1" aria-label="weniger">−</button><b>${S.b[b.k]||0}</b><button type="button" class="p" data-m="${b.k}" data-d="1" aria-label="mehr">+</button></div></div>`; }).join('')}
           <button type="button" class="bs" data-rec="1" style="cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%"><div class="hak${S.rec?' on':''}">${S.rec?'✓':''}</div><div class="bs-t"><b>Recruiting &amp; Job-Posts</b><span>Fachkräfte und Azubis aus der Region erreichen. Wir machen Ihnen ein Angebot.</span></div>${P.id==='premium'||P.id==='p1896'?'<small style="font-size:13px;font-weight:700;color:var(--blau)">teils inklusive</small>':''}</button></div>
