@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.55', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.55.1', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -22122,7 +22122,7 @@ document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==
    2) Klick-Heatmap je Seite: nur zusammengezählt, ohne Person, in einem groben Raster (20 × 60).
    3) Admin-Dashboard „Nutzung“: Aktive, Zeit, App, Mitteilungen, Erste Schritte, Bereiche, Personen mit Nutzertyp,
       ungenutzte Funktionen, Hinweise, Heatmap direkt auf der Seite.
-   Jede Person sieht unter Mein Konto, was erfasst wird, und kann es abschalten. Aufbewahrung 12 Monate (096).
+   Jede Person sieht unter Mein Konto, was erfasst wird, und kann es abschalten. Aufbewahrung solange der Zugang besteht (Wunsch Albert 24.10.: Daten dauerhaft für die Vereinsarbeit, keine Löschfrist; beim Löschen des Zugangs fallen sie per Fremdschlüssel weg).
    ===================================================================== */
 const N2={e:{},s:{},h:{},cur:null,t0:Date.now(),aus:false,me:null,meP:null,timer:null,daten:null,tage:30,offen:null,heat:null,sort:'last'};
 const N2_AKTIONEN=/^(eye_v1_speichern|rating_pruefung_neu|kandidat_v1_set|kader_plan_v1_set|bedarf_v1_kriterien|training_save|push_sub|rating_modell_entwurf|rating_modell_aktivieren|funktion_setzen|rating_neu_berechnen|daten_entscheiden|spieler_zusammenfuehren)$|(_save|_set|_speichern|_neu|_anlegen|_teilen|_senden|_erledigen)$/;
@@ -22206,7 +22206,7 @@ function n2Datenschutz(){
     <div class="n2-dsx">
       <h4>Wer verarbeitet die Daten?</h4><p>${n2E(v)}, Fußballabteilung. Die Sportzentrale ist ein internes Werkzeug für Vorstand, Trainer, Planer und Jugend. Zugriff haben nur angemeldete Mitglieder mit ihrer Rolle.</p>
       <h4>Konto und Inhalte</h4><p>Name, E-Mail und Rolle für die Anmeldung. Alles, was du in der App einträgst (z. B. Trainings, Abstimmungen, Einschätzungen), dient der Arbeit im Verein und ist nur für Berechtigte sichtbar.</p>
-      <h4>Nutzungsauswertung</h4><p>Damit wir die App verbessern und gezielt erklären können, werten wir aus, welche Bereiche und Funktionen wie oft und wie lange genutzt werden, wie Hinweise ankommen und welche Geräte die App nutzen. Inhalte und Eingaben werden dabei nicht erfasst. Tipp-Positionen werden nur zusammengezählt und ohne Bezug zur Person gespeichert. Einsehen kann die Auswertung nur der Admin. Rechtsgrundlage ist das berechtigte Interesse des Vereins an einer gut funktionierenden App (Art. 6 Abs. 1 lit. f DSGVO). Die Daten werden höchstens 12 Monate aufbewahrt.</p>
+      <h4>Nutzungsauswertung</h4><p>Damit wir die App verbessern und gezielt erklären können, werten wir aus, welche Bereiche und Funktionen wie oft und wie lange genutzt werden, wie Hinweise ankommen und welche Geräte die App nutzen. Inhalte und Eingaben werden dabei nicht erfasst. Tipp-Positionen werden nur zusammengezählt und ohne Bezug zur Person gespeichert. Einsehen kann die Auswertung nur der Admin. Rechtsgrundlage ist das berechtigte Interesse des Vereins an einer gut funktionierenden App (Art. 6 Abs. 1 lit. f DSGVO). Die Daten bleiben gespeichert, solange dein Zugang zur Sportzentrale besteht, weil wir sie dauerhaft für die Vereinsarbeit brauchen. Wird dein Zugang gelöscht, werden sie mit gelöscht.</p>
       <h4>Dein Widerspruch</h4><p>Du kannst der Nutzungsauswertung jederzeit widersprechen: unter Mein Konto den Schalter „Nutzungsstatistik“ ausschalten oder dich an den Vorstand wenden.</p>
       <h4>Mitteilungen</h4><p>Wenn du Mitteilungen einschaltest, speichern wir die technische Adresse deines Geräts für den Versand. Ausschalten geht jederzeit unter Mein Konto.</p>
       <h4>Deine Rechte</h4><p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung und Beschwerde bei der zuständigen Aufsichtsbehörde. Ansprechpartner ist der Vorstand der Abteilung.</p>
@@ -22306,7 +22306,7 @@ async function n2Dashboard(){
         <div class="n2-tr"><span>gezeigt</span><b>${HW.zeigen}</b></div><div class="n2-tr"><span>angenommen</span><b>${HW.ja}</b></div><div class="n2-tr"><span>später / weggewischt</span><b>${HW.spaeter}</b></div>
         <p class="note small">Wer Hinweise oft wegwischt, bekommt sie seltener (der Abstand wächst von selbst).</p></div>
     </div>
-    <p class="note small">Erfasst wird nur das Wo, Wie oft und Wie lange, nie Inhalte. Jede Person sieht das unter Mein Konto und kann es abschalten. Daten älter als 12 Monate werden gelöscht. Stand ${n2E(new Date(D.stand).toLocaleString('de-DE'))}.</p></div>`;
+    <p class="note small">Erfasst wird nur das Wo, Wie oft und Wie lange, nie Inhalte. Jede Person sieht das unter Mein Konto und kann es abschalten. Die Daten bleiben für die Vereinsarbeit erhalten, solange der Zugang besteht. Stand ${n2E(new Date(D.stand).toLocaleString('de-DE'))}.</p></div>`;
   P.querySelectorAll('[data-n2t]').forEach(b=>b.onclick=()=>{ N2.tage=+b.dataset.n2t; n2Dashboard(); });
   P.querySelectorAll('[data-n2s]').forEach(b=>b.onclick=()=>{ N2.sort=b.dataset.n2s; n2Dashboard(); });
   P.querySelectorAll('[data-n2p]').forEach(b=>b.onclick=()=>{ N2.offen=N2.offen===b.dataset.n2p?null:b.dataset.n2p; n2Dashboard(); });
