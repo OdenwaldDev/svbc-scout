@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.64', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.65', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18263,6 +18263,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.65',v:'0.65',datum:'2026-10-29',titel:'Die Sportzentrale als App',kurz:'Bald gibt es die Sportzentrale als echte App für iPhone und Android. Updates kommen dort automatisch, ganz ohne Store.',
+   punkte:[
+    {ic:'📲',t:'App für iPhone und Android',d:'Mit Mitteilungen direkt aufs Handy, Entsperren mit Face ID und Teilen über das Teilen-Menü. Die Einladung kommt von der Abteilungsleitung.'},
+    {ic:'🔄',t:'Immer aktuell',d:'Neue Versionen lädt die App still im Hintergrund und zeigt sie beim nächsten Öffnen.'},
+    {ic:'🔒',t:'Datenschutz und Hilfe',d:'Zum Nachlesen unter svbsc.kaderwerk.pro/datenschutz.html und /hilfe.html.'}
+   ]},
   {id:'0.64',v:'0.64',datum:'2026-10-29',titel:'Partner-Engine',kurz:'Partnerschaften von der ersten Präsentation bis zur Rechnung, und ein Wächter im Hintergrund, damit keine Verlängerung und kein Angebot mehr untergeht.',
    punkte:[
     {ic:'🧭',t:'Partner-Steuerung',d:'Neuer erster Reiter bei Partner: was heute zu tun ist, wer welche Fläche bis wann hat (Jugend als Raster je Mannschaft), Laufzeiten, Rechnungen, Katalog, Team.'},
@@ -25436,6 +25442,14 @@ const svnLs=(k,v)=>{ try{ if(v===undefined)return localStorage.getItem(k); if(v=
 
 if(SVN.nativ){
   document.documentElement.classList.add('nativ','nativ-'+SVN.plattform);
+
+  // ---------- Updates in der Store-App (Beta 0.65) ----------
+  // Die Dateien liegen in der App selbst. Neue Versionen holt der Capgo-Updater still im Hintergrund (Funktion app-ota),
+  // sie gelten ab dem nächsten Öffnen. Service Worker und version.json-Abfrage der Web-App sind hier aus.
+  appRegisterSW=function(){};
+  appCheckUpdate=async function(){ return null; };
+  try{ const U=SVN.plug.CapacitorUpdater; if(U&&U.notifyAppReady){ const ok=()=>{ try{ U.notifyAppReady(); }catch(e){} };
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ok); else ok(); } }catch(e){}
 
   // ---------- Mitteilungen über APNs/FCM ----------
   const PN=()=>SVN.plug.PushNotifications;
