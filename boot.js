@@ -3,6 +3,9 @@
    Die öffentliche Seite enthält KEINE Spielerdaten. Erst nach erfolgreicher
    Anmeldung werden Datenbestand + App-Code geladen.
    ===================================================================== */
+// Öffentliche Adresse der App: in der Store-App (Capacitor) immer die echte Webadresse, sonst der aktuelle Ort
+function svBasis(){ try{ const C=window.Capacitor; if(C&&C.isNativePlatform&&C.isNativePlatform())return 'https://svbsc.kaderwerk.pro/'; }catch(e){} return location.origin+location.pathname.replace(/[^/]*$/,''); }
+
 // Installieren (Android/Chrome): das Angebot des Browsers früh aufheben, die App fragt später dezent (svm50.js)
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); window.__svBip=e; });
 (function(){
@@ -141,7 +144,7 @@ function viewForgot(email){
   };
   document.getElementById('gFgLink').onclick=async ev=>{
     const b=ev.currentTarget; if(!em.value.trim()||!em.checkValidity()){ em.reportValidity(); return; } busy(b,true,'Senden …');
-    try{ const {error}=await sb.auth.resetPasswordForEmail(em.value.trim(),{redirectTo:location.origin+location.pathname}); if(error)throw error;
+    try{ const {error}=await sb.auth.resetPasswordForEmail(em.value.trim(),{redirectTo:svBasis()}); if(error)throw error;
       busy(b,false); msg(m,'ok','Wenn die Adresse freigeschaltet ist, ist die E-Mail unterwegs. Bitte auch im Spam-Ordner nachsehen.'); }
     catch(err){ busy(b,false); msg(m,'err',errText(err)); }
   };
@@ -256,7 +259,7 @@ SV.changePassword=async function(pw){
   await sb.rpc('me_update',{p_name:null,p_pw_set:true});
 };
 SV.admin=async function(action,payload){
-  const {data,error}=await sb.functions.invoke('admin-users',{body:Object.assign({app_url:location.origin+location.pathname},payload||{},{action})});
+  const {data,error}=await sb.functions.invoke('admin-users',{body:Object.assign({app_url:svBasis()},payload||{},{action})});
   if(error){ let t=error.message; try{ const j=await error.context.json(); if(j&&j.error)t=j.error; }catch(e){} throw new Error(t); }
   if(data&&data.error)throw new Error(data.error);
   return data;

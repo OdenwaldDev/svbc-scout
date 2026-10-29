@@ -1,0 +1,226 @@
+{
+ "version": 1,
+ "geprueft": "2026-10-28",
+ "wappen": [
+  {
+   "name": "SV/BSC Mörlenbach",
+   "slug": "svbsc-moerlenbach",
+   "datei": "svbsc-moerlenbach.webp",
+   "breite": 1379,
+   "hoehe": 784,
+   "quelle": null,
+   "art": "original",
+   "notiz": "Vereinswappen, unverändert.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "TG Jahn Trösel",
+   "slug": "tg-jahn-troesel",
+   "datei": "tg-jahn-troesel.webp",
+   "breite": 790,
+   "hoehe": 782,
+   "quelle": "https://www.fupa.net/team/tg-jahn-troesel-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "SV Affolterbach",
+   "slug": "sv-affolterbach",
+   "datei": "sv-affolterbach.webp",
+   "breite": 634,
+   "hoehe": 770,
+   "quelle": "https://www.fupa.net/team/sv-affolterbach-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "SG Brandau/Gadernheim",
+   "slug": "sg-ksg-brandau-gadernheim",
+   "datei": "sg-ksg-brandau-gadernheim.svg",
+   "breite": 800,
+   "hoehe": 800,
+   "quelle": "https://www.fupa.net/team/sg-ksg-brandau-gadernheim-m1-2026-27",
+   "art": "contour-clipped",
+   "notiz": "Runde Außenkontur maskiert; gesamtes Wappeninnere unverändert.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "VfR Fehlheim II",
+   "slug": "vfr-fehlheim",
+   "datei": "vfr-fehlheim.webp",
+   "breite": 1050,
+   "hoehe": 1233,
+   "quelle": "https://www.fupa.net/team/vfr-fehlheim-m2-2026-27",
+   "art": "ai-restored",
+   "notiz": "Deckendes Innenfeld geprüft; alte defekte Varianten ersetzt.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "SG Wald-Michelbach",
+   "slug": "sg-wald-michelbach",
+   "datei": "sg-wald-michelbach.webp",
+   "breite": 690,
+   "hoehe": 800,
+   "quelle": "https://www.fupa.net/team/sg-wald-michelbach-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "ISC Fürth",
+   "slug": "isc-fuerth",
+   "datei": "isc-fuerth.webp",
+   "breite": 938,
+   "hoehe": 1209,
+   "quelle": "https://www.fupa.net/team/isc-fuerth-m1-2026-27",
+   "art": "ai-restored",
+   "notiz": "KI-restauriert und visuell verglichen. Original separat gespeichert.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "FV Hofheim/Ried",
+   "slug": "fv-hofheim",
+   "datei": "fv-hofheim.webp",
+   "breite": 794,
+   "hoehe": 792,
+   "quelle": "https://www.fupa.net/team/fv-hofheim-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "FSV Eintracht Zotzenbach",
+   "slug": "fsv-zotzenbach",
+   "datei": "fsv-zotzenbach.webp",
+   "breite": 691,
+   "hoehe": 796,
+   "quelle": "https://www.fupa.net/team/fsv-zotzenbach-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "TV Lampertheim",
+   "slug": "tv-lampertheim",
+   "datei": "tv-lampertheim.webp",
+   "breite": 717,
+   "hoehe": 782,
+   "quelle": "https://www.fupa.net/team/tv-lampertheim-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "TSV Auerbach II",
+   "slug": "tsv-rot-weiss-auerbach",
+   "datei": "tsv-rot-weiss-auerbach.webp",
+   "breite": 1063,
+   "hoehe": 1189,
+   "quelle": "https://www.fupa.net/team/tsv-rot-weiss-auerbach-m2-2026-27",
+   "art": "ai-restored",
+   "notiz": "KI-restauriert und visuell verglichen. Original separat gespeichert.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "VfB Lampertheim",
+   "slug": "vfb-lampertheim",
+   "datei": "vfb-lampertheim.webp",
+   "breite": 641,
+   "hoehe": 800,
+   "quelle": "https://www.fupa.net/team/vfb-lampertheim-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "FC Ober-Abtsteinach",
+   "slug": "fc-ober-abtsteinach",
+   "datei": "fc-ober-abtsteinach.webp",
+   "breite": 559,
+   "hoehe": 671,
+   "quelle": "https://www.fupa.net/team/fc-ober-abtsteinach-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "SG Hammelbach/Scharbach",
+   "slug": "sg-hammelbachscharbach",
+   "datei": "sg-hammelbachscharbach.webp",
+   "breite": 714,
+   "hoehe": 784,
+   "quelle": "https://www.fupa.net/team/sg-hammelbachscharbach-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "TSV Hambach",
+   "slug": "tsv-hambach",
+   "datei": "tsv-hambach.webp",
+   "breite": 736,
+   "hoehe": 789,
+   "quelle": "https://www.fupa.net/team/tsv-hambach-m1-2026-27",
+   "art": "original",
+   "notiz": "Nur außen transparent; Innenfarben erhalten.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "FSG Riedrode II",
+   "slug": "fsg-riedrode",
+   "datei": "fsg-riedrode.webp",
+   "breite": 1136,
+   "hoehe": 1232,
+   "quelle": "https://www.fupa.net/team/fsg-riedrode-m2-2026-27",
+   "art": "ai-restored",
+   "notiz": "KI-restauriert und visuell verglichen. Original separat gespeichert.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "SF Heppenheim",
+   "slug": "sf-heppenheim",
+   "datei": "sf-heppenheim.webp",
+   "breite": 1030,
+   "hoehe": 1225,
+   "quelle": "https://www.fupa.net/club/fc-sportfreunde-heppenheim",
+   "art": "ai-restored",
+   "notiz": "KI-restauriert und visuell verglichen. Original separat gespeichert.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "FC Fürth II",
+   "slug": "fc-fuerth",
+   "datei": "fc-fuerth.webp",
+   "breite": 1138,
+   "hoehe": 1246,
+   "quelle": "https://www.fupa.net/club/fc-fuerth/matches",
+   "art": "ai-restored",
+   "notiz": "KI-restauriert und visuell verglichen. Original separat gespeichert.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "SG Nordheim/Wattenheim",
+   "slug": "sg-nordheim-wattenheim",
+   "datei": "sg-nordheim-wattenheim.webp",
+   "breite": 1063,
+   "hoehe": 1215,
+   "quelle": "https://www.fupa.net/club/sg-nordheimwattenheim",
+   "art": "ai-restored",
+   "notiz": "KI-restauriert und visuell verglichen. Original separat gespeichert.",
+   "geprueft": "2026-10-28"
+  },
+  {
+   "name": "SG Lindenfels/Winterkasten",
+   "slug": "sg-lindenfels-winterkasten",
+   "datei": "sg-lindenfels-winterkasten.svg",
+   "breite": 800,
+   "hoehe": 800,
+   "quelle": "https://www.fupa.net/club/sv-winterkasten/matches?pointer=prev",
+   "art": "contour-clipped",
+   "notiz": "Runde Außenkontur maskiert; gesamtes Wappeninnere unverändert.",
+   "geprueft": "2026-10-28"
+  }
+ ]
+}
