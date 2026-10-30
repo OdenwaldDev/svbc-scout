@@ -10,7 +10,12 @@ function svBasis(){ try{ const C=window.Capacitor; if(C&&C.isNativePlatform&&C.i
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); window.__svBip=e; });
 (function(){
 'use strict';
-const CFG=window.SVBC_CFG||{}, I=window.SVI;
+const CFG0=window.SVBC_CFG||{}, I=window.SVI;
+// Demo-Zugang (Beta 0.66): eigene Demo-Datenbank mit erfundenen Daten (App-Prüfung, Screenshots, Vorführen).
+// Wer sich mit einer Demo-Adresse anmeldet, arbeitet danach nur noch mit der Demo-Datenbank, bis zum Abmelden.
+let CFG=CFG0;
+try{ if(CFG0.demo&&CFG0.demo.url&&localStorage.getItem('svbc-backend')==='demo'){ CFG=Object.assign({},CFG0,{url:CFG0.demo.url,anon:CFG0.demo.anon,istDemo:true}); window.SVBC_CFG=CFG; document.documentElement.classList.add('demo-zugang'); } }catch(e){}
+const istDemoMail=m=>!!(CFG0.demo&&(CFG0.demo.mails||[]).includes(String(m||'').trim().toLowerCase()));
 const gate=document.getElementById('gate'), card=document.getElementById('gcard'), load=document.getElementById('gload');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}};
@@ -92,7 +97,15 @@ function viewLogin(note,kind){
   (em.value?pw:em).focus({preventScroll:true});
   document.getElementById('gLogin').onsubmit=async e=>{
     e.preventDefault(); const b=document.getElementById('gGo'); msg(m,'',''); busy(b,true,'Anmelden …');
-    try{ const {error}=await sb.auth.signInWithPassword({email:em.value.trim(),password:pw.value}); if(error)throw error;
+    try{
+      // Wechsel zwischen Vereins- und Demo-Datenbank: dort anmelden, Speicher leeren, neu starten
+      const mail=em.value.trim(), demo=istDemoMail(mail);
+      if(demo!==!!CFG.istDemo){ const Z=demo?CFG0.demo:CFG0;
+        const zsb=window.supabase.createClient(Z.url,Z.anon,{auth:{persistSession:true,autoRefreshToken:false,detectSessionInUrl:false,storageKey:'svbc-auth',flowType:'implicit',storage:store}});
+        const {error:ze}=await zsb.auth.signInWithPassword({email:mail,password:pw.value}); if(ze)throw ze;
+        ls.set('svbc-backend',demo?'demo':null); ls.set('svbcLastEmail',mail); ls.set('svbcProfile',null); await IDB.clear();
+        location.replace(location.pathname); return; }
+      const {error}=await sb.auth.signInWithPassword({email:em.value.trim(),password:pw.value}); if(error)throw error;
       ls.set('svbcLastEmail',em.value.trim()); await enter({}); }
     catch(err){ busy(b,false); msg(m,'err',errText(err)); pw.select(); }
   };
@@ -249,7 +262,7 @@ async function loadAndStart(){
 SV.signOut=async function(){
   window.__svbcOut=true;
   try{ await sb.auth.signOut({scope:'local'}); }catch(e){}
-  ['svbcOutbox','svbcProfile','svbcReloadFor'].forEach(k=>ls.set(k,null));
+  ['svbcOutbox','svbcProfile','svbcReloadFor','svbc-backend'].forEach(k=>ls.set(k,null));
   try{ sessionStorage.clear(); }catch(e){}
   await IDB.clear();
   location.replace(location.pathname);

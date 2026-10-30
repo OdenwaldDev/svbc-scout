@@ -61,6 +61,7 @@
     S.team=(M.find(m=>{ const t=lk('team_jugend'); return t&&t.frei_je&&t.frei_je[m.id]>0; })||M[0]||{}).id||null;
     document.title='Partner werden · '+(dk.kurzname||dk.firma)+' · SV/BSC Mörlenbach';
     geruest(); fragen(); welten(); vorschlag(); korb(); abschluss(); kopfZahl();
+    { const zu=hp.get('s'); if(zu&&/^[a-z]+$/.test(zu))setTimeout(()=>{ const e=document.getElementById(zu); if(e)e.scrollIntoView({block:'start'}); },350); }   // aus der Partner-Zentrale direkt zum Abschluss
     window.addEventListener('scroll',fortschritt,{passive:true}); fortschritt();
     setInterval(async()=>{ if(document.visibilityState!=='visible'||S.busy||S.ergebnis||S.sig.p||S.sig.v)return;
       try{ const n=await rpc('partner_praesi',{p_code:code}); L=filtern(n.leistungen||L); welten(); vorschlag(); korb(); }catch(e){} },45000);
