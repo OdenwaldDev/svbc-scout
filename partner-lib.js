@@ -2334,7 +2334,7 @@ PLIB.ZIELE={jugend:'Jugend fördern',sichtbarkeit:'Sichtbar in der Region',netzw
   gemeinschaft:'Gemeinschaft erleben',events:'Bei Events dabei',exklusiv:'Exklusiv in der Branche',digital:'Online präsent',spende:'Einfach helfen',bildung:'Gute Ausbildung'};
 PLIB.BEREICHE={verein:'Der ganze Verein',erste:'1. Mannschaft',zweite:'2. Mannschaft',jugend:'Jugend',events:'Events'};
 PLIB.EINHEIT={saison:'je Saison',einmalig:'einmalig',spieltag:'je Spieltag',stueck:'je Stück',frei:''};
-PLIB.eur=(n,dez)=>{ const r=Math.round((+n||0)*100)/100; return r.toLocaleString('de-DE',{minimumFractionDigits:dez||!Number.isInteger(r)?2:0,maximumFractionDigits:2})+' €'; };
+PLIB.eur=(n,dez)=>{ const r=Math.round((+n||0)*100)/100; return r.toLocaleString('de-DE',{minimumFractionDigits:dez||!Number.isInteger(r)?2:0,maximumFractionDigits:2})+'\u00a0€'; };
 
 // ---------- Preis rechnen (gleiche Regeln wie der Server) ----------
 PLIB.rechnen=function(pos,leistungen,saisons){
@@ -2353,40 +2353,50 @@ PLIB.rechnen=function(pos,leistungen,saisons){
 // ---------- Vertragsbausteine ----------
 // [Schlüssel, Überschrift, Text]. {…} wird beim Anzeigen ersetzt.
 PLIB.KLAUSELN={
-  gegenstand:['Vertragsgegenstand','Der Partner unterstützt die Fußballabteilung des Vereins. Der Verein erbringt dafür die in der Leistungsübersicht genannten Leistungen. Art, Umfang und Platzierung der Werbung stimmen die Parteien vor der Umsetzung ab.'],
-  laufzeit_fest:['Laufzeit','Der Vertrag beginnt am {beginn} und endet am {ende}, ohne dass es einer Kündigung bedarf. Über eine Verlängerung sprechen die Parteien rechtzeitig vor Ablauf.'],
-  laufzeit_auto:['Laufzeit und Verlängerung','Der Vertrag beginnt am {beginn} und läuft bis {ende}. Er verlängert sich um jeweils eine Saison, wenn keine Partei spätestens {frist} Monate vor Ablauf in Textform kündigt.'],
-  verguetung:['Vergütung und Zahlung','Der Partner zahlt die in der Leistungsübersicht genannte Vergütung. Alle Beträge verstehen sich netto zuzüglich gesetzlicher Umsatzsteuer, soweit der Verein umsatzsteuerpflichtig abrechnet. Der Verein stellt zu Beginn jeder Saison eine Rechnung, zahlbar innerhalb von 14 Tagen ohne Abzug.'],
-  werbemittel:['Logo und Werbemittel','Der Partner stellt sein Logo in druckfähiger Form zur Verfügung. Der Verein darf Namen und Logo des Partners für die vereinbarten Leistungen und für die Darstellung der Partnerschaft in seinen Medien nutzen. Der Partner darf auf die Partnerschaft mit dem Verein hinweisen.'],
-  bande:['Werbebande','Herstellung und Montage der Bande übernimmt der Verein, soweit im Paket enthalten. Beschädigungen durch Dritte oder Witterung beseitigt der Verein in angemessener Zeit. Die genaue Platzierung richtet sich nach Paket und Verfügbarkeit.'],
-  trikot:['Trikot und Spielkleidung','Die Spielkleidung wird über den Ausrüster des Vereins beschafft. Der Hauptpartner auf der Trikotbrust hat ein Vorrecht. Das Logo des Partners wird auf der vereinbarten Fläche angebracht und bleibt für die Lebensdauer der Kleidung sichtbar.'],
-  jugend:['Jugend','Leistungen für Jugendmannschaften kommen den Kindern und Jugendlichen unmittelbar zugute. Werbung für Tabak, Alkohol, Glücksspiel und vergleichbare Produkte ist auf Jugendkleidung und in Jugendmedien ausgeschlossen.'],
-  exklusiv:['Branchenexklusivität','Der Verein nimmt in der Laufzeit keinen weiteren Partner der Branche „{branche}“ in die gleiche Partnerstufe auf.'],
-  events:['Veranstaltungen','Fällt eine Veranstaltung aus Gründen aus, die der Verein nicht zu vertreten hat, holt der Verein die Leistung bei einer vergleichbaren Veranstaltung nach. Ein Anspruch auf Rückzahlung besteht in diesem Fall nicht.'],
-  spielausfall:['Spielbetrieb','Einzelne Spiel- oder Trainingsausfälle, etwa wegen Witterung oder Entscheidungen des Verbands, mindern die Vergütung nicht.'],
+  gegenstand:['Vertragsgegenstand','Der Partner unterstützt die Fußballabteilung des Vereins. Der Verein erbringt dafür die Leistungen, die in der Leistungsübersicht stehen. Art, Umfang und Platzierung der Werbung stimmen die Parteien vor der Umsetzung ab. Mit seiner Unterschrift bietet der Partner dem Verein den Abschluss dieses Vertrags verbindlich an. An dieses Angebot ist er vier Wochen ab seiner Unterschrift gebunden, weil der Vorstand des Vereins ehrenamtlich arbeitet und nicht jeden Tag zusammenkommt. Der Vertrag kommt zustande, wenn eine vertretungsberechtigte Person des Vereins innerhalb dieser Frist gegenzeichnet. Eine besondere Erklärung der Annahme gegenüber dem Partner ist dafür nicht nötig (§ 151 BGB). Der Verein schickt dem Partner den Vertrag dann mit beiden Unterschriften. Zeichnet der Verein nicht innerhalb der Frist gegen, ist der Partner nicht mehr gebunden. Der Partner schließt den Vertrag als Unternehmer (§ 14 BGB) für sein Unternehmen ab.'],
+  laufzeit_fest:['Laufzeit','Der Vertrag beginnt am {beginn} und endet am {ende} von selbst. Eine Kündigung ist nicht nötig. Über eine Verlängerung sprechen die Parteien rechtzeitig vorher.'],
+  laufzeit_auto:['Laufzeit und Verlängerung','Der Vertrag beginnt am {beginn} und läuft bis {ende}. Er verlängert sich um jeweils eine Saison, wenn keine Partei bis zum {frist_datum} in Textform kündigt, zum Beispiel per Mail an {mail}. In den Jahren danach ist jeweils der 31. März der letzte Tag für die Kündigung. Die Verlängerung gilt nur für Leistungen, die je Saison berechnet werden. Einmalige Leistungen werden nicht erneut berechnet. Für die Verlängerung gelten die Preise der letzten Saison ohne Laufzeitvorteil. Möchte der Verein die Preise ändern, sagt er das dem Partner spätestens vier Wochen vor dem letzten Kündigungstag in Textform. Der Partner kann dann bis zu diesem Tag kündigen.'],
+  laufzeit_einmal:['Laufzeit','Der Vertrag gilt für die einmaligen Leistungen aus der Leistungsübersicht. Er endet, wenn sie erbracht sind. Eine Kündigung ist nicht nötig.'],
+  verguetung_einmal:['Vergütung und Zahlung','Der Partner zahlt die Vergütung aus der Leistungsübersicht. Alle Beträge sind Nettobeträge, dazu kommt die gesetzliche Umsatzsteuer. Die Rechnung stellt der Verein, sobald der Vertrag geschlossen ist. Sie ist innerhalb von 14 Tagen ohne Abzug zahlbar. Der Partner ist einverstanden, dass er Rechnungen als PDF per Mail bekommt. Sobald das Gesetz es verlangt, schickt der Verein sie als E-Rechnung.'],
+  verguetung:['Vergütung und Zahlung','Der Partner zahlt die Vergütung aus der Leistungsübersicht. Alle Beträge sind Nettobeträge, dazu kommt die gesetzliche Umsatzsteuer. Die erste Rechnung stellt der Verein, sobald der Vertrag geschlossen ist. Beginnt die Laufzeit erst danach, ist die erste Rechnung zum Beginn der Laufzeit fällig. Beginnt der Vertrag während einer laufenden Saison, wird der Saisonpreis voll berechnet. Jede weitere Rechnung folgt zu Beginn der nächsten Saison. Rechnungen sind innerhalb von 14 Tagen ohne Abzug zahlbar. Der Partner ist einverstanden, dass er Rechnungen als PDF per Mail bekommt. Sobald das Gesetz es verlangt, schickt der Verein sie als E-Rechnung.'],
+  werbemittel:['Logo und Werbemittel','Der Partner stellt sein Logo in druckfähiger Form zur Verfügung. Er versichert, dass er die Rechte an Logo und Namen hat. Er stellt den Verein von Ansprüchen Dritter frei, die darauf beruhen, dass diese Zusicherung nicht stimmt. Der Verein darf Namen und Logo für die vereinbarten Leistungen und für Berichte über die Partnerschaft nutzen. Bevor etwas gedruckt oder veröffentlicht wird, zeigt der Verein dem Partner einen Entwurf. Nach Vertragsende nimmt der Verein das Logo innerhalb von vier Wochen aus seinen digitalen Medien. Gedruckte Kleidung und Banden bleiben in Gebrauch, bis sie ersetzt werden. Kommt das Logo später, beginnen Druck und Bestellung entsprechend später. An der Vergütung ändert das nichts. Der Partner darf auf die Partnerschaft mit dem Verein hinweisen und dafür das Wappen des Vereins in der vom Verein freigegebenen Form nutzen, solange der Vertrag läuft, und nur so, dass nicht der Eindruck entsteht, der Verein empfehle bestimmte Produkte.'],
+  bande:['Werbebande','Herstellung und Montage der Bande übernimmt der Verein, soweit sie in der gebuchten Leistung enthalten sind. Beschädigungen durch Dritte oder Witterung beseitigt der Verein in angemessener Zeit. Die genaue Platzierung richtet sich nach Paket und Verfügbarkeit.'],
+  trikot:['Trikot und Spielkleidung','Der Verein bestellt die Kleidung über seinen Ausrüster. Wo das Logo genau sitzt, stimmen beide Seiten vor der Bestellung ab. Hat der Partner nicht ausdrücklich die Trikotbrust gebucht und ist sie schon an einen anderen Partner vergeben, kommt das Logo an eine andere gut sichtbare Stelle. Es bleibt dort, solange die Kleidung getragen wird.'],
+  jugend:['Jugend','Leistungen für Jugendmannschaften kommen den Kindern und Jugendlichen unmittelbar zugute. Werbung für Tabak, Alkohol, Glücksspiel und vergleichbare Produkte ist auf Jugendkleidung und in Jugendmedien ausgeschlossen. Fotos von Kindern und Jugendlichen veröffentlicht der Verein nur mit Einwilligung der Eltern, ab 14 Jahren auch mit Einwilligung der Jugendlichen selbst. Der Partner nutzt solche Fotos nur, wenn der Verein sie ihm ausdrücklich für diesen Zweck freigegeben hat und die Einwilligung diese Nutzung umfasst.'],
+  exklusiv:['Branchenexklusivität','Der Verein nimmt in der Laufzeit keinen weiteren Partner aus der Branche {branche} in dieselbe Partnerstufe auf.'],
+  laufzeitvorteil:['Laufzeitvorteil','Für die vereinbarte Laufzeit gelten die Preise dieses Vertrags unverändert. Die gebuchten Plätze sind für den Partner bis zum Vertragsende reserviert.'],
+  events:['Veranstaltungen','Muss eine Veranstaltung ausfallen, ohne dass der Verein etwas dafür kann, holt er die Leistung bei einer vergleichbaren Veranstaltung nach. Ist das nicht möglich, erstattet der Verein den Anteil, der auf die ausgefallene Leistung entfällt.'],
+  ausfall:['Wenn etwas nicht klappt','Kann der Verein eine gebuchte Leistung dauerhaft nicht erbringen, etwa weil eine Mannschaft abgemeldet wird, bietet er dem Partner eine gleichwertige Leistung an. Möchte der Partner das nicht, erstattet der Verein den Anteil, der auf die nicht erbrachte Leistung entfällt.'],
+  spielausfall:['Spielbetrieb','Fällt einmal ein Spiel oder Training aus, etwa wegen Witterung oder einer Entscheidung des Verbands, ändert das an der Vergütung nichts. Das gilt auch für die üblichen Pausen im Sommer und im Winter. Ruht der Spielbetrieb darüber hinaus wegen einer behördlichen Anordnung oder einer Entscheidung des Verbands länger als zwei Monate am Stück, holt der Verein die betroffenen Leistungen nach oder erstattet nach Wahl des Partners den Anteil, der auf diese Zeit entfällt.'],
   werte:['Werte','Beide Parteien achten darauf, dem Ansehen der jeweils anderen nicht zu schaden. Werbung, die gegen gesetzliche Vorgaben oder die Werte des Vereins verstößt, ist ausgeschlossen.'],
-  kuendigung:['Kündigung aus wichtigem Grund','Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt, insbesondere bei schwerwiegender Rufschädigung oder Zahlungsverzug von mehr als zwei Monaten.'],
-  datenschutz:['Datenschutz','Die Parteien verarbeiten personenbezogene Daten nur zur Durchführung dieses Vertrags und nach den gesetzlichen Vorgaben.'],
-  schluss:['Schlussbestimmungen','Änderungen und Ergänzungen bedürfen der Textform. Sollte eine Bestimmung unwirksam sein, bleibt der Vertrag im Übrigen wirksam. Es gilt deutsches Recht.'],
-  spende:['Spende','Die Zuwendung erfolgt freiwillig und ohne Gegenleistung. Der Verein verwendet sie für den angegebenen Zweck. Eine Zuwendungsbestätigung stellt der Verein aus, soweit die steuerlichen Voraussetzungen vorliegen.']
+  kuendigung:['Kündigung aus wichtigem Grund','Aus wichtigem Grund können beide Parteien jederzeit fristlos kündigen, zum Beispiel wenn eine Partei dem Ruf der anderen schwer schadet oder eine fällige Zahlung trotz Mahnung mehr als zwei Monate aussteht.'],
+  haftung:['Haftung','Beide Parteien haften einander nach den gesetzlichen Vorschriften.'],
+  datenschutz:['Datenschutz','Der Verein verarbeitet die Angaben des Partners, die Unterschrift und die Rechnungen, um die Partnerschaft zu vereinbaren und durchzuführen (Art. 6 Abs. 1 lit. b DSGVO) und um gesetzliche Aufbewahrungspflichten zu erfüllen (Art. 6 Abs. 1 lit. c DSGVO). Er bewahrt sie auf, solange die Partnerschaft läuft, und danach so lange, wie das Gesetz es verlangt: Rechnungen acht Jahre, Verträge und geschäftliche Mails sechs Jahre, jeweils ab Ende des Jahres. Der Partner hat das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Widerspruch und Datenübertragbarkeit. Er kann sich beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit beschweren. Mehr dazu steht in den Datenschutzhinweisen der Partnerseite.'],
+  schluss:['Schlussbestimmungen','Änderungen und Ergänzungen halten die Parteien in Textform fest, eine Mail genügt. Ist eine Bestimmung unwirksam, gilt der Rest des Vertrags weiter. Es gilt deutsches Recht. Erfüllungsort ist Mörlenbach. Sind beide Parteien Kaufleute, ist Gerichtsstand der Sitz des Vereins (§ 38 ZPO).'],
+  spende:['Spende','Die Spendenzusage ist eine freiwillige Absicht, keine rechtliche Verpflichtung. Sie ist von allen Leistungen des Vereins unabhängig: Der Verein erbringt dafür keine Gegenleistung, und an gebuchten Leistungen ändert sich nichts, wenn die Spende ausbleibt. Der Verein setzt sie für {zweck} ein. Eine Zuwendungsbestätigung stellt der Verein nach Zahlungseingang aus, soweit er als gemeinnützig anerkannt ist und die steuerlichen Voraussetzungen vorliegen.'],
+  spende_ohne:['Spende','Die Spendenzusage ist eine freiwillige Absicht, keine rechtliche Verpflichtung. Sie ist von allen Leistungen des Vereins unabhängig: Der Verein erbringt dafür keine Gegenleistung, und an gebuchten Leistungen ändert sich nichts, wenn die Spende ausbleibt. Der Verein setzt sie für {zweck} ein. Eine Zuwendungsbestätigung kann der Verein dafür nicht ausstellen.']
 };
 PLIB.klauselnFuer=function(pos,leistungen,opt){
   opt=opt||{}; const keys=(pos||[]).map(p=>p.key), L=k=>leistungen.find(x=>x.key===k)||{}, bereiche=new Set(keys.map(k=>L(k).bereich));
   const nurSpende=keys.length&&keys.every(k=>k==='spende');
   if(nurSpende)return ['spende','datenschutz','schluss'];
-  const k=['gegenstand',opt.auto?'laufzeit_auto':'laufzeit_fest','verguetung','werbemittel'];
+  const saisonal=keys.some(x=>{ const l=L(x); return l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art); });
+  const k=['gegenstand',saisonal?(opt.auto?'laufzeit_auto':'laufzeit_fest'):'laufzeit_einmal',saisonal?'verguetung':'verguetung_einmal','werbemittel'];
   if(keys.some(x=>/^(club|premium|p1896|bande_)/.test(x)))k.push('bande');
   if(keys.some(x=>/^(brust_|aermel_|trikot_|aufwaerm_)/.test(x)))k.push('trikot');
   if(bereiche.has('jugend')||keys.some(x=>['zeltlager','ferienspiele'].includes(x)))k.push('jugend');
   if(keys.includes('p1896'))k.push('exklusiv');
   if(bereiche.has('events')||keys.some(x=>['matchball','sotd'].includes(x)))k.push('events');
   if(bereiche.has('erste')||bereiche.has('zweite')||keys.some(x=>/^(club|premium|p1896)$/.test(x)))k.push('spielausfall');
+  if((+opt.saisons||1)>=2&&keys.some(x=>{ const l=L(x); return l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art); }))k.push('laufzeitvorteil');
+  if(keys.some(x=>x!=='spende'))k.push('ausfall');
   if(keys.includes('spende'))k.push('spende');
-  k.push('werte','kuendigung','datenschutz','schluss');
+  k.push('werte','kuendigung','haftung','datenschutz','schluss');
   return k;
 };
 PLIB.klauselText=function(key,w){ const K=PLIB.KLAUSELN[key]; if(!K)return null; w=w||{};
-  return [K[0],K[1].replace(/\{(\w+)\}/g,(m,n)=>w[n]!=null&&w[n]!==''?w[n]:'…')]; };
+  let t=K[1]; if(key==='exklusiv'&&!w.branche)t='Der Verein nimmt in der Laufzeit keinen weiteren Partner aus derselben Branche wie der Partner in dieselbe Partnerstufe auf.';
+  return [K[0],t.replace(/\{(\w+)\}/g,(m,n)=>w[n]!=null&&w[n]!==''?w[n]:'…')]; };
 
 // ---------- Girocode (EPC069-12, Version 002) ----------
 PLIB.girocode=function(o){
@@ -2406,7 +2416,9 @@ PLIB.qrMatrix=function(text){ if(typeof qrcode!=='function'||!text)return null; 
 PLIB.ibanSchoen=s=>String(s||'').replace(/\s/g,'').replace(/(.{4})/g,'$1 ').trim();
 
 // ---------- Rechnung als PDF (jsPDF), mit Girocode ----------
-PLIB.rechnungPdf=function(jsPDF,R,vd){
+// V: der Vertrag zur Rechnung (für den Leistungszeitraum). Ohne Angabe sucht die App ihn in den geladenen Verträgen.
+PLIB.rechnungPdf=function(jsPDF,R,vd,V){
+  if(!V){ try{ V=((typeof PE!=='undefined'&&PE&&PE.d&&PE.d.vertraege)||[]).find(x=>x.id===R.vertrag)||null; }catch(e){ V=null; } }
   const doc=new jsPDF({unit:'pt',format:'a4'}), W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), L=56;
   const navy=[20,27,71], or=[232,116,31], grau=[100,104,120], tinte=[20,24,36];
   const pz=s=>String(s==null?'':s).replace(/[−–—]/g,'-').replace(/[„“”]/g,'"');
@@ -2418,20 +2430,23 @@ PLIB.rechnungPdf=function(jsPDF,R,vd){
   [E.firma,E.ansprech,E.strasse,E.ort].filter(Boolean).forEach(z=>{ t(z,L,y); y+=15; });
   doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...navy); t(R.art==='spende'?'SPENDENZUSAGE':'RECHNUNG',L,220);
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(...grau);
-  const datum=d=>{ try{ return new Date(String(d).slice(0,10)+'T12:00:00').toLocaleDateString('de-DE'); }catch(e){ return d; } };
-  t('Nr. '+R.nr,W-L,206,{align:'right'}); t('Datum '+datum(R.datum),W-L,220,{align:'right'});
+  const datum=d=>{ const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(d||'')); return m?m[3]+'.'+m[2]+'.'+m[1]:String(d||''); };
+  t('Nr. '+R.nr,W-L,192,{align:'right'}); t('Datum '+datum(R.datum),W-L,206,{align:'right'}); if(V&&V.nr&&V.nr!==R.nr)t('Vertrag '+V.nr,W-L,220,{align:'right'});
+  // Leistungszeitraum wie auf der Rechnung aus der Mail: je Saison bis zum Saisonende, sonst Leistung ab Beginn
+  const iso=d=>String(d||'').slice(0,10), saisonEnde=(von,bis)=>{ const d=new Date(iso(von)+'T12:00:00'), y=d.getMonth()>=6?d.getFullYear()+1:d.getFullYear(), e=y+'-06-30'; return bis&&iso(bis)<e?iso(bis):e; };
+  const von=iso(R.zeit_von||(V&&V.beginn)||R.datum), bis=R.zeit_bis||saisonEnde(von,V&&V.ende);
   y=262; doc.setDrawColor(220,214,204); doc.line(L,y-14,W-L,y-14);
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...grau); t('LEISTUNG',L,y); t('BETRAG',W-L,y,{align:'right'}); y+=18;
   doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...tinte);
-  (R.positionen||[]).forEach(p=>{ const z=doc.splitTextToSize(pz(p.titel+(p.mannschaft?', '+p.mannschaft:'')+(p.menge>1?', '+p.menge+' ×':'')+(p.rabatt?', Laufzeitvorteil '+Math.round(p.rabatt*100)+' %':'')),W-2*L-110);
+  (R.positionen||[]).forEach(p=>{ const z=doc.splitTextToSize(pz(p.titel+(p.mannschaft?', '+p.mannschaft:'')+(p.menge>1?', '+p.menge+' ×':'')+(p.rabatt?', Laufzeitvorteil '+Math.round(p.rabatt*100)+' %':'')+(p.key==='spende'||p.einheit==='frei'?'':p.einheit==='saison'?', Leistungszeitraum '+datum(von)+' bis '+datum(bis):', Leistung ab '+datum(von))),W-2*L-110);
     t(z,L,y); t(PLIB.eur(p.summe,true),W-L,y,{align:'right'}); y+=14*z.length+6; });
   doc.line(L,y,W-L,y); y+=18;
   const sum=(a,b,fett)=>{ doc.setFont('helvetica',fett?'bold':'normal'); doc.setFontSize(fett?11.5:10); t(a,W-L-200,y); t(b,W-L,y,{align:'right'}); y+=17; };
-  if(R.art!=='spende'){ sum('Netto',PLIB.eur(R.netto,true)); if(+R.ust_satz>0)sum('Umsatzsteuer '+(+R.ust_satz)+' %',PLIB.eur(R.netto*R.ust_satz/100,true)); }
+  if(R.art!=='spende'){ sum('Netto',PLIB.eur(R.netto,true)); if(+R.ust_satz>0)sum('Umsatzsteuer '+(+R.ust_satz)+' %',PLIB.eur(Math.round((R.brutto-R.netto)*100)/100,true)); }
   sum('Gesamt',PLIB.eur(R.brutto,true),true);
   y+=10; doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(...grau);
-  const hinweis=R.art==='spende'?'Vielen Dank für Ihre Spende. Die Zuwendungsbestätigung erhalten Sie nach Zahlungseingang, soweit die steuerlichen Voraussetzungen vorliegen.'
-    :(+R.ust_satz>0?'':'Kein Ausweis von Umsatzsteuer. ')+'Bitte überweisen Sie den Betrag bis '+datum(R.faellig)+' unter Angabe des Verwendungszwecks.';
+  const hinweis=R.art==='spende'?('Vielen Dank für Ihre Spende.'+((vd||{}).gemeinnuetzig===true?' Die Zuwendungsbestätigung erhalten Sie nach Zahlungseingang.':''))
+    :(+R.ust_satz>0?'':'Kein Ausweis von Umsatzsteuer. ')+'Vorausrechnung: Die Leistungen erbringen wir im genannten Zeitraum. Bitte überweisen Sie den Betrag bis '+datum(R.faellig)+' unter Angabe des Verwendungszwecks.';
   const hz=doc.splitTextToSize(pz(hinweis),W-2*L); t(hz,L,y); y+=hz.length*13+18;
   // Bank und Girocode
   const gc=PLIB.girocode({name:vd.kontoinhaber||vd.name,iban:vd.iban,bic:vd.bic,betrag:R.brutto,zweck:R.zweck});
@@ -2445,7 +2460,7 @@ PLIB.rechnungPdf=function(jsPDF,R,vd){
     for(let r=0;r<M.n;r++)for(let c=0;c<M.n;c++)if(M.dark(r,c))doc.rect(x0+(c+4)*m,y0+(r+4)*m,m+.15,m+.15,'F');
     doc.setFontSize(7); doc.setTextColor(...grau); t('Mit der Banking-App scannen',x0+s/2,y0+s+10,{align:'center'}); }
   doc.setFontSize(7); doc.setTextColor(...grau);
-  t([vd.name,vd.register,vd.steuernr?'St.-Nr. '+vd.steuernr:'',vd.ustid?'USt-IdNr. '+vd.ustid:''].filter(Boolean).join(' · '),L,H-36);
+  t([vd.name,vd.register,vd.steuernr?'St.-Nr. '+vd.steuernr:'',vd.ustid?'USt-IdNr. '+vd.ustid:'',vd.finanzamt?'Finanzamt '+vd.finanzamt:''].filter(Boolean).join(' · '),L,H-36);
   t([vd.email,vd.web].filter(Boolean).join(' · '),L,H-24);
   return doc;
 };
