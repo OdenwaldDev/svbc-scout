@@ -15,6 +15,7 @@
 window.TRIKOT3D = (function(){
   'use strict';
   const PI = Math.PI, TAU = PI * 2;
+  const GRENZE = .44;   // 0.82: so weit neigt sich das Fotomodell beim Ziehen (rad), dann dreht es sich ganz um
   const kl = (x, a, b) => Math.max(a, Math.min(b, x)), lerp = (a, b, t) => a + (b - a) * t;
   const sst = (a, b, x) => { const t = kl((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
   const ruhig = () => { try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } };
@@ -40,16 +41,17 @@ window.TRIKOT3D = (function(){
     auswaerts:{ vorn:{ bild:'foto-ausw-vorn.webp', w:447, h:555, brust:[222,232,150,76,0], aermel_l:[387,170,46,34,24], aermel_r:[62,170,46,34,-22], wappen:[288,153,44], gemeinde:[222,149,36,37] },
            hinten:{ bild:'foto-ausw-hinten.webp', w:453, h:525, jungs:[224,78,76], name:[226,105,130], nummer:[228,180,124] } }
   };
-  // 3D aus den Produktfotos: Atlas (links vorn, rechts hinten, 640 × 760 je Seite) und Tiefenkarte (120 × 144: R vorn, G hinten, B innen).
+  // 3D aus den Produktfotos: Atlas (links vorn, rechts hinten, 1024 × 1216 je Seite, aus den hochgerechneten Fotos in tools/trikot_hd),
+  // Maske in voller Größe mit weicher Kante und Tiefenkarte (160 × 192: R vorn, G hinten, B innen).
   // Das Foto hinten ist über Landmarken auf den Umriss von vorn gelegt (erzeugt mit tools/trikot_fotomodell.py). Positionen in Atlaspixeln.
   const FOTO3D = {
-    A:[640, 760], N:[120, 144], hoehe:.76, dmax:.14, saum:-.03,
-    heim:{ atlas:'foto3d-heim.webp', tiefe:'foto3d-heim-tiefe.png', maske:'foto3d-heim-maske.png', breite:.5924,
-      brust:[328,324,265,133,0], aermel_l:[588,211,82,61,24], aermel_r:[65,214,82,61,-22], wappen:[443,197,79], gemeinde:[328,191,63,65],
-      jungs:[954,78,118], name:[954,116,205], nummer:[954,224,192] },
-    auswaerts:{ atlas:'foto3d-auswaerts.webp', tiefe:'foto3d-auswaerts-tiefe.png', maske:'foto3d-auswaerts-maske.png', breite:.5976,
-      brust:[328,310,246,125,0], aermel_l:[599,215,75,56,24], aermel_r:[66,215,75,56,-22], wappen:[437,188,72], gemeinde:[328,182,59,61],
-      jungs:[942,83,137], name:[944,122,246], nummer:[943,230,216] }
+    A:[1024, 1216], N:[160, 192], hoehe:.76, dmax:.14, saum:-.03,
+    heim:{ atlas:'foto3d-heim.webp', tiefe:'foto3d-heim-tiefe.png', maske:'foto3d-heim-maske.png', breite:0.5935,
+      brust:[523,515,425,213,0], aermel_l:[939,334,132,98,24], aermel_r:[101,340,132,98,-22], wappen:[707,313,126], gemeinde:[523,302,101,103],
+      jungs:[1528,122,188], name:[1529,182,328], nummer:[1529,356,308] },
+    auswaerts:{ atlas:'foto3d-auswaerts.webp', tiefe:'foto3d-auswaerts-tiefe.png', maske:'foto3d-auswaerts-maske.png', breite:0.6048,
+      brust:[521,493,392,199,0], aermel_l:[952,340,120,89,24], aermel_r:[102,340,120,89,-22], wappen:[693,298,115], gemeinde:[521,288,94,97],
+      jungs:[1511,127,218], name:[1514,190,393], nummer:[1513,364,344] }
   };
   function platzListe(art){ return Object.keys(PLAETZE[art === 'anzug' ? 'anzug' : 'trikot']); }
   function platzInfo(art, k){ return PLAETZE[art === 'anzug' ? 'anzug' : 'trikot'][k] || null; }
@@ -303,7 +305,7 @@ window.TRIKOT3D = (function(){
         const [atlas, tiefe, maske] = await Promise.all([bild(opt.kit + M.atlas), bild(opt.kit + M.tiefe), bild(opt.kit + M.maske)]);
         const c = leinwand(FOTO3D.N[0], FOTO3D.N[1]), x = c.getContext('2d', { willReadFrequently:true }); x.drawImage(tiefe, 0, 0);
         // Stofffarbe aus dem Foto (Mitte vorn), damit Hose und Stutzen zum Trikot passen
-        const p = leinwand(40, 40), px = p.getContext('2d', { willReadFrequently:true }); px.drawImage(atlas, 250, 420, 140, 160, 0, 0, 40, 40);
+        const p = leinwand(40, 40), px = p.getContext('2d', { willReadFrequently:true }); px.drawImage(atlas, 400, 672, 224, 256, 0, 0, 40, 40);
         const q = px.getImageData(0, 0, 40, 40).data; let r = 0, g = 0, b = 0, n = 0; for(let i = 0; i < q.length; i += 4){ if(q[i + 3] < 250) continue; r += q[i]; g += q[i + 1]; b += q[i + 2]; n++; }
         Z.fm[satz] = { atlas, maske, t:x.getImageData(0, 0, c.width, c.height).data, farbe:n ? mischen(hex(r / n, g / n, b / n), '#000000', .2) : null }; }catch(e){} }));
       Z.gl = true; bedienung(cv);
@@ -406,13 +408,15 @@ window.TRIKOT3D = (function(){
         if(a < 0 || b < 0 || c < 0 || d < 0) continue;
         if(hinten) idx.push(a, b, c, b, d, c); else idx.push(a, c, b, b, c, d); }
       const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
-      const cv = leinwand(FOTO3D.A[0] * 4, FOTO3D.A[1] * 2), map = new T.CanvasTexture(cv);
+      const cv = leinwand(FOTO3D.A[0] * 2, FOTO3D.A[1]), map = new T.CanvasTexture(cv);   // 0.82: Atlas in voller Größe (2048 × 1216), nicht mehr hochskaliert
       map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); map.generateMipmaps = true; map.minFilter = T.LinearMipmapLinearFilter;
       // Licht passend zum Foto: das Foto bringt sein Licht mit, dazu nur ein sanftes Abdunkeln, wenn sich der Stoff wegdreht
-      const mk = new T.Texture(FM.maske); mk.needsUpdate = true; mk.minFilter = T.LinearMipmapLinearFilter;
-      const mat = new T.ShaderMaterial({ uniforms:{ map:{ value:map }, maske:{ value:mk } }, transparent:false, side:T.DoubleSide,
-        vertexShader:'varying vec2 vUv; varying vec3 vN; void main(){ vUv = uv; vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-        fragmentShader:'uniform sampler2D map; uniform sampler2D maske; varying vec2 vUv; varying vec3 vN; void main(){ if(texture2D(maske, vUv).r < .5) discard; vec4 t = texture2D(map, vUv); vec3 L = normalize(vec3(-.3, .35, .89)); float l = max(dot(normalize(vN), L), 0.0); float r = pow(1.0 - abs(normalize(vN).z), 3.0); gl_FragColor = vec4(t.rgb * (.74 + .3 * l) * (1.0 - .18 * r) * (gl_FrontFacing ? 1.0 : .42), 1.0); }' });
+      const mk = new T.Texture(FM.maske); mk.needsUpdate = true; mk.minFilter = T.LinearMipmapLinearFilter; mk.anisotropy = map.anisotropy;
+      // 0.82: weiche Kante aus der Maske (Alpha statt Abschneiden, kein Treppenrand), nur Vorderseiten (kein dunkler Saum von innen),
+      // Licht im Blickraum: von vorn sieht man das Foto unverändert, beim Drehen wandert ein sanfter Glanz über den Stoff.
+      const mat = new T.ShaderMaterial({ uniforms:{ map:{ value:map }, maske:{ value:mk } }, transparent:true, depthWrite:true, side:T.FrontSide,
+        vertexShader:'varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ vUv = uv; vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',
+        fragmentShader:'uniform sampler2D map; uniform sampler2D maske; varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ float a = smoothstep(.34, .66, texture2D(maske, vUv).r); if(a < .01) discard; vec3 n = normalize(vN), v = normalize(vV); vec3 t = texture2D(map, vUv).rgb; vec3 L = normalize(vec3(-.35, .45, .82)); float l = max(dot(n, L), 0.0), l0 = .82; float r = pow(1.0 - max(dot(n, v), 0.0), 2.5); vec3 h = normalize(L + v); float g = pow(max(dot(n, h), 0.0), 28.0); vec3 c = t * clamp(1.0 + .32 * (l - l0), .7, 1.08) * (1.0 - .22 * r) + vec3(.05) * g * (1.0 - r); gl_FragColor = vec4(c, a); }' });
       mats.push(mat); mat.map = map; mat.maske = mk;
       const o = new T.Mesh(geo, mat); gruppe.add(o); teile.foto = { cv, mat, teil:'foto', o, satz };
     }
@@ -587,10 +591,13 @@ window.TRIKOT3D = (function(){
       for(let i = 0; i < n; i++) weiter = physik(dt) || weiter;
       gruppe.rotation.y = -Z.winkel; kameraSetzen();
       renderer.render(szene, kamera); markenSetzen();
-      const sicht = Z.winkel < PI / 4 ? 'vorn' : Z.winkel > 3 * PI / 4 ? 'hinten' : 'seite';
+      const sicht = sichtVon(Z.winkel);
       if(sicht !== Z.sicht){ Z.sicht = sicht; opt.onDreh && opt.onDreh(sicht); }
       if(weiter || Z.zieht) raf = requestAnimationFrame(schritt); else tAlt = 0;
     }
+    // Fotomodell: vorn oder hinten, „seite“ erst ab der Schrägansicht (über der Zieh-Grenze); gebaut wie bisher in Vierteln
+    function sichtVon(w){ if(!Z.foto3d) return w < PI / 4 ? 'vorn' : w > 3 * PI / 4 ? 'hinten' : 'seite';
+      const r = w > PI / 2 ? PI : 0; return Math.abs(w - r) > GRENZE * 1.1 ? 'seite' : r ? 'hinten' : 'vorn'; }
     function physik(dt){
       let weiter = false;
       if(!Z.zieht){
@@ -609,19 +616,34 @@ window.TRIKOT3D = (function(){
     }
     function bedienung(cv){
       let x0 = 0, w0 = 0, lx = 0, lt = 0, id = null, bewegt = false;
-      cv.addEventListener('pointerdown', e => { if(e.button > 0) return; id = e.pointerId; x0 = lx = e.clientX; w0 = Z.winkel; lt = performance.now(); bewegt = false; Z.ziel = null; Z.vw = 0; });
+      cv.addEventListener('pointerdown', e => { if(e.button > 0) return; id = e.pointerId; x0 = lx = e.clientX; w0 = Z.winkel; lt = performance.now(); bewegt = false;
+        if(Z.foto3d) return;   // Fotomodell: ein bloßer Tipp hält eine laufende Drehung nicht an (sonst bliebe es hochkant stehen)
+        Z.ziel = null; Z.vw = 0; });
       cv.addEventListener('pointermove', e => { if(e.pointerId !== id) return; const dx = e.clientX - x0;
-        if(!bewegt && Math.abs(dx) > 6){ bewegt = true; Z.zieht = true; wurzel.classList.add('zieht'); try{ cv.setPointerCapture(id); }catch(_){} zeigen3d(); }
+        if(!bewegt && Math.abs(dx) > 6){ bewegt = true; Z.zieht = true; wurzel.classList.add('zieht'); try{ cv.setPointerCapture(id); }catch(_){}
+          if(Z.foto3d){ // Neigung von jetzt an stetig: aus dem aktuellen Winkel den Zug zurückrechnen (auch mitten im Umdrehen gegriffen)
+            Z.ruhe = Z.winkel > PI / 2 ? PI : 0; const t = Z.winkel - Z.ruhe, at = Math.abs(t); Z.roh0 = at <= GRENZE ? t : Math.sign(t) * (GRENZE + (at - GRENZE) / .22);
+            x0 = e.clientX; Z.ziel = null; Z.vw = 0; }
+          zeigen3d(); }
         if(!bewegt) return; e.preventDefault();
-        let w = w0 - dx * .0095; if(w < 0) w = w * .35; if(w > PI) w = PI + (w - PI) * .35; Z.winkel = w;
+        // 0.82: das Trikot neigt sich beim Ziehen nur bis etwa 25 Grad (die flache Seite bleibt verborgen), weiter gezogen gibt es nach wie ein Gummiband
+        if(!Z.foto3d){ let w = w0 - dx * .0095; if(w < 0) w = w * .35; if(w > PI) w = PI + (w - PI) * .35; Z.winkel = w; }
+        else { const roh = Z.roh0 - (e.clientX - x0) * .0045, gz = GRENZE, w = Math.abs(roh) <= gz ? roh : Math.sign(roh) * (gz + (Math.abs(roh) - gz) * .22); Z.winkel = Z.ruhe + w; Z.zug = roh; }
         const t = performance.now(), dtt = Math.max(1, t - lt); Z.vw = lerp(Z.vw, -(e.clientX - lx) * .0095 / dtt * 1000, .5); lx = e.clientX; lt = t; });
-      const los = e => { if(e.pointerId !== id) return; id = null; if(bewegt){ Z.zieht = false; wurzel.classList.remove('zieht'); if(ruhig()){ Z.vw = 0; Z.winkel = kl(Z.winkel, 0, PI); } zeigen3d(); } };
+      // Loslassen: weit genug oder schnell genug gezogen, dann dreht es sich ganz um (vorn <-> hinten), sonst federt es zurück
+      const los = e => { if(e.pointerId !== id) return; id = null; if(bewegt){ Z.zieht = false; wurzel.classList.remove('zieht');
+        if(!Z.foto3d){ if(ruhig()){ Z.vw = 0; Z.winkel = kl(Z.winkel, 0, PI); } zeigen3d(); return; }   // Anzug (gebaut): frei drehen wie bisher
+        const um = Math.abs(Z.zug || 0) > GRENZE * 1.5 || Math.abs(Z.vw) > 2.2 && Math.sign(Z.vw) === Math.sign(Z.winkel - Z.ruhe);
+        const ziel = um ? PI - Z.ruhe : Z.ruhe; Z.zug = 0;
+        if(ruhig()){ Z.vw = 0; Z.winkel = Z.ziel = ziel; } else { Z.ziel = ziel; Z.vw *= .4; } zeigen3d(); } };
       cv.addEventListener('pointerup', los); cv.addEventListener('pointercancel', los);
-      cv.addEventListener('keydown', e => { if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){ e.preventDefault(); drehen(kl((Z.ziel != null ? Z.ziel : Z.winkel) + (e.key === 'ArrowRight' ? 1 : -1) * PI / 4, 0, PI)); } });
+      cv.addEventListener('keydown', e => { if(e.key === 'ArrowLeft' || e.key === 'ArrowRight'){ e.preventDefault(); const jetzt = Z.ziel != null ? Z.ziel : Z.winkel;
+        drehen(Z.foto3d ? (jetzt > PI / 2 ? 0 : PI) : kl(jetzt + (e.key === 'ArrowRight' ? 1 : -1) * PI / 4, 0, PI)); } });
     }
     function drehen(w, sofort){
-      const z = typeof w === 'number' ? w : ({ vorn:0, seite:PI / 2, hinten:PI }[w] || 0);
+      let z = typeof w === 'number' ? w : ({ vorn:0, seite:Z.foto3d ? GRENZE * 1.2 : PI / 2, hinten:PI }[w] || 0);   // Fotomodell: „Seite“ ist die Schrägansicht
       if(Z.modus === 'foto'){ Z.sicht = z > PI / 2 ? 'hinten' : 'vorn'; Z.winkel = Z.ziel = z > PI / 2 ? PI : 0; foto(); opt.onDreh && opt.onDreh(Z.sicht); return; }
+      if(Z.foto3d){ const r = z > PI / 2 ? PI : 0; z = r + kl(z - r, -GRENZE * 1.2, GRENZE * 1.2); }   // z. B. Ärmel (.95): Schrägansicht statt flacher Seite
       Z.ziel = z; if(sofort || ruhig()){ Z.winkel = z; Z.vw = 0; } zeigen3d();
     }
     function fokus(f, sofort){ if(f === Z.fokusZiel) return; Z.fokus = Z.fk >= 1 ? Z.fokusZiel : Z.fokus; Z.fokusZiel = f; Z.fk = sofort || ruhig() ? 1 : 0; if(Z.fk >= 1) Z.fokus = f; zeigen3d(); }
