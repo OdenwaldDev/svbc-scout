@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.80', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.81', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18390,6 +18390,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.81',v:'0.81',datum:'2026-11-05',titel:'Trikots wie in echt',kurz:'Heim- und Auswärtstrikot im Trikot-Creator sehen jetzt in 3D aus wie unser echtes Squadra 25, mit den Schulterstreifen, Bündchen und dem Gemeindewappen oben in der Mitte. Partnerplätze gibt es nur noch dort, wo wir sie auch vergeben: Brust, Ärmel links und Ärmel rechts.',
+   punkte:[
+    {ic:'◐',r:'team',t:'3D aus dem Produktfoto',d:'Vorn und hinten ist das echte Trikot, gedreht wird es wie bisher mit dem Finger. Hose und Stutzen sind raus, dort gibt es keine Werbung. Die Bühne zeigt nur noch Trikot oder Jacke.',go:'sponsoring'},
+    {ic:'+',r:'team',t:'Nur noch Brust und Ärmel',d:'Rücken, Nacken und Hose sind keine Partnerplätze mehr. Beim Anzug sind es Jacke Brust und die beiden Ärmel, dort sind Logos schwarz, weil der Oberarm weiß ist.',go:'sponsoring'},
+    {ic:'●',r:'team',t:'Saubere weiße Logos',d:'Jedes Logo, das die App mitbringt, hat eine von Hand geprüfte weiße Fassung. Hochgeladene Logos rechnet sie jetzt sauberer um: weiße Flächen im Logo bleiben ausgespart, damit nichts zum Klecks wird. Für Gespräche liegen auch die Logos der großen Firmen aus Mörlenbach bereit, zum Beispiel Ehmann, Heinrich Schmid, Elis, Uhl, Wolff, Mader und Müller Dörsam. Immolino steht jetzt mit seinem Logo auf den Trikots der F-Jugend statt als Schriftzug.',go:'sponsoring'}
+   ]},
   {id:'0.80',v:'0.80',datum:'2026-11-04',titel:'Trikot- und Bandencreator',kurz:'Im Partner-Bereich gibt es die Reiter Trikots und Bandencreator: Du siehst unsere Trikots in 3D mit allen Partnerlogos und ziehst ein neues Logo auf einen freien Platz. Und aus Logo, Name und Kontakt eines Partners wird mit einem Tipp eine druckfertige Bande, live am Spielfeldrand.',
    punkte:[
     {ic:'◐',r:'team',t:'Trikots in 3D',d:'Jede Mannschaft mit Heim, Auswärts und Anzug, dazu ein Musterteam, auf dem alles frei ist. Mit dem Finger drehst du von vorn bis hinten, die Knöpfe Vorn, Seite und Hinten springen direkt dorthin. Die Foto-Ansicht zeigt die echten Trikots der Ersten.',go:'sponsoring'},
@@ -28248,7 +28254,7 @@ try{ svOnlineRender(); }catch(e){}
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm77css'; s.textContent="/* Beta 0.79 · Struktur und Navigation */\n\n/* 7. Seitenleiste am Rechner: kompakter, Gruppen wie im Menü, scrollt in sich */\n@media (min-width:1181px){\n  .side .brand{padding:2px 8px 12px;}\n  .side .brand img{width:36px;height:36px;border-radius:11px;}\n  .side .snav{gap:1px;}\n  .side .snav .sgrp{padding:10px 12px 3px;font-size:11px;line-height:1.2;}\n  .side .snav .sgrp:first-child{padding-top:2px;}\n  .side .snav button[data-tab],.side .snav .sp-nav{min-height:0;height:30px;padding:0 10px;gap:10px;font-size:13.5px;border-radius:9px;}\n  .side .snav button svg{width:17px;height:17px;}\n  .side .snav button.active:before{top:7px;bottom:7px;}\n  .side .snav .sp-nav .sp-nic{font-size:13px;}\n}\n\n/* 6. Mehr-Menü: Gruppen, lange Namen dürfen umbrechen */\n#moreSheet .sgrid button{hyphens:manual;-webkit-hyphens:manual;text-align:center;line-height:1.2;}\n#moreSheet > .sp-sheet{margin-top:12px;}\n#moreSheet > .sp-sheet + .sp-sheet{margin-top:8px;}\n\n/* 5. Titel am Handy: lieber zwei Zeilen als abgeschnitten */\n@media (max-width:760px){\n  #pgTitle.n77-lang{white-space:normal!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:clip;font-size:17px!important;line-height:1.15;}\n}\n\n/* 2. Scouting am Handy: feste Reiter, der Rest unter „Mehr“ */\n.hub-in.n77-fest{overflow-x:hidden;flex-wrap:nowrap!important;justify-content:flex-start!important;}\n@media (min-width:761px){ .hub-in > button{padding-left:11px;padding-right:11px;} }\n.hub-in > button[hidden]{display:none!important;}\n.hub-in .n77-hm{font:inherit;font-size:13px;font-weight:700;color:var(--ink3);background:none;border:0;padding:11px 8px 10px 11px;white-space:nowrap;cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-left:auto;}\n.hub-in .n77-hm svg{width:14px;height:14px;transform:rotate(90deg);opacity:.8;}\n.hub-in .n77-hm[aria-expanded=\"true\"] svg{transform:rotate(-90deg);}\n.hub-in .n77-hm.on{color:var(--ink);}\n.hub-in .n77-hm:focus-visible{outline:2px solid var(--brand2);outline-offset:-2px;border-radius:8px;}\n.n77-menu{position:fixed;z-index:120;min-width:190px;max-width:calc(100vw - 16px);padding:6px;border-radius:14px;border:1px solid var(--line);background:var(--card,#141a28);box-shadow:0 12px 32px -8px rgba(0,0,0,.45);display:flex;flex-direction:column;}\n.n77-menu button{font:inherit;font-size:15px;font-weight:600;text-align:left;color:var(--ink);background:none;border:0;border-radius:10px;min-height:44px;padding:0 12px;cursor:pointer;}\n.n77-menu button:hover,.n77-menu button:focus-visible{background:rgba(148,163,196,.12);outline:none;}\n.n77-menu button.on{color:var(--brand2);}\nhtml[data-theme=\"hell\"] .n77-menu{background:#fffdf9;box-shadow:0 12px 32px -10px rgba(30,36,52,.25);}\nhtml[data-theme=\"hell\"] .n77-menu button.on{color:var(--brand);}\n\n/* 8. Leere Zustände */\n.n77-leer{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:18px 16px;border:1px dashed var(--line);border-radius:14px;margin:6px 0;}\n.n77-leer b{font-size:15px;font-weight:650;color:var(--ink);}\n.n77-leer p{margin:0;font-size:14px;line-height:1.45;color:var(--ink2);max-width:60ch;}\n.n77-leer .btn{margin-top:6px;min-height:44px;}\n\n/* 10. Mein Konto: Hilfe und Über die App */\n.n77-links{display:flex;flex-wrap:wrap;gap:8px;}\n.n77-links .btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;text-decoration:none;}\n.n77-links .btn svg{width:16px;height:16px;}\n.n77-tech{margin-top:12px;border-top:1px solid var(--line2);padding-top:8px;}\n.n77-tech>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:14px;font-weight:600;color:var(--ink2);}\n.n77-tech>summary:focus-visible{outline:2px solid var(--brand2);outline-offset:2px;border-radius:6px;}\n.n77-tech .note{margin:4px 0;}\n"; document.head.appendChild(s); }catch(e){} })();
 /* =====================================================================
-   Beta 0.80 · Logo-Werkstatt (gemeinsam für Trikot- und Bandencreator)
+   Beta 0.80/0.81 · Logo-Werkstatt (gemeinsam für Trikot- und Bandencreator)
    Ein Partnerlogo (PNG, JPG, SVG, Data-URL) wird im Browser analysiert und aufbereitet:
    - Hintergrund weg: weiße oder einfarbige Flächen am Rand werden durchsichtig (Flutfüllung vom Rand aus)
    - Zuschnitt auf das Logo (ohne leeren Rand)
@@ -28316,18 +28322,23 @@ const LOGO = (() => {
     const zus = []; L.sort((a, b) => b.n - a.n).forEach(f => { const z = zus.find(g => Math.abs(g.r - f.r) + Math.abs(g.g - f.g) + Math.abs(g.b - f.b) < 60); if(z){ z.n += f.n; } else zus.push({ ...f }); });
     return zus.filter(f => f.n / Math.max(1, n) > .015).slice(0, 6).map(f => ({ hex:hex(f.r, f.g, f.b), anteil:Math.round(f.n / Math.max(1, n) * 100), hell:lum(f.r, f.g, f.b) > .55 }));
   }
-  // Einfarbig: alle sichtbaren Pixel in eine Farbe. Helle Innenflächen werden ausgespart, wenn das Logo dunkle oder farbige Flächen hat.
+  // Einfarbig (0.81): Abstand zu Weiß als weiche Deckung. Farbiges und Dunkles wird voll, Weißes im Logo fällt weg (bleibt als Aussparung),
+  // Kanten bleiben glatt. Ist das Logo selbst überwiegend hell (weiße Schrift), wird alles Sichtbare eingefärbt.
+  const sst = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   function einfarbig(c, farbe){
     const n = leinwand(c.width, c.height), x = n.getContext('2d', { willReadFrequently:true }); x.drawImage(c, 0, 0);
     const d = x.getImageData(0, 0, n.width, n.height), p = d.data;
     let hell = 0, dunkel = 0; for(let k = 0; k < p.length; k += 4){ if(p[k + 3] < 128) continue; if(lum(p[k], p[k + 1], p[k + 2]) > .78) hell++; else dunkel++; }
-    const aussparen = hell > 0 && dunkel > 0 && hell / (hell + dunkel) < .6;
+    const nurHell = hell / Math.max(1, hell + dunkel) >= .6;
     const [r, g, b] = [1, 3, 5].map(i => parseInt(farbe.slice(i, i + 2), 16));
-    for(let k = 0; k < p.length; k += 4){ if(p[k + 3] === 0) continue;
-      if(aussparen){ const l = lum(p[k], p[k + 1], p[k + 2]); if(l > .78){ p[k + 3] = 0; continue; } if(l > .6) p[k + 3] = Math.round(p[k + 3] * (1 - (l - .6) / .18)); }
-      p[k] = r; p[k + 1] = g; p[k + 2] = b; }
+    for(let k = 0; k < p.length; k += 4){ const a = p[k + 3] / 255; if(!a){ continue; }
+      let deck = a;
+      if(!nurHell){ const m = Math.min(p[k], p[k + 1], p[k + 2]) / 255 * a + (1 - a); deck = sst(.1, .42, 1 - m); }
+      p[k] = r; p[k + 1] = g; p[k + 2] = b; p[k + 3] = Math.round(deck * 255); }
     x.putImageData(d, 0, 0); return n;
   }
+  // Mitgelieferte Logos (kit/logos/name.png) haben eine von Hand geprüfte weiße Fassung unter kit/logos/weiss/name.png
+  function weissDatei(src){ const m = /^(.*?)(kit\/logos\/)([a-z0-9-]+)\.png(\?.*)?$/.exec(String(src || '')); return m ? m[1] + m[2] + 'weiss/' + m[3] + '.png' : null; }
   const merk = new Map();
   // Aufbereiten: freistellen, zuschneiden, analysieren. Ergebnis wird je Quelle gemerkt.
   async function aufbereiten(src){
@@ -28345,6 +28356,8 @@ const LOGO = (() => {
     const a = await aufbereiten(src);
     if(art === 'original') return a.c;
     const k = art + '|' + src; if(merk.has(k)) return merk.get(k);
+    const wd = art === 'weiss' && weissDatei(src);
+    if(wd){ try{ const w = (await aufbereiten(wd)).c; merk.set(k, w); return w; }catch(e){ /* sonst selbst rechnen */ } }
     const farbe = art === 'weiss' ? '#ffffff' : art === 'schwarz' ? '#111111' : (art.startsWith('farbe:') ? art.slice(6) : '#ffffff');
     const c = einfarbig(a.c, farbe); merk.set(k, c); return c;
   }
@@ -28400,7 +28413,7 @@ function tcLogo(id){ return ((TC.d && TC.d.logos) || []).find(l => l.id === id) 
 function tcVorKey(k){ const s = tcSatz(); return s ? s.id + '|' + k : k; }
 function tcName(k){ const i = TRIKOT3D_INFO(k); return i ? i.n : k; }
 function TRIKOT3D_INFO(k){ return window.TRIKOT3D ? TRIKOT3D.platzInfo(TC.art, k) : null; }
-function tcRegelVariante(firma, k){ return /^basakci/i.test(firma || '') && TC.art === 'auswaerts' && k === 'brust' ? 'original' : 'weiss'; }
+function tcRegelVariante(firma, k){ return /^basakci/i.test(firma || '') && TC.art === 'auswaerts' && k === 'brust' ? 'original' : TC.art === 'anzug' && /^aermel/.test(k) ? 'schwarz' : 'weiss'; }
 function tcBelegung(){ const B = {};
   tcPlaetze().forEach(p => { const l = p.logo ? tcLogo(p.logo) : null;
     if(p.status !== 'frei') B[p.platz] = { status:p.status, firma:p.firma, bild:l && l.bild, variante:p.variante, groesse:+p.groesse || 1 };
@@ -28416,7 +28429,7 @@ async function tcRender(B){
     <div class="pz-tc-raster"><div class="pz-tc-links">
       <div class="pz-tc-wahl"><label class="pz-tc-team"><span>Mannschaft</span><select id="tcTeam" aria-label="Mannschaft"></select></label>
         <div class="pz-tc-seg" id="tcArt" role="group" aria-label="Satz">${TC_ARTEN.map(([k, t]) => `<button type="button" data-tcart="${k}">${t}</button>`).join('')}</div></div>
-      <div class="pz-tc-buehne" id="tcBuehne"><div class="pz-tc-laden" id="tcLaden"><i></i>Trikots werden aufgebaut …</div><button type="button" class="pz-tc-zoom" id="tcZoom" hidden aria-pressed="false">Ganzes Set</button></div>
+      <div class="pz-tc-buehne" id="tcBuehne"><div class="pz-tc-laden" id="tcLaden"><i></i>Trikots werden aufgebaut …</div></div>
       <div class="pz-tc-leiste"><div class="pz-tc-seg klein" id="tcSicht" role="group" aria-label="Ansicht">${[['vorn', 'Vorn'], ['seite', 'Seite'], ['hinten', 'Hinten']].map(([k, t]) => `<button type="button" data-tcsicht="${k}">${t}</button>`).join('')}</div>
         <div class="pz-tc-seg klein" id="tcModus" role="group" aria-label="Darstellung"><button type="button" data-tcmodus="3d">3D</button><button type="button" data-tcmodus="foto">Foto</button></div></div>
       <p class="pz-tc-info" id="tcInfo" aria-live="polite"></p></div>
@@ -28447,7 +28460,7 @@ async function tcRender(B){
   TC.v = TRIKOT3D.buehne(host, { three:'vendor/three.min.js?v=' + encodeURIComponent(tcBuild()), kit:'kit/', schrift:'BarlowC', name:tcName,
     onPlatz:tcPlatzTipp, onDreh:s => { TC.sicht = s; tcKnoepfe(); } });
   await TC.v.bereit; const L = P.querySelector('#tcLaden'); if(L) L.remove();
-  const zb = P.querySelector('#tcZoom'); zb.hidden = !TC.v.webgl; zb.onclick = () => { const ganz = TC.v.fokusJetzt !== 'gesamt'; TC.v.fokus(ganz ? 'gesamt' : 'oben'); tcZoomText(); };
+  // 0.81: ohne Hose und Stutzen gibt es kein „Ganzes Set“ mehr, die Bühne zeigt immer das ganze Oberteil
   TC.modus = TC.v.modusJetzt; tcStand(true); tcZiehenBinden(P);
 }
 function tcZoomText(){ const zb = document.getElementById('tcZoom'); if(!zb || !TC.v) return; const ganz = TC.v.fokusJetzt === 'gesamt'; zb.textContent = ganz ? 'Trikot nah' : 'Ganzes Set'; zb.setAttribute('aria-pressed', String(ganz)); zb.hidden = !TC.v.webgl || TC.modus === 'foto'; }

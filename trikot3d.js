@@ -1,5 +1,8 @@
 /* =====================================================================
    Beta 0.80 · Trikot-Creator: die Bühne (3D und Foto)
+   Beta 0.81: Heim- und Auswärtstrikot in 3D direkt aus den Produktfotos (Atlas vorn/hinten, Tiefenkarte), damit es aussieht wie das echte
+   Squadra 25. Nur noch Brust und Ärmel als Plätze, oben in der Mitte fest das Gemeindewappen (drei Glocken, weiß). Der Anzug bleibt gebaut.
+   Ohne Hose und Stutzen (keine Partnerplätze dort): die Bühne zeigt nur Trikot bzw. Jacke.
    Gemeinsam für den Partner-Bereich der App (svm78.js) und die Partner-Präsentation (partner.js).
    three.js (r149, UMD) liegt unter vendor/three.min.js und wird erst geladen, wenn die Bühne aufgeht.
    Die Kleidung ist prozedural gebaut, ohne Puppe, wie ein Produktbild: Trikot mit Ärmeln und Kragen, Hose, Stutzen;
@@ -19,27 +22,34 @@ window.TRIKOT3D = (function(){
   /* ---------- Plätze ---------- */
   // teil: torso (x, y in Metern, vorn/hinten) · aermel (seite +1 = links des Trägers, l entlang des Ärmels) · bein (seite, l entlang des Beins)
   const PLAETZE = {
+    // Nur drei Plätze für Partner: Brust, Ärmel links, Ärmel rechts (Beta 0.81). Oben in der Mitte sitzt fest das Gemeindewappen.
     trikot: {
       brust:{ n:'Brust', k:'Brust', teil:'torso', vorn:true, x:0, y:.462, w:.23, h:.13, haupt:true, fokus:'oben' },
-      aermel_l:{ n:'Ärmel links', k:'Ärmel L', teil:'aermel', seite:1, l:.38, w:.1, h:.068, fokus:'oben' },
-      aermel_r:{ n:'Ärmel rechts', k:'Ärmel R', teil:'aermel', seite:-1, l:.38, w:.1, h:.068, fokus:'oben' },
-      ruecken:{ n:'Rücken unten', k:'Rücken', teil:'torso', vorn:false, x:0, y:.31, w:.2, h:.06, fokus:'oben' },
-      nacken:{ n:'Nacken', k:'Nacken', teil:'torso', vorn:false, x:0, y:.686, w:.085, h:.022, fokus:'oben' },
-      hose_vorn:{ n:'Hose vorn', k:'Hose vorn', teil:'bein', seite:1, vorn:true, l:.62, w:.075, h:.045, fokus:'unten' },
-      hose_hinten:{ n:'Hose hinten', k:'Hose hinten', teil:'bein', seite:-1, vorn:false, l:.36, w:.09, h:.045, fokus:'unten' }
+      aermel_l:{ n:'Ärmel links', k:'Ärmel L', teil:'aermel', seite:1, l:.38, w:.08, h:.06, fokus:'oben' },
+      aermel_r:{ n:'Ärmel rechts', k:'Ärmel R', teil:'aermel', seite:-1, l:.38, w:.08, h:.06, fokus:'oben' }
     },
     anzug: {
-      jacke_brust:{ n:'Jacke Brust', k:'Brust', teil:'torso', vorn:true, x:-.105, y:.53, w:.1, h:.055, haupt:true, fokus:'oben' },
-      jacke_ruecken:{ n:'Jacke Rücken', k:'Rücken', teil:'torso', vorn:false, x:0, y:.5, w:.25, h:.11, fokus:'oben' },
-      anzug_aermel:{ n:'Ärmel', k:'Ärmel', teil:'aermel', seite:1, l:.3, w:.075, h:.055, fokus:'oben' },
-      anzug_hose:{ n:'Hose', k:'Hose', teil:'bein', seite:1, vorn:true, l:.2, w:.075, h:.045, fokus:'unten' }
+      jacke_brust:{ n:'Jacke Brust', k:'Brust', teil:'torso', vorn:true, x:-.105, y:.53, w:.125, h:.07, haupt:true, fokus:'oben' },
+      aermel_l:{ n:'Ärmel links', k:'Ärmel L', teil:'aermel', seite:1, l:.3, w:.075, h:.055, fokus:'oben' },
+      aermel_r:{ n:'Ärmel rechts', k:'Ärmel R', teil:'aermel', seite:-1, l:.3, w:.075, h:.055, fokus:'oben' }
     }
   };
-  const FOTO = {   // Plätze auf den Produktfotos (Pixel im Foto, Drehung in Grad), nur Trikot
-    heim:{ vorn:{ bild:'foto-heim-vorn.webp', w:397, h:505, brust:[204,226,148,74,0], aermel_l:[349,158,46,34,24], aermel_r:[57,160,46,34,-22], wappen:[268,150,44], gemeinde:[204,148,22] },
-           hinten:{ bild:'foto-heim-hinten.webp', w:437, h:539, nacken:[221,84,46,13,0], ruecken:[222,300,118,38,0], jungs:[222,102,74], name:[222,128,128], nummer:[222,204,124] } },
-    auswaerts:{ vorn:{ bild:'foto-ausw-vorn.webp', w:447, h:555, brust:[222,232,150,76,0], aermel_l:[387,170,46,34,24], aermel_r:[62,170,46,34,-22], wappen:[288,153,44], gemeinde:[222,151,22] },
-           hinten:{ bild:'foto-ausw-hinten.webp', w:453, h:525, nacken:[223,60,46,13,0], ruecken:[232,272,122,38,0], jungs:[224,78,76], name:[226,105,130], nummer:[228,180,124] } }
+  const FOTO = {   // Plätze auf den Produktfotos (Pixel im Foto, Drehung in Grad), nur Trikot; gemeinde: Gemeindewappen oben in der Mitte [x, y, b, h]
+    heim:{ vorn:{ bild:'foto-heim-vorn.webp', w:397, h:505, brust:[204,226,148,74,0], aermel_l:[349,158,46,34,24], aermel_r:[57,160,46,34,-22], wappen:[268,150,44], gemeinde:[204,146,35,36] },
+           hinten:{ bild:'foto-heim-hinten.webp', w:437, h:539, jungs:[222,102,74], name:[222,128,128], nummer:[222,204,124] } },
+    auswaerts:{ vorn:{ bild:'foto-ausw-vorn.webp', w:447, h:555, brust:[222,232,150,76,0], aermel_l:[387,170,46,34,24], aermel_r:[62,170,46,34,-22], wappen:[288,153,44], gemeinde:[222,149,36,37] },
+           hinten:{ bild:'foto-ausw-hinten.webp', w:453, h:525, jungs:[224,78,76], name:[226,105,130], nummer:[228,180,124] } }
+  };
+  // 3D aus den Produktfotos: Atlas (links vorn, rechts hinten, 640 × 760 je Seite) und Tiefenkarte (120 × 144: R vorn, G hinten, B innen).
+  // Das Foto hinten ist über Landmarken auf den Umriss von vorn gelegt (erzeugt mit tools/trikot_fotomodell.py). Positionen in Atlaspixeln.
+  const FOTO3D = {
+    A:[640, 760], N:[120, 144], hoehe:.76, dmax:.14, saum:-.03,
+    heim:{ atlas:'foto3d-heim.webp', tiefe:'foto3d-heim-tiefe.png', maske:'foto3d-heim-maske.png', breite:.5924,
+      brust:[328,324,265,133,0], aermel_l:[588,211,82,61,24], aermel_r:[65,214,82,61,-22], wappen:[443,197,79], gemeinde:[328,191,63,65],
+      jungs:[954,78,118], name:[954,116,205], nummer:[954,224,192] },
+    auswaerts:{ atlas:'foto3d-auswaerts.webp', tiefe:'foto3d-auswaerts-tiefe.png', maske:'foto3d-auswaerts-maske.png', breite:.5976,
+      brust:[328,310,246,125,0], aermel_l:[599,215,75,56,24], aermel_r:[66,215,75,56,-22], wappen:[437,188,72], gemeinde:[328,182,59,61],
+      jungs:[942,83,137], name:[944,122,246], nummer:[943,230,216] }
   };
   function platzListe(art){ return Object.keys(PLAETZE[art === 'anzug' ? 'anzug' : 'trikot']); }
   function platzInfo(art, k){ return PLAETZE[art === 'anzug' ? 'anzug' : 'trikot'][k] || null; }
@@ -288,6 +298,14 @@ window.TRIKOT3D = (function(){
       gr.addColorStop(0, 'rgba(0,0,0,.42)'); gr.addColorStop(.45, 'rgba(0,0,0,.2)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); sx.fillStyle = gr; sx.fillRect(0, 0, 256, 256);
       const sT = new T.CanvasTexture(sc); Z.schatten = new T.Mesh(new T.PlaneGeometry(1.15, .5), new T.MeshBasicMaterial({ map:sT, transparent:true, depthWrite:false }));
       Z.schatten.rotation.x = -PI / 2; szene.add(Z.schatten);
+      // Fotomodell für Heim und Auswärts vorladen (Atlas und Tiefe); ohne bleibt das gebaute Trikot
+      Z.fm = {}; await Promise.all(['heim', 'auswaerts'].map(async satz => { try{ const M = FOTO3D[satz];
+        const [atlas, tiefe, maske] = await Promise.all([bild(opt.kit + M.atlas), bild(opt.kit + M.tiefe), bild(opt.kit + M.maske)]);
+        const c = leinwand(FOTO3D.N[0], FOTO3D.N[1]), x = c.getContext('2d', { willReadFrequently:true }); x.drawImage(tiefe, 0, 0);
+        // Stofffarbe aus dem Foto (Mitte vorn), damit Hose und Stutzen zum Trikot passen
+        const p = leinwand(40, 40), px = p.getContext('2d', { willReadFrequently:true }); px.drawImage(atlas, 250, 420, 140, 160, 0, 0, 40, 40);
+        const q = px.getImageData(0, 0, 40, 40).data; let r = 0, g = 0, b = 0, n = 0; for(let i = 0; i < q.length; i += 4){ if(q[i + 3] < 250) continue; r += q[i]; g += q[i + 1]; b += q[i + 2]; n++; }
+        Z.fm[satz] = { atlas, maske, t:x.getImageData(0, 0, c.width, c.height).data, farbe:n ? mischen(hex(r / n, g / n, b / n), '#000000', .2) : null }; }catch(e){} }));
       Z.gl = true; bedienung(cv);
       new ResizeObserver(groesse).observe(wurzel); groesse();
     }
@@ -324,19 +342,22 @@ window.TRIKOT3D = (function(){
 
     function bauen(){
       while(gruppe.children.length){ const c = gruppe.children.pop(); c.traverse(o => { if(o.geometry) o.geometry.dispose(); }); }
-      mats.forEach(m => { if(m.map) m.map.dispose(); if(m.normalMap) m.normalMap.dispose(); m.dispose(); }); mats = []; teile = {}; texte = {};
+      mats.forEach(m => { if(m.map) m.map.dispose(); if(m.normalMap) m.normalMap.dispose(); if(m.maske) m.maske.dispose(); m.dispose(); }); mats = []; teile = {}; texte = {};
       const art = Z.art === 'anzug' ? 'anzug' : 'trikot', d = Z.daten || {}, grund = d.grund || '#2f5fd0';
-      const S = SCHNITT[art], R = rumpf(S);
-      const neu = (name, form, W, H, nN, nM, teil) => { const cv = leinwand(W, H), mat = stoff(cv, normale(W >> 2, H >> 2, art, teil), grund);
-        const g = form.geo(nN, nM), o = mesh(g, mat, innenStoff(grund)); gruppe.add(o); teile[name] = { form, cv, mat, teil, o }; return teile[name]; };
-      neu('torso', R, 2048, 1024, 128, 84, 'torso');
-      neu('aermel_l', aermel(1, art), 1024, 512, 48, 36, 'aermel'); neu('aermel_r', aermel(-1, art), 1024, 512, 48, 36, 'aermel');
-      neu('bein_l', bein(1, art), 1024, art === 'anzug' ? 1024 : 512, 56, art === 'anzug' ? 80 : 40, 'bein'); neu('bein_r', bein(-1, art), 1024, art === 'anzug' ? 1024 : 512, 56, art === 'anzug' ? 80 : 40, 'bein');
-      if(art === 'trikot'){ neu('stutzen_l', stutzen(1), 512, 512, 32, 64, 'stutzen'); neu('stutzen_r', stutzen(-1), 512, 512, 32, 64, 'stutzen'); }
+      const S = SCHNITT[art], R = rumpf(S), satz = Z.art === 'auswaerts' ? 'auswaerts' : 'heim', FM = art === 'trikot' && Z.fm && Z.fm[satz];
+      Z.foto3d = FM ? satz : null;
+      const gU = FM && FM.farbe || grund;   // Hose und Stutzen: beim Fotomodell in der Farbe des Fotos
+      const neu = (name, form, W, H, nN, nM, teil) => { const f = teil === 'bein' || teil === 'stutzen' ? gU : grund, cv = leinwand(W, H), mat = stoff(cv, normale(W >> 2, H >> 2, art, teil), f);
+        const g = form.geo(nN, nM), o = mesh(g, mat, innenStoff(f)); gruppe.add(o); teile[name] = { form, cv, mat, teil, o }; return teile[name]; };
+      if(FM) fotoKoerper(satz, FM);
+      else { neu('torso', R, 2048, 1024, 128, 84, 'torso');
+        neu('aermel_l', aermel(1, art), 1024, 512, 48, 36, 'aermel'); neu('aermel_r', aermel(-1, art), 1024, 512, 48, 36, 'aermel'); }
+      // 0.81: keine Hose und keine Stutzen mehr, dort gibt es keine Partnerplätze. Nur Trikot und Jacke, damit der Blick auf den Logos bleibt.
       // Kragen
       const hals = R.hals(96), kurve = new T.CatmullRomCurve3(hals.map(p => new T.Vector3(p[0], p[1], p[2])), true);
       const kf = mischen(grund, '#000000', .16);
-      if(S.kragen === 'rund'){
+      if(FM){ /* Kragen steckt im Foto */ }
+      else if(S.kragen === 'rund'){
         const km = new T.MeshPhysicalMaterial({ color:new T.Color(kf), roughness:.88, sheen:.35, sheenColor:new T.Color(mischen(grund, '#ffffff', .2)), envMapIntensity:.25 }); mats.push(km);
         const k = new T.Mesh(new T.TubeGeometry(kurve, 160, .0115, 12, true), km); k.scale.set(1, 1, 1); gruppe.add(k);
       } else {
@@ -352,9 +373,79 @@ window.TRIKOT3D = (function(){
         const vorn = kurve.getPointAt(0); const zip = new T.Mesh(new T.BoxGeometry(.008, .062, .004), zm); zip.position.set(vorn.x, vorn.y + .025, vorn.z + .006); gruppe.add(zip);
         const zg = new T.Mesh(new T.BoxGeometry(.012, .028, .004), zm); zg.position.set(vorn.x, vorn.y + .045, vorn.z + .011); zg.rotation.x = -.25; gruppe.add(zg);
       }
-      Z.form = R; Z.unten = art === 'anzug' ? -1.03 : -.975; Z.oben = S.H + (S.kragen === 'steh' ? .06 : .0);
+      Z.form = R; Z.unten = FM ? FOTO3D.saum : -.012; Z.oben = FM ? FOTO3D.saum + FOTO3D.hoehe : S.H + (S.kragen === 'steh' ? .06 : .0);
       Z.schatten.position.y = Z.unten - .06;
       ankerBerechnen();
+    }
+
+    /* ----- Trikot aus den Produktfotos: aufgeblasener Umriss, vorn und hinten das echte Foto ----- */
+    function fotoTiefe(FM, gx, gy, hinten){   // gx, gy in Netzkoordinaten (0..N-1), bilinear
+      const [NW, NH] = FOTO3D.N, x0 = kl(Math.floor(gx), 0, NW - 1), y0 = kl(Math.floor(gy), 0, NH - 1), x1 = Math.min(NW - 1, x0 + 1), y1 = Math.min(NH - 1, y0 + 1), fx = kl(gx - x0, 0, 1), fy = kl(gy - y0, 0, 1);
+      const v = (x, y) => FM.t[(y * NW + x) * 4 + (hinten ? 1 : 0)] / 255 * FOTO3D.dmax;
+      return lerp(lerp(v(x0, y0), v(x1, y0), fx), lerp(v(x0, y1), v(x1, y1), fx), fy); }
+    function fotoPunkt(satz, ax, ay){   // Atlaspixel -> Punkt und Normale am Körper (vorn: ax < A, hinten: ax >= A)
+      const M = FOTO3D[satz], FM = Z.fm[satz], [AW, AH] = FOTO3D.A, [NW, NH] = FOTO3D.N, hinten = ax >= AW, fx = hinten ? AW - (ax - AW) : ax;
+      const x = (fx / AW - .5) * M.breite, y = FOTO3D.saum + (1 - ay / AH) * FOTO3D.hoehe, gx = fx / AW * (NW - 1), gy = ay / AH * (NH - 1);
+      const z = fotoTiefe(FM, gx, gy, hinten) * (hinten ? -1 : 1), e = 1.5, mx = M.breite / (NW - 1), my = FOTO3D.hoehe / (NH - 1);
+      const dzx = (fotoTiefe(FM, gx + e, gy, hinten) - fotoTiefe(FM, gx - e, gy, hinten)) / (2 * e * mx), dzy = (fotoTiefe(FM, gx, gy - e, hinten) - fotoTiefe(FM, gx, gy + e, hinten)) / (2 * e * my);
+      const n = hinten ? norm([-dzx, -dzy, -1]) : norm([-dzx, -dzy, 1]);
+      return { P:[x, y, z], n, r:hinten ? [-1, 0, 0] : [1, 0, 0], o:[0, 1, 0] }; }
+    function fotoKoerper(satz, FM){
+      const M = FOTO3D[satz], [NW, NH] = FOTO3D.N, t = FM.t, innen = new Uint8Array(NW * NH), dabei = new Uint8Array(NW * NH);
+      for(let k = 0; k < NW * NH; k++) innen[k] = t[k * 4 + 2] > 127 ? 1 : 0;
+      // Netz: Umriss plus zwei Zellen Rand (Tiefe 0), damit vorn und hinten sich am Rand treffen; die Maske im Shader schneidet sauber
+      for(let j = 0; j < NH; j++) for(let i = 0; i < NW; i++){ let d = 0; for(let b = -2; b <= 2 && !d; b++) for(let a = -2; a <= 2; a++){ const x = i + a, y = j + b; if(x >= 0 && y >= 0 && x < NW && y < NH && innen[y * NW + x]){ d = 1; break; } } dabei[j * NW + i] = d; }
+      const pos = [], uv = [], idx = [], nr = new Int32Array(NW * NH * 2).fill(-1);
+      for(const hinten of [0, 1]) for(let j = 0; j < NH; j++) for(let i = 0; i < NW; i++){ const k = j * NW + i; if(!dabei[k]) continue;
+        const z = innen[k] ? t[k * 4 + hinten] / 255 * FOTO3D.dmax : 0;   // außerhalb 0; der Saum liegt in der letzten Zeile und bleibt offen
+        nr[hinten * NW * NH + k] = pos.length / 3;
+        pos.push((i / (NW - 1) - .5) * M.breite, FOTO3D.saum + (1 - j / (NH - 1)) * FOTO3D.hoehe, hinten ? -z : z);
+        uv.push(hinten ? .5 + (1 - i / (NW - 1)) * .5 : i / (NW - 1) * .5, 1 - j / (NH - 1)); }
+      for(const hinten of [0, 1]) for(let j = 0; j < NH - 1; j++) for(let i = 0; i < NW - 1; i++){
+        const o = hinten * NW * NH, a = nr[o + j * NW + i], b = nr[o + j * NW + i + 1], c = nr[o + (j + 1) * NW + i], d = nr[o + (j + 1) * NW + i + 1];
+        if(a < 0 || b < 0 || c < 0 || d < 0) continue;
+        if(hinten) idx.push(a, b, c, b, d, c); else idx.push(a, c, b, b, c, d); }
+      const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+      const cv = leinwand(FOTO3D.A[0] * 4, FOTO3D.A[1] * 2), map = new T.CanvasTexture(cv);
+      map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); map.generateMipmaps = true; map.minFilter = T.LinearMipmapLinearFilter;
+      // Licht passend zum Foto: das Foto bringt sein Licht mit, dazu nur ein sanftes Abdunkeln, wenn sich der Stoff wegdreht
+      const mk = new T.Texture(FM.maske); mk.needsUpdate = true; mk.minFilter = T.LinearMipmapLinearFilter;
+      const mat = new T.ShaderMaterial({ uniforms:{ map:{ value:map }, maske:{ value:mk } }, transparent:false, side:T.DoubleSide,
+        vertexShader:'varying vec2 vUv; varying vec3 vN; void main(){ vUv = uv; vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader:'uniform sampler2D map; uniform sampler2D maske; varying vec2 vUv; varying vec3 vN; void main(){ if(texture2D(maske, vUv).r < .5) discard; vec4 t = texture2D(map, vUv); vec3 L = normalize(vec3(-.3, .35, .89)); float l = max(dot(normalize(vN), L), 0.0); float r = pow(1.0 - abs(normalize(vN).z), 3.0); gl_FragColor = vec4(t.rgb * (.74 + .3 * l) * (1.0 - .18 * r) * (gl_FrontFacing ? 1.0 : .42), 1.0); }' });
+      mats.push(mat); mat.map = map; mat.maske = mk;
+      const o = new T.Mesh(geo, mat); gruppe.add(o); teile.foto = { cv, mat, teil:'foto', o, satz };
+    }
+    async function fotoMalen(fest, logos){   // Atlas mit Aufdrucken und Partnerlogos, schattiert wie im Foto
+      const t = teile.foto, M = FOTO3D[t.satz], FM = Z.fm[t.satz], d = Z.daten, c = t.cv, x = c.getContext('2d'), s = c.width / (FOTO3D.A[0] * 2);
+      // Grundbild (Foto, Aufdrucke, Logos, schattiert) nur neu rechnen, wenn sich Belegung oder Nummer ändern; Hervorheben malt nur die Rahmen neu
+      const schluessel = JSON.stringify([t.satz, d.nummer || '10', Object.keys(logos).sort(), Object.entries(d.belegung || {}).map(([k, b]) => [k, b && b.status, b && b.firma, b && b.variante, b && b.groesse, b && !!b.vorschau, b && b.bild && String(b.bild).length])]);
+      x.setTransform(1, 0, 0, 1, 0, 0);
+      if(t.grund && t.grundKey === schluessel){ x.clearRect(0, 0, c.width, c.height); x.drawImage(t.grund, 0, 0); return fotoRahmen(x, M, d, s, t); }
+      x.clearRect(0, 0, c.width, c.height); x.imageSmoothingQuality = 'high'; x.drawImage(FM.atlas, 0, 0, c.width, c.height);
+      const A = leinwand(c.width, c.height), a = A.getContext('2d', { willReadFrequently:true });
+      const setze = (q, b, wq, hq, gr) => { if(!q || !b) return; const iw = b.width || b.naturalWidth, ih = b.height || b.naturalHeight; if(!iw || !ih) return;
+        const k = Math.min(wq * s / iw, hq * s / ih) * (gr || 1); a.save(); a.translate(q[0] * s, q[1] * s); a.rotate((q[4] || 0) * PI / 180); a.drawImage(b, -iw * k / 2, -ih * k / 2, iw * k, ih * k); a.restore(); };
+      setze(M.wappen, fest.wappen, M.wappen[2], M.wappen[2] * .6); setze(M.gemeinde, fest.gemeinde, M.gemeinde[2], M.gemeinde[3]);
+      setze(M.jungs, fest.jungs, M.jungs[2], M.jungs[2] * .2); setze(M.name, textBild('SV/BSC MÖRLENBACH', 120, '#ffffff', 700), M.name[2], M.name[2] * .2);
+      setze(M.nummer, textBild(String(d.nummer || '10'), 400, '#ffffff', 700), M.nummer[2], M.nummer[2] * 1.05);
+      Object.entries(logos).forEach(([k, L]) => { const q = M[k]; if(!q) return; const b = d.belegung[k]; setze(q, L, q[2], q[3], kl(+b.groesse || 1, .5, 1.5) * .92); });
+      // Schattierung: Helligkeit des Fotos unter dem Druck (Falten, Licht)
+      const pd = a.getImageData(0, 0, A.width, A.height), fd = x.getImageData(0, 0, c.width, c.height), P = pd.data, Q = fd.data;
+      const ref = FM.ref || (FM.ref = (() => { let s0 = 0, n = 0; for(let i = 0; i < Q.length; i += 4 * 13){ if(Q[i + 3] < 250) continue; const l = Q[i] * .3 + Q[i + 1] * .59 + Q[i + 2] * .11; if(l < 235 && l > 30){ s0 += l; n++; } } return n ? s0 / n : 128; })());
+      for(let i = 0; i < P.length; i += 4){ if(!P[i + 3]) continue; const l = Q[i] * .3 + Q[i + 1] * .59 + Q[i + 2] * .11, f = kl(Math.pow(l / ref, .8), .62, 1.12); P[i] *= f; P[i + 1] *= f; P[i + 2] *= f; }
+      a.putImageData(pd, 0, 0); x.globalCompositeOperation = 'source-atop'; x.globalAlpha = .96; x.drawImage(A, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+      if(!t.grund){ t.grund = leinwand(c.width, c.height); } const gx = t.grund.getContext('2d'); gx.clearRect(0, 0, c.width, c.height); gx.drawImage(c, 0, 0); t.grundKey = schluessel;
+      fotoRahmen(x, M, d, s, t);
+    }
+    function fotoRahmen(x, M, d, s, t){   // Rahmen für freie Plätze und Hervorhebung
+      if(opt.rahmen) Object.keys(PLAETZE.trikot).forEach(k => { const q = M[k]; if(!q) return; const b = (d.belegung || {})[k], frei = !b || b.status === 'frei'; if(!(frei || b.vorschau || Z.an === k || Z.nein === k)) return;
+        x.save(); x.translate(q[0] * s, q[1] * s); x.rotate((q[4] || 0) * PI / 180); const w = q[2] * s, h = q[3] * s; x.beginPath(); if(x.roundRect) x.roundRect(-w / 2, -h / 2, w, h, Math.min(w, h) * .18); else x.rect(-w / 2, -h / 2, w, h);
+        if(Z.an === k){ x.fillStyle = 'rgba(255,255,255,.22)'; x.fill(); x.strokeStyle = '#fff'; x.lineWidth = Math.max(4, w * .03); }
+        else if(Z.nein === k){ x.fillStyle = 'rgba(176,40,26,.25)'; x.fill(); x.strokeStyle = '#ffd2cc'; x.lineWidth = Math.max(4, w * .03); }
+        else { x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = Math.max(3, w * .016); x.setLineDash([Math.max(8, w * .06), Math.max(6, w * .04)]); }
+        x.stroke(); x.restore(); });
+      t.mat.map.needsUpdate = true;
     }
 
     /* ----- Malen der Texturen ----- */
@@ -373,6 +464,8 @@ window.TRIKOT3D = (function(){
       const art = Z.art === 'anzug' ? 'anzug' : 'trikot', R = Z.form; Z.anker = {};
       const torsoAnker = (x, y, vorn) => { const [u, v] = R.uvFuer(x, y, vorn); return ankerFuer(R, teile.torso.cv, u, v, { mx:0 }); };
       const besteU = (form, v, richtung) => { let best = 0, bu = 0; for(let i = 0; i < 128; i++){ const u = i / 128, a = form.PUV(u, v), b = form.PUV((i + 64) / 128 % 1, v); const n = norm(add(a, b, -1)); const s = pkt(n, norm(richtung)); if(s > best){ best = s; bu = u; } } return bu; };
+      if(Z.foto3d){ const M = FOTO3D[Z.foto3d]; Object.keys(PLAETZE.trikot).forEach(k => { const q = M[k]; if(q) Z.anker[k] = Object.assign(fotoPunkt(Z.foto3d, q[0], q[1]), { teil:'foto' }); });
+        Z.fest = {}; return; }
       Object.entries(PLAETZE[art]).forEach(([k, p]) => {
         if(p.teil === 'torso') Z.anker[k] = Object.assign(torsoAnker(p.x, p.y, p.vorn), { teil:'torso' });
         else if(p.teil === 'aermel'){ const t = teile[p.seite > 0 ? 'aermel_l' : 'aermel_r'], v = 1 - p.l;
@@ -385,7 +478,7 @@ window.TRIKOT3D = (function(){
       // feste Aufdrucke
       const S = R.S; Z.fest = {};
       if(art === 'trikot'){ Z.fest.wappen = torsoAnker(.098, .6, true); Z.fest.gemeinde = torsoAnker(0, .603, true); Z.fest.jungs = torsoAnker(0, .655, false); Z.fest.name = torsoAnker(0, .618, false); Z.fest.nummer = torsoAnker(0, .49, false);
-        const tb = teile.bein_r, vb = 1 - .7, ub = besteU(tb.form, vb, [-.35, 0, 1]); Z.fest.hoseWappen = ankerFuer(tb.form, tb.cv, ub, vb, { mx:tb.form.PUV(ub, vb)[0] + .1, my:tb.form.PUV(ub, vb)[1] }); }
+        if(teile.bein_r){ const tb = teile.bein_r, vb = 1 - .7, ub = besteU(tb.form, vb, [-.35, 0, 1]); Z.fest.hoseWappen = ankerFuer(tb.form, tb.cv, ub, vb, { mx:tb.form.PUV(ub, vb)[0] + .1, my:tb.form.PUV(ub, vb)[1] }); } }
       else { Z.fest.wappen = torsoAnker(.105, .53, true); Z.fest.jungs = torsoAnker(0, .345, false); }
       void S;
     }
@@ -412,14 +505,17 @@ window.TRIKOT3D = (function(){
     let malT = 0, malNr = 0, fotoNr = 0;
     function malen(){ clearTimeout(malT); malT = setTimeout(malenJetzt, 0); }
     async function malenJetzt(){
-      if(!Z.gl || !teile.torso || !Z.daten) return; const nr = ++malNr;
-      const d = Z.daten, art = Z.art === 'anzug' ? 'anzug' : 'trikot', grund = d.grund || '#2f5fd0', akzent = d.akzent || '#ffffff', kit = opt.kit;
-      const fest = {}; await Promise.all([['wappen', 'wappen.png'], ['gemeinde', 'gemeinde.png'], ['jungs', 'jungs.png']].map(async ([k, f]) => { try{ fest[k] = await bild(kit + f); }catch(e){} }));
+      if(!Z.gl || !(teile.torso || teile.foto) || !Z.daten) return; const nr = ++malNr;
+      const d = Z.daten, art = Z.art === 'anzug' ? 'anzug' : 'trikot', grundAlle = d.grund || '#2f5fd0', akzent = d.akzent || '#ffffff', kit = opt.kit;
+      const fest = {}; await Promise.all([['wappen', 'wappen.png'], ['gemeinde', 'wappen-glocken-weiss.png'], ['jungs', 'jungs.png']].map(async ([k, f]) => { try{ fest[k] = await bild(kit + f); }catch(e){} }));
       try{ await document.fonts.load(`800 100px ${opt.schrift}`); await document.fonts.load(`700 100px ${opt.schrift}`); }catch(e){}
       const logos = {}; await Promise.all(Object.entries(d.belegung || {}).map(async ([k, b]) => { if(b && b.status !== 'frei' && (b.bild || b.firma)) logos[k] = await logoLeinwand(b, opt.schrift); }));
       if(nr !== malNr) return;
-      Object.entries(teile).forEach(([name, t]) => {
+      if(teile.foto) await fotoMalen(fest, logos);
+      if(nr !== malNr) return;
+      Object.entries(teile).forEach(([name, t]) => { if(name === 'foto') return;
         const c = t.cv, x = c.getContext('2d'), W = c.width, H = c.height; x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1;
+        const grund = Z.foto3d && (t.teil === 'bein' || t.teil === 'stutzen') && Z.fm[Z.foto3d].farbe || grundAlle;
         x.fillStyle = grund; x.fillRect(0, 0, W, H);
         if(name === 'torso'){
           const R = Z.form, S = R.S;
@@ -432,7 +528,7 @@ window.TRIKOT3D = (function(){
               for(let i = 0; i <= 20; i++){ const xx = sg * lerp(S.nr + .012, S.Xs + .004, i / 20), yy = S.H - .012 - .34 * (Math.abs(xx) - S.nr) - .016; const [u, v] = R.uvFuer(xx, yy, vorn); if(i) x.lineTo(u * W, (1 - v) * H); else x.moveTo(u * W, (1 - v) * H); }
               x.stroke(); }
             zeichneIn(x, Z.fest.wappen, fest.wappen, .085, .05);
-            zeichneIn(x, Z.fest.gemeinde, fest.gemeinde, .034, .048);
+            zeichneIn(x, Z.fest.gemeinde, fest.gemeinde, .05, .052);
             zeichneIn(x, Z.fest.jungs, fest.jungs, .1, .02);
             zeichneIn(x, Z.fest.name, textBild('SV/BSC MÖRLENBACH', 120, '#ffffff', 700), .19, .032);
             zeichneIn(x, Z.fest.nummer, textBild(String(d.nummer || '10'), 400, '#ffffff', 700), .26, .19);
@@ -474,8 +570,8 @@ window.TRIKOT3D = (function(){
 
     /* ----- Kamera, Drehen, Marken ----- */
     const FOKUS = { gesamt:null, oben:null, unten:null };
-    function kameraZiel(f){ const top = Z.oben + .03, bot = Z.unten - .02;
-      if(f === 'oben') return { y0:-.16, y1:top + .02 }; if(f === 'unten') return { y0:bot, y1:-.02 }; return { y0:bot, y1:top }; }
+    function kameraZiel(f){ const top = Z.oben + .03, bot = Z.unten - .03;   // 0.81: nur noch Trikot bzw. Jacke, alle Ansichten zeigen das ganze Oberteil
+      void f; return { y0:bot, y1:top + .02 }; }
     function kameraSetzen(){
       const a = kameraZiel(Z.fokus), b = kameraZiel(Z.fokusZiel), k = sst(0, 1, Z.fk), y0 = lerp(a.y0, b.y0, k), y1 = lerp(a.y1, b.y1, k);
       const hoehe = (y1 - y0) * 1.08, breite = Z.fokusZiel === 'oben' && Z.fk >= 1 ? .9 : .98, fov = kamera.fov * PI / 180;
@@ -561,7 +657,7 @@ window.TRIKOT3D = (function(){
         const x0 = cvF.getContext('2d'); x0.clearRect(0, 0, cvF.width, cvF.height); x0.fillStyle = '#4a5064'; x0.font = `600 ${15 * dp}px system-ui, sans-serif`; x0.textAlign = 'center';
         x0.fillText('Den Anzug zeigen wir nur in 3D.', cvF.width / 2, cvF.height / 2); Z.fotoLage = null; Object.values(marken).forEach(m => m.classList.add('weg')); return; }
       let img; try{ img = await bild(opt.kit + F.bild); }catch(e){ return; }
-      const fest = {}; await Promise.all([['wappen', 'wappen.png'], ['gemeinde', 'gemeinde.png'], ['jungs', 'jungs.png']].map(async ([k, f]) => { try{ fest[k] = await bild(opt.kit + f); }catch(e){} }));
+      const fest = {}; await Promise.all([['wappen', 'wappen.png'], ['gemeinde', 'wappen-glocken-weiss.png'], ['jungs', 'jungs.png']].map(async ([k, f]) => { try{ fest[k] = await bild(opt.kit + f); }catch(e){} }));
       try{ await document.fonts.load(`700 100px ${opt.schrift}`); }catch(e){}
       const logos = {}; await Promise.all(Object.entries(d.belegung || {}).map(async ([k, b]) => { if(F[k] && b && b.status !== 'frei' && (b.bild || b.firma)) logos[k] = await logoLeinwand(b, opt.schrift); }));
       if(nr !== fotoNr || Z.modus !== 'foto') return;
@@ -575,7 +671,7 @@ window.TRIKOT3D = (function(){
       const A = document.createElement('canvas'); A.width = F.w * 2; A.height = F.h * 2; const a = A.getContext('2d'); a.scale(2, 2);
       const setze = (q, bildX, wM, hM, gr) => { if(!q || !bildX) return; const [cx, cy, w, h, rot] = q; const iw = bildX.width || bildX.naturalWidth, ih = bildX.height || bildX.naturalHeight;
         const k = Math.min(w / iw, (h || w) / ih) * (gr || 1); a.save(); a.translate(cx, cy); a.rotate((rot || 0) * PI / 180); a.drawImage(bildX, -iw * k / 2, -ih * k / 2, iw * k, ih * k); a.restore(); void wM; void hM; };
-      if(seite === 'vorn'){ setze([...F.wappen, F.wappen[2] * .6, 0], fest.wappen); setze([F.gemeinde[0], F.gemeinde[1], F.gemeinde[2], F.gemeinde[2] * 1.4, 0], fest.gemeinde); }
+      if(seite === 'vorn'){ setze([...F.wappen, F.wappen[2] * .6, 0], fest.wappen); setze([F.gemeinde[0], F.gemeinde[1], F.gemeinde[2], F.gemeinde[3], 0], fest.gemeinde); }
       else { setze([...F.jungs, F.jungs[2] * .2, 0], fest.jungs); setze([...F.name, F.name[2] * .2, 0], textBild('SV/BSC MÖRLENBACH', 120, '#ffffff', 700)); setze([...F.nummer, F.nummer[2] * 1.05, 0], textBild(String(d.nummer || '10'), 400, '#ffffff', 700)); }
       Object.entries(logos).forEach(([k, L]) => { const b = d.belegung[k]; setze(F[k], L, 0, 0, kl(+b.groesse || 1, .5, 1.5) * .92); });
       // Schattierung: Helligkeit des Fotos unter dem Druck übernehmen (Falten, Licht)
@@ -602,7 +698,7 @@ window.TRIKOT3D = (function(){
 
     /* ----- nach außen ----- */
     async function setzen(daten){
-      const artNeu = daten.art === 'anzug' ? 'anzug' : daten.art === 'auswaerts' ? 'auswaerts' : 'heim', formWechsel = (artNeu === 'anzug') !== (Z.art === 'anzug') || !teile.torso, farbWechsel = !Z.daten || Z.daten.grund !== daten.grund;
+      const artNeu = daten.art === 'anzug' ? 'anzug' : daten.art === 'auswaerts' ? 'auswaerts' : 'heim', formWechsel = (artNeu === 'anzug') !== (Z.art === 'anzug') || !(teile.torso || teile.foto) || (teile.foto && teile.foto.satz !== artNeu), farbWechsel = !Z.daten || Z.daten.grund !== daten.grund;
       Z.art = artNeu; Z.daten = daten;
       if(Z.art === 'anzug' && Z.modus === 'foto' && Z.gl){ Z.modus = '3d'; modusZeigen(); }
       if(Z.gl){ if(formWechsel || farbWechsel){ bauen(); oberkanten(); } }
@@ -639,8 +735,8 @@ window.TRIKOT3D = (function(){
 
     const bereit = (Z.modus === '3d' ? start3d().catch(e => { Z.fehler = e; Z.modus = 'foto'; modusZeigen(); }) : Promise.resolve()).then(() => { modusZeigen(); });
     return { bereit, setzen, drehen, fokus, modus, platzBei, hervorheben, png, zerstoeren, pixelTest,
-      get modusJetzt(){ return Z.modus; }, get fokusJetzt(){ return Z.fokusZiel; }, get sicht(){ return Z.sicht; }, get webgl(){ return Z.gl; }, get winkel(){ return Z.winkel; }, wurzel };
+      get modusJetzt(){ return Z.modus; }, get fotoModell(){ return Z.foto3d || null; }, get fokusJetzt(){ return Z.fokusZiel; }, get sicht(){ return Z.sicht; }, get webgl(){ return Z.gl; }, get winkel(){ return Z.winkel; }, wurzel };
   }
 
-  return { laden, kannWebGL, buehne, PLAETZE, platzListe, platzInfo, FOTO };
+  return { laden, kannWebGL, buehne, PLAETZE, platzListe, platzInfo, FOTO, FOTO3D };
 })();

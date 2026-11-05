@@ -323,14 +323,14 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // Das Logo aus der Präsentation sitzt gleich auf einem freien Platz (Ärmel zuerst), 3D drehbar, Mannschaft und Platz frei wählbar.
   // Daten nur aus trikot_oeffentlich (Mannschaften, Plätze frei/belegt, Logos der belegten Plätze), keine Kontaktdaten.
   const TK={d:null,v:null,team:null,art:'heim',platz:null,an:false,sicht:'vorn'};
-  const TK_REIHE=['aermel_l','aermel_r','brust','ruecken','hose_vorn','nacken','hose_hinten','jacke_brust','anzug_aermel','jacke_ruecken','anzug_hose'];
+  const TK_REIHE=['aermel_l','aermel_r','brust','jacke_brust'];   // 0.81: nur Brust und die beiden Ärmel
   const TK_ART={heim:'Heim',auswaerts:'Auswärts',anzug:'Anzug'};
   function tkOhneJugend(){ return ((((D||{}).deck||{}).passung||{}).ohne||[]).includes('trikot'); }
   function tkTeams(){ const L=((TK.d&&TK.d.mannschaften)||[]).filter(m=>!tkOhneJugend()||m.art==='herren'); return L; }
   function tkSatz(team,art){ return ((TK.d&&TK.d.saetze)||[]).find(x=>x.mannschaft===(team||TK.team)&&x.art===(art||TK.art))||null; }
   function tkPlaetze(team,art){ const s=tkSatz(team,art); return s?TK.d.plaetze.filter(p=>p.satz===s.id):[]; }
   function tkFrei(team,art){ return tkPlaetze(team,art).filter(p=>p.status==='frei').sort((a,b)=>TK_REIHE.indexOf(a.platz)-TK_REIHE.indexOf(b.platz)); }
-  const TK_NAME={brust:'Brust',aermel_l:'Ärmel links',aermel_r:'Ärmel rechts',ruecken:'Rücken unten',nacken:'Nacken',hose_vorn:'Hose vorn',hose_hinten:'Hose hinten',jacke_brust:'Jacke Brust',jacke_ruecken:'Jacke Rücken',anzug_aermel:'Ärmel',anzug_hose:'Hose'};
+  const TK_NAME={brust:'Brust',aermel_l:'Ärmel links',aermel_r:'Ärmel rechts',jacke_brust:'Jacke Brust',ruecken:'Rücken',nacken:'Nacken',hose_vorn:'Hose',hose_hinten:'Hose',jacke_ruecken:'Jacke Rücken',anzug_aermel:'Ärmel',anzug_hose:'Hose'};
   function tkName(k){ return TK_NAME[k]||k; }
   // Passende Mannschaft: die im Baukasten gewählte Jugend (S.team), sonst die Erste, sonst die erste mit freiem Ärmel
   function tkWahl(){ const T=tkTeams(), hatAermel=id=>tkFrei(id,'heim').some(p=>/^aermel/.test(p.platz));
@@ -338,7 +338,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     TK.team=kand.find(hatAermel)||kand.find(id=>tkFrei(id,'heim').length)||(T[0]||{}).id||null; TK.art='heim'; TK.platz=(tkFrei()[0]||{}).platz||null; }
   function tkBelegung(){ const B={}, lg=id=>((TK.d.logos||[]).find(l=>l.id===id)||{}).bild||null, dk=D.deck||{};
     tkPlaetze().forEach(p=>{ if(p.status!=='frei')B[p.platz]={status:'belegt',firma:p.firma,bild:p.logo?lg(p.logo):null,variante:p.variante||'weiss',groesse:+p.groesse||1};
-      else if(p.platz===TK.platz)B[p.platz]={status:'belegt',vorschau:true,firma:dk.kurzname||dk.firma,bild:dk.logo||null,variante:'weiss',groesse:1};
+      else if(p.platz===TK.platz)B[p.platz]={status:'belegt',vorschau:true,firma:dk.kurzname||dk.firma,bild:dk.logo||null,variante:TK.art==='anzug'&&/^aermel/.test(p.platz)?'schwarz':'weiss',groesse:1};
       else B[p.platz]={status:'frei'}; }); return B; }
   function tkZeigen(){ const sel=$('#tkTeam'); if(!sel||!TK.d)return; const s=tkSatz();
     document.querySelectorAll('[data-tka]').forEach(b=>{ const an=b.dataset.tka===TK.art; b.classList.toggle('on',an); b.setAttribute('aria-pressed',String(an)); });
@@ -347,7 +347,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     $('#tkPl').innerHTML=fr.length?fr.map(p=>`<button type="button" class="tk-p${p.platz===TK.platz?' on':''}" data-tkp="${p.platz}" aria-pressed="${p.platz===TK.platz}">${esc(tkName(p.platz))}</button>`).join(''):'<p class="tk-leer">Bei diesem Satz ist gerade alles vergeben. Nimm eine andere Mannschaft oder den anderen Satz.</p>';
     $('#tkBelegt').textContent=bel.length?'Schon vergeben: '+bel.map(p=>tkName(p.platz)+(p.firma?' ('+p.firma+')':'')).join(', ')+'.':'';
     // Passt zu: Ärmel der Ersten und Zweiten als Fläche, in der Jugend die Trikotpatenschaft
-    const P=$('#tkPasst'), herren=TK.team==='h1'||TK.team==='h2', key=!TK.platz?null:herren?(/^aermel|anzug_aermel/.test(TK.platz)?(TK.team==='h1'?'aermel_erste':'aermel_zweite'):TK.platz==='brust'?(TK.team==='h1'?'brust_erste':'brust_zweite'):null):(TK.art==='anzug'?null:'trikot_jugend'), l=key&&lk(key);
+    const P=$('#tkPasst'), herren=TK.team==='h1'||TK.team==='h2', key=!TK.platz?null:herren?(/^aermel/.test(TK.platz)?(TK.team==='h1'?'aermel_erste':'aermel_zweite'):TK.platz==='brust'?(TK.team==='h1'?'brust_erste':'brust_zweite'):null):(TK.art==='anzug'?null:'trikot_jugend'), l=key&&lk(key);
     if(l&&!fertig()){ const drin=imKorb(key,l.je_mannschaft?TK.team:null);
       P.innerHTML=`<p><b>${esc(l.titel)}</b>${l.je_mannschaft?' für die '+esc(mn):''}${l.preis!=null?' · '+eur(l.preis)+' '+esc(PLIB.EINHEIT[l.einheit]||''):''}${s&&!s.vorhanden?'. Diesen Satz gibt es noch nicht, mit eurer Patenschaft wird er möglich.':'.'}</p>
         <button type="button" class="knopf-w tk-dazu" data-tkdazu="${key}"${drin?' disabled':''}>${drin?'Ist in eurer Auswahl':'In die Auswahl'}</button>`;

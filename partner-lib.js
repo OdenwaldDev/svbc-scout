@@ -2466,7 +2466,7 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
 };
 
 /* =====================================================================
-   Beta 0.80 · Logo-Werkstatt (gemeinsam für Trikot- und Bandencreator)
+   Beta 0.80/0.81 · Logo-Werkstatt (gemeinsam für Trikot- und Bandencreator)
    Ein Partnerlogo (PNG, JPG, SVG, Data-URL) wird im Browser analysiert und aufbereitet:
    - Hintergrund weg: weiße oder einfarbige Flächen am Rand werden durchsichtig (Flutfüllung vom Rand aus)
    - Zuschnitt auf das Logo (ohne leeren Rand)
@@ -2534,18 +2534,23 @@ const LOGO = (() => {
     const zus = []; L.sort((a, b) => b.n - a.n).forEach(f => { const z = zus.find(g => Math.abs(g.r - f.r) + Math.abs(g.g - f.g) + Math.abs(g.b - f.b) < 60); if(z){ z.n += f.n; } else zus.push({ ...f }); });
     return zus.filter(f => f.n / Math.max(1, n) > .015).slice(0, 6).map(f => ({ hex:hex(f.r, f.g, f.b), anteil:Math.round(f.n / Math.max(1, n) * 100), hell:lum(f.r, f.g, f.b) > .55 }));
   }
-  // Einfarbig: alle sichtbaren Pixel in eine Farbe. Helle Innenflächen werden ausgespart, wenn das Logo dunkle oder farbige Flächen hat.
+  // Einfarbig (0.81): Abstand zu Weiß als weiche Deckung. Farbiges und Dunkles wird voll, Weißes im Logo fällt weg (bleibt als Aussparung),
+  // Kanten bleiben glatt. Ist das Logo selbst überwiegend hell (weiße Schrift), wird alles Sichtbare eingefärbt.
+  const sst = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   function einfarbig(c, farbe){
     const n = leinwand(c.width, c.height), x = n.getContext('2d', { willReadFrequently:true }); x.drawImage(c, 0, 0);
     const d = x.getImageData(0, 0, n.width, n.height), p = d.data;
     let hell = 0, dunkel = 0; for(let k = 0; k < p.length; k += 4){ if(p[k + 3] < 128) continue; if(lum(p[k], p[k + 1], p[k + 2]) > .78) hell++; else dunkel++; }
-    const aussparen = hell > 0 && dunkel > 0 && hell / (hell + dunkel) < .6;
+    const nurHell = hell / Math.max(1, hell + dunkel) >= .6;
     const [r, g, b] = [1, 3, 5].map(i => parseInt(farbe.slice(i, i + 2), 16));
-    for(let k = 0; k < p.length; k += 4){ if(p[k + 3] === 0) continue;
-      if(aussparen){ const l = lum(p[k], p[k + 1], p[k + 2]); if(l > .78){ p[k + 3] = 0; continue; } if(l > .6) p[k + 3] = Math.round(p[k + 3] * (1 - (l - .6) / .18)); }
-      p[k] = r; p[k + 1] = g; p[k + 2] = b; }
+    for(let k = 0; k < p.length; k += 4){ const a = p[k + 3] / 255; if(!a){ continue; }
+      let deck = a;
+      if(!nurHell){ const m = Math.min(p[k], p[k + 1], p[k + 2]) / 255 * a + (1 - a); deck = sst(.1, .42, 1 - m); }
+      p[k] = r; p[k + 1] = g; p[k + 2] = b; p[k + 3] = Math.round(deck * 255); }
     x.putImageData(d, 0, 0); return n;
   }
+  // Mitgelieferte Logos (kit/logos/name.png) haben eine von Hand geprüfte weiße Fassung unter kit/logos/weiss/name.png
+  function weissDatei(src){ const m = /^(.*?)(kit\/logos\/)([a-z0-9-]+)\.png(\?.*)?$/.exec(String(src || '')); return m ? m[1] + m[2] + 'weiss/' + m[3] + '.png' : null; }
   const merk = new Map();
   // Aufbereiten: freistellen, zuschneiden, analysieren. Ergebnis wird je Quelle gemerkt.
   async function aufbereiten(src){
@@ -2563,6 +2568,8 @@ const LOGO = (() => {
     const a = await aufbereiten(src);
     if(art === 'original') return a.c;
     const k = art + '|' + src; if(merk.has(k)) return merk.get(k);
+    const wd = art === 'weiss' && weissDatei(src);
+    if(wd){ try{ const w = (await aufbereiten(wd)).c; merk.set(k, w); return w; }catch(e){ /* sonst selbst rechnen */ } }
     const farbe = art === 'weiss' ? '#ffffff' : art === 'schwarz' ? '#111111' : (art.startsWith('farbe:') ? art.slice(6) : '#ffffff');
     const c = einfarbig(a.c, farbe); merk.set(k, c); return c;
   }
