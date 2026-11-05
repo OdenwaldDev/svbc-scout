@@ -169,7 +169,7 @@
   }
   window.addEventListener('hashchange',()=>location.reload());
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&S)load(); });
-  if(hp.has('mitmachen'))mitmachen(hp.get('mitmachen')||'helfer'); else if(hp.get('einsatz'))einsatz(hp.get('einsatz')); else if(hp.get('h'))helfer(hp.get('h')); else if(hp.get('b'))bestaetigen(hp.get('b')); else if(hp.get('m'))teamAbst(hp.get('m')); else load();
+  if(hp.get('termin'))termin(hp.get('termin')); else if(hp.has('mitmachen'))mitmachen(hp.get('mitmachen')||'helfer'); else if(hp.get('einsatz'))einsatz(hp.get('einsatz')); else if(hp.get('h'))helfer(hp.get('h')); else if(hp.get('b'))bestaetigen(hp.get('b')); else if(hp.get('m'))teamAbst(hp.get('m')); else load();
 
 
   /* Checkliste für Helfer ohne App (…/team.html#h=<code>): abhaken, Aufgabe übernehmen, Absprache, Foto in den Vereins-Drive */
@@ -325,6 +325,39 @@
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&T&&!offen)laden(); });
   }
 
+  /* Öffentliche Terminseite (…/#termin=<id>): zum Teilen per WhatsApp, mit „In meinen Kalender“ und „Mithelfen“ (0.76) */
+  async function termin(id){
+    const h=document.querySelector('header h1'), hs=document.querySelector('header p'), ft=document.querySelector('footer');
+    if(h)h.textContent='SV/BSC Mörlenbach'; if(hs)hs.textContent='Termin'; if(ft)ft.textContent='SV Mörlenbach 1896 e.V.';
+    const st=document.createElement('style'); st.textContent=`.tm-art{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--s3);color:var(--ink2);font-size:12.5px;font-weight:700}
+      .tm h2{font-size:24px;line-height:1.2;margin:10px 0 12px}.tm-z{display:flex;flex-direction:column;gap:6px;font-size:16px}.tm-z span{color:var(--ink2)}.tm-i{margin:14px 0 0;line-height:1.5;white-space:pre-wrap}
+      .tm-b{display:flex;flex-direction:column;gap:10px;margin-top:18px}.tm-b a,.tm-b button{min-height:48px;border-radius:12px;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;border:1px solid var(--line);background:var(--s3);color:inherit}
+      .tm-b .eins{background:var(--brand);border-color:var(--brand);color:#fff}.tm-h{margin-top:16px;padding:14px;border-radius:12px;border:1px solid var(--line)}.tm-h p{margin:4px 0 10px;color:var(--ink2);font-size:15px}`;
+    document.head.appendChild(st);
+    if(!/^[0-9a-f-]{36}$/.test(id)){ app.innerHTML='<div class="card err empty"><h2>Link ungültig</h2></div>'; return; }
+    let t=null; try{ t=await rpc('termin_oeffentlich',{p_id:id}); }catch(e){}
+    if(!t){ app.innerHTML='<div class="card empty"><h2>Termin nicht gefunden</h2><p class="note">Vielleicht ist er schon vorbei oder nur für Mitglieder.</p></div>'; return; }
+    document.title=t.t+' · SV/BSC Mörlenbach';
+    const tag=d=>{ try{ return new Date(d+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }catch(e){ return d; } };
+    const wann=tag(t.d)+(t.bis&&t.bis!==t.d?' bis '+tag(t.bis):'')+(t.z?', '+t.z+' Uhr':'');
+    const frei=t.helfer&&+t.helfer.frei||0;
+    app.innerHTML=`<div class="card tm"><span class="tm-art">Termin</span><h2>${esc(t.t)}</h2>
+      <div class="tm-z"><div><span>Wann:</span> ${esc(wann)}</div>${t.ort?`<div><span>Wo:</span> ${esc(t.ort)}</div>`:''}</div>${t.info?`<p class="tm-i">${esc(t.info)}</p>`:''}
+      <div class="tm-b"><button type="button" class="eins" id="tmIcs">In meinen Kalender</button><button type="button" id="tmTeil">Teilen</button></div>
+      ${frei?`<div class="tm-h"><b>Wir suchen noch Helfer</b><p>${frei} ${frei===1?'Platz ist':'Plätze sind'} frei. Trag dich in den Helferpool ein, dann bekommst du deinen eigenen Link zu den freien Schichten.</p><div class="tm-b" style="margin-top:0"><a href="#mitmachen=helfer">Mithelfen</a></div></div>`:''}</div>`;
+    const esc2=x=>String(x||'').replace(/\\/g,'\\\\').replace(/\r\n|\r|\n/g,'\\n').replace(/([,;])/g,'\\$1');
+    $('#tmIcs').onclick=()=>{ const ymd=d=>d.replace(/-/g,''), nx=d=>{ const x=new Date(d+'T12:00:00Z'); x.setUTCDate(x.getUTCDate()+1); return x.toISOString().slice(0,10); };
+      const VTZ=['BEGIN:VTIMEZONE','TZID:Europe/Berlin','BEGIN:DAYLIGHT','TZOFFSETFROM:+0100','TZOFFSETTO:+0200','TZNAME:CEST','DTSTART:19700329T020000','RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU','END:DAYLIGHT',
+        'BEGIN:STANDARD','TZOFFSETFROM:+0200','TZOFFSETTO:+0100','TZNAME:CET','DTSTART:19701025T030000','RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU','END:STANDARD','END:VTIMEZONE'];
+      const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SV-BSC Moerlenbach//Termin//DE',...(t.z?VTZ:[]),'BEGIN:VEVENT','UID:'+t.id+'@svbsc.kaderwerk.pro','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,''),
+        ...(t.z?['DTSTART;TZID=Europe/Berlin:'+ymd(t.d)+'T'+t.z.replace(':','')+'00',t.bis&&t.bis!==t.d?'DTEND;TZID=Europe/Berlin:'+ymd(t.bis)+'T235900':'DURATION:PT3H']:['DTSTART;VALUE=DATE:'+ymd(t.d),'DTEND;VALUE=DATE:'+ymd(nx(t.bis||t.d))]),
+        'SUMMARY:'+esc2(t.t),...(t.ort?['LOCATION:'+esc2(t.ort)]:[]),...(t.info?['DESCRIPTION:'+esc2(t.info)]:[]),'END:VEVENT','END:VCALENDAR'];
+      const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([L.join('\r\n')+'\r\n'],{type:'text/calendar;charset=utf-8'})); a.download='termin.ics'; document.body.appendChild(a); a.click(); setTimeout(()=>a.remove(),3000); };
+    $('#tmTeil').onclick=async()=>{ const text=t.t+'\n'+wann+(t.ort?'\n'+t.ort:''), url=location.href;
+      if(navigator.share){ try{ await navigator.share({title:t.t,text,url}); return; }catch(e){ if(e&&e.name==='AbortError')return; } }
+      window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+url),'_blank','noopener'); };
+  }
+
   /* Einsatzplan für Helfer aus dem Helferpool (…/#einsatz=<code>, persönlicher Link): offene Schichten, mit einem Tipp eintragen oder austragen */
   function einsatz(tok){
     const h=document.querySelector('header h1'), hs=document.querySelector('header p'), ft=document.querySelector('footer');
@@ -351,10 +384,10 @@
       app.innerHTML=`<div class="card hero"><span class="pill">Hallo ${esc(I.ich.vorname)}</span><h2 style="margin:12px 0 6px">Danke, dass du mithilfst!</h2>
           <p class="note">Hier siehst du, wo gerade Hände gebraucht werden. Ein Tipp auf „Ich helfe“ genügt, die Orga sieht es sofort.</p>
           ${meine.length?`<div class="ez-mein">${meine.map(m=>`<div>✓ <b>${esc(wd(m.t.datum))}</b>: ${esc(m.x.st)}, ${esc(zeit(m.x))}<br><small>${esc(m.t.titel)}</small></div>`).join('')}</div>`:''}</div>
-        ${T.length?T.map(t=>`<div class="card ez-t">${t.passt?'<span class="ez-pass">Passt zu dir</span>':''}<h2>${esc(t.titel)}</h2>
+        ${T.length?T.map(t=>`<div class="card ez-t">${t.passt?'<span class="ez-pass">Passt zu dir</span>':''}<h2>${t.ober?esc(t.ober)+': ':''}${esc(t.titel)}</h2>
             <small>${esc(wd(t.datum))}${t.zeit?' · '+esc(t.zeit)+' Uhr':''}${t.ort?' · '+esc(t.ort):''}${t.wer?' · Ansprechpartner: '+esc(t.wer):''}</small>
             ${(t.schichten||[]).map(x=>{ const frei=Math.max(0,x.p-x.belegt);
-              return `<div class="ez-s${x.mein?' mein':''}"><div><b>${esc(x.st)}</b><small>${esc(zeit(x))} · ${x.mein?'Du'+(x.namen.length?' und '+esc(x.namen.join(', ')):''):x.namen.length?esc(x.namen.join(', ')):'noch niemand'}</small>
+              return `<div class="ez-s${x.mein?' mein':''}"><div><b>${x.bereich&&x.bereich!==x.st?esc(x.bereich)+', ':''}${esc(x.st)}</b>${x.auf?`<small>${esc(x.auf)}</small>`:''}${x.hin?`<small>${esc(x.hin)}</small>`:''}<small>${esc(zeit(x))} · ${x.mein?'Du'+(x.namen.length?' und '+esc(x.namen.join(', ')):''):x.namen.length?esc(x.namen.join(', ')):'noch niemand'}</small>
                   <div class="ez-bar"><i style="width:${Math.round(x.belegt/x.p*100)}%"></i></div></div>
                 ${x.mein?`<button class="ez-b raus" data-ez="${esc(x.id)}" data-an="0">Austragen</button>`:frei>0?`<button class="ez-b" data-ez="${esc(x.id)}" data-an="1">Ich helfe</button>`:'<span class="ez-voll">voll</span>'}</div>`; }).join('')}</div>`).join('')
           :'<div class="card empty"><h2>Gerade nichts offen</h2><p class="note">Im Moment sind keine Einsätze ausgeschrieben. Wir melden uns, sobald wieder Hilfe gebraucht wird.</p></div>'}

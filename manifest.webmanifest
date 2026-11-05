@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "SV/BSC Sportzentrale – Mörlenbach",
+  "name": "SV/BSC Sportzentrale Mörlenbach",
   "short_name": "Sportzentrale",
-  "description": "Kader, Scouting, Mannschaft, Jugend und Kasse des SV/BSC Mörlenbach",
+  "description": "Kader, Training, Spieltag, Partner, Helfer und Kasse des SV/BSC Mörlenbach",
   "lang": "de",
   "dir": "ltr",
   "start_url": "./",
@@ -28,6 +28,12 @@
       "purpose": "any"
     },
     {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
@@ -36,20 +42,9 @@
   ],
   "shortcuts": [
     {
-      "name": "Kader",
-      "short_name": "Kader",
-      "url": "./#kader",
-      "icons": [
-        {
-          "src": "icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "Scouting",
-      "short_name": "Scouting",
-      "url": "./#scout",
+      "name": "Heute",
+      "short_name": "Heute",
+      "url": "./#home",
       "icons": [
         {
           "src": "icon-192.png",
@@ -61,6 +56,28 @@
       "name": "Mannschaft",
       "short_name": "Mannschaft",
       "url": "./#training",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Termine",
+      "short_name": "Termine",
+      "url": "./#kalender",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Scouting",
+      "short_name": "Scouting",
+      "url": "./#scout",
       "icons": [
         {
           "src": "icon-192.png",

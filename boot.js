@@ -30,7 +30,8 @@ if(!CFG.url||!CFG.anon||!window.supabase){
 // Speicher mit Rückfallebene: Klappt localStorage nicht (privater Modus, In-App-Browser) oder wird er von außen geleert, bleibt die Anmeldung im Speicher erhalten
 const MEM={}, store={getItem:k=>{ try{ const v=localStorage.getItem(k); return v!=null?v:(k in MEM?MEM[k]:null); }catch(e){ return k in MEM?MEM[k]:null; } },
   setItem:(k,v)=>{ MEM[k]=v; try{ localStorage.setItem(k,v); }catch(e){} }, removeItem:k=>{ delete MEM[k]; try{ localStorage.removeItem(k); }catch(e){} }};
-const sb=window.supabase.createClient(CFG.url,CFG.anon,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'svbc-auth',flowType:'implicit',storage:store}});
+// Passkeys (Beta 0.77): Supabase Auth bietet sie als Beta, nur mit ausdrücklichem Einschalten im Client
+const sb=window.supabase.createClient(CFG.url,CFG.anon,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'svbc-auth',flowType:'implicit',storage:store,experimental:{passkey:true}}});
 const SV=window.SVBC={sb,cfg:CFG,profile:null,offline:false,ROLE_T,initials,esc};
 // Sitzung aus dem Einladungs-/Anmeldelink zusätzlich im Speicher halten: Wird der Browser-Speicher zwischendurch geleert
 // (zweiter Tab mit demselben Link, In-App-Browser von WhatsApp …), lässt sie sich wiederherstellen statt „Auth session missing“.
@@ -62,6 +63,37 @@ function errText(e){
   if(/session missing|not authenticated|JWT expired|invalid JWT/i.test(m))return 'Deine Anmeldung ist auf diesem Gerät verloren gegangen (z. B. weil der Link zweimal geöffnet wurde).';
   return 'Das hat nicht geklappt ('+m.slice(0,120)+').';
 }
+/* ---------- Passkeys (Beta 0.77): Face ID, Touch ID, Windows Hello ----------
+   Nur Anmeldung: Rolle, Rechte und Sperre kommen danach wie immer aus touch_me (enter). Es wird nichts geloggt. */
+function pkNativ(){ try{ const C=window.Capacitor; return !!(C&&C.isNativePlatform&&C.isNativePlatform()); }catch(e){ return false; } }
+// Store-App (Capacitor) läuft nicht unter der Vereinsadresse, dort gehen Passkeys nicht
+function pkGeht(){ try{ return !!(window.PublicKeyCredential&&navigator.credentials&&typeof navigator.credentials.get==='function'&&typeof navigator.credentials.create==='function')&&!pkNativ()&&typeof sb.auth.signInWithPasskey==='function'; }catch(e){ return false; } }
+function pkGeraet(){ const u=navigator.userAgent||'';
+  if(/iPhone|iPod/.test(u))return 'Face ID'; if(/iPad/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1))return 'Face ID oder Touch ID';
+  if(/Android/.test(u))return 'Fingerabdruck oder Displaysperre'; if(/Macintosh|Mac OS X/.test(u))return 'Touch ID'; if(/Windows/.test(u))return 'Windows Hello';
+  return 'Face ID, Touch ID oder Windows Hello'; }
+// Fehler verständlich machen. still: abgebrochen, nichts anzeigen. art: aus | fehlt | doppelt | sonst
+function pkFehler(e,wo){
+  const m=String((e&&e.message)||e||''), c=String((e&&e.code)||''), n=String((e&&e.name)||(e&&e.cause&&e.cause.name)||''), st=e&&e.status;
+  const login=wo==='login', hatPk=ls.get('svbcPasskey')==='1';
+  if(c==='ERROR_CEREMONY_ABORTED'||n==='AbortError'||n==='NotAllowedError'){
+    // Abgebrochen. Auf einem Gerät ohne bekannten Passkey ist das meist „keiner da“: dann freundlich erklären
+    return (login&&!hatPk)?{still:false,kind:'info',art:'fehlt',text:'Noch keinen Passkey auf diesem Gerät? Melde dich einmal mit Passwort an und richte unter Mein Konto einen Passkey ein.'}:{still:true};
+  }
+  if(isNet(e)&&!c)return {kind:'err',art:'sonst',text:'Keine Verbindung. Bitte Internet prüfen und nochmal versuchen.'};
+  if(c==='passkey_disabled'||st===404||/passkey.*(disabled|not enabled)/i.test(m))
+    return {kind:'info',art:'aus',text:login?'Anmelden mit Passkey ist im Verein noch nicht freigeschaltet. Melde dich bitte mit Passwort an.':'Passkeys sind im Verein noch nicht freigeschaltet. Sobald der Admin sie einschaltet, kannst du hier einen einrichten.'};
+  if(c==='webauthn_credential_not_found')return {kind:'info',art:'fehlt',text:'Dieser Passkey ist bei uns nicht (mehr) hinterlegt. Melde dich einmal mit Passwort an und richte unter Mein Konto einen Passkey ein.'};
+  if(c==='webauthn_credential_exists'||c==='ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED'||n==='InvalidStateError')return {kind:'info',art:'doppelt',text:'Auf diesem Gerät ist schon ein Passkey für dich eingerichtet.'};
+  if(c==='too_many_passkeys')return {kind:'err',art:'sonst',text:'Du hast schon die höchste Zahl an Passkeys. Entferne einen alten, dann klappt es.'};
+  if(c==='webauthn_challenge_expired'||c==='webauthn_challenge_not_found')return {kind:'err',art:'sonst',text:'Das hat zu lange gedauert. Bitte nochmal versuchen.'};
+  if(c==='webauthn_verification_failed')return {kind:'err',art:'sonst',text:'Der Passkey ließ sich nicht bestätigen. Bitte nochmal versuchen'+(login?' oder mit Passwort anmelden.':'.')};
+  if(c==='user_banned')return {kind:'err',art:'sonst',text:'Dein Zugang ist gesperrt. Wenn das ein Versehen ist, sprich bitte den Admin an.'};
+  if(c==='ERROR_INVALID_RP_ID'||c==='ERROR_INVALID_DOMAIN'||n==='SecurityError')return {kind:'info',art:'aus',text:'Passkeys gehen nur unter der Vereinsadresse svbsc.kaderwerk.pro.'+(login?' Hier bitte mit Passwort anmelden.':'')};
+  if(/does not support WebAuthn/i.test(m))return {kind:'info',art:'aus',text:'Dieser Browser kann keine Passkeys.'+(login?' Melde dich bitte mit Passwort an.':'')};
+  if(/email.not.confirmed/i.test(c+m))return {kind:'err',art:'sonst',text:errText(e)};
+  return {kind:'err',art:'sonst',text:'Das hat nicht geklappt. Bitte nochmal versuchen'+(login?' oder mit Passwort anmelden.':'.')};
+}
 function pwScore(p){ let s=0; if(p.length>=10)s++; if(p.length>=14)s++; if(/[a-z]/.test(p)&&/[A-Z]/.test(p))s++; if(/\d/.test(p))s++; if(/[^A-Za-z0-9]/.test(p))s++; return Math.min(4,s); }
 function eyeWire(root){ root.querySelectorAll('.eye').forEach(b=>b.onclick=()=>{ const i=b.previousElementSibling; const sh=i.type==='password'; i.type=sh?'text':'password'; b.innerHTML=I(sh?'eyeoff':'eye'); }); }
 
@@ -88,6 +120,7 @@ function viewLogin(note,kind){
       <div class="g-field"><label for="gPw">Passwort <a id="gForgot">Vergessen?</a></label><div class="g-in"><input id="gPw" type="password" autocomplete="current-password" placeholder="••••••••••" required><button type="button" class="eye" aria-label="Passwort zeigen">${I('eye')}</button></div></div>
       <button class="g-btn" id="gGo" type="submit">Anmelden ${I('chev')}</button>
       <div class="g-or">oder</div>
+      ${pkGeht()?`<button class="g-btn alt g-pk" id="gPk" type="button">${I('key')}<span class="g-pkt"><b>Mit Passkey anmelden</b><small>${esc(pkGeraet())}, ohne Passwort</small></span></button>`:''}
       <button class="g-btn alt" id="gCodeBtn" type="button">${I('mail')} Code per E-Mail</button>
     </form>
     <div class="g-foot">${I('lock')}<span>Zugang nur auf Einladung. Alle Daten sind verschlüsselt übertragen und nur für freigeschaltete Personen sichtbar.</span></div>`;
@@ -106,8 +139,18 @@ function viewLogin(note,kind){
         ls.set('svbc-backend',demo?'demo':null); ls.set('svbcLastEmail',mail); ls.set('svbcProfile',null); await IDB.clear();
         location.replace(location.pathname); return; }
       const {error}=await sb.auth.signInWithPassword({email:em.value.trim(),password:pw.value}); if(error)throw error;
-      ls.set('svbcLastEmail',em.value.trim()); await enter({}); }
+      ls.set('svbcLastEmail',em.value.trim()); window.__svbcPwLogin=true; await enter({}); }   // __svbcPwLogin: die App bietet danach einmal an, einen Passkey einzurichten (svm74p.js)
     catch(err){ busy(b,false); msg(m,'err',errText(err)); pw.select(); }
+  };
+  const pkB=document.getElementById('gPk');
+  if(pkB)pkB.onclick=async()=>{
+    if(pkB.disabled)return; msg(m,'',''); busy(pkB,true,'Warte auf Bestätigung …');
+    try{
+      const {data,error}=await sb.auth.signInWithPasskey(); if(error)throw error;
+      if(!data||!data.session)throw new Error('Keine Sitzung');
+      ls.set('svbcPasskey','1'); if(data.user&&data.user.email)ls.set('svbcLastEmail',data.user.email);
+      await enter({}); }   // wie nach dem Passwort: touch_me prüft Rolle und Sperre
+    catch(err){ busy(pkB,false); const f=pkFehler(err,'login'); if(!f.still)msg(m,f.kind,f.text); }
   };
   document.getElementById('gCodeBtn').onclick=()=>viewCode(em.value.trim());
   document.getElementById('gForgot').onclick=()=>viewForgot(em.value.trim());
@@ -278,6 +321,7 @@ SV.admin=async function(action,payload){
   return data;
 };
 SV.errText=errText; SV.isNet=isNet; SV.pwScore=pwScore;
+SV.passkey={geht:pkGeht,geraet:pkGeraet,fehler:pkFehler,merken:on=>ls.set('svbcPasskey',on?'1':null)};
 sb.auth.onAuthStateChange((ev,s)=>{ if(s)keepS(s); if(ev==='SIGNED_OUT'&&window.__SVBC_USER){ location.replace(location.pathname); } });
 
 /* ---------- Start: Links aus Einladungen / E-Mails auswerten ---------- */
