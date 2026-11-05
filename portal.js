@@ -140,26 +140,31 @@
     busy=false;
   }
   function kasse(B){
-    const K=S.kasse||{}, cfg=K.cfg||{}, L=K.buchungen||[];
+    const K=S.kasse||{}, cfg=K.cfg||{}, LA=K.buchungen||[], L=LA.filter(b=>b.einheit!=='kasten');   // Geld; Kästen extra
+    const kst=v=>{ const n=+v||0; return (n===1?'1 Kasten':n.toLocaleString('de-DE')+' Kästen'); }, wert=b=>b.einheit==='kasten'?kst(b.betrag):eur(b.betrag);
     const bez=L.filter(b=>b.status==='bezahlt'), KT=K.konten||{bank:(+cfg.anfang||0)+bez.filter(b=>b.art!=='ausgabe').reduce((a,b)=>a+ +b.betrag,0)-bez.filter(b=>b.art==='ausgabe').reduce((a,b)=>a+ +b.betrag,0),paypal:0,bar:0};
     const stand=(+KT.bank||0)+(+KT.paypal||0)+(+KT.bar||0), KO=[['bank','🏦 Bankkonto'],['paypal','🅿️ PayPal'],['bar','💶 Bar']].filter(([k])=>k!=='bar'||+KT.bar), FIX={bank:'Überweisung',paypal:'PayPal',bar:'bar'};
     const face=i=>{ const [k,t]=KO[i%KO.length]; return `<span class="pill">${t} ⟲</span><div class="big">${eur(KT[k])}</div><small>Gesamt ${eur(stand)}${cfg.kassenwart?' · Kassenwart: '+esc(cfg.kassenwart):''}</small>`; };
     const offen=b=>b.status==='offen'||b.status==='gemeldet';
+    const mineA=LA.filter(b=>b.p===ME.id), myK=mineA.filter(b=>b.einheit==='kasten'&&offen(b)).reduce((a,b)=>a+ +b.betrag,0);
     const mine=L.filter(b=>b.p===ME.id), myOpen=mine.filter(b=>b.status==='offen'), myG=mine.filter(b=>b.status==='gemeldet'), sum=myOpen.reduce((a,b)=>a+ +b.betrag,0);
-    const per=new Map(); L.filter(b=>b.p&&(b.art==='strafe'||b.art==='beitrag')).forEach(b=>{ const o=per.get(b.p)||{name:b.name||'?',off:0,bez:0}; if(offen(b))o.off+= +b.betrag; else if(b.status==='bezahlt')o.bez+= +b.betrag; per.set(b.p,o); });
-    const P=[...per.values()].sort((a,b)=>b.off-a.off||b.bez-a.bez);
+    const per=new Map(); LA.filter(b=>b.p&&(b.art==='strafe'||b.art==='beitrag')).forEach(b=>{ const o=per.get(b.p)||{name:b.name||'?',off:0,bez:0,k:0}; if(b.einheit==='kasten'){ if(offen(b))o.k+= +b.betrag; } else if(offen(b))o.off+= +b.betrag; else if(b.status==='bezahlt')o.bez+= +b.betrag; per.set(b.p,o); });
+    const P=[...per.values()].sort((a,b)=>b.off-a.off||b.k-a.k||b.bez-a.bez);
+    const myT=(mineA.find(b=>b.team)||{}).team, KAT=K.katalog||[], TEAMS=[...new Set(KAT.map(k=>k.team||'1'))].sort((a,b)=>(a===myT?-1:b===myT?1:0)||a.localeCompare(b)), KATG=['Training','Spiel','Allgemein'];
+    const katWert=k=>k.einheit==='kasten'?kst(k.betrag):eur(k.betrag)+(+k.pro_minute?' + '+eur(k.pro_minute)+' pro Minute':'');
+    const katHtml=TEAMS.map(t=>`${TEAMS.length>1?`<h3>${t==='2'?'2. Mannschaft':'1. Mannschaft'}${t===myT?' · deine Mannschaft':''}</h3>`:''}${KATG.map(g=>{ const X=KAT.filter(k=>(k.team||'1')===t&&((KATG.includes(k.kategorie)?k.kategorie:'Allgemein')===g)); return X.length?`<h4 class="katg">${g}</h4>${X.map(k=>`<div class="row"><b>${esc(k.titel)}</b><em>${esc(katWert(k))}</em></div>`).join('')}`:''; }).join('')}`).join('');
     const pay=cfg.paypal&&sum>0?`https://www.paypal.com/paypalme/${encodeURIComponent(cfg.paypal)}/${sum.toFixed(2)}EUR`:null;
     B.innerHTML=`<div class="flip" id="flip"><div class="flin"><div class="card hero fl-f">${face(0)}</div><div class="card hero fl-b"></div></div></div>
       ${C.kasse?`<a class="mklink" href="${esc(C.kasse.replace(/\/?$/,'/')+'#k='+encodeURIComponent(KEY))}"><span>🏆</span><b>Top-Supporter &amp; Kassen-Transparenz</b><i>→</i></a>`:''}
-      <div class="card mine"><h2>Deine Strafen</h2>${mine.length?`<div class="grid2" style="margin-top:12px"><div class="stat"><span>Offen</span><b class="${sum?'mid':'ok'}">${eur(sum)}</b></div><div class="stat"><span>Bezahlt</span><b>${eur(mine.filter(b=>b.status==='bezahlt').reduce((a,b)=>a+ +b.betrag,0))}</b></div></div>
+      <div class="card mine"><h2>Deine Strafen</h2>${mineA.length?`<div class="grid2" style="margin-top:12px"><div class="stat"><span>Offen</span><b class="${sum||myK?'mid':'ok'}">${eur(sum)}${myK?' + '+esc(kst(myK)):''}</b></div><div class="stat"><span>Bezahlt</span><b>${eur(mine.filter(b=>b.status==='bezahlt').reduce((a,b)=>a+ +b.betrag,0))}</b></div></div>
         ${pay?`<a class="pay" href="${esc(pay)}" target="_blank" rel="noopener">Mit PayPal bezahlen · ${eur(sum)}</a><p class="note">Bitte „Freunde &amp; Familie“ wählen, dann kostet es nichts.</p>`:''}
         ${sum&&cfg.iban?`<div class="iban"><span>Oder per Überweisung</span><b>${esc(cfg.iban.replace(/(.{4})/g,'$1 ').trim())}</b><small>${esc(cfg.kontoinhaber||'')} · Verwendungszweck: Mannschaftskasse ${esc(ME.name)}</small><button class="btn2" id="ibanCp">IBAN kopieren</button></div>`:''}
         ${sum?`<button class="btn2" id="paid">Ich habe bezahlt</button><div class="weg" id="weg" hidden><p class="note"><b>Wie hast du bezahlt?</b> Der Kassenwart schaut dann aufs richtige Konto.</p><div class="ans">${['paypal','bank','bar'].map(k=>`<button data-weg="${k}"><span>${{paypal:'🅿️',bank:'🏦',bar:'💶'}[k]}</span>${{paypal:'PayPal',bank:'Überweisung',bar:'Bar'}[k]}</button>`).join('')}</div></div>`:''}${myG.length?`<p class="note">⏳ ${myG.length} Posten als bezahlt gemeldet${myG[0].zahlweg?' ('+FIX[myG[0].zahlweg]+')':''} · zählt, sobald der Kassenwart den Eingang abhakt.</p>`:''}
-        <h3>Deine Posten</h3>${mine.map(b=>`<div class="row"><b>${esc(b.titel)}</b><small>${esc(new Date(b.datum+'T12:00:00').toLocaleDateString('de-DE'))}</small><em>${eur(b.betrag)}</em><span class="st ${esc(b.status)}">${esc(b.status)}</span></div>`).join('')}`
-        :'<p class="note">Weiße Weste, keine Strafen. 😇</p>'}${cfg.hinweis?`<p class="note">${esc(cfg.hinweis)}</p>`:''}</div>
-      <div class="card"><h2>Alle Spieler</h2>${P.length?P.map(x=>`<div class="row"><b>${esc(x.name)}</b>${x.off?`<em class="mid">${eur(x.off)} offen</em>`:'<em class="ok">✓</em>'}<small>${eur(x.bez)} bezahlt</small></div>`).join(''):'<p class="note">Noch keine Einträge.</p>'}</div>
-      ${(K.katalog||[]).length?`<div class="card"><h2>Strafenkatalog</h2>${K.katalog.map(k=>`<div class="row"><b>${esc(k.titel)}</b><em>${eur(k.betrag)}</em></div>`).join('')}</div>`:''}
-      <div class="card"><h2>Letzte Buchungen</h2>${L.slice(0,40).map(b=>`<div class="row"><b>${b.art==='ausgabe'?'➖ ':b.art==='einzahlung'?'➕ ':''}${esc(b.p?b.name||'':b.titel)}</b><small>${b.p?esc(b.titel):''}</small><em class="${b.art==='ausgabe'?'bad':''}">${b.art==='ausgabe'?'−':''}${eur(b.betrag)}</em></div>`).join('')||'<p class="note">Noch keine Buchungen.</p>'}</div>`;
+        <h3>Deine Posten</h3>${mineA.map(b=>`<div class="row"><b>${esc(b.titel)}</b><small>${esc(new Date(b.datum+'T12:00:00').toLocaleDateString('de-DE'))}</small><em>${esc(wert(b))}</em><span class="st ${esc(b.status)}">${esc(b.status)}</span></div>`).join('')}`
+        :(myK?'':'<p class="note">Weiße Weste, keine Strafen. 😇</p>')}${myK?`<p class="note"><b>Noch offen: ${esc(kst(myK))}</b> für die Mannschaft. Das Team hakt ab, sobald ${myK===1?'er':'sie'} da ${myK===1?'ist':'sind'}.</p>`:''}${cfg.hinweis?`<p class="note">${esc(cfg.hinweis)}</p>`:''}</div>
+      <div class="card"><h2>Alle Spieler</h2>${P.length?P.map(x=>`<div class="row"><b>${esc(x.name)}</b>${x.off||x.k?`<em class="mid">${[x.off?eur(x.off):'',x.k?kst(x.k):''].filter(Boolean).join(' + ')} offen</em>`:'<em class="ok">✓</em>'}<small>${eur(x.bez)} bezahlt</small></div>`).join(''):'<p class="note">Noch keine Einträge.</p>'}</div>
+      ${KAT.length?`<div class="card"><h2>Strafenkatalog</h2>${katHtml}</div>`:''}
+      <div class="card"><h2>Letzte Buchungen</h2>${LA.slice(0,40).map(b=>`<div class="row"><b>${b.art==='ausgabe'?'➖ ':b.art==='einzahlung'?'➕ ':''}${esc(b.p?b.name||'':b.titel)}</b><small>${b.p?esc(b.titel):''}</small><em class="${b.art==='ausgabe'?'bad':''}">${b.art==='ausgabe'?'−':''}${esc(wert(b))}</em></div>`).join('')||'<p class="note">Noch keine Buchungen.</p>'}</div>`;
     const ic=$('#ibanCp'); if(ic)ic.onclick=async()=>{ try{ await navigator.clipboard.writeText(cfg.iban); toast('✓ IBAN kopiert'); }catch(e){ prompt('IBAN:',cfg.iban); } };
     const pd=$('#paid'); if(pd)pd.onclick=()=>{ pd.hidden=true; $('#weg').hidden=false; };
     document.querySelectorAll('[data-weg]').forEach(b=>b.onclick=async()=>{ if(busy)return; busy=true;
