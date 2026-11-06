@@ -21,7 +21,9 @@
   const seg=(location.pathname.split('/').pop()||''), pathKey=/^[A-Za-z0-9]{8,40}$/.test(seg)&&!/\.html?$/.test(seg)?seg:'';
   let KEY=hp.get('k')||pathKey||ls.get('kab_k')||''; if(hp.get('k')||pathKey)ls.set('kab_k',KEY);
   const FOCUS=hp.get('a')||null;
-  let ME=null; try{ ME=JSON.parse(ls.get('kab_me')||'null'); }catch(e){}
+  // 0.87: Namenswahl je Link (jede Mannschaft hat ihren eigenen Gruppenlink)
+  const MEK='kab_me_'+KEY.slice(0,8);
+  let ME=null; try{ ME=JSON.parse(ls.get(MEK)||ls.get('kab_me')||'null'); }catch(e){}
   let S=null, view=FOCUS?'abst':(hp.get('v')==='kasse'?'kasse':(ls.get('kab_view')||'abst')), busy=false;
   const REASONS={arbeit:'Arbeit/Schicht',urlaub:'Urlaub',krank:'Krank',verletzt:'Verletzt',uni:'Schule/Uni',familie:'Familie',privat:'Privat'};
   const ART={training:'Training',spiel:'Spiel',event:'Event',sonstiges:'Termin'};
@@ -34,7 +36,8 @@
   }
   async function load(){
     if(!KEY||KEY.length<8){ app.innerHTML=`<div class="card empty"><h2>Link fehlt</h2><p class="note">Bitte den Kabinen-Link aus der WhatsApp-Gruppe öffnen.</p></div>`; return; }
-    try{ S=await rpc('portal_state',{p_key:KEY}); if(S.ich){ ME={id:S.ich.id,name:S.ich.name||'Du',fest:true}; ls.set('kab_me',JSON.stringify(ME)); } render(); }
+    try{ S=await rpc('portal_state',{p_key:KEY}); if(S.ich){ ME={id:S.ich.id,name:S.ich.name||'Du',fest:true}; ls.set(MEK,JSON.stringify(ME)); }
+      else if(ME&&!ME.fest&&(S.polls||[]).length&&!(S.polls||[]).some(p=>(p.teilnehmer||[]).some(t=>t.id===ME.id))){ ME=null; ls.del(MEK); } render(); }
     catch(e){ app.innerHTML=`<div class="card err empty"><h2>Link ungültig</h2><p class="note">${esc(e.message)}</p></div>`; if(/ungültig|erneuert/.test(e.message))ls.del('kab_k'); }
   }
   function roster(){
@@ -57,7 +60,7 @@
           <button class="btn2 full" id="gGo">Eintragen</button></div>`:'<p class="note" style="text-align:center">Du fehlst? Kurz beim Trainer melden. Er setzt dich auf die Liste.</p>'}`;
       const gg=$('#gGo'); if(gg)gg.onclick=()=>gast(tgt.id,$('#gV').value,$('#gN').value);
       const draw=q=>{ const n=(q||'').toLowerCase(); $('#pk').innerHTML=R.filter(x=>!n||x.name.toLowerCase().includes(n)).map(x=>`<button data-id="${esc(x.id)}">${esc(x.name)}</button>`).join('')||'<p class="note">Kein Treffer.</p>';
-        document.querySelectorAll('#pk [data-id]').forEach(b=>b.onclick=()=>{ ME={id:b.dataset.id,name:R.find(x=>x.id===b.dataset.id).name}; ls.set('kab_me',JSON.stringify(ME)); render(); }); };
+        document.querySelectorAll('#pk [data-id]').forEach(b=>b.onclick=()=>{ ME={id:b.dataset.id,name:R.find(x=>x.id===b.dataset.id).name}; ls.set(MEK,JSON.stringify(ME)); render(); }); };
       draw(''); $('#q').oninput=e=>draw(e.target.value); return;
     }
     app.innerHTML=`<div class="tabs"><button data-v="abst" class="${view==='abst'?'on':''}">Abstimmungen</button><button data-v="kasse" class="${view==='kasse'?'on':''}">Mannschaftskasse</button></div><div id="body"></div>`;
@@ -71,7 +74,7 @@
     v=String(v||'').trim(); n=String(n||'').trim();
     if(v.length<2||n.length<2){ toast('Bitte Vor- und Nachname eintragen'); return; }
     if(busy)return; busy=true;
-    try{ const r=await rpc('portal_gast',{p_key:KEY,p_poll:poll,p_vorname:v,p_nachname:n}); ME={id:r.id,name:r.name}; ls.set('kab_me',JSON.stringify(ME));
+    try{ const r=await rpc('portal_gast',{p_key:KEY,p_poll:poll,p_vorname:v,p_nachname:n}); ME={id:r.id,name:r.name}; ls.set(MEK,JSON.stringify(ME));
       toast(r.neu?'✓ Eingetragen: jetzt zu- oder absagen':'✓ Gefunden: '+r.name); busy=false; await load(); return; }
     catch(e){ toast('⚠️ '+e.message); }
     busy=false;
@@ -107,13 +110,14 @@
   }
   function polls(B){
     if(ABW===null){ ABW=[]; abwLoad().then(()=>{ if(view==='abst')render(); }); }
+    // 0.87: der Server liefert nur die Abstimmungen der eigenen Mannschaft (und die, auf denen man selbst steht)
     const P=(S.polls||[]).filter(p=>p.datum>=S.heute).sort((a,b)=>(a.id===FOCUS?-1:b.id===FOCUS?1:0)||(a.datum<b.datum?-1:a.datum>b.datum?1:0));
     const wa=S.ich&&S.ich.whatsapp?`<div class="card wa"><b>WhatsApp-Erinnerungen</b><span>${S.ich.optout?'Aus: du bekommst keine Nachrichten.':'An: du bekommst den Link zum Training und ggf. eine Erinnerung.'}</span><button class="btn2" id="waT">${S.ich.optout?'Wieder einschalten':'Ausschalten'}</button></div>`:'';
     if(!P.length){ B.innerHTML=mdHtml()+'<div class="card empty"><h2>Gerade nichts offen</h2><p class="note">Sobald der Trainer eine Abstimmung anlegt, steht sie hier.</p></div>'+urHtml()+wa; waWire(); urWire(); return; }
     B.innerHTML=P.map(p=>{ const T=p.teilnehmer||[], V=new Map((p.votes||[]).map(v=>[v.p,v])), mine=V.get(ME.id), inL=T.some(t=>t.id===ME.id);
       const g={zu:[],vllt:[],ab:[],offen:[]}; T.forEach(t=>{ const v=V.get(t.id); (v?g[v.a]:g.offen).push(t.name); }); const n=T.length||1, pc=x=>Math.round(x/n*100);
       const closed=p.geschlossen;
-      return `<div class="card" id="p-${esc(p.id)}">${mine?'<span class="done">✓ abgestimmt</span>':''}<span class="pill ${p.art==='spiel'?'spiel':''}">${esc(ART[p.art]||'Termin')}</span>
+      return `<div class="card" id="p-${esc(p.id)}">${mine?'<span class="done">✓ abgestimmt</span>':''}<span class="pill ${p.art==='spiel'?'spiel':''}">${esc(ART[p.art]||'Termin')}</span>${p.team==='2'?' <span class="pill">2. Mannschaft</span>':''}
         <h2>${esc(p.titel)}</h2><div class="meta">${esc(wd(p.datum))}${p.zeit?' · '+esc(p.zeit)+' Uhr':''}${p.ort?' · '+esc(p.ort):''}</div>
         ${p.notiz?`<p class="note">${esc(p.notiz)}</p>`:''}${p.frist?`<p class="note">Bitte bis ${esc(new Date(p.frist).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))} Uhr antworten.</p>`:''}
         ${closed?'<p class="note"><b>Abstimmung geschlossen.</b></p>':inL?`<div class="ans">${[['zu','👍','Bin dabei'],['ab','✋','Nicht dabei']].map(([a,i,t])=>`<button class="${a}${mine&&mine.a===a?' on':''}" data-poll="${esc(p.id)}" data-a="${a}"><span>${i}</span>${t}</button>`).join('')}</div>
