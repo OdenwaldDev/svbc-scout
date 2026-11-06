@@ -378,29 +378,56 @@
       .ez-s.mein b{color:var(--ok)}.ez-bar{height:6px;border-radius:99px;background:var(--s3);overflow:hidden;margin-top:7px;max-width:180px}.ez-bar i{display:block;height:100%;background:var(--ok)}
       .ez-b{min-height:46px;padding:0 16px;border-radius:12px;border:0;background:var(--brand);color:#fff;font-weight:800;font-size:15.5px;cursor:pointer;flex:none}.ez-b.raus{background:var(--s3);color:var(--ink2);border:1px solid var(--line)}
       .ez-voll{color:var(--ink3);font-size:14px;flex:none}.ez-mein{display:flex;flex-direction:column;gap:8px;margin-top:12px}.ez-mein div{padding:10px 12px;border-radius:12px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);font-size:15px}
-      .ez-regel{font-size:14px;color:var(--ink2);line-height:1.5}`;
+      .ez-regel{font-size:14px;color:var(--ink2);line-height:1.5}
+      .hp-t h2{font-size:19px;margin:4px 0 2px}.hp-t>small{color:var(--ink2);font-size:14px}.hp-frage{margin-top:14px}.hp-frage b{font-size:16.5px}
+      .hp-ant{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.hp-auf{margin-top:14px}.hp-auf summary{cursor:pointer;font-weight:800;min-height:44px;display:flex;align-items:center}
+      .hp-t .ez-s b{hyphens:auto;-webkit-hyphens:auto;overflow-wrap:anywhere}.hp-gh{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin:14px 0 2px}.hp-kf{display:flex;flex-direction:column;gap:8px;margin-top:10px}.hp-kf input{min-height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--s3);color:var(--ink);font:inherit;font-size:16px}.hp-link{background:none;border:0;color:var(--brand);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;min-height:44px;padding:0 4px}`;
     document.head.appendChild(st);
-    let I=null;
+    let I=null, H=null;
+    // 0.88 Helferplan: Spieltage mit Aufgaben, „Hilfst du mit?“ und Eintragen für sich selbst
+    const HG={g:'Gemeinsame Aufgaben','1':'1. Mannschaft','2':'2. Mannschaft',f:'Freiwillige Unterstützung'};
+    const spText=t=>(t.spiele||[]).slice().sort((a,b)=>a.team.localeCompare(b.team)).map(x=>(x.team==='2'?'Zweite':'Erste')+(x.heim?' zu Hause':' auswärts')+(x.zeit?' '+x.zeit+' Uhr':'')).join(' · ');
+    function hpHtml(){ if(!H)return '';
+      const tagFokus=hp.get('tag'); const tage=(H.tage||[]).slice().sort((a,b)=>(a.datum===tagFokus?-1:b.datum===tagFokus?1:0)||(a.datum<b.datum?-1:1));
+      return tage.map(t=>{ const M=(t.aufgaben||[]).filter(a=>(a.namen||[]).some(n=>n.mein)), heim=(t.spiele||[]).some(x=>x.heim), gr=['g','1','2','f'].filter(g=>t.aufgaben.some(a=>a.bereich===g));
+        return `<div class="card hp-t"><h2>${esc(wd(t.datum))}: ${heim?'Heimspieltag':'Spieltag'}</h2><small>${esc(spText(t))}</small>
+          ${M.length?`<div class="ez-mein">${M.map(a=>`<div>✓ ${esc(a.titel)} <small>${esc(HG[a.bereich])}</small></div>`).join('')}</div>`
+            :`<div class="hp-frage"><b>Hilfst du mit?</b><div class="hp-ant">${[['ja','Ja, ich helfe'],['vielleicht','Vielleicht'],['nein','Diesmal nicht']].map(([k,l])=>`<button class="ez-b${(t.antwort?t.antwort===k:k==='ja')?'':' raus'}" data-hpant="${esc(t.datum)}|${k}" aria-pressed="${t.antwort===k}">${t.antwort===k?'✓ ':''}${l}</button>`).join('')}</div></div>`}
+          ${t.antwort==='nein'&&!M.length?'<p class="ez-regel">Alles klar, danke für die Rückmeldung. Wenn es doch klappt: „Aufgaben“ aufklappen und eine antippen.</p>':''}
+          <details class="hp-auf"${t.antwort==='ja'||M.length||t.datum===tagFokus?' open':''}><summary>Aufgaben (${(t.aufgaben||[]).filter(a=>!a.frei&&!(a.namen||[]).length).length} noch frei)</summary>
+          ${gr.map(g=>`<h3 class="hp-gh">${esc(HG[g])}</h3>${t.aufgaben.filter(a=>a.bereich===g).map(a=>{ const ich=(a.namen||[]).some(n=>n.mein), andere=(a.namen||[]).filter(n=>!n.mein).map(n=>n.n.split(' ')[0]);
+            return `<div class="ez-s${ich?' mein':''}"><div><b>${esc(a.titel)}</b><small>${ich?'Du'+(andere.length?' und '+esc(andere.join(', ')):''):andere.length?esc(andere.join(', ')):'noch frei'}</small></div>
+              <button class="ez-b${ich?' raus':''}" data-hpa="${esc(t.datum)}|${a.bereich}|${a.key}" data-an="${ich?0:1}">${ich?'Austragen':'Ich mach das'}</button></div>`; }).join('')}`).join('')}</details></div>`; }).join('')
+        +(H.ich&&(!H.ich.handy||!H.ich.email)?`<div class="card"><h2 style="font-size:18px;margin:0 0 6px">Damit wir dich erreichen</h2><p class="ez-regel">Uns fehlt noch ${!H.ich.handy&&!H.ich.email?'deine Handynummer und E-Mail':!H.ich.handy?'deine Handynummer':'deine E-Mail-Adresse'}. Die Orga nutzt sie für Absprachen rund um deine Einsätze. Hast du eine feste Aufgabe wie Platzwart, steht deine Nummer bei den wichtigen Nummern.</p>
+          <div class="hp-kf">${!H.ich.handy?'<input id="hpTel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Handynummer, z. B. 0171 1234567">':''}${!H.ich.email?'<input id="hpMail" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="E-Mail-Adresse">':''}<button class="ez-b" id="hpKOk">Speichern</button></div></div>`:'')
+        +(H.ich&&H.ich.handy&&H.ich.frage?`<div class="card"><p class="ez-regel">${H.ich.nachrichten?'Vor jedem Heimspieltag fragen wir dich kurz per WhatsApp, ob du mithilfst.':'Du bekommst vor dem Spieltag keine WhatsApp-Frage.'} <button class="hp-link" data-hpnach="${H.ich.nachrichten?0:1}">${H.ich.nachrichten?'Keine Nachrichten mehr':'Wieder fragen'}</button></p></div>`:''); }
     const uhr=ts=>{ try{ return new Date(ts).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } };
     const zeit=x=>x.von?uhr(x.von)+(x.bis?' bis '+uhr(x.bis):'')+' Uhr':'Zeit folgt';
     async function laden(){
       if(!/^[a-f0-9]{32}$/.test(tok)){ app.innerHTML='<div class="card err empty"><h2>Link ungültig</h2><p class="note">Bitte den Link aus der WhatsApp-Nachricht öffnen.</p></div>'; return; }
-      try{ I=await rpc('helfer_einsatz_info',{p_token:tok}); if(!I)throw new Error('Der Link ist ungültig. Bitte bei der Orga nachfragen.'); zeigen(); }
+      try{ I=await rpc('helfer_einsatz_info',{p_token:tok}); if(!I)throw new Error('Der Link ist ungültig. Bitte bei der Orga nachfragen.');
+        try{ H=await rpc('hp_link_info',{p_token:tok}); }catch(e){ H=null; } zeigen(); }
       catch(e){ app.innerHTML=`<div class="card err empty"><h2>Link nicht verfügbar</h2><p class="note">${esc(e.message)}</p></div>`; }
     }
     function zeigen(){
       const T=I.termine||[], meine=[]; T.forEach(t=>(t.schichten||[]).forEach(x=>{ if(x.mein)meine.push({t,x}); }));
       app.innerHTML=`<div class="card hero"><span class="pill">Hallo ${esc(I.ich.vorname)}</span><h2 style="margin:12px 0 6px">Danke, dass du mithilfst!</h2>
-          <p class="note">Hier siehst du, wo gerade Hände gebraucht werden. Ein Tipp auf „Ich helfe“ genügt, die Orga sieht es sofort.</p>
+          <p class="note">Hier siehst du, wo gerade Hände gebraucht werden. Ein Tipp genügt, die Orga sieht es sofort.</p>
           ${meine.length?`<div class="ez-mein">${meine.map(m=>`<div>✓ <b>${esc(wd(m.t.datum))}</b>: ${esc(m.x.st)}, ${esc(zeit(m.x))}<br><small>${esc(m.t.titel)}</small></div>`).join('')}</div>`:''}</div>
+        ${hpHtml()}
         ${T.length?T.map(t=>`<div class="card ez-t">${t.passt?'<span class="ez-pass">Passt zu dir</span>':''}<h2>${t.ober?esc(t.ober)+': ':''}${esc(t.titel)}</h2>
             <small>${esc(wd(t.datum))}${t.zeit?' · '+esc(t.zeit)+' Uhr':''}${t.ort?' · '+esc(t.ort):''}${t.wer?' · Ansprechpartner: '+esc(t.wer):''}</small>
             ${(t.schichten||[]).map(x=>{ const frei=Math.max(0,x.p-x.belegt);
               return `<div class="ez-s${x.mein?' mein':''}"><div><b>${x.bereich&&x.bereich!==x.st?esc(x.bereich)+', ':''}${esc(x.st)}</b>${x.auf?`<small>${esc(x.auf)}</small>`:''}${x.hin?`<small>${esc(x.hin)}</small>`:''}<small>${esc(zeit(x))} · ${x.mein?'Du'+(x.namen.length?' und '+esc(x.namen.join(', ')):''):x.namen.length?esc(x.namen.join(', ')):'noch niemand'}</small>
                   <div class="ez-bar"><i style="width:${Math.round(x.belegt/x.p*100)}%"></i></div></div>
                 ${x.mein?`<button class="ez-b raus" data-ez="${esc(x.id)}" data-an="0">Austragen</button>`:frei>0?`<button class="ez-b" data-ez="${esc(x.id)}" data-an="1">Ich helfe</button>`:'<span class="ez-voll">voll</span>'}</div>`; }).join('')}</div>`).join('')
-          :'<div class="card empty"><h2>Gerade nichts offen</h2><p class="note">Im Moment sind keine Einsätze ausgeschrieben. Wir melden uns, sobald wieder Hilfe gebraucht wird.</p></div>'}
+          :(H&&(H.tage||[]).length?'':'<div class="card empty"><h2>Gerade nichts offen</h2><p class="note">Im Moment sind keine Einsätze ausgeschrieben. Wir melden uns, sobald wieder Hilfe gebraucht wird.</p></div>')}
         <div class="card"><p class="ez-regel">Bitte 15 Minuten vor Schichtbeginn an der Station sein und die Übergabe persönlich machen. Wenn etwas dazwischenkommt: hier austragen und kurz der Orga Bescheid geben.</p></div>`;
+      const hpRuf=async(fn,args,ok)=>{ if(busy)return; busy=true; try{ H=await rpc(fn,Object.assign({p_token:tok},args)); busy=false; try{ navigator.vibrate&&navigator.vibrate(15); }catch(e){} if(ok)toast(ok); zeigen(); }catch(e){ busy=false; toast('⚠️ '+e.message); laden(); } };
+      app.querySelectorAll('[data-hpant]').forEach(b=>b.onclick=()=>{ const [d,a]=b.dataset.hpant.split('|'); hpRuf('hp_link_antwort',{p_datum:d,p_antwort:a},a==='ja'?'✓ Danke! Such dir unten eine Aufgabe aus':a==='nein'?'✓ Danke für die Rückmeldung':'✓ Notiert'); });
+      app.querySelectorAll('[data-hpa]').forEach(b=>b.onclick=()=>{ const [d,ber,key]=b.dataset.hpa.split('|'), an=b.dataset.an==='1'; hpRuf('hp_link_setzen',{p_datum:d,p_bereich:ber,p_aufgabe:key,p_an:an},an?'✓ Danke, du bist eingetragen':'✓ Ausgetragen'); });
+      const kOk=document.getElementById('hpKOk'); if(kOk)kOk.onclick=()=>{ const t=(document.getElementById('hpTel')||{}).value||'', m=(document.getElementById('hpMail')||{}).value||''; if(!t.trim()&&!m.trim())return toast('Bitte etwas eintragen'); (async()=>{ if(busy)return; busy=true; try{ H=await rpc('hp_link_kontakt',{p_token:tok,p_handy:t,p_email:m}); busy=false; toast('✓ Danke, gespeichert'); zeigen(); }catch(e){ busy=false; toast('⚠️ '+e.message); } })(); };
+      app.querySelectorAll('[data-hpnach]').forEach(b=>b.onclick=()=>hpRuf('hp_link_nachrichten',{p_an:b.dataset.hpnach==='1'},b.dataset.hpnach==='1'?'✓ Wir fragen dich wieder':'✓ Keine Nachrichten mehr'));
       app.querySelectorAll('[data-ez]').forEach(b=>b.onclick=async()=>{ if(busy)return; busy=true; const an=b.dataset.an==='1';
         try{ I=await rpc('helfer_einsatz_setzen',{p_token:tok,p_schicht:b.dataset.ez,p_an:an}); busy=false; try{ navigator.vibrate&&navigator.vibrate(15); }catch(e){} toast(an?'✓ Danke, du bist eingetragen':'✓ Ausgetragen'); zeigen(); }
         catch(e){ busy=false; toast('⚠️ '+e.message); laden(); } });
