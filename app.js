@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.90', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.91', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18572,15 +18572,21 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
-  {id:'0.90',v:'0.90',datum:'2026-11-06',titel:'Helferplan immer abgeglichen',kurz:'Der Helferplan gleicht sich alle 15 Minuten mit Lukas\' Helferplan-App ab. Wer sich dort einträgt, steht auch bei uns, wer dort rausgeht, verschwindet auch hier.',
+  {id:'0.91',v:'0.91',datum:'2026-11-06',titel:'Runden nach euren Listen, Abgleich sparsamer',kurz:'Die Termine der Runde der Leiter und der Sportlichen Abstimmung sehen genau die Personen aus euren Gruppen. Der Abgleich mit Lukas\' Helferplan läuft tagsüber alle zwei Stunden und fragt nur ab, was sich geändert hat.',
    punkte:[
-    {ic:'🔄',r:'team',t:'Abgleich mit Lukas\' Helferplan',d:'Tagsüber alle 15 Minuten holt der Server die nächsten Spieltage aus Lukas\' App. Neue Einträge kommen dazu, dort gelöschte gehen hier auch weg. Das klappt für Aufgaben, die bei uns gleich heißen. Was ihr in unserer App oder über den Helfer-Link eintragt, bleibt unberührt.',go:'sptag'},
-    {ic:'🕒',r:'team',t:'Stand auf einen Blick',d:'Unter dem Helferplan steht, wann zuletzt abgeglichen wurde. Die Orga kann direkt daneben sofort abgleichen und sieht, welche Aufgaben aus Lukas\' App es bei uns nicht gibt.',go:'sptag'},
+    {ic:'👥',r:'team',t:'Runde der Leiter und Sportliche Abstimmung',d:'Wer in den Runden ist, sieht ihre Termine im Kalender, sobald sein Konto in der App angelegt ist. Andere sehen sie nicht, der Vorstand sieht immer alles.',go:'kalender'},
+    {ic:'🔄',r:'team',t:'Abgleich schont Lukas\' App',d:'Tagsüber alle zwei Stunden, nachts nicht. Einzelne Spieltage fragt der Abgleich nur ab, wenn sich dort etwas geändert hat. „Jetzt abgleichen“ geht höchstens alle 10 Minuten.',go:'sptag'},
+    {ic:'📋',r:'team',t:'Neue Aufgaben von Lukas',d:'Gibt es in Lukas\' App eine Aufgabe, die wir nicht haben, legt der Abgleich sie bei uns an, sobald sich dort jemand dafür einträgt. Unsere Aufgaben benennt er nie um.',go:'sptag'},
+   ]},
+  {id:'0.90',v:'0.90',datum:'2026-11-06',titel:'Helferplan immer abgeglichen',kurz:'Der Helferplan gleicht sich tagsüber regelmäßig mit Lukas\' Helferplan-App ab. Wer sich dort einträgt, steht auch bei uns, wer dort rausgeht, verschwindet auch hier.',
+   punkte:[
+    {ic:'🔄',r:'team',t:'Abgleich mit Lukas\' Helferplan',d:'Tagsüber alle zwei Stunden schaut der Server in Lukas\' App nach, nachts nicht. Einzelne Spieltage fragt er nur ab, wenn sich dort etwas geändert hat. Neue Einträge kommen dazu, dort gelöschte gehen hier auch weg. Was ihr in unserer App oder über den Helfer-Link eintragt, bleibt unberührt.',go:'sptag'},
+    {ic:'🕒',r:'team',t:'Stand auf einen Blick',d:'Unter dem Helferplan steht, wann zuletzt abgeglichen wurde. Die Orga kann direkt daneben sofort abgleichen.',go:'sptag'},
     {ic:'🧹',r:'team',t:'Gelöscht bleibt gelöscht',d:'Tragt ihr hier jemanden aus, holt der Abgleich ihn nicht zurück, auch wenn er bei Lukas noch steht. Dort bitte auch austragen.',go:'sptag'},
    ]},
   {id:'0.89',v:'0.89',datum:'2026-11-06',titel:'Treffen als Serie, Einladung für WhatsApp, Banden schneller',kurz:'Runde der Leiter und Sportliche Abstimmung stehen bis 2030 im Kalender. Treffen legst du jetzt als Serie an und bekommst die Einladung für WhatsApp gleich fertig dazu, mit Kalenderdatei. Bei den Banden filtern die Zahlen oben direkt, die Firma im Partner-Bereich wird vorgeschlagen.',
    punkte:[
-    {ic:'🗓️',r:'team',t:'Runde der Leiter und Sportliche Abstimmung',d:'Die Runde der Leiter trifft sich am 2. Dienstag im Januar, April, Juli und Oktober (17:30 bis 19:00 Uhr), die Sportliche Abstimmung jeden 3. Dienstag im Monat (17:45 bis 18:45 Uhr), beides im Clubhaus. Die Runde der Leiter sehen alle mit Leitung oder Stellvertretung in der Vereinsarbeit, die Sportliche Abstimmung alle Trainer und die Leitung von Mannschaften, Kader und Planung.',go:'kalender'},
+    {ic:'🗓️',r:'team',t:'Runde der Leiter und Sportliche Abstimmung',d:'Die Runde der Leiter trifft sich am 2. Dienstag im Januar, April, Juli und Oktober (17:30 bis 19:00 Uhr), die Sportliche Abstimmung jeden 3. Dienstag im Monat (17:45 bis 18:45 Uhr), beides im Clubhaus. Sehen können die Termine die Mitglieder der beiden Runden, ändern kann sie der Vorstand.',go:'kalender'},
     {ic:'🔁',r:'team',t:'Termine als Serie',d:'Beim neuen Termin unter „Wiederholen“: jede Woche, alle zwei Wochen, jeden Monat am gleichen Wochentag oder jedes Quartal. Dazu gibt es jetzt „Bis (Uhrzeit)“.',go:'kalender'},
     {ic:'💬',r:'team',t:'Einladung für WhatsApp',d:'Nach dem Speichern eines Treffens kommt die Einladung sofort: fertiger Text mit Datum, Uhrzeit und Ort, dazu die Kalenderdatei mit allen Terminen und Erinnerungen eine Woche und einen Tag vorher. Am Handy mit einem Tipp in die Gruppe teilen.',go:'kalender'},
     {ic:'🔎',r:'team',t:'Banden: Zahlen filtern',d:'Oben auf „erneuern“, „prüfen“, „gut“ oder „Partner fragen“ tippen zeigt genau diese Banden. Nochmal tippen zeigt wieder alle.',go:'sponsoring'},
@@ -30670,13 +30676,14 @@ function hplStandText(){ const a = HPL.stand, orga = !!(HPL.d && HPL.d.orga); if
   const txt = a.ok ? `Abgeglichen mit Lukas' Helferplan ${wann}.`
     : a.fehler === 'zu-viel-weg' ? `Abgleich angehalten (${wann}): In Lukas' Helferplan fehlen auf einmal viele Einträge. Bitte dort nachsehen, danach hier neu abgleichen.`
     : `Abgleich mit Lukas' Helferplan klappt gerade nicht (${wann} versucht). Später noch mal abgleichen, sonst Albert Bescheid geben.`;
-  const weg = orga && (a.nicht_erkannt || []).length ? ` Diese Aufgaben aus Lukas' Helferplan gibt es bei uns nicht, bitte die Namen angleichen: ${hplE(a.nicht_erkannt.join(', '))}.` : '';
+  const weg = (orga && (a.aufgaben || []).length ? ` Neu von Lukas übernommen: ${hplE(a.aufgaben.join(', '))}.` : '')
+    + (orga && (a.nicht_erkannt || []).length ? ` Nicht übernommen: ${hplE(a.nicht_erkannt.join(', '))}.` : '');
   return `<p class="note small hpl-sync${a.ok ? '' : ' warn'}">${txt}${weg}${orga ? ` <button type="button" class="btn ghost sm hpl-sk" id="hplImp">Jetzt abgleichen</button>` : ''}</p>`; }
 async function hplImport(box, knopf){
   knopf.disabled = true; knopf.textContent = 'Gleiche ab …';
   try{ const d = await maRufen({ quelle:'helfer', art:'abgleich' });
     await hplLaden(true); await SVB.sb.rpc('hp_abgleich_stand').then(r => { HPL.stand = r.data || HPL.stand; }).catch(() => {}); hplZeichnen(box);
-    kToast(d.gebremst ? '⚠️ Abgleich angehalten: in Lukas\' Helferplan fehlen auf einmal viele Einträge' : `✓ Abgeglichen: ${d.neu || 0} neu, ${d.weg || 0} entfernt`); }
+    kToast(d.gebremst ? '⚠️ Abgleich angehalten: in Lukas\' Helferplan fehlen auf einmal viele Einträge' : d.gerade ? '✓ Ist schon aktuell, gerade erst abgeglichen' : `✓ Abgeglichen: ${d.neu || 0} neu, ${d.weg || 0} entfernt` + ((d.aufgaben || []).length ? `, ${d.aufgaben.length === 1 ? '1 Aufgabe' : d.aufgaben.length + ' Aufgaben'} von Lukas übernommen` : '')); }
   catch(e){ kToast('⚠️ Abgleich ging nicht: ' + (typeof maFehlerText === 'function' ? maFehlerText(e) : e.message)); knopf.disabled = false; knopf.textContent = 'Jetzt abgleichen'; } }
 
 // Einhängen: Helfer-Bereich (statt der Mini-App-Karte) und „Mein Spieltag“
