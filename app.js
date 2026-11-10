@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.96', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.97', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.97',v:'0.97',datum:'2026-11-10',titel:'Unser Weg bis 2030 steht jetzt im Partner-Flow',kurz:'Zwischen Verein und „Was es bewirkt“ steht neu die Station „Bis 2030“ mit den Zielen aus dem Konzept 2030 und ihrem Stand. Davor der Block „Die Jugend ist der Plan“: Zahl der Kinder, Jugendmannschaften und das Kaderziel aus der eigenen Jugend.',
+   punkte:[
+    {ic:'\u{1F5FA}',r:'team',t:'Die Roadmap aus dem Konzept 2030',d:'Ein Partner sieht jetzt, wohin wir wollen: die Ziele für Verein und Sport, jedes mit seinem Stand. Gepflegt werden sie wie bisher unter Verein, Vorstand und Ziele, die Präsentation zieht sie von dort.',go:'vorstand'},
+    {ic:'\u{1F91D}',r:'team',t:'Beim Partner-Ziel steht der Stand',d:'Unter „10 aktive, lokale Partner“ steht, wie viele es heute sind und was sich mit diesem Betrieb ändern würde. Nur die Zahl, keine Namen und keine Beträge.',go:'sponsoring'},
+    {ic:'\u26BD',r:'team',t:'Die Jugend zuerst',d:'Ein eigener Block sagt, dass die Jugend nicht das Beiprogramm neben der Ersten ist, mit der Zahl der Kinder, den Jugendmannschaften und dem Ziel, 14 von 21 Kaderplätzen aus der eigenen Jugend zu besetzen.',go:'sponsoring'},
+   ]},
   {id:'0.96',v:'0.96',datum:'2026-11-10',titel:'Euer Auftritt zuerst, und wir dürfen euch nennen',kurz:'Bande und Trikot stehen in der Partner-Präsentation jetzt ganz vorn, noch vor den Preisen. Beim Abschluss fragen wir, ob wir öffentlich sagen dürfen, dass die Firma Partner ist. Wer ja sagt, steht in der neuen Box „Aktuelle Partner“.',
    punkte:[
     {ic:'\u{1F3DF}',r:'team',t:'Euer Auftritt steht vorn',d:'Bande am Platz und Logo auf dem Trikot liegen zusammen in einer Station „Euer Auftritt“, direkt nach dem Einstieg und vor den Preisen. Die Bande steht gleich da, das Trikot baut sich erst auf, wenn jemand darauf tippt.',go:'sponsoring'},

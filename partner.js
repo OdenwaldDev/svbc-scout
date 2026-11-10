@@ -167,7 +167,7 @@
     geruest(); fragen(); bereiche(); katalog(); korb(); abschluss(); kopfZahl();
     auftrittStart();
     if(S.nennOffen&&S.ergebnis&&!demo())nennungSenden();
-    partnerWand();
+    partnerWand(); zieleStation();
     // Nach dem Neuladen (Tab vom Browser verworfen) an derselben Stelle weiter, dann erst der Hinweis
     const zuS=hp.get('s'), hinStelle=wieder&&!S.ergebnis&&!ausAngebot&&!(zuS&&/^[a-z]+$/.test(zuS))&&S.pos&&document.getElementById(S.pos.id);
     const hinDort=()=>{ const el=document.getElementById(S.pos.id), k=$('.top'); if(el)window.scrollTo({top:Math.max(0,el.getBoundingClientRect().top+scrollY-((k&&k.offsetHeight)||60)-2+(+S.pos.off||0)),behavior:'instant'}); };
@@ -249,7 +249,7 @@
     return `<ul class="bewegt">${ls.map(l=>`<li><em>${eur(l.preis)}</em><div><b>${esc(l.titel)}</b><small>${esc((String(l.text||'').match(/[^.]+\.?/g)||[]).slice(0,2).join('').trim())}</small></div></li>`).join('')}</ul>
       <p class="bewegt-f">Was ihr für die Jugend gebt, bleibt bei der Jugend.</p>`; }
   // Stationen oben: wenige Ziele, frei anspringbar, zeigen den Stand
-  const STN=[['auftritt','Auftritt','Euer Auftritt'],['verein','Verein','Verein'],['wirkung','Wirkung','Was es bewirkt'],['pakete','Pakete','Pakete'],['bausteine','Bausteine','Bausteine'],['baukasten','Abschluss','Abschluss']];
+  const STN=[['auftritt','Auftritt','Euer Auftritt'],['verein','Verein','Verein'],['ziele','2030','Bis 2030'],['wirkung','Wirkung','Was es bewirkt'],['pakete','Pakete','Pakete'],['bausteine','Bausteine','Bausteine'],['baukasten','Abschluss','Abschluss']];
   function geruest(){
     const dk=D.deck, P=dk.passung||{}, kurz=dk.kurzname||dk.firma, nJ=M.length, hatPassung=P.titel||P.text||(P.punkte||[]).length, V=D.verein||{};
     const st=STUFEN();
@@ -292,13 +292,19 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
 </section>
 <section class="sec" id="verein"><div class="ww">
   <div class="v-kopf rv"><div><h2 class="g">Unser Verein</h2>
-    <p class="lead">Fußball in Mörlenbach seit 1896. Die Kinder spielen meist samstags, die Herren sonntags, und am Rand stehen die Familien. Ohne Ehrenamt ginge das nicht, und ohne die Betriebe, die uns unterstützen, auch nicht.</p></div>
+    <p class="lead">Fußball in Mörlenbach seit 1896. Der größte Teil von uns ist jung: Die Kinder spielen meist samstags, die Herren sonntags, und am Rand stehen die Familien. Ohne Ehrenamt ginge das nicht, und ohne die Betriebe, die uns unterstützen, auch nicht.</p></div>
     <div class="vz">${V.jugend?`<div class="zahl"><b>${esc(V.jugend)}</b><span>Kinder und Jugendliche,<br>jede Woche auf dem Platz</span></div>`:''}${V.heimspiele?`<div class="zahl zahl2"><b>${esc(V.heimspiele)}</b><span>Heimspiele der Ersten<br>in der ${esc(V.liga||'Kreisliga A')}${V.zuschauer?`, im Schnitt rund ${esc(V.zuschauer)} Zuschauer`:''}</span></div>`:''}
     <p class="zahl-n">${nJ?nJ+' ':''}Jugendmannschaften von den Minikickern bis zur A-Jugend · eine Erste und eine Zweite${V.zuschauer?' · Die Zuschauerzahl ist unsere Schätzung.':''}</p></div></div>
   <div class="bc-kopf"><h3>Wo ihr dabei sein könnt</h3><div class="pf" aria-hidden="true"><button type="button" data-pf="-1" tabindex="-1">‹</button><button type="button" data-pf="1" tabindex="-1">›</button></div></div>
   <div class="karus" id="bereiche" role="list" aria-label="Bereiche des Vereins"></div><div class="punkte" id="bcDots" aria-hidden="true"></div>
   <div class="apa rv" id="apartner" hidden><h3>Aktuelle Partner</h3><p class="apa-l">Diese Betriebe sind gerade beim SV/BSC Mörlenbach dabei und haben uns erlaubt, sie zu nennen.</p>
     <ul id="apaL"></ul></div></div></section>
+<section class="sec grau" id="ziele" hidden><div class="ww">
+  <div class="sk"><h2 class="g">Unser Weg bis 2030</h2>
+    <p class="lead">Wir haben uns einen Plan gegeben und lassen uns daran messen. Bis Juni 2030 soll das hier stehen, im Verein und auf dem Platz. Ihr seht hier denselben Stand, den unser Vorstand sieht.</p></div>
+  <div class="jg rv" id="zlJg" hidden></div>
+  <div class="zl rv" id="zlL"></div>
+  <p class="zl-f" id="zlF" hidden></p></div></section>
 <section class="sec grau" id="wirkung"><div class="ww w-raster">
   <div class="rv"><h2 class="g">Was es bewirkt</h2><p class="lead">Ein paar Beispiele aus der Jugend, so wie man sie bei uns buchen kann. Die Preise sind netto.</p><div id="bewegtW">${bewegtHtml()}</div></div>
   ${hatPassung?`<div id="passung" class="pa rv"><div class="pa-kopf">${dk.logo?logoImg('pl'):`<b>${esc(kurz)}</b>`}<i>und</i><img class="sv" src="${WAPPEN}" width="320" height="182" alt="SV/BSC Mörlenbach"></div>
@@ -447,6 +453,41 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     document.querySelectorAll('[data-auf]').forEach(b=>b.onclick=()=>{ if(AUF.an===b.dataset.auf)return; aufZeigen(b.dataset.auf,true); });
     if(AUF.bd)bdHolen();
     aufZeigen(AUF.bd?'bande':'trikot'); }
+  // ---------- 0.97: Station „Unser Weg bis 2030“ ----------
+  // Die Ziele kommen aus dem Konzept 2030 und stehen in der App unter Verein, Vorstand und Ziele.
+  // Hier nur Titel und Stand (public.partner_ziele), keine Verantwortlichen, keine Aufgaben, keine Namen.
+  function zielZahl(t,re){ const m=re.exec(String(t||'')); return m?m.slice(1):null; }
+  function zieleHtml(Z,n){ if(!Z.length)return '';
+    const grp=[['verein','Im Verein'],['sport','Auf dem Platz']];
+    return grp.map(([k,t])=>{ const L0=Z.filter(z=>z.bereich===k); if(!L0.length)return '';
+      return `<div class="zl-g"><h3>${t}</h3><ul>${L0.map(z=>{
+        let zu='';
+        if(z.thema==='partner'&&!dabeiArt()){ const soll=zielZahl(z.titel,/(\d{1,3})\s*(?:aktive|lokale|Partner)/i);
+          const ziel=soll?+soll[0]:null;
+          zu=`<b class="zl-ihr">${ziel!=null&&n>=ziel?'Das steht schon, und wir halten es gern.'
+            :n===0?'Noch ist keiner dabei. Ihr wärt der erste.'
+            :n===1?'Heute ist es einer. Mit euch wären es zwei.'
+            :'Heute sind es '+n+'. Mit euch wären es '+(n+1)+'.'}</b>`; }
+        return `<li class="${z.erreicht?'ok':''}"><i aria-hidden="true">${z.erreicht?'\u2713':''}</i><span>${esc(z.titel)}${zu}</span></li>`; }).join('')}</ul></div>`; }).join(''); }
+  // Kinder und Jugend sind der Kern des Plans, nicht das Beiprogramm. Zahlen nur aus den Vereinsangaben und den Zielen.
+  function jugendHtml(Z){ const V=(D&&D.verein)||{}, nJ=M.length, kader=Z.find(z=>z.thema==='jugend'&&/(\d{1,2})\s*von\s*(\d{1,2})/i.test(z.titel));
+    const kz=kader?zielZahl(kader.titel,/(\d{1,2})\s*von\s*(\d{1,2})/i):null;
+    const k=[V.jugend?[esc(V.jugend),'Kinder und Jugendliche, jede Woche auf dem Platz']:null,
+      nJ?[String(nJ),'Jugendmannschaften von den Minikickern bis zur A-Jugend']:null,
+      kz?[kz[0]+' von '+kz[1],'Kaderplätzen je Mannschaft aus der eigenen Jugend, so soll es 2030 sein']:null].filter(Boolean);
+    if(!k.length)return '';
+    return `<div class="jg-t"><h3>Die Jugend ist der Plan</h3>
+      <p>${V.jugend?`Bei uns lernen ${esc(V.jugend)} Kinder und Jugendliche Fußball.`:'Bei uns lernen Kinder und Jugendliche aus dem Ort Fußball.'} Sie sind nicht das Beiprogramm neben der Ersten, sie sind der Plan.${kz?` Bis 2030 sollen ${kz[0]} von ${kz[1]} Kaderplätzen je Mannschaft mit Spielern besetzt sein, die bei uns Fußball gelernt haben.`:''} Jeder Euro, der in die Jugend geht, zahlt darauf ein.</p></div>
+      <ul class="jg-z">${k.map(([b,t])=>`<li><b>${b}</b><span>${t}</span></li>`).join('')}</ul>`; }
+  async function zieleStation(){ const sec=$('#ziele'); if(!sec)return;
+    let z=null; try{ z=await rpc('partner_ziele',{},10000); }catch(e){ sec.hidden=true; stationenNeu(); return; }
+    const Z=(z&&Array.isArray(z.ziele)?z.ziele:[]).filter(x=>x&&x.titel), n=Math.max(0,+((z||{}).partner_jetzt)||0);
+    if(!Z.length){ sec.hidden=true; stationenNeu(); return; }
+    const J=$('#zlJg'), jh=jugendHtml(Z); if(J){ J.innerHTML=jh; J.hidden=!jh; }
+    $('#zlL').innerHTML=zieleHtml(Z,n);
+    const F=$('#zlF'), erf=Z.filter(x=>x.erreicht).length;
+    if(F){ F.textContent=`Stand heute: ${erf} von ${Z.length} Zielen stehen. Den Rest haben wir noch vor uns, und dabei hilft jeder Partner.`; F.hidden=false; }
+    sec.hidden=false; beobachten(sec); stationenNeu(); }
   // ---------- 0.96: Infobox „Aktuelle Partner“ ----------
   // Nur Firmennamen, nur von Betrieben, die ausdrücklich ja gesagt haben (public.partner_nennung_liste).
   // Unter drei Namen zeigen wir die Box gar nicht, dann wirkt sie leer statt stark.
@@ -541,10 +582,10 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // Stand an den Stationen: Paket gewählt, Bausteine dabei, Zahl im Abschluss; nach der Unterschrift nur noch, was zählt
   function stationenNeu(){ const aufS=$('#auftritt');
     if(aufS&&!aufS.hidden&&fertig()){ aufS.hidden=true; const bd0=$('#bande'), tk0=$('#trikots'); if(bd0)bd0.hidden=true; if(tk0)tk0.hidden=true; }
-    const sicht={auftritt:!($('#auftritt')||{}).hidden,verein:true,wirkung:!($('#wirkung')||{}).hidden,pakete:!($('#pakete')||{}).hidden,bausteine:!($('#bausteine')||{}).hidden,baukasten:true};
+    const sicht={auftritt:!($('#auftritt')||{}).hidden,verein:true,ziele:!($('#ziele')||{}).hidden,wirkung:!($('#wirkung')||{}).hidden,pakete:!($('#pakete')||{}).hidden,bausteine:!($('#bausteine')||{}).hidden,baukasten:true};
     STN.forEach(([id])=>{ const li=document.querySelector(`.stn li[data-stn="${id}"]`); if(li)li.hidden=!sicht[id]; }); const nv=$('.stn'); if(nv)nv.classList.toggle('wenig',Object.values(sicht).filter(Boolean).length<4);
     const ok=(id,an)=>{ const b=document.querySelector(`.stn li[data-stn="${id}"] .stn-ok`); if(b)b.hidden=!an; };
-    ok('auftritt',false); ok('pakete',hatPaket()); ok('bausteine',S.korb.some(e=>e.key!=='spende'&&(lk(e.key)||{}).art!=='paket')); ok('verein',false); ok('wirkung',false);
+    ok('auftritt',false); ok('ziele',false); ok('pakete',hatPaket()); ok('bausteine',S.korb.some(e=>e.key!=='spende'&&(lk(e.key)||{}).art!=='paket')); ok('verein',false); ok('wirkung',false);
     const p=$('#prog'); if(p)p.dataset.w=''; fortschritt(); }
   function kopfZahl(plopp){ leiste(); merken(); seiteBs(); const n=$('#kopfN'); if(!n)return; const fertig=S.ergebnis&&S.ergebnis.art!=='angebot'&&S.ergebnis.art!=='warteliste';
     const nL=S.korb.filter(e=>e.key!=='spende').length, sp=fertig&&S.ergebnis.art==='spende'; n.textContent=nL||(S.korb.length?'♥':'0'); n.hidden=!!fertig||!S.korb.length;
