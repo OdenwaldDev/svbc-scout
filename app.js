@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.91', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.92', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18572,6 +18572,15 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.92',v:'0.92',datum:'2026-11-10',titel:'Board zum Ziehen, Kader beginnt wieder bei der Mannschaft',kurz:'Im Planungs-Board ziehst du Karten jetzt wirklich: in eine andere Spalte, an eine andere Stelle oder auf eine Person. Am Handy stehen alle Phasen übereinander in einer Leiste. Der Kader öffnet wieder die Kaderübersicht mit euren Spielern.',
+   punkte:[
+    {ic:'🖐️',r:'team',t:'Karten ziehen, auch am Handy',d:'Rechts oben auf jeder Karte sind jetzt sichtbare Punkte zum Anfassen. Am Handy reicht auch: Karte kurz gedrückt halten, dann ziehen. Wischen scrollt weiter wie vorher.',go:'planung'},
+    {ic:'↕️',r:'team',t:'Reihenfolge in der Spalte',d:'Du kannst eine Karte an eine andere Stelle in der Spalte ziehen. Eine Linie zeigt, wo sie landet, und die Reihenfolge bleibt so.',go:'planung'},
+    {ic:'📱',r:'team',t:'Alle Phasen auf einen Blick',d:'Am Handy steht über dem Board eine Leiste mit allen Phasen und ihren Zahlen. Antippen springt zur Spalte, so geht keine Phase mehr unter.',go:'planung'},
+    {ic:'👥',r:'scout',t:'Kader zeigt wieder die Mannschaft',d:'Der Kader öffnet die Kaderübersicht mit euren Spielern und ihren Stärken. Die Planung der nächsten Saison ist der zweite Reiter.',go:'kueber'},
+    {ic:'🔁',r:'scout',t:'Stärken laden sich nach',d:'Wenn die Stärken einmal nicht ankommen, versucht die App es von selbst noch einmal und sagt dir sonst Bescheid, statt endlos zu laden.',go:'kueber'},
+    {ic:'⚡',r:'admin',t:'Datenbank entlastet',d:'Der große Abgleich der Spielerdaten läuft jetzt höchstens stündlich statt alle 20 Minuten und sortiert im Arbeitsspeicher statt auf der Festplatte. Das war die Ursache der Warnung von Supabase.'},
+   ]},
   {id:'0.91',v:'0.91',datum:'2026-11-06',titel:'Runden nach euren Listen, Abgleich sparsamer',kurz:'Die Termine der Runde der Leiter und der Sportlichen Abstimmung sehen genau die Personen aus euren Gruppen. Der Abgleich mit Lukas\' Helferplan läuft tagsüber alle zwei Stunden und fragt nur ab, was sich geändert hat.',
    punkte:[
     {ic:'👥',r:'team',t:'Runde der Leiter und Sportliche Abstimmung',d:'Wer in den Runden ist, sieht ihre Termine im Kalender, sobald sein Konto in der App angelegt ist. Andere sehen sie nicht, der Vorstand sieht immer alles.',go:'kalender'},
@@ -21794,8 +21803,20 @@ function k1Panel(id){ let P=document.getElementById('panel-'+id); if(P)return P;
 function k1Kopf(t,sub){ return `<div class="k1-kopf"><div><h2>${k1E(t)}</h2>${sub?`<p>${sub}</p>`:''}</div></div>`; }
 function k1TeamUm(cur,attr){ return `<div class="k1-seg" role="tablist">${['1','2'].map(t=>`<button type="button" class="${cur===t?'on':''}" ${attr}="${t}">${t}. Mannschaft</button>`).join('')}</div>`; }
 function k1Lade(P,txt){ P.innerHTML=`<div class="card"><div class="empty">${k1E(txt||'Lade …')}</div></div>`; }
+// Stärken fehlen: nicht endlos „wird geladen“ zeigen, sondern nachladen und beim zweiten Fehlversuch sagen, was los ist
+function k1Fehler(P,again){
+  P.innerHTML=`<div class="card"><div class="empty"><p><b>Die Stärken konnten nicht geladen werden.</b></p>
+    <p class="note">Die Kaderübersicht braucht die Werte aus der Bewertung. Meist hilft ein neuer Versuch.</p>
+    <p><button type="button" class="btn" id="k1Neu">Nochmal versuchen</button></p></div></div>`;
+  const b=P.querySelector('#k1Neu'); if(b)b.onclick=()=>{ K1.werteVersuch=0; k1Lade(P,'Stärken werden geladen …'); v1Laden().then(()=>setTimeout(again,0)); };
+}
 function k1Bereit(P,again){
-  if(!V1.werte){ k1Lade(P,'Stärken werden geladen …'); setTimeout(again,800); return false; }
+  if(!V1.werte){
+    K1.werteVersuch=(K1.werteVersuch||0)+1;
+    if(K1.werteVersuch===8||K1.werteVersuch===24){ k1Lade(P,'Stärken werden geladen …'); v1Laden().then(()=>setTimeout(again,400)); return false; }
+    if(K1.werteVersuch>40){ k1Fehler(P,again); return false; }
+    k1Lade(P,'Stärken werden geladen …'); setTimeout(again,800); return false; }
+  K1.werteVersuch=0;
   if(typeof SV4!=='undefined'&&!SV4.loaded){ k1Lade(P); if(SV4.loading)setTimeout(again,400); else sv4Load().then(()=>setTimeout(again,0)); return false; }
   if(!K1.planGeladen){ k1Lade(P); k1PlanLaden().then(again); return false; }
   if(K1.ju===null){ k1JuLaden().then(again); }
@@ -21979,18 +22000,19 @@ function k1TopElf(){
    Navigation V1 (Kader, Scouting, Mannschaft): neue Reiter, alte leiten um, Rückweg über den Schalter
    ===================================================================== */
 const V1NAV={alt:null,an:false,klassisch:false};
-const V1_UMLEITUNG={kader:'kplan',gespr:'kplan',ejugend:'kplan',sxi:'topelf',elf:'topelf',kaderplan:'kueber',
+const V1_UMLEITUNG={kader:'kueber',gespr:'kplan',ejugend:'kplan',sxi:'topelf',elf:'topelf',kaderplan:'kueber',
   bedarf:'sbedarf',kandidaten:'skand',best:'entdecken',radar:'entdecken',eye:'entdecken',totw:'entdecken',jugend:'entdecken',cmp:'entdecken',scout:'entdecken'};
 const V1_ENT_UNTER={best:'markt',radar:'radar',totw:'radar',jugend:'talente',cmp:'markt',scout:'markt',eye:'markt'};
 function v1NavAn(){
   if(V1NAV.an)return; V1NAV.an=true;
   V1NAV.alt={kader:SV4_HUB.kader.tabs,scouting:SV4_HUB.scouting.tabs,mannschaft:SV4_HUB.mannschaft.tabs,spieltag:SV4_HUB.spieltag?SV4_HUB.spieltag.tabs:null,side:Object.assign({},SV4_SIDEKEY)};
-  SV4_HUB.kader.tabs=[['kplan','Planung'],['kueber','Kaderübersicht'],['topelf','Top-Elf']];
+  // Kader beginnt mit unserer Mannschaft (Liste mit den Stärken), die Planung der nächsten Saison kommt danach
+  SV4_HUB.kader.tabs=[['kueber','Kaderübersicht'],['kplan','Planung'],['topelf','Top-Elf']];
   SV4_HUB.scouting.tabs=[['sbedarf','Bedarfe'],['skand','Kandidaten'],['blick','Beobachtung'],['entdecken','Entdecken']];
   SV4_HUB.mannschaft.tabs=[['training:uebersicht','Übersicht'],['training:players','Spieler'],['training:sessions','Training'],['training:games','Spiele'],['training:verf','Verfügbarkeit'],['training:orga','Organisation']];
   if(SV4_HUB.spieltag)SV4_HUB.spieltag.tabs=SV4_HUB.spieltag.tabs.filter(([k])=>k!=='totw');
   Object.assign(SV4_OF,{kplan:'kader',kueber:'kader',topelf:'kader',sbedarf:'scouting',skand:'scouting',entdecken:'scouting'});
-  SV4_SIDEKEY.scouting='sbedarf'; SV4_SIDEKEY.kader='kplan';
+  SV4_SIDEKEY.scouting='sbedarf'; SV4_SIDEKEY.kader='kueber';
   Object.assign(SV_PAGES,{kplan:['Kader','Planung der nächsten Saison: Plan-Elf, Bedarfe, offene Entscheidungen'],kueber:['Kader','Kaderübersicht: Erste und Zweite sportlich'],
     topelf:['Kader','Top-Elf heute und Plan-Elf nächste Saison'],sbedarf:['Scouting','Bedarfe aus dem Kaderplan'],skand:['Scouting','Kandidaten: Kontakt, Gespräch, Entscheidung'],
     entdecken:['Scouting','Entdecken: Markt, Radar, Rückkehrer, Talente']});
@@ -30730,19 +30752,24 @@ function brdAufgaben(){
   return plAuf().filter(a => (BRD.bereich === 'alle' || a.bereich === BRD.bereich) && (BRD.projekt === 'alle' || (BRD.projekt === 'ohne' ? !a.projekt : a.projekt === BRD.projekt))
     && (BRD.wer === 'alle' || a.wer === BRD.wer || (a.mit || []).includes(BRD.wer))
     && (a.status !== 'erledigt' || !a.erledigt_am || plIso(new Date(a.erledigt_am)) >= vor14)); }
+// Reihenfolge in der Spalte: zuerst die von Hand gezogene (sort), dann Stufe, dann Fälligkeit
+function brdSpalte(L, k){
+  const X = L.filter(x => x.status === k); if(BRD.art !== 'aufgaben') return X;
+  return X.sort((a, b) => ((a.sort || 0) - (b.sort || 0)) || (prioStufe(a) - prioStufe(b))
+    || (plTage(a.faellig) == null) - (plTage(b.faellig) == null) || ((plTage(a.faellig) || 0) - (plTage(b.faellig) || 0))); }
 function brdProjekte(){ return plPro().filter(p => p.status !== 'verworfen' && (BRD.bereich === 'alle' || p.bereich === BRD.bereich) && (BRD.wer === 'alle' || p.verantwortlich === BRD.wer)); }
 
 function brdKarteA(a){
   const s = prioStufe(a), erl = a.status === 'erledigt', t = plTage(a.faellig), ueber = !erl && a.faellig && t < 0, nm = prioNamen(a), pr = a.projekt ? plProj(a.projekt) : null;
   return `<article class="brd-k s${s}${erl ? ' erl' : ''}" data-brdk="${brdE(a.id)}" tabindex="0" aria-label="${brdE(a.titel)}">
-    <span class="brd-griff" data-brdg aria-hidden="true">${SVI('menu')}</span>
+    <span class="brd-griff" data-brdg title="Ziehen: in eine andere Spalte, an eine andere Stelle oder auf eine Person" aria-hidden="true">${SVI('griff')}</span>
     <b>${brdE(a.titel)}</b>
     <div class="brd-m">${s <= 2 && !erl ? `<span class="prio-st s${s}">${PRIO_ST[s]}</span>` : ''}${a.faellig && !erl ? `<span class="${ueber ? 'rot' : ''}">${brdE(prioWann(a))}</span>` : ''}${pr ? `<span>${brdE(pr.titel)}</span>` : ''}${a.status === 'wartet' && a.wartet_auf ? `<span>wartet auf ${brdE(a.wartet_auf)}</span>` : ''}</div>
     <div class="brd-wer">${nm.length ? nm.slice(0, 3).map(n => `<i title="${brdE(n)}">${brdE(brdIni(n))}</i>`).join('') + `<small>${brdE(nm.map(brdKurz).join(', '))}</small>` : '<small class="brd-nie">Noch niemand</small>'}</div></article>`; }
 function brdKarteP(p){
   const offen = plAuf().filter(a => a.projekt === p.id && a.status !== 'erledigt').length, alle = plAuf().filter(a => a.projekt === p.id).length, wer = p.verantwortlich_name || p.verantwortlich_text || '';
   return `<article class="brd-k amp-${brdE(p.ampel || 'gruen')}" data-brdk="${brdE(p.id)}" tabindex="0" aria-label="${brdE(p.titel)}">
-    <span class="brd-griff" data-brdg aria-hidden="true">${SVI('menu')}</span>
+    <span class="brd-griff" data-brdg title="Ziehen: in eine andere Spalte oder auf eine Person" aria-hidden="true">${SVI('griff')}</span>
     <b>${brdE(p.titel)}</b>
     <div class="brd-m"><span>${brdE((PL_B[p.bereich] || {}).t || '')}</span>${alle ? `<span>${alle - offen} von ${alle} Aufgaben erledigt</span>` : ''}${p.ende ? `<span>bis ${brdE(prioDatum(p.ende))}</span>` : ''}</div>
     ${alle ? `<div class="brd-bar"><i style="width:${Math.round((alle - offen) / alle * 100)}%"></i></div>` : ''}
@@ -30760,9 +30787,10 @@ function brdSeite(R){
       ${aufg ? `<label class="brd-f"><span>Projekt</span><select id="brdP"><option value="alle">Alle</option><option value="ohne"${BRD.projekt === 'ohne' ? ' selected' : ''}>Ohne Projekt</option>${plPro().filter(p => p.status !== 'verworfen' && p.status !== 'fertig' && (BRD.bereich === 'alle' || p.bereich === BRD.bereich)).map(p => `<option value="${brdE(p.id)}"${BRD.projekt === p.id ? ' selected' : ''}>${brdE(p.titel)}</option>`).join('')}</select></label>` : ''}
       <button type="button" class="btn sm" id="brdNeu">${SVI('plus')} ${aufg ? 'Aufgabe' : 'Projekt'}</button></div>
     ${leute.length ? `<div class="brd-leute" aria-label="Zuständig: Karte auf eine Person ziehen"><span class="brd-lt">Zuschieben an</span>${leute.map(l => `<button type="button" class="brd-l${BRD.wer === l.id ? ' on' : ''}" data-brdl="${brdE(l.id)}" aria-pressed="${BRD.wer === l.id}" title="${brdE(l.name)}: antippen filtert, Karte hierher ziehen macht zuständig"><i>${brdE(brdIni(l.name))}</i>${brdE(brdKurz(l.name))}</button>`).join('')}${BRD.wer !== 'alle' ? '<button type="button" class="brd-l alle" data-brdl="alle">Alle zeigen</button>' : ''}</div>` : ''}
-    <div class="brd-sp" style="--n:${spalten.length}">${spalten.map(([k, t, c]) => { const X = L.filter(x => x.status === k);
-      return `<section class="brd-s" data-brdsp="${k}" style="--c:${c}"><h3><span>${brdE(t)}</span><i>${X.length}</i></h3><div class="brd-l1">${X.length ? X.map(aufg ? brdKarteA : brdKarteP).join('') : '<p class="brd-leer">Hierher ziehen</p>'}</div></section>`; }).join('')}</div>
-    <p class="note small">Karte am Griff ziehen: in eine andere Spalte oder auf eine Person. Am Handy die Karte antippen und „Verschieben“ wählen. Erledigtes bleibt 14 Tage stehen.</p></div>`;
+    <div class="brd-phasen" aria-label="Phasen">${spalten.map(([k, t, c]) => `<button type="button" data-brdph="${k}" style="--c:${c}"><span>${brdE(t)}</span><i>${brdSpalte(L, k).length}</i></button>`).join('')}</div>
+    <div class="brd-sp" style="--n:${spalten.length}">${spalten.map(([k, t, c]) => { const X = brdSpalte(L, k);
+      return `<section class="brd-s" data-brdsp="${k}" style="--c:${c}"><h3><span>${brdE(t)}</span><i>${X.length}</i></h3><div class="brd-l1" data-brdliste>${X.length ? X.map(aufg ? brdKarteA : brdKarteP).join('') : '<p class="brd-leer">Hierher ziehen</p>'}</div></section>`; }).join('')}</div>
+    <p class="note small">Karte am Griff ziehen: in eine andere Spalte, an eine andere Stelle oder auf eine Person. Am Handy die Karte kurz gedrückt halten, dann ziehen, oder antippen und „Verschieben“ wählen. Erledigtes bleibt 14 Tage stehen.</p></div>`;
   // Leute-Leiste bleibt beim Scrollen sichtbar (unter der Kopfzeile), damit man Karten auch aus langen Spalten zuschieben kann
   try{ const lt = R.querySelector('.brd-leute'); if(lt){ let top = 0; document.querySelectorAll('.topbar, .pl-nav').forEach(el => { const cs = getComputedStyle(el); if(/sticky|fixed/.test(cs.position) && el.offsetHeight) top = Math.max(top, (parseFloat(cs.top) || 0) + el.offsetHeight); }); lt.style.top = top + 'px'; } }catch(e){}
   R.querySelectorAll('[data-brda]').forEach(b => b.onclick = () => { BRD.art = b.dataset.brda; brdSeite(R); });
@@ -30774,6 +30802,17 @@ function brdSeite(R){
   R.querySelectorAll('[data-brdk]').forEach(k => { k.onclick = e => { if((BRD.zieh && BRD.zieh.bewegt) || Date.now() < (BRD.ruhe || 0)) return; brdMenue(R, k.dataset.brdk); };
     k.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); brdMenue(R, k.dataset.brdk); } };
     brdZiehen(R, k); });
+  brdPhasen(R);
+}
+// Phasen-Leiste: am Handy steht immer nur eine Spalte im Bild, hier stehen alle. Antippen springt zur Spalte.
+function brdPhasen(R){
+  const S = R.querySelector('.brd-sp'), PH = R.querySelector('.brd-phasen'); if(!S || !PH) return;
+  PH.querySelectorAll('[data-brdph]').forEach(b => b.onclick = () => { const s = S.querySelector(`[data-brdsp="${b.dataset.brdph}"]`);
+    if(s) S.scrollTo({ left: s.offsetLeft - S.offsetLeft - 6, behavior: 'smooth' }); });
+  const markiere = () => { const mitte = S.scrollLeft + S.clientWidth / 2; let nah = null, d = 1e9;
+    S.querySelectorAll('[data-brdsp]').forEach(s => { const m = s.offsetLeft - S.offsetLeft + s.offsetWidth / 2, x = Math.abs(m - mitte); if(x < d){ d = x; nah = s.dataset.brdsp; } });
+    PH.querySelectorAll('[data-brdph]').forEach(b => b.classList.toggle('on', b.dataset.brdph === nah)); };
+  S.onscroll = markiere; markiere();
 }
 // Antippen: öffnen oder verschieben (Bedienung ohne Ziehen)
 function brdMenue(R, id){
@@ -30787,44 +30826,82 @@ function brdMenue(R, id){
   document.querySelectorAll('[data-brdw]').forEach(b => b.onclick = async () => { closeOverlay(); await brdSetzen(R, id, { wer:b.dataset.brdw }); });
   document.getElementById('brdOf').onclick = () => { closeOverlay(); aufg ? plAufgabeOeffnen(id) : plProjektOeffnen(id); };
 }
+// Neue Reihenfolge einer Spalte: die gezogene Karte vor „vor“ einsortieren und die Spalte neu durchnummerieren
+async function brdStelle(id, stelle){
+  const L = brdAufgaben(), X = brdSpalte(L, stelle.spalte).filter(a => a.id !== id), a = plAuf().find(x => x.id === id);
+  if(!a) return;
+  const i = stelle.vor ? X.findIndex(x => x.id === stelle.vor) : -1;
+  const neu = X.slice(); neu.splice(i < 0 ? neu.length : i, 0, a);
+  const ids = neu.map(x => x.id);
+  if(ids.every((x, n) => (neu[n].sort || 0) === (n + 1) * 10)) return;   // steht schon so
+  await ogRpc('plan_sort_setzen', { p_ids: ids });
+  neu.forEach((x, n) => { x.sort = (n + 1) * 10; });
+}
 async function brdSetzen(R, id, was){
   const aufg = BRD.art === 'aufgaben';
   try{
-    if(aufg){ const p = { id }; if(was.status) p.status = was.status; if(was.wer) p.wer = was.wer;
-      const n = await ogRpc('plan_aufgabe_speichern', { p }); const folge = n.folge; delete n.folge; plErsetzen('aufgaben', n); if(folge) plErsetzen('aufgaben', folge); }
+    if(aufg){ if(was.status || was.wer){ const p = { id }; if(was.status) p.status = was.status; if(was.wer) p.wer = was.wer;
+        const n = await ogRpc('plan_aufgabe_speichern', { p }); const folge = n.folge; delete n.folge; plErsetzen('aufgaben', n); if(folge) plErsetzen('aufgaben', folge); }
+      if(was.stelle) await brdStelle(id, was.stelle); }
     else { const p = { id }; if(was.status) p.status = was.status; if(was.wer) p.verantwortlich = was.wer;
       plErsetzen('projekte', await ogRpc('plan_projekt_speichern', { p })); }
     try{ navigator.vibrate && navigator.vibrate(12); }catch(e){}
     const sp = (aufg ? BRD_A : BRD_P).find(s => s[0] === was.status), wer = was.wer && (brdLeute().find(l => l.id === was.wer) || {}).name;
-    kToast(sp ? '✓ ' + sp[1] : wer ? '✓ Zuständig: ' + wer : '✓ Gespeichert');
+    kToast(sp ? '✓ ' + sp[1] : wer ? '✓ Zuständig: ' + wer : was.stelle ? '✓ Neue Reihenfolge' : '✓ Gespeichert');
   }catch(e){ kToast('⚠️ ' + e.message); }
   if(R.isConnected) brdSeite(R);
 }
-// Ziehen mit Maus, Stift und Finger (am Griff). Ziel: Spalte oder Person.
+// Ziehen mit Maus, Stift und Finger. Ziel: Spalte, Stelle in der Spalte oder Person.
+// Maus und Stift: sofort losziehen. Finger: am Griff sofort, sonst kurz gedrückt halten (250 ms), damit Wischen weiter scrollt.
+function brdMarke(){ let m = document.getElementById('brdMarke');
+  if(!m){ m = document.createElement('div'); m.id = 'brdMarke'; m.className = 'brd-marke'; } return m; }
 function brdZiehen(R, k){
   const griff = k.querySelector('[data-brdg]');
+  const losgehts = (e, sofort) => { const r = k.getBoundingClientRect();
+    BRD.zieh = { id:k.dataset.brdk, x0:e.clientX, y0:e.clientY, dx:e.clientX - r.left, dy:e.clientY - r.top,
+      bewegt:false, geist:null, ziel:null, vor:null, pid:e.pointerId, frei:sofort };
+    try{ k.setPointerCapture(e.pointerId); }catch(x){} };
   const start = e => {
     if(e.button !== undefined && e.button !== 0) return;
-    if(e.pointerType !== 'mouse' && !e.target.closest('[data-brdg]')) return;   // Finger nur am Griff, sonst scrollt die Seite
-    const r = k.getBoundingClientRect(); BRD.zieh = { id:k.dataset.brdk, x0:e.clientX, y0:e.clientY, dx:e.clientX - r.left, dy:e.clientY - r.top, bewegt:false, geist:null, ziel:null, pid:e.pointerId };
-    k.setPointerCapture && k.setPointerCapture(e.pointerId); };
+    const amGriff = !!(e.target.closest && e.target.closest('[data-brdg]'));
+    if(e.pointerType === 'mouse' || amGriff){ losgehts(e, true); return; }
+    // Finger auf der Karte: erst nach kurzem Halten ziehen, vorher scrollt die Seite wie gewohnt
+    losgehts(e, false);
+    const Z = BRD.zieh;
+    Z.timer = setTimeout(() => { if(BRD.zieh === Z && !Z.bewegt){ Z.frei = true; try{ navigator.vibrate && navigator.vibrate(14); }catch(x){} k.classList.add('brd-bereit'); } }, 250);
+  };
+  const aufraeumen = Z => { if(Z && Z.timer){ clearTimeout(Z.timer); Z.timer = null; } k.classList.remove('brd-bereit'); };
   const zug = e => { const Z = BRD.zieh; if(!Z || Z.pid !== e.pointerId) return;
-    if(!Z.bewegt){ if(Math.hypot(e.clientX - Z.x0, e.clientY - Z.y0) < 6) return; Z.bewegt = true;
+    const weg = Math.hypot(e.clientX - Z.x0, e.clientY - Z.y0);
+    if(!Z.frei){ if(weg > 8){ aufraeumen(Z); BRD.zieh = null; }   // das war Scrollen, kein Ziehen
+      return; }
+    if(!Z.bewegt){ if(weg < 6) return; Z.bewegt = true; aufraeumen(Z);
       const g = k.cloneNode(true); g.classList.add('brd-geist'); g.style.width = k.offsetWidth + 'px'; document.body.appendChild(g); Z.geist = g; k.classList.add('brd-weg'); R.classList.add('brd-zieht'); }
     e.preventDefault();
     Z.geist.style.transform = `translate(${e.clientX - Z.dx}px, ${e.clientY - Z.dy}px) rotate(1.5deg)`;
     const el = document.elementFromPoint(e.clientX, e.clientY), ziel = el && (el.closest('[data-brdsp]') || el.closest('[data-brdl]'));
     if(Z.ziel !== ziel){ if(Z.ziel) Z.ziel.classList.remove('brd-hier'); Z.ziel = ziel && R.contains(ziel) && ziel.dataset.brdl !== 'alle' ? ziel : null; if(Z.ziel) Z.ziel.classList.add('brd-hier'); }
+    // Stelle in der Spalte: Marke zwischen die Karten setzen
+    const m = brdMarke();
+    if(Z.ziel && Z.ziel.dataset.brdsp && BRD.art === 'aufgaben'){
+      const liste = Z.ziel.querySelector('[data-brdliste]'), karten = liste ? [...liste.querySelectorAll('[data-brdk]')].filter(c => c !== k) : [];
+      let vor = null; for(const c of karten){ const b = c.getBoundingClientRect(); if(e.clientY < b.top + b.height / 2){ vor = c; break; } }
+      Z.vor = vor; if(liste) liste.insertBefore(m, vor);
+    } else { Z.vor = null; m.remove(); }
     // am oberen und unteren Rand die Seite mitscrollen (lange Spalten, Leute oben)
     if(e.clientY < 110) window.scrollBy(0, -14); else if(e.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
     // am Rand automatisch weiterscrollen (Spalten nebeneinander)
     const S = R.querySelector('.brd-sp'); if(S){ const b = S.getBoundingClientRect(); if(e.clientX > b.right - 40) S.scrollLeft += 12; else if(e.clientX < b.left + 40) S.scrollLeft -= 12; } };
   const ende = async e => { const Z = BRD.zieh; if(!Z || Z.pid !== e.pointerId) return;
+    aufraeumen(Z); brdMarke().remove();
     if(Z.geist) Z.geist.remove(); k.classList.remove('brd-weg'); R.classList.remove('brd-zieht'); if(Z.ziel) Z.ziel.classList.remove('brd-hier');
-    const ziel = Z.ziel, bewegt = Z.bewegt; setTimeout(() => { BRD.zieh = null; }, 0);
+    const ziel = Z.ziel, bewegt = Z.bewegt, vor = Z.vor; setTimeout(() => { BRD.zieh = null; }, 0);
     if(!bewegt || !ziel){ if(BRD.spaeter){ BRD.spaeter = false; BRD.zieh = null; try{ plRender(); }catch(x){ if(R.isConnected) brdSeite(R); } } return; }
     BRD.spaeter = false; BRD.ruhe = Date.now() + 400;   // der Klick nach dem Loslassen öffnet nichts
-    if(ziel.dataset.brdsp){ const aufg = BRD.art === 'aufgaben', x = aufg ? plAuf().find(a => a.id === Z.id) : plProj(Z.id); if(x && x.status !== ziel.dataset.brdsp) await brdSetzen(R, Z.id, { status:ziel.dataset.brdsp }); }
+    if(ziel.dataset.brdsp){ const aufg = BRD.art === 'aufgaben', x = aufg ? plAuf().find(a => a.id === Z.id) : plProj(Z.id); if(!x) return;
+      const neuerStatus = x.status !== ziel.dataset.brdsp ? ziel.dataset.brdsp : null;
+      await brdSetzen(R, Z.id, Object.assign(neuerStatus ? { status:neuerStatus } : {}, aufg ? { stelle:{ spalte:ziel.dataset.brdsp, vor:vor ? vor.dataset.brdk : null } } : {}));
+    }
     else if(ziel.dataset.brdl) await brdSetzen(R, Z.id, { wer:ziel.dataset.brdl }); };
   k.addEventListener('pointerdown', start); k.addEventListener('pointermove', zug); k.addEventListener('pointerup', ende); k.addEventListener('pointercancel', ende);
   k.addEventListener('lostpointercapture', e => { const Z = BRD.zieh; if(Z && Z.pid === e.pointerId && Z.bewegt && !document.contains(k)){ if(Z.geist) Z.geist.remove(); BRD.zieh = null; } });
@@ -30844,7 +30921,7 @@ if(typeof prioSeite === 'function'){ const _ps86 = prioSeite; prioSeite = functi
   }catch(e){ console.warn('Board', e); }
   return r; }; }
 
-(function(){ try{ const s=document.createElement('style'); s.id='svm86css'; s.textContent="/* Beta 0.89 · Planung als Board */\n.brd-leiste{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:4px 0 10px;}\n.brd-f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink2);}\n.brd-f select{min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;max-width:240px;}\n.brd-leiste #brdNeu{min-height:44px!important;margin-left:auto;}\n.brd-leute{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:6px 0 8px;scrollbar-width:none;position:sticky;top:0;z-index:6;background:var(--bg,var(--surface));}\n.brd-leute::-webkit-scrollbar{display:none;}\n.brd-lt{flex:none;font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;}\n.brd-l{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:4px 12px 4px 4px;border-radius:999px;border:1px dashed var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,transform .15s;}\n.brd-l i{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--surface3);font-style:normal;font-size:12.5px;font-weight:800;text-transform:uppercase;}\n.brd-l.on{border-style:solid;border-color:var(--brand2);}\n.brd-l.alle{padding:4px 12px;}\n.brd-l.brd-hier{border-style:solid;border-color:var(--brand2);background:rgba(59,130,246,.12);transform:scale(1.05);}\n.brd-sp{display:grid;grid-template-columns:repeat(var(--n),minmax(200px,1fr));gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;scroll-snap-type:x proximity;}\n.brd-s{background:var(--surface3);border-radius:14px;border-top:4px solid var(--c);display:flex;flex-direction:column;min-height:200px;scroll-snap-align:start;transition:box-shadow .15s,background .15s;}\n.brd-s>h3{display:flex;align-items:center;justify-content:space-between;margin:0;padding:10px 12px;font-size:14px;}\n.brd-s>h3 span::before{content:\"\";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:8px;}\n.brd-s>h3 i{font-style:normal;font-size:12px;font-weight:800;color:var(--ink2);background:var(--surface);border-radius:999px;padding:2px 8px;}\n.brd-s.brd-hier{box-shadow:inset 0 0 0 2px var(--c);background:color-mix(in srgb,var(--c) 10%,var(--surface3));}\n.brd-l1{display:flex;flex-direction:column;gap:8px;padding:0 10px 12px;flex:1;}\n.brd-leer{margin:8px 0;padding:16px 8px;text-align:center;font-size:13px;color:var(--ink2);border:1px dashed var(--line);border-radius:10px;}\n.brd-k{position:relative;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:10px 12px 10px 14px;cursor:pointer;user-select:none;-webkit-user-select:none;}\n.brd-k:focus-visible{outline:2px solid var(--brand2);outline-offset:2px;}\n.brd-k.s1{border-left-color:#ef4444;} .brd-k.s2{border-left-color:#f59e0b;} .brd-k.s4{border-left-color:var(--surface3);}\n.brd-k.amp-gelb{border-left-color:#f59e0b;} .brd-k.amp-rot{border-left-color:#ef4444;} .brd-k.amp-gruen{border-left-color:#22c55e;}\n.brd-k.erl b{text-decoration:line-through;color:var(--ink2);}\n.brd-k b{display:block;font-size:14.5px;line-height:1.35;padding-right:38px;overflow-wrap:anywhere;}\n.brd-griff{position:absolute;top:2px;right:2px;display:inline-grid;place-items:center;width:44px;height:44px;border-radius:8px;color:var(--ink2);cursor:grab;}\n.brd-griff:hover{background:var(--surface3);}\n.brd-m{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:12.5px;color:var(--ink2);}\n.brd-m .rot{color:#f87171;font-weight:700;}\nhtml[data-theme=\"hell\"] .brd-m .rot{color:#dc2626;}\n.brd-wer{display:flex;align-items:center;gap:4px;margin-top:8px;}\n.brd-wer i{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface3);font-style:normal;font-size:11px;font-weight:800;text-transform:uppercase;}\n.brd-wer small{margin-left:4px;font-size:12.5px;color:var(--ink2);}\n.brd-nie{color:#fdba74!important;}\nhtml[data-theme=\"hell\"] .brd-nie{color:#c2410c!important;}\n.brd-bar{height:5px;border-radius:99px;background:var(--surface3);overflow:hidden;margin-top:8px;}\n.brd-bar i{display:block;height:100%;background:#22c55e;}\n.brd-weg{opacity:.35;}\n.brd-geist{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;box-shadow:0 12px 28px rgba(15,23,42,.22);opacity:.96;}\n.brd-zieht{cursor:grabbing;}\n.brd-mn h4{margin:14px 0 6px;font-size:13px;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;}\n.brd-mn .pchip{min-height:44px;}\n.brd-ch{border-left:4px solid var(--c)!important;}\n.prio-board{max-width:none;}\n@media (max-width:700px){ .brd-sp{grid-template-columns:repeat(var(--n),minmax(82vw,1fr));} .brd-leiste #brdNeu{margin-left:0;} }\n@media (prefers-reduced-motion:reduce){ .brd-l,.brd-s{transition:none;} }\n"; document.head.appendChild(s); }catch(e){} })();
+(function(){ try{ const s=document.createElement('style'); s.id='svm86css'; s.textContent="/* Beta 0.89 · Planung als Board */\n.brd-leiste{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:4px 0 10px;}\n.brd-f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink2);}\n.brd-f select{min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;max-width:240px;}\n.brd-leiste #brdNeu{min-height:44px!important;margin-left:auto;}\n.brd-leute{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:6px 0 8px;scrollbar-width:none;position:sticky;top:0;z-index:6;background:var(--bg,var(--surface));}\n.brd-leute::-webkit-scrollbar{display:none;}\n.brd-lt{flex:none;font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;}\n.brd-l{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:4px 12px 4px 4px;border-radius:999px;border:1px dashed var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,transform .15s;}\n.brd-l i{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--surface3);font-style:normal;font-size:12.5px;font-weight:800;text-transform:uppercase;}\n.brd-l.on{border-style:solid;border-color:var(--brand2);}\n.brd-l.alle{padding:4px 12px;}\n.brd-l.brd-hier{border-style:solid;border-color:var(--brand2);background:rgba(59,130,246,.12);transform:scale(1.05);}\n.brd-sp{display:grid;grid-template-columns:repeat(var(--n),minmax(200px,1fr));gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:8px;scroll-snap-type:x proximity;}\n.brd-s{background:var(--surface3);border-radius:14px;border-top:4px solid var(--c);display:flex;flex-direction:column;min-height:200px;scroll-snap-align:start;transition:box-shadow .15s,background .15s;}\n.brd-s>h3{display:flex;align-items:center;justify-content:space-between;margin:0;padding:10px 12px;font-size:14px;}\n.brd-s>h3 span::before{content:\"\";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:8px;}\n.brd-s>h3 i{font-style:normal;font-size:12px;font-weight:800;color:var(--ink2);background:var(--surface);border-radius:999px;padding:2px 8px;}\n.brd-s.brd-hier{box-shadow:inset 0 0 0 2px var(--c);background:color-mix(in srgb,var(--c) 10%,var(--surface3));}\n.brd-l1{display:flex;flex-direction:column;gap:8px;padding:0 10px 12px;flex:1;}\n.brd-leer{margin:8px 0;padding:16px 8px;text-align:center;font-size:13px;color:var(--ink2);border:1px dashed var(--line);border-radius:10px;}\n.brd-k{position:relative;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:10px 12px 10px 14px;cursor:pointer;user-select:none;-webkit-user-select:none;}\n.brd-k:focus-visible{outline:2px solid var(--brand2);outline-offset:2px;}\n.brd-k.s1{border-left-color:#ef4444;} .brd-k.s2{border-left-color:#f59e0b;} .brd-k.s4{border-left-color:var(--surface3);}\n.brd-k.amp-gelb{border-left-color:#f59e0b;} .brd-k.amp-rot{border-left-color:#ef4444;} .brd-k.amp-gruen{border-left-color:#22c55e;}\n.brd-k.erl b{text-decoration:line-through;color:var(--ink2);}\n.brd-k b{display:block;font-size:14.5px;line-height:1.35;padding-right:38px;overflow-wrap:anywhere;}\n.brd-griff{position:absolute;top:2px;right:2px;display:inline-grid;place-items:center;width:44px;height:44px;border-radius:8px;color:var(--ink2);opacity:.55;cursor:grab;touch-action:none;}\n.brd-griff:hover{background:var(--surface3);opacity:1;}\n.brd-k:focus-within .brd-griff{opacity:1;}\n.brd-k.brd-bereit{box-shadow:0 0 0 2px var(--brand2);transform:scale(1.02);}\n.brd-marke{height:3px;border-radius:99px;background:var(--brand2);margin:1px 0;}\n.brd-phasen{display:none;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 8px;}\n.brd-phasen::-webkit-scrollbar{display:none;}\n.brd-phasen button{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:4px 12px;border-radius:999px;border:1px solid var(--line);border-left:4px solid var(--c);background:var(--surface);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer;}\n.brd-phasen button.on{background:color-mix(in srgb,var(--c) 14%,var(--surface));border-color:var(--c);}\n.brd-phasen button i{font-style:normal;font-size:12px;font-weight:800;color:var(--ink2);}\n.brd-m{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:12.5px;color:var(--ink2);}\n.brd-m .rot{color:#f87171;font-weight:700;}\nhtml[data-theme=\"hell\"] .brd-m .rot{color:#dc2626;}\n.brd-wer{display:flex;align-items:center;gap:4px;margin-top:8px;}\n.brd-wer i{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--surface3);font-style:normal;font-size:11px;font-weight:800;text-transform:uppercase;}\n.brd-wer small{margin-left:4px;font-size:12.5px;color:var(--ink2);}\n.brd-nie{color:#fdba74!important;}\nhtml[data-theme=\"hell\"] .brd-nie{color:#c2410c!important;}\n.brd-bar{height:5px;border-radius:99px;background:var(--surface3);overflow:hidden;margin-top:8px;}\n.brd-bar i{display:block;height:100%;background:#22c55e;}\n.brd-weg{opacity:.35;}\n.brd-geist{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;box-shadow:0 12px 28px rgba(15,23,42,.22);opacity:.96;}\n.brd-zieht{cursor:grabbing;}\n.brd-mn h4{margin:14px 0 6px;font-size:13px;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;}\n.brd-mn .pchip{min-height:44px;}\n.brd-ch{border-left:4px solid var(--c)!important;}\n.prio-board{max-width:none;}\n@media (max-width:700px){ .brd-sp{grid-template-columns:repeat(var(--n),minmax(82vw,1fr));} .brd-leiste #brdNeu{margin-left:0;} .brd-phasen{display:flex;} }\n@media (prefers-reduced-motion:reduce){ .brd-l,.brd-s{transition:none;} }\n"; document.head.appendChild(s); }catch(e){} })();
 /* =====================================================================
    Beta 0.89 · Treffen als Serie und Einladung per WhatsApp (Wunsch Albert, 06.11.2026)
    - Termin anlegen: „Bis (Uhrzeit)“ und „Wiederholen“ (jede Woche, alle zwei Wochen, jeden Monat am gleichen Wochentag, jedes Quartal).
