@@ -127,12 +127,12 @@
 
   try{ if('scrollRestoration' in history)history.scrollRestoration='manual'; }catch(e){}   // die Stelle stellen wir selbst wieder her
   async function laden(){
-    if(!/^[a-f0-9]{32}$/.test(code)){ app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Link fehlt</h2><p>Bitte den persönlichen Link aus der Nachricht öffnen.</p></div>`; return; }
+    if(!/^[a-f0-9]{32}$/.test(code)){ app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Link fehlt</h2><p>Bitte den persönlichen Link aus der Nachricht öffnen.</p>${kontaktHtml('Du findest ihn nicht mehr? Melde dich, dann schicken wir ihn dir gleich noch einmal.')}</div>`; return; }
     app.innerHTML='<div class="leer-hinweis">Einen Moment …</div>';
     try{ D=await rpc('partner_praesi',{p_code:code}); if(!D)throw new Error('Dieser Link ist nicht mehr aktiv.'); }
     catch(e){
       if(e.netz){ app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Gerade keine Verbindung</h2><p>Dein persönlicher Link gilt weiter. Prüf bitte die Verbindung und versuch es noch einmal.</p><button type="button" class="knopf-w" id="nochmal" style="max-width:320px;margin-top:22px">Noch einmal versuchen</button></div>`; $('#nochmal').onclick=laden; }
-      else app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Link nicht mehr aktiv</h2><p>${esc(e.message)}</p><p>Schreib uns kurz, dann schicken wir dir einen neuen.</p></div>`;
+      else app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Link nicht mehr aktiv</h2><p>${esc(e.message)}</p>${kontaktHtml('Melde dich kurz, dann schicken wir dir einen neuen Link.')}</div>`;
       return; }
     L=filtern(D.leistungen||[]); M=D.mannschaften||[]; T=!!D.team; exklusivSperre();
     const dk=D.deck||{}, pt=D.partner||{};
@@ -804,10 +804,31 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function klauseln(c){ const keys=PLIB.klauselnFuer(c.positionen,L,{auto:S.auto,saisons:S.saisons}), e=ende(c), fd=fristDatum(c);
     const w={zweck:ZWECK_VERTRAG[(S.korb.find(x=>x.key==='spende')||{}).zweck]||'seine Fußballabteilung',beginn:datum(beginn()),ende:e?datum(e):'Ende der Leistung',frist:3,frist_datum:fd?datum(fd):'drei Monate vor Ablauf',branche:(D.deck||{}).branche||'',mail:(D.verein||{}).email||'den Verein'};
     return keys.map(k=>{ const kk=k==='spende'&&(D.verein||{}).gemeinnuetzig===false?'spende_ohne':k, [titel,text]=PLIB.klauselText(kk,w); return {key:kk,titel,text}; }); }
-  function sprechenHtml(){ const V=D.verein||{}; if(!V.email)return ''; const c=rechnung();
-    const body='Hallo,\n\nich würde gern kurz über eine Partnerschaft sprechen.'+(c.positionen.length?'\n\nMein Paket bisher:\n'+c.positionen.map(p=>'· '+p.titel+(p.mannschaft?' ('+((M.find(m=>m.id===p.mannschaft)||{}).name||p.mannschaft)+')':'')).join('\n'):'')+'\n\nMeine Nummer: \nAm besten erreichbar: \n\nViele Grüße\n'+(S.F.ansprech||'');
-    const href='mailto:'+V.email+'?subject='+encodeURIComponent('Partnerschaft: '+(S.F.firma||(D.deck||{}).firma||''))+'&body='+encodeURIComponent(body);
-    return `<p class="sprechen">Lieber erst kurz sprechen? <a href="${esc(href)}">Schick uns deine Nummer</a>, dann rufen wir an. Oder schreib direkt an <span class="sel">${esc(V.email)}</span>.</p>`; }
+  // Ansprechpartner mit Gesicht: Menschen folgen Menschen, und aus WhatsApp heraus ist eine Mail ein Bruch.
+  // Wer zu sehen ist, steht in der Vereinsdatei (Bild, Name, Funktion). Nummer und Mail kommen aus den Vereinsdaten
+  // der App, damit sie nur an einer Stelle gepflegt werden. Fehlt ein Wert, fehlt einfach der Knopf.
+  function kontaktDaten(){ const V=(D&&D.verein)||{}, K=(C.kontakt||{});
+    let P=Array.isArray(K.personen)?K.personen.filter(x=>x&&x.name):[];
+    if(!P.length&&(V.vertreter||K.name))P=[{name:V.vertreter||K.name,funktion:V.vertreter_funktion||K.funktion||'',bild:K.bild||''}];
+    return {personen:P.slice(0,2), telefon:V.telefon||K.telefon||'', whatsapp:V.whatsapp||K.whatsapp||'', mail:V.email||K.mail||''}; }
+  const telLink=n=>'tel:'+String(n||'').replace(/[^+0-9]/g,'');
+  // +49 ohne Leerzeichen und ohne führende Null, so will es wa.me
+  function waLink(n){ let x=String(n||'').replace(/[^+0-9]/g,''); if(!x)return ''; if(x.startsWith('+'))x=x.slice(1); else if(x.startsWith('00'))x=x.slice(2); else if(x.startsWith('0'))x='49'+x.slice(1); return 'https://wa.me/'+x; }
+  function mailHref(){ const K=kontaktDaten(); if(!K.mail)return ''; const c=(L&&L.length&&S.korb.length)?rechnung():null;
+    const pos=c&&c.positionen.length?'\n\nMein Paket bisher:\n'+c.positionen.map(p=>'· '+p.titel+(p.mannschaft?' ('+((M.find(m=>m.id===p.mannschaft)||{}).name||p.mannschaft)+')':'')).join('\n'):'';
+    const body='Hallo,\n\nich würde gern kurz über eine Partnerschaft sprechen.'+pos+'\n\nMeine Nummer: \nAm besten erreichbar: \n\nViele Grüße\n'+((S.F&&S.F.ansprech)||'');
+    return 'mailto:'+K.mail+'?subject='+encodeURIComponent('Partnerschaft: '+((S.F&&S.F.firma)||(D&&D.deck||{}).firma||''))+'&body='+encodeURIComponent(body); }
+  function kontaktHtml(satz){ const K=kontaktDaten(); if(!K.personen.length&&!K.mail&&!K.telefon)return '';
+    const mh=mailHref(), wa=waLink(K.whatsapp), P=K.personen;
+    const kopf=P.length>1?`<b>${P.map(x=>esc(x.name)).join(' und ')}</b><small>${esc(P.map(x=>x.funktion).filter(Boolean).join(' · '))}</small>`
+      :P.length?`<b>${esc(P[0].name)}</b>${P[0].funktion?`<small>${esc(P[0].funktion)}</small>`:''}`:'';
+    return `<div class="kontakt${P.length>1?' zwei':''}">
+      ${P.length?`<div class="kt-bilder">${P.map(x=>x.bild?`<img src="${esc(x.bild)}" alt="${esc(x.name)}" width="74" height="74" loading="lazy" decoding="async">`:'').join('')}</div>`:''}
+      <div class="kt-t">${kopf}
+        <p>${esc(satz||'Lieber erst kurz sprechen? Melde dich, dann klären wir das in fünf Minuten.')}</p>
+        <div class="kt-knoepfe">${K.telefon?`<a href="${esc(telLink(K.telefon))}">Anrufen</a>`:''}${wa?`<a href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:''}${mh?`<a href="${esc(mh)}">Mail schreiben</a>`:''}</div>
+      </div></div>`; }
+  function sprechenHtml(){ return kontaktHtml(); }
   function feldHtml(n,t,typ,ac,o){ o=o||{}; const F=S.F;
     return `<label${o.cls?` class="${o.cls}"`:''}>${t}<input name="${n}" ${typ?`type="${typ}"`:''} autocomplete="${ac||'off'}" maxlength="${o.max||120}" value="${esc(F[n]||'')}"${o.ph?` placeholder="${esc(o.ph)}"`:''}${o.im?` inputmode="${o.im}"`:''} enterkeyhint="${o.ek||'next'}"${o.cap?` autocapitalize="${o.cap}"`:''}${o.aus?' autocorrect="off" spellcheck="false"':''}></label>`; }
   // Weiter auf der iPhone-Tastatur springt ins nächste Feld, Fertig schließt die Tastatur

@@ -28,10 +28,13 @@
 html{scroll-padding-top:72px;scroll-padding-bottom:84px;}
 html,body{overflow-x:clip;}
 body{margin:0;background:#fff;font-family:'Barlow',system-ui,sans-serif;font-size:17px;line-height:1.55;color:var(--ink);-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4,.pk-k b,.wahl2 button b{text-wrap:balance;}
+p,li,.lead,figcaption,.hinweis,.ds{text-wrap:pretty;}
 a{color:inherit;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;}
 input,select,textarea,button{font-family:inherit;}
 button,a,summary,label,[role=switch],[role=radio]{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
-:focus-visible{outline:3px solid var(--hb);outline-offset:2px;}
+:focus-visible{outline:3px solid var(--navy);outline-offset:2px;}
+.dunkel :focus-visible,.hero :focus-visible,footer :focus-visible{outline-color:var(--hb);}
 h2[tabindex="-1"]:focus{outline:none;}
 .nur-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
 .w{max-width:720px;margin:0 auto;}
@@ -427,7 +430,10 @@ h3{font-family:var(--c);font-weight:700;font-size:22px;line-height:1.15;color:va
 .wahl2 button b{font-family:var(--c);font-weight:700;font-size:23px;line-height:1.1;color:var(--navy);}
 .wahl2 button span{font-size:15px;line-height:1.5;color:var(--ink2);}
 .wahl2 button:after{content:"→";position:absolute;right:16px;top:18px;font-weight:700;font-size:18px;color:var(--navy);}
+.wahl2 button.haupt{border-color:var(--navy);}
+.wahl2 button.haupt:before{content:"Empfohlen";position:absolute;top:-9px;left:14px;padding:1px 8px;border-radius:999px;background:var(--navy);color:#fff;font-family:var(--c);font-weight:700;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;}
 .wahl2 button.on{border-color:var(--navy);background:var(--zart);box-shadow:inset 0 0 0 1px var(--navy);}
+.wahl2 button.haupt.on{box-shadow:inset 0 0 0 2px var(--navy);}
 .wahl2 button.on:after{content:"✓";}
 @media (hover:hover){.wahl2 button:not(.on):hover{border-color:var(--navy);}}
 .felder{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
@@ -445,6 +451,22 @@ h3{font-family:var(--c);font-weight:700;font-size:22px;line-height:1.15;color:va
 .hinweis{margin-top:12px;font-size:14.5px;line-height:1.5;color:var(--grau);}
 .sprechen{margin-top:22px;font-size:15.5px;line-height:1.5;color:var(--ink2);}
 .sprechen a{font-weight:700;color:var(--navy);display:inline-block;padding:11px 0;margin:-11px 0;}
+
+/* Ansprechpartner: ein Gesicht statt einer Mailadresse. Aus WhatsApp heraus ist eine Mail ein Bruch. */
+.kontakt{margin-top:26px;display:flex;align-items:flex-start;gap:16px;padding:18px;border:1px solid var(--linie);border-left:4px solid var(--navy);border-radius:var(--r);background:#fff;}
+.kt-bilder{flex:none;display:flex;}
+.kontakt img{flex:none;width:74px;height:74px;border-radius:50%;object-fit:cover;background:var(--flaeche);box-shadow:0 0 0 3px #fff;}
+.kontakt.zwei .kt-bilder img+img{margin-left:-18px;}
+.kontakt .kt-t{min-width:0;}
+.kontakt .kt-t b{display:block;font-family:var(--c);font-weight:700;font-size:23px;line-height:1.1;color:var(--navy);}
+.kontakt .kt-t small{display:block;margin-top:2px;font-size:14.5px;color:var(--grau);}
+.kontakt .kt-t p{margin:8px 0 0;font-size:15.5px;line-height:1.5;color:var(--ink2);}
+.kt-knoepfe{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.kt-knoepfe a{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 15px;border:1.5px solid var(--linie2);border-radius:999px;background:#fff;color:var(--navy);font-weight:700;font-size:15.5px;text-decoration:none;}
+.kt-knoepfe a:active{transform:scale(.98);}
+@media (hover:hover){.kt-knoepfe a:hover{border-color:var(--navy);}}
+.leer-hinweis .kontakt{text-align:left;margin-top:28px;}
+@media (max-width:520px){.kontakt{flex-direction:column;align-items:center;text-align:center;}.kontakt .kt-t{text-align:center;}.kt-knoepfe{justify-content:center;}.kontakt.zwei .kt-bilder img+img{margin-left:-14px;}}
 .vertrag{margin-top:26px;background:#fff;color:var(--ink);border:1px solid var(--linie);border-top:4px solid var(--navy);border-radius:var(--r);}
 .vertrag.rein{animation:ein .25s ease both;}
 .vt-k{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 22px 0;}
@@ -642,7 +664,7 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
 </head>
 <body>
 <div id="app"><div class="leer-hinweis">Einen Moment …</div></div>
-<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.94"};</script>
-<script src="partner-lib.js?v=beta-0.94"></script>
-<script src="partner.js?v=beta-0.94"></script>
+<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.95", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}};</script>
+<script src="partner-lib.js?v=beta-0.95"></script>
+<script src="partner.js?v=beta-0.95"></script>
 </body></html>

@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.94', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.95', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18572,6 +18572,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.95',v:'0.95',datum:'2026-11-10',titel:'Partner sehen, mit wem sie es zu tun haben',kurz:'In der Partner-Präsentation steht jetzt ein Mensch statt einer Mailadresse: Bild, Name, Funktion und die Knöpfe Anrufen, WhatsApp und Mail. Auch wer mit einem alten Link kommt, landet nicht mehr im Nichts.',
+   punkte:[
+    {ic:'\u{1F4DE}',r:'team',t:'Ansprechpartner mit Gesicht',d:'Am Ende der Präsentation und überall dort, wo es nicht weitergeht, steht der Ansprechpartner mit Bild und Funktion. Anrufen und Mail sind immer dabei, WhatsApp, sobald eine Handynummer hinterlegt ist.',go:'sponsoring'},
+    {ic:'\u{1F4F1}',r:'team',t:'WhatsApp-Nummer hinterlegen',d:'Unter Partner, Vereinsdaten gibt es ein neues Feld „WhatsApp-Nummer für Partner“. Steht dort eine Nummer, bekommen die Partner den WhatsApp-Knopf. Leer lassen geht auch.',go:'sponsoring'},
+    {ic:'\u26A1',r:'scout',t:'Kaderübersicht lädt sofort',d:'Die Stärken werden einmal berechnet und liegen danach fertig bereit. Auch wenn die Datenbank gerade langsam ist, steht die Liste sofort da.',go:'kueber'},
+    {ic:'\u2705',r:'team',t:'Der empfohlene Weg ist zu sehen',d:'Beim Abschluss ist „Gleich unterschreiben“ als empfohlen markiert. Texte brechen sauberer um, und der Fokusrahmen ist in Vereinsfarbe statt Hellblau.',go:'sponsoring'},
+   ]},
   {id:'0.94',v:'0.94',datum:'2026-11-10',titel:'Der Kader zeigt wieder alle Spieler',kurz:'Die Stärken brauchten zuletzt fast eine Minute und kamen deshalb nie an. Die Kaderübersicht und die Top-Elf blieben leer. Jetzt sind sie in unter zwei Sekunden da.',
    punkte:[
     {ic:'\u26A1',r:'scout',t:'Stärken laden wieder',d:'Die Abfrage holt nur noch den neuesten Stand je Spieler und packt nicht mehr für jeden Stand die ganze Vorgeschichte aus. Aus 55 Sekunden werden unter zwei.',go:'kueber'},
@@ -34350,9 +34357,11 @@ function peVerein(H){
     <h3>Für die Präsentation</h3>
     <div class="pe-2">${f('heimspiele','Heimspiele je Saison','number','min="0" max="999" step="1" inputmode="numeric"')}${f('zuschauer','Zuschauer im Schnitt (eure Schätzung)','number','min="0" max="99999" step="1" inputmode="numeric"')}</div>
     <p class="note">Diese Zahlen erscheinen in der Präsentation bei den Firmen, die gesehen werden wollen. Leer lassen, dann steht dort nichts dazu.</p>
+    <div class="pe-2">${f('whatsapp','WhatsApp-Nummer für Partner (freiwillig)','tel','maxlength="40" placeholder="z. B. 0170 1234567"')}</div>
+    <p class="note">Steht hier eine Handynummer, bekommt der Ansprechpartner in der Präsentation einen WhatsApp-Knopf. Leer lassen, dann gibt es nur Anrufen und Mail.</p>
     ${darf?`<div class="btnrow"><button type="button" class="btn" id="peVok">Speichern</button></div>`:'<p class="note">Ändern kann die Abteilungsleitung.</p>'}</div>`;
   const b=H.querySelector('#peVok'); if(b)b.onclick=()=>paEinmal(b,async()=>{ const p={};
-    ['kontoinhaber','iban','bic','bank','steuernr','ustid','ust_satz','finanzamt','freistellung_datum','name','abteilung','strasse','ort','register','email','vertreter','vertreter_funktion','glaeubiger_id','heimspiele','zuschauer','vorstand','telefon','vertretung','vollmacht'].forEach(k=>{ p[k]=H.querySelector('#peV_'+k).value.trim(); });
+    ['kontoinhaber','iban','bic','bank','steuernr','ustid','ust_satz','finanzamt','freistellung_datum','name','abteilung','strasse','ort','register','email','vertreter','vertreter_funktion','glaeubiger_id','heimspiele','zuschauer','vorstand','telefon','whatsapp','vertretung','vollmacht'].forEach(k=>{ p[k]=H.querySelector('#peV_'+k).value.trim(); });
     const gw=H.querySelector('#peV_gemeinnuetzig').value; p.gemeinnuetzig=gw===''?null:gw==='true';   // „Noch offen“ bleibt offen
     if(p.iban&&!spoIbanOk(p.iban)){ kToast('Die IBAN stimmt noch nicht. Bitte jede Ziffer prüfen.'); return; }
     try{ await peRpc('partner_vereinsdaten_setzen',{p},'✓ Gespeichert'); }catch(e){} },'Speichert …');
