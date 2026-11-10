@@ -5,10 +5,21 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#1d2760">
 <title>Partner werden · SV/BSC Mörlenbach</title>
+<!-- Vorschau in WhatsApp und Mail: der erste Kontakt ist der Chat, nicht die Seite -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SV/BSC Mörlenbach">
+<meta property="og:title" content="Partner werden beim SV/BSC Mörlenbach">
+<meta property="og:description" content="Eure persönliche Übersicht: Pakete, Bande, Trikot und was euer Beitrag im Verein bewirkt.">
+<meta property="og:image" content="https://svbsc.kaderwerk.pro/partner/vorschau.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Jugend des SV/BSC Mörlenbach auf dem Platz">
+<meta property="og:locale" content="de_DE">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon-64.png">
 <link rel="preload" href="partner/barlowc-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="partner/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="partner/jugend.jpg" as="image" fetchpriority="high">
+<link rel="preload" href="partner/jugend.webp" as="image" type="image/webp" fetchpriority="high">
 <style>
 /* Partner-Präsentation · Gestaltung 0.77: ruhige Vereinsseite. Weiße und hellgraue Flächen, Navy als Vereinsfarbe,
    Orange nur für die Hauptaktion, Hellblau für Markierungen, Barlow Condensed für Überschriften, Barlow für Text.
@@ -51,6 +62,16 @@ h3{font-family:var(--c);font-weight:700;font-size:22px;line-height:1.15;color:va
 .dunkel .lead{color:#d9e2f0;}
 .k{font-size:14px;font-weight:600;color:var(--grau);margin-bottom:6px;}
 .dunkel .k{color:var(--hb2);}
+.start{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px var(--rand);text-align:center;background:var(--navy);color:#fff;}
+.start img{border-radius:12px;}
+.start-k{margin:8px 0 0;font-family:var(--c);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--hb);}
+.start h1{margin:0;font-family:var(--c);font-weight:800;font-size:clamp(34px,9vw,52px);line-height:1;color:#fff;}
+.start-t{margin:2px 0 0;font-size:16px;color:var(--hb2);}
+.start-b{display:flex;gap:7px;margin-top:18px;}
+.start-b i{width:9px;height:9px;border-radius:50%;background:var(--hb);opacity:.45;animation:startp 1.1s ease-in-out infinite;}
+.start-b i:nth-child(2){animation-delay:.15s;} .start-b i:nth-child(3){animation-delay:.3s;}
+@keyframes startp{0%,100%{opacity:.3;transform:translateY(0);}50%{opacity:1;transform:translateY(-4px);}}
+@media (prefers-reduced-motion:reduce){.start-b i{animation:none;}}
 .leer-hinweis{padding:120px 20px;text-align:center;max-width:560px;margin:0 auto;}
 .leer-hinweis p{color:var(--ink2);}
 
@@ -449,6 +470,10 @@ h3{font-family:var(--c);font-weight:700;font-size:22px;line-height:1.15;color:va
 .msg{margin-top:12px;font-size:16px;font-weight:600;color:var(--ink2);min-height:1em;}
 .msg.err{color:var(--rot);}
 .hinweis{margin-top:12px;font-size:14.5px;line-height:1.5;color:var(--grau);}
+.wirk{display:flex;align-items:center;gap:12px;margin-top:14px;padding:12px 14px;border-radius:var(--r);background:var(--zart);}
+.summe .wirk span:last-child{white-space:normal;}
+.wirk b{flex:none;font-family:var(--c);font-weight:800;font-size:30px;line-height:1;color:var(--navy);font-variant-numeric:tabular-nums;}
+.wirk span{min-width:0;flex:1;font-size:14.5px;line-height:1.45;color:var(--ink2);overflow-wrap:anywhere;}
 .sprechen{margin-top:22px;font-size:15.5px;line-height:1.5;color:var(--ink2);}
 .sprechen a{font-weight:700;color:var(--navy);display:inline-block;padding:11px 0;margin:-11px 0;}
 
@@ -457,8 +482,10 @@ h3{font-family:var(--c);font-weight:700;font-size:22px;line-height:1.15;color:va
 .kt-bilder{flex:none;display:flex;}
 .kontakt img{flex:none;width:74px;height:74px;border-radius:50%;object-fit:cover;background:var(--flaeche);box-shadow:0 0 0 3px #fff;}
 .kontakt.zwei .kt-bilder img+img{margin-left:-18px;}
+.kontakt .kt-bilder img+img{margin-left:-18px;}
 .kontakt .kt-t{min-width:0;}
-.kontakt .kt-t b{display:block;font-family:var(--c);font-weight:700;font-size:23px;line-height:1.1;color:var(--navy);}
+.kontakt .kt-t b{display:block;font-family:var(--c);font-weight:700;font-size:23px;line-height:1.12;color:var(--navy);text-wrap:balance;}
+.kontakt.drei .kt-t b{font-size:21px;}
 .kontakt .kt-t small{display:block;margin-top:2px;font-size:14.5px;color:var(--grau);}
 .kontakt .kt-t p{margin:8px 0 0;font-size:15.5px;line-height:1.5;color:var(--ink2);}
 .kt-knoepfe{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
@@ -466,7 +493,7 @@ h3{font-family:var(--c);font-weight:700;font-size:22px;line-height:1.15;color:va
 .kt-knoepfe a:active{transform:scale(.98);}
 @media (hover:hover){.kt-knoepfe a:hover{border-color:var(--navy);}}
 .leer-hinweis .kontakt{text-align:left;margin-top:28px;}
-@media (max-width:520px){.kontakt{flex-direction:column;align-items:center;text-align:center;}.kontakt .kt-t{text-align:center;}.kt-knoepfe{justify-content:center;}.kontakt.zwei .kt-bilder img+img{margin-left:-14px;}}
+@media (max-width:520px){.kontakt{flex-direction:column;align-items:center;text-align:center;}.kontakt .kt-t{text-align:center;}.kt-knoepfe{justify-content:center;}.kontakt .kt-bilder img+img{margin-left:-14px;}}
 .vertrag{margin-top:26px;background:#fff;color:var(--ink);border:1px solid var(--linie);border-top:4px solid var(--navy);border-radius:var(--r);}
 .vertrag.rein{animation:ein .25s ease both;}
 .vt-k{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 22px 0;}
@@ -658,13 +685,37 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
 .bd-buehne canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
 .bd-laden{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center;font-size:16px;color:var(--grau);background:#eef1f2;}
 .bd-mass,.bd-frei{margin:0;font-size:15px;line-height:1.5;color:var(--ink2);}
+.bd-frei{min-height:3em;}
 .bd-frei b{color:var(--navy);}
 @media (min-width:900px){.bd-raster{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);grid-template-areas:'kopf kopf' 'buehne text';column-gap:40px;align-items:start;}.bd-buehne{aspect-ratio:16/10;}}
+/* 0.96: Infobox „Aktuelle Partner“ und die Frage, ob wir nennen dürfen */
+.apa{margin-top:36px;padding:24px var(--rand);border:1.5px solid var(--linie2);border-radius:calc(var(--r) + 8px);background:#fff;}
+@media (min-width:900px){.apa{padding:30px 34px;}}
+.apa h3{margin:0 0 6px;font-family:var(--c);font-weight:800;font-size:26px;line-height:1.15;color:var(--navy);}
+.apa .apa-l{margin:0 0 18px;max-width:52ch;font-size:16px;line-height:1.5;color:var(--ink2);}
+.apa ul{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none;}
+.apa li{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 15px;border:1.5px solid var(--linie2);border-radius:999px;background:var(--flaeche);font-family:var(--c);font-weight:700;font-size:19px;line-height:1.2;color:var(--navy);}
+.apa li.ich{border-color:var(--navy);background:var(--navy);color:#fff;}
+.apa li.ich b{font-family:'Barlow',system-ui,sans-serif;font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;opacity:.85;}
+.nenn-stand{margin:14px 0 0;font-size:16px;line-height:1.5;color:var(--ink2);}
+.nenn-stand .textknopf{margin-left:6px;}
+/* 0.96: Bande und Trikot zusammen in der Station „Euer Auftritt“, vor den Preisen */
+#auftritt{padding-bottom:20px;}
+#auftritt>.ww{display:flex;flex-direction:column;gap:18px;}
+.auf-seg{max-width:560px;}
+#bande,#trikots{padding:0 0 56px;background:none;}
+@media (min-width:900px){#auftritt{padding-bottom:26px;}#bande,#trikots{padding-bottom:80px;}}
 </style>
 </head>
 <body>
-<div id="app"><div class="leer-hinweis">Einen Moment …</div></div>
-<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.95", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}};</script>
-<script src="partner-lib.js?v=beta-0.95"></script>
-<script src="partner.js?v=beta-0.95"></script>
+<div id="app"><div class="start" id="startHuelle">
+  <img src="partner/wappen.png" width="76" height="76" alt="" fetchpriority="high">
+  <p class="start-k">SV/BSC Mörlenbach</p>
+  <h1>Partner werden</h1>
+  <p class="start-t">Eure Übersicht wird geladen …</p>
+  <div class="start-b" aria-hidden="true"><i></i><i></i><i></i></div>
+</div></div>
+<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.96", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
+<script src="partner-lib.js?v=beta-0.96"></script>
+<script src="partner.js?v=beta-0.96"></script>
 </body></html>
