@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.93', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.94', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18572,6 +18572,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.94',v:'0.94',datum:'2026-11-10',titel:'Der Kader zeigt wieder alle Spieler',kurz:'Die Stärken brauchten zuletzt fast eine Minute und kamen deshalb nie an. Die Kaderübersicht und die Top-Elf blieben leer. Jetzt sind sie in unter zwei Sekunden da.',
+   punkte:[
+    {ic:'\u26A1',r:'scout',t:'Stärken laden wieder',d:'Die Abfrage holt nur noch den neuesten Stand je Spieler und packt nicht mehr für jeden Stand die ganze Vorgeschichte aus. Aus 55 Sekunden werden unter zwei.',go:'kueber'},
+   ]},
   {id:'0.93',v:'0.93',datum:'2026-11-10',titel:'Spielerdaten werden nach unseren Spielen gerechnet',kurz:'Die Auswertung der Spielerdaten läuft jetzt dann, wenn sie gebraucht wird: sobald die Ergebnisse unserer Mannschaften da sind. An der App ändert sich sonst nichts.',
    punkte:[
     {ic:'⚽',r:'admin',t:'Nach dem Spiel statt rund um die Uhr',d:'Sobald sich an einem unserer Spiele etwas tut, rechnet der Server die Zuordnung und die Spielerwerte neu, danach noch ein paar Mal für Nachmeldungen. Sonst einmal am Tag. Das ist rund ein Vierzigstel der bisherigen Last auf der Datenbank.'},
