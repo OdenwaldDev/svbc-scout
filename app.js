@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.92', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.93', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18572,6 +18572,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.93',v:'0.93',datum:'2026-11-10',titel:'Spielerdaten werden nach unseren Spielen gerechnet',kurz:'Die Auswertung der Spielerdaten läuft jetzt dann, wenn sie gebraucht wird: sobald die Ergebnisse unserer Mannschaften da sind. An der App ändert sich sonst nichts.',
+   punkte:[
+    {ic:'⚽',r:'admin',t:'Nach dem Spiel statt rund um die Uhr',d:'Sobald sich an einem unserer Spiele etwas tut, rechnet der Server die Zuordnung und die Spielerwerte neu, danach noch ein paar Mal für Nachmeldungen. Sonst einmal am Tag. Das ist rund ein Vierzigstel der bisherigen Last auf der Datenbank.'},
+   ]},
   {id:'0.92',v:'0.92',datum:'2026-11-10',titel:'Board zum Ziehen, Kader beginnt wieder bei der Mannschaft',kurz:'Im Planungs-Board ziehst du Karten jetzt wirklich: in eine andere Spalte, an eine andere Stelle oder auf eine Person. Am Handy stehen alle Phasen übereinander in einer Leiste. Der Kader öffnet wieder die Kaderübersicht mit euren Spielern.',
    punkte:[
     {ic:'🖐️',r:'team',t:'Karten ziehen, auch am Handy',d:'Rechts oben auf jeder Karte sind jetzt sichtbare Punkte zum Anfassen. Am Handy reicht auch: Karte kurz gedrückt halten, dann ziehen. Wischen scrollt weiter wie vorher.',go:'planung'},
