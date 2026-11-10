@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.97', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.98', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.98',v:'0.98',datum:'2026-11-10',titel:'Die Zahl der heutigen Partner stimmt wieder',kurz:'In der Station „Bis 2030“ stand beim Partner-Ziel „Noch ist keiner dabei“, obwohl wir 13 Bestandspartner haben. Jetzt zählen Bestandspartner mit.',
+   punkte:[
+    {ic:'\u{1F522}',r:'team',t:'Bestandspartner zählen mit',d:'Beim Ziel „10 aktive, lokale Partner“ steht jetzt die richtige Zahl. Gezählt wird wie in der Infobox „Aktuelle Partner“: Bestandspartner oder laufender Vertrag.',go:'sponsoring'},
+   ]},
   {id:'0.97',v:'0.97',datum:'2026-11-10',titel:'Unser Weg bis 2030 steht jetzt im Partner-Flow',kurz:'Zwischen Verein und „Was es bewirkt“ steht neu die Station „Bis 2030“ mit den Zielen aus dem Konzept 2030 und ihrem Stand. Davor der Block „Die Jugend ist der Plan“: Zahl der Kinder, Jugendmannschaften und das Kaderziel aus der eigenen Jugend.',
    punkte:[
     {ic:'\u{1F5FA}',r:'team',t:'Die Roadmap aus dem Konzept 2030',d:'Ein Partner sieht jetzt, wohin wir wollen: die Ziele für Verein und Sport, jedes mit seinem Stand. Gepflegt werden sie wie bisher unter Verein, Vorstand und Ziele, die Präsentation zieht sie von dort.',go:'vorstand'},

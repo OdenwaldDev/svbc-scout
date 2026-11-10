@@ -462,10 +462,8 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     return grp.map(([k,t])=>{ const L0=Z.filter(z=>z.bereich===k); if(!L0.length)return '';
       return `<div class="zl-g"><h3>${t}</h3><ul>${L0.map(z=>{
         let zu='';
-        if(z.thema==='partner'&&!dabeiArt()){ const soll=zielZahl(z.titel,/(\d{1,3})\s*(?:aktive|lokale|Partner)/i);
-          const ziel=soll?+soll[0]:null;
-          zu=`<b class="zl-ihr">${ziel!=null&&n>=ziel?'Das steht schon, und wir halten es gern.'
-            :n===0?'Noch ist keiner dabei. Ihr wärt der erste.'
+        if(z.thema==='partner'&&!dabeiArt()){
+          zu=`<b class="zl-ihr">${n===0?'Noch ist keiner dabei. Ihr wärt der erste.'
             :n===1?'Heute ist es einer. Mit euch wären es zwei.'
             :'Heute sind es '+n+'. Mit euch wären es '+(n+1)+'.'}</b>`; }
         return `<li class="${z.erreicht?'ok':''}"><i aria-hidden="true">${z.erreicht?'\u2713':''}</i><span>${esc(z.titel)}${zu}</span></li>`; }).join('')}</ul></div>`; }).join(''); }
