@@ -13,9 +13,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon-64.png">
-<meta name="app-build" content="beta-0.99.2">
+<meta name="app-build" content="beta-0.99.3">
 <title>SV/BSC Sportzentrale</title>
-<script src="vendor/chart.umd.min.js?v=beta-0.99.2" async></script>
+<script src="vendor/chart.umd.min.js?v=beta-0.99.3" async></script>
 <style>
   :root{
     color-scheme: dark;
@@ -3814,6 +3814,24 @@ body.gated{overflow:hidden;}
 }
 /* 0.74: ruhige Anmeldung. Die bewegte Fläche und der Glanz auf dem Knopf aus sv43.css bleiben aus */
 .g-art::before,.g-art::after,.g-btn::after,.g-orb{display:none!important;animation:none!important;}
+/* 137: Zugang anfragen, Google und Apple */
+.g-oauth{display:flex;flex-direction:column;gap:10px;margin:4px 0 6px;}
+.g-oa{display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;}
+.g-oa svg{flex:none;}
+.g-neu{display:flex;flex-direction:column;gap:6px;margin-top:18px;padding:16px;border-radius:16px;border:1px solid rgba(91,155,255,.35);background:rgba(47,107,255,.10);}
+.g-neu b{font-size:16px;color:#f1f4fb;}
+.g-neu span{font-size:13.5px;line-height:1.45;color:#b8c3d8;}
+.g-neu .g-btn{margin-top:6px;}
+.g-lab{display:block;font-size:13px;font-weight:650;color:#b8c3d8;margin-bottom:6px;}
+.g-chips{display:flex;flex-wrap:wrap;gap:8px;}
+.g-chip{position:relative;cursor:pointer;}
+.g-chip input{position:absolute;opacity:0;width:1px;height:1px;}
+.g-chip span{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid rgba(148,163,196,.28);background:rgba(148,163,196,.06);color:#dbe3f0;font:600 14.5px 'InterV',sans-serif;}
+.g-chip input:checked+span{background:#2f6bff;border-color:#2f6bff;color:#fff;}
+.g-chip input:focus-visible+span{outline:2px solid #7fb0ff;outline-offset:2px;}
+.g-falle{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0;}
+.g-klein{font-size:12.5px;line-height:1.45;color:#8b95aa;margin:2px 0 0;text-align:center;}
+.g-klein a{color:#7fb0ff;}
 
 </style>
 <script>(function(){try{var w=localStorage.getItem('svbc_theme'),t=w==='hell'?'hell':w==='dunkel'?'dunkel':(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches?'hell':'dunkel');document.documentElement.setAttribute('data-theme',t);if(t==='hell'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#f3eee4');}}catch(e){}})();</script>
@@ -4341,9 +4359,9 @@ a.kbtn{text-decoration:none;display:inline-block}
 
 
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
-<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.2", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
-<script src="vendor/supabase.js?v=beta-0.99.2"></script>
-<script src="icons.js?v=beta-0.99.2"></script>
-<script src="boot.js?v=beta-0.99.2"></script>
+<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.3", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
+<script src="vendor/supabase.js?v=beta-0.99.3"></script>
+<script src="icons.js?v=beta-0.99.3"></script>
+<script src="boot.js?v=beta-0.99.3"></script>
 </body>
 </html>

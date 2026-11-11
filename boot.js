@@ -53,10 +53,10 @@ function isNet(e){ const m=String((e&&(e.message||e.name))||e||''); return /fetc
 function errText(e){
   const m=String((e&&e.message)||e||'');
   if(isNet(e))return 'Keine Verbindung. Bitte Internet prüfen und nochmal versuchen.';
-  if(/Invalid login credentials/i.test(m))return 'E-Mail oder Passwort stimmt nicht.';
+  if(/Invalid login credentials/i.test(m))return 'E-Mail oder Passwort stimmt nicht. Noch keinen Zugang? Unten auf „Zugang anfragen“ tippen.';
   if(/Email not confirmed/i.test(m))return 'Dein Zugang ist noch nicht bestätigt. Nutze den Einladungslink.';
   if(/expired|invalid|otp/i.test(m)&&/token|otp|link|expired/i.test(m))return 'Der Link bzw. Code ist abgelaufen oder wurde schon benutzt. Frag deinen Admin nach einem neuen.';
-  if(/Signups not allowed|not found|User not found/i.test(m))return 'Diese E-Mail-Adresse ist nicht freigeschaltet. Zugang gibt es nur mit Einladung.';
+  if(/Signups not allowed|not found|User not found/i.test(m))return 'Diese Adresse kennen wir noch nicht. Tipp unten auf „Neu hier? Zugang anfragen“, das dauert eine Minute.';
   if(/rate|too many|security purposes/i.test(m))return 'Zu viele Versuche. Bitte einen Moment warten.';
   if(/should be different/i.test(m))return 'Das neue Passwort muss sich vom alten unterscheiden.';
   if(/Password should be/i.test(m))return 'Das Passwort ist zu schwach.';
@@ -112,8 +112,9 @@ const IDB={
 
 /* ---------- Ansichten ---------- */
 function viewLogin(note,kind){
-  card.innerHTML=`<h2>Willkommen zurück</h2>
-    <p class="sub">Melde dich mit deinem Vereinszugang an.</p>
+  card.innerHTML=`<h2>Willkommen</h2>
+    <p class="sub">Melde dich an. Neu hier? Dein Zugang dauert eine Minute.</p>
+    <div class="g-oauth" id="gOauth"></div>
     <form class="g-form" id="gLogin" autocomplete="on">
       <div class="g-msg" id="gMsg"></div>
       <div class="g-field"><label for="gEmail">E-Mail</label><div class="g-in"><input id="gEmail" type="email" autocomplete="username" inputmode="email" placeholder="name@beispiel.de" required value="${esc(ls.get('svbcLastEmail')||'')}"></div></div>
@@ -121,9 +122,11 @@ function viewLogin(note,kind){
       <button class="g-btn" id="gGo" type="submit">Anmelden ${I('chev')}</button>
       <div class="g-or">oder</div>
       ${pkGeht()?`<button class="g-btn alt g-pk" id="gPk" type="button">${I('key')}<span class="g-pkt"><b>Mit Passkey anmelden</b><small>${esc(pkGeraet())}, ohne Passwort</small></span></button>`:''}
-      <button class="g-btn alt" id="gCodeBtn" type="button">${I('mail')} Code per E-Mail</button>
+      <button class="g-btn alt" id="gCodeBtn" type="button">${I('mail')} Code per E-Mail, ohne Passwort</button>
     </form>
-    <div class="g-foot">${I('lock')}<span>Zugang nur auf Einladung. Alle Daten sind verschlüsselt übertragen und nur für freigeschaltete Personen sichtbar.</span></div>`;
+    <div class="g-neu"><b>Neu hier?</b><span>Spieler, Eltern, Helfer oder Trainer: E-Mail eintragen, Passwort festlegen, fertig.</span>
+      <button class="g-btn" id="gNeu" type="button">Zugang anfragen ${I('chev')}</button></div>
+    <div class="g-foot">${I('lock')}<span>Nur für Mitglieder des Vereins. Neue Zugänge schaltet die Leitung frei. Alle Daten sind verschlüsselt übertragen.</span></div>`;
   showCard(); eyeWire(card);
   const m=document.getElementById('gMsg'); if(note)msg(m,kind||'info',note);
   const em=document.getElementById('gEmail'), pw=document.getElementById('gPw');
@@ -154,6 +157,94 @@ function viewLogin(note,kind){
   };
   document.getElementById('gCodeBtn').onclick=()=>viewCode(em.value.trim());
   document.getElementById('gForgot').onclick=()=>viewForgot(em.value.trim());
+  document.getElementById('gNeu').onclick=()=>viewAnfrage(em.value.trim());
+  oauthKnoepfe(document.getElementById('gOauth'),m);
+}
+/* ---------- 137: Weiter mit Google oder Apple (nur wenn im Supabase-Projekt eingeschaltet; in der Store-App erst mit nativer Anmeldung) ---------- */
+let OAUTH=null;
+async function oauthAn(){ if(OAUTH)return OAUTH;
+  try{ const r=await fetch(CFG.url+'/auth/v1/settings',{headers:{apikey:CFG.anon},signal:AbortSignal.timeout?AbortSignal.timeout(4000):undefined}); const j=r.ok?await r.json():{}; OAUTH={google:!!(j.external&&j.external.google),apple:!!(j.external&&j.external.apple)}; }
+  catch(e){ OAUTH={google:false,apple:false}; }
+  try{ const C=window.Capacitor; if(C&&C.isNativePlatform&&C.isNativePlatform())OAUTH={google:false,apple:false}; }catch(e){}
+  return OAUTH; }
+const OAUTH_LOGO={
+  google:'<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
+  apple:'<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.5 0 2 .8 3.4.8 1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.7-1-2.7-4.1zM13.9 4.9c.7-.9 1.2-2.1 1.1-3.3-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.2 1.1.1 2.3-.6 3-1.5z"/></svg>'};
+async function oauthKnoepfe(box,m){ if(!box)return; const O=await oauthAn(); const L=[]; if(O.google)L.push(['google','Weiter mit Google']); if(O.apple)L.push(['apple','Weiter mit Apple']);
+  if(!L.length){ box.remove(); return; }
+  box.innerHTML=L.map(([k,t])=>`<button type="button" class="g-btn alt g-oa g-oa-${k}" data-oa="${k}">${OAUTH_LOGO[k]}<span>${esc(t)}</span></button>`).join('')+'<div class="g-or">oder mit E-Mail</div>';
+  box.querySelectorAll('[data-oa]').forEach(b=>b.onclick=async()=>{ busy(b,true,'Weiterleiten …');
+    try{ const {error}=await sb.auth.signInWithOAuth({provider:b.dataset.oa,options:{redirectTo:svBasis()}}); if(error)throw error; }
+    catch(err){ busy(b,false); msg(m,'err',errText(err)); } }); }
+
+/* ---------- 137: Zugang anfragen ---------- */
+const ZG_ARTEN=[['spieler','Spieler/in'],['eltern','Eltern'],['helfer','Helfer/in'],['trainer','Trainer/in'],['sonstiges','Sonstiges']];
+function viewAnfrage(email){
+  card.innerHTML=`<h2>Zugang anfragen</h2>
+    <p class="sub">Drei Angaben, dann bekommst du eine Mail. Darin legst du dein Passwort fest, und die Leitung schaltet dich frei.</p>
+    <div class="g-oauth" id="gOauth"></div>
+    <form class="g-form" id="gAnf" autocomplete="on">
+      <div class="g-msg" id="gMsg"></div>
+      <div class="g-field"><label for="gName">Vor- und Nachname</label><div class="g-in"><input id="gName" autocomplete="name" placeholder="z. B. Max Muster" required maxlength="80"></div></div>
+      <div class="g-field"><label for="gEmail">E-Mail</label><div class="g-in"><input id="gEmail" type="email" autocomplete="email" inputmode="email" placeholder="name@beispiel.de" required value="${esc(email||'')}"></div></div>
+      <div class="g-field"><span class="g-lab">Ich bin</span><div class="g-chips" role="radiogroup" aria-label="Ich bin">${ZG_ARTEN.map(([k,t],i)=>`<label class="g-chip"><input type="radio" name="gArt" value="${k}"${i===0?' required':''}><span>${t}</span></label>`).join('')}</div></div>
+      <div class="g-field"><label for="gTeam">Mannschaft (wenn passend)</label><div class="g-in"><input id="gTeam" placeholder="z. B. Zweite, D1, Helferpool" maxlength="40"></div></div>
+      <input id="gWeb" name="website" tabindex="-1" autocomplete="off" class="g-falle" aria-hidden="true">
+      <button class="g-btn" id="gGo" type="submit">Mail schicken ${I('chev')}</button>
+      <p class="g-klein">Wir nutzen deine Angaben nur für den Zugang zur App des Vereins. <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></p>
+      <button class="g-link" type="button" id="gBack">← Ich habe schon einen Zugang</button>
+    </form>`;
+  showCard();
+  const m=document.getElementById('gMsg'); document.getElementById('gName').focus({preventScroll:true});
+  document.getElementById('gBack').onclick=()=>viewLogin();
+  oauthKnoepfe(document.getElementById('gOauth'),m);
+  document.getElementById('gAnf').onsubmit=async e=>{
+    e.preventDefault(); const b=document.getElementById('gGo'); msg(m,'',''); busy(b,true,'Senden …');
+    const art=(card.querySelector('input[name=gArt]:checked')||{}).value||'';
+    const body={action:'anfrage',app_url:svBasis(),name:document.getElementById('gName').value.trim(),email:document.getElementById('gEmail').value.trim(),art,team:document.getElementById('gTeam').value.trim(),website:document.getElementById('gWeb').value};
+    try{ const {data,error}=await sb.functions.invoke('admin-users',{body});
+      if(error){ let t=error.message; try{ const j=await error.context.json(); if(j&&j.error)t=j.error; }catch(_){} throw new Error(t); }
+      if(data&&data.error)throw new Error(data.error);
+      ls.set('svbcLastEmail',body.email); window.__svbcAnfrage=data; viewPostfach(body.email); }
+    catch(err){ busy(b,false); msg(m,'err',/Zu viele|Bitte/.test(err.message)?err.message:errText(err)); }
+  };
+}
+function viewPostfach(email){
+  card.innerHTML=`<h2>Schau in dein Postfach</h2>
+    <p class="sub">Wir haben dir eine Mail an <b style="color:#dbe3f0">${esc(email)}</b> geschickt. Tipp auf den Knopf darin, dann legst du dein Passwort fest.</p>
+    <div class="g-form"><div class="g-msg info show">Keine Mail da? Bitte auch im Spam-Ordner nachsehen. Sie kommt von svbsc@kaderwerk.pro.</div>
+      <button class="g-btn alt" id="gCode2" type="button">${I('mail')} Lieber einen Code eingeben</button>
+      <button class="g-link" type="button" id="gBack">← Zurück zur Anmeldung</button></div>`;
+  showCard();
+  document.getElementById('gBack').onclick=()=>viewLogin();
+  document.getElementById('gCode2').onclick=()=>viewCode(email);
+}
+function viewWartet(prof){
+  const vn=String((prof&&prof.name)||'').split(' ')[0];
+  card.innerHTML=`<h2>Fast geschafft${vn?', '+esc(vn):''}!</h2>
+    <p class="sub">Dein Zugang ist angefragt. Die Leitung schaltet dich frei, meistens noch am selben Tag. Du bekommst dann eine Mail und bist mit einem Tipp drin.</p>
+    <div class="g-form"><button class="g-btn" id="gNochmal" type="button">Bin ich schon frei? ${I('chev')}</button>
+      <button class="g-btn alt" id="gOut" type="button">${I('logout')} Abmelden</button></div>`;
+  showCard();
+  document.getElementById('gNochmal').onclick=async ev=>{ busy(ev.currentTarget,true,'Prüfen …'); await enter({}); };
+  document.getElementById('gOut').onclick=()=>SV.signOut();
+}
+function viewAngaben(prof){
+  card.innerHTML=`<h2>Wer bist du?</h2>
+    <p class="sub">Damit die Leitung dich richtig freischaltet.</p>
+    <form class="g-form" id="gAng">
+      <div class="g-msg" id="gMsg"></div>
+      <div class="g-field"><label for="gName">Vor- und Nachname</label><div class="g-in"><input id="gName" autocomplete="name" required maxlength="80" value="${esc((prof&&prof.name)||'')}"></div></div>
+      <div class="g-field"><span class="g-lab">Ich bin</span><div class="g-chips" role="radiogroup" aria-label="Ich bin">${ZG_ARTEN.map(([k,t],i)=>`<label class="g-chip"><input type="radio" name="gArt" value="${k}"${i===0?' required':''}><span>${t}</span></label>`).join('')}</div></div>
+      <div class="g-field"><label for="gTeam">Mannschaft (wenn passend)</label><div class="g-in"><input id="gTeam" maxlength="40"></div></div>
+      <button class="g-btn" id="gGo" type="submit">Anfrage abschicken ${I('chev')}</button>
+    </form>`;
+  showCard();
+  const m=document.getElementById('gMsg');
+  document.getElementById('gAng').onsubmit=async e=>{ e.preventDefault(); const b=document.getElementById('gGo'); busy(b,true,'Senden …');
+    try{ const {error}=await sb.rpc('zugang_angaben',{p_name:document.getElementById('gName').value,p_art:(card.querySelector('input[name=gArt]:checked')||{}).value||'',p_team:document.getElementById('gTeam').value});
+      if(error)throw error; await enter({}); }
+    catch(err){ busy(b,false); msg(m,'err',String(err.message||err).replace(/^.*?: /,'')); } };
 }
 function viewCode(email,sent,reset){
   card.innerHTML=`<h2>${sent?'Code eingeben':'Anmelden mit Code'}</h2>
@@ -206,9 +297,9 @@ function viewForgot(email){
   };
 }
 function viewSetPassword(mode,prof){
-  const inv=mode==='invite';
-  card.innerHTML=`<h2>${inv?'Willkommen im Team!':'Neues Passwort'}</h2>
-    <p class="sub">${inv?'Leg jetzt dein persönliches Passwort fest, damit meldest du dich künftig an.':'Vergib ein neues Passwort für deinen Zugang.'}</p>
+  const inv=mode==='invite'||mode==='anfrage';
+  card.innerHTML=`<h2>${mode==='anfrage'?'E-Mail bestätigt!':inv?'Willkommen im Team!':'Neues Passwort'}</h2>
+    <p class="sub">${mode==='anfrage'?'Leg jetzt dein Passwort fest. Zweimal eintippen, damit kein Tippfehler drin ist.':inv?'Leg jetzt dein persönliches Passwort fest, damit meldest du dich künftig an.':'Vergib ein neues Passwort für deinen Zugang.'}</p>
     ${prof?`<div class="g-welcome"><div class="uav">${esc(initials(prof.name||prof.email))}</div><div><b>${esc(prof.name||prof.email)}</b><span>${esc(ROLE_T[prof.role]||'')} · ${esc(prof.email)}</span></div></div>`:''}
     <form class="g-form" id="gSet">
       <div class="g-msg" id="gMsg"></div>
@@ -233,6 +324,7 @@ function viewSetPassword(mode,prof){
       if(error&&/session missing/i.test(error.message)&&KEEP){ await sb.auth.setSession(KEEP).catch(()=>{}); ({error}=await sb.auth.updateUser({password:p1.value})); }
       if(error&&!/should be different/i.test(error.message))throw error;
       await sb.rpc('me_update',{p_name:null,p_pw_set:true}); if(SV.profile)SV.profile.pw_set=true;
+      if(mode==='anfrage'){ await enter({mode:'angaben'}); return; }
       await loadAndStart(); }
     catch(err){ busy(b,false); msg(m,'err',errText(err));
       if(/session missing|not authenticated|JWT/i.test(String(err&&err.message))&&prof&&prof.email&&!document.getElementById('gNewLink')){   // Selbsthilfe: neuen Link per E-Mail
@@ -261,7 +353,13 @@ async function enter(opts){
     else { viewLogin(errText(e),'err'); return; }
   }
   if(!prof){ viewBlocked('none'); return; }
-  if(!prof.active){ ls.set('svbcProfile',null); viewBlocked('locked'); return; }
+  if(!prof.active){ ls.set('svbcProfile',null);
+    let z=null; try{ const {data}=await sb.rpc('zugang_stand'); z=data; }catch(e){}
+    if(z&&z.anfrage){ await keepNow();   // 137: Zugang angefragt: erst Passwort, dann Angaben (nach Google/Apple), dann warten
+      if(!prof.pw_set&&opts.mode!=='angaben'){ viewSetPassword('anfrage',prof); return; }
+      if(!z.art){ viewAngaben(z); return; }
+      viewWartet(z); return; }
+    viewBlocked('locked'); return; }
   SV.profile=prof; ls.set('svbcProfile',JSON.stringify(prof)); await keepNow();
   if(opts.mode==='recovery'){ viewSetPassword('recovery',prof); return; }
   if(!prof.pw_set&&!SV.offline){ viewSetPassword('invite',prof); return; }   // noch kein eigenes Passwort → erst festlegen (egal ob per Link, Code oder gespeicherter Anmeldung)
