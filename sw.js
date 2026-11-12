@@ -2,7 +2,7 @@
    - App-Seite: erst Netz (max. 4 s), sonst gespeicherte Version → startet auch im Funkloch
    - Icons/Wappen/Chart-Bibliothek: aus dem Speicher, im Hintergrund aufgefrischt
    - Sync (Make) und version.json laufen NIE über den Speicher */
-const BUILD = 'beta-0.99.3';
+const BUILD = 'beta-0.99.4';
 const CACHE = 'svbc-scout-' + BUILD;
 const SHELL = ['./', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon-64.png', './crest.svg', './logo.png',
   './fonts/inter-var.woff2', './fonts/barlowc-700.woff2', './vendor/supabase.js?v=' + BUILD, './icons.js?v=' + BUILD, './boot.js?v=' + BUILD, './app.js?v=' + BUILD, './vendor/chart.umd.min.js?v=' + BUILD];
@@ -81,7 +81,9 @@ self.addEventListener('push', e => {
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
   const title = String(d.title || 'SV/BSC Sportzentrale').slice(0, 120);
   const opts = { body: String(d.body || '').slice(0, 400), icon: './icon-192.png', badge: './favicon-64.png', tag: d.tag || 'svbc-scout',
-    renotify: true, data: { url: d.url || './#kandidaten' }, lang: 'de' };
+    renotify: true, data: { url: d.url || './#kandidaten', frage: d.frage || null }, lang: 'de' };
+  // Frage mit zwei Knöpfen direkt in der Mitteilung (Beta 0.99.4, siehe 138_fragen.sql)
+  if (d.frage) opts.actions = [{ action: 'ja', title: String(d.ja || 'Ja').slice(0, 30) }, { action: 'nein', title: String(d.nein || 'Nein').slice(0, 30) }];
   e.waitUntil((async () => {
     await self.registration.showNotification(title, opts);
     try { if (self.navigator && self.navigator.setAppBadge) { if (d.n > 0) await self.navigator.setAppBadge(d.n); else await self.navigator.clearAppBadge(); } } catch (_) {}
@@ -91,7 +93,9 @@ self.addEventListener('notificationclick', e => {
   e.notification.close();
   const scope = self.registration.scope;
   let target = scope;
-  try { const u = new URL((e.notification.data && e.notification.data.url) || './#kandidaten', scope); if (u.origin === new URL(scope).origin) target = u.href; } catch (_) {}
+  const nd = e.notification.data || {};
+  const roh = (e.action === 'ja' || e.action === 'nein') && nd.frage ? './#frage=' + nd.frage + ':' + e.action : (nd.url || './#kandidaten');
+  try { const u = new URL(roh, scope); if (u.origin === new URL(scope).origin) target = u.href; } catch (_) {}
   const ziel = target.split('#')[1] || 'kandidaten';
   e.waitUntil((async () => {
     // Merkzettel: falls das Handy die Adresse beim Öffnen verliert (iPhone-App), holt die App das Ziel beim Start ab
