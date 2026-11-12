@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.6', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.7', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.7',v:'0.99.7',datum:'2026-11-12',titel:'Die App kommt in die Stores: Testphase',kurz:'Unter svbsc.kaderwerk.pro/test.html führt eine Seite Schritt für Schritt zur Testversion für Android und iPhone.',
+   punkte:[
+    {ic:'\u{1F4F1}',t:'In wenigen Schritten zur App',d:'Die Seite erkennt dein Handy und zeigt genau den nächsten Schritt. Sie merkt sich, wo du warst.'},
+    {ic:'\u{1F91D}',t:'Zwölf Tester, 14 Tage',d:'So viele verlangt Google, bevor die App für alle in den Play Store darf. Jeder, der mitmacht, hilft.'},
+   ]},
   {id:'0.99.6',v:'0.99.6',datum:'2026-11-12',titel:'Auch bei den anderen Vereinen fehlt niemand mehr',kurz:'Spieler aus unseren sechs Ligen, die spielen, aber noch nicht getroffen haben, kommen jetzt von selbst ins Scouting.',
    punkte:[
     {ic:'\u{1F4E1}',r:'scout',t:'Neue Spieler der Umgebung',d:'Wer in dieser Saison drei oder mehr Spiele für einen Verein aus Gruppenliga, Kreisoberliga oder den Kreisligen A bis D hat, steht im Bestand. Bisher kamen neue Namen nur über die Torjägerliste.'},
