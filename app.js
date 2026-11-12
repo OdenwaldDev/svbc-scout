@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.7', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.9', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,18 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.9',v:'0.99.9',datum:'2026-11-12',titel:'Startklar: Training als Frage aufs Handy',kurz:'Spieler mit Konto bekommen jede Trainingsabfrage als Mitteilung mit Zusagen und Absagen. Neue Nutzer führt die App beim ersten Start durch die Einrichtung.',
+   punkte:[
+    {ic:'\u{1F514}',t:'Zusagen direkt in der Mitteilung',d:'Wer als Spieler zugeordnet ist, bekommt Training und Spiel aufs Handy und antwortet mit einem Tipp. Die Antwort steht sofort in der Abstimmung des Trainers.'},
+    {ic:'\u{1F44B}',t:'Willkommen beim ersten Start',d:'Kurze Begrüßung, Mitteilungen erlauben, App auf den Startbildschirm. In einer Minute ist alles eingerichtet.'},
+    {ic:'\u{1F517}',r:'admin',t:'Konto und Spieler verbinden',d:'Bei der Freigabe einer Zugangsanfrage oder später in der Karte „App-Test“: auswählen, welcher Spieler das ist. Offene Abfragen gehen dann sofort raus.'},
+   ]},
+  {id:'0.99.8',v:'0.99.8',datum:'2026-11-12',titel:'App-Test: eintragen, Schritt für Schritt bis zur App',kurz:'Auf svbsc.kaderwerk.pro/test.html trägt sich jeder selbst ein, wählt Android oder iPhone und wird bis zur installierten App geführt.',
+   punkte:[
+    {ic:'\u{270D}\u{FE0F}',t:'Ein Formular, ein Zugang',d:'Wer sich einträgt, bekommt zugleich seinen Zugang zur App. Eine Mail bestätigen, Passwort festlegen, fertig.'},
+    {ic:'\u{1F4EC}',t:'Bescheid, wenn es losgeht',d:'Android-Tester gehen gleich in die Testgruppe, iPhone-Nutzer kommen auf die Liste. Sobald Google oder Apple freigeben, kommt eine Mail mit dem Link.'},
+    {ic:'\u{1F4CB}',r:'admin',t:'Karte „App-Test“ in Nutzer & Rollen',d:'Wer hat sich eingetragen, mit welchem Handy, wie weit ist er. Von dort stellt der Admin um und gibt allen Wartenden mit einem Tipp Bescheid.'},
+   ]},
   {id:'0.99.7',v:'0.99.7',datum:'2026-11-12',titel:'Die App kommt in die Stores: Testphase',kurz:'Unter svbsc.kaderwerk.pro/test.html führt eine Seite Schritt für Schritt zur Testversion für Android und iPhone.',
    punkte:[
     {ic:'\u{1F4F1}',t:'In wenigen Schritten zur App',d:'Die Seite erkennt dein Handy und zeigt genau den nächsten Schritt. Sie merkt sich, wo du warst.'},
@@ -31789,12 +31801,15 @@ async function zgKarte(){
   const ADM = typeof isAdmin === 'function' && isAdmin();
   const rollen = (typeof SV_ROLES !== 'undefined' ? SV_ROLES : ['vorstand','planer','trainer','jugend','viewer']).filter(r => r !== 'admin' && (ADM || ['planer','trainer','viewer','jugend'].includes(r)));
   const name = r => (typeof SV_ROLE_INFO !== 'undefined' && SV_ROLE_INFO[r] && SV_ROLE_INFO[r].t) || r;
+  const zgN = t => String(t || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z]/g, '');
+  let eig = []; try{ eig = players.filter(p => p.own && !p.isJugend).slice().sort((x, y) => String(x.name).localeCompare(String(y.name), 'de')); }catch(e){}
   const k = document.createElement('div'); k.className = 'card zg-karte';
   k.innerHTML = `<div class="adm-head"><div><h3 style="margin:0">Zugangsanfragen <span class="zg-n">${L.length}</span></h3>
       <p style="margin:6px 0 0;font-size:13.5px">Diese Personen haben sich selbst angemeldet und warten auf die Freigabe. Bis dahin sehen sie keine Daten.</p></div></div>
     <div class="zg-liste">${L.map(a => `<div class="zg-z" data-zg="${svEsc(a.id)}">
       <div class="zg-wer"><b>${svEsc(a.name || a.email)}</b><span>${svEsc(a.email)}</span>
         <small>${svEsc([ZG_ART_T[a.art] || 'Angaben fehlen noch', a.team].filter(Boolean).join(' · '))} · ${svEsc(typeof svAgo === 'function' ? svAgo(a.am) : '')}${a.bestaetigt ? '' : ' · E-Mail noch nicht bestätigt'}</small></div>
+      ${a.art === 'spieler' && eig.length ? `<select data-zgs aria-label="Spieler zu ${svEsc(a.name || a.email)}"><option value="">Welcher Spieler? (später zuordnen)</option>${eig.map(p => `<option value="${svEsc(p.id)}"${zgN(p.name) === zgN(a.name) ? ' selected' : ''}>${svEsc(p.name)}</option>`).join('')}</select>` : ''}
       <select data-zgr aria-label="Rolle für ${svEsc(a.name || a.email)}">${rollen.map(r => `<option value="${r}"${(ZG_ROLLE_VORSCHLAG[a.art] || 'viewer') === r ? ' selected' : ''}>${svEsc(name(r))}</option>`).join('')}</select>
       <div class="zg-akt"><button type="button" class="btn sm" data-zgf>${SVI('check')} Freigeben</button><button type="button" class="btn sm ghost" data-zga>Ablehnen</button></div>
     </div>`).join('')}</div>`;
@@ -31803,6 +31818,7 @@ async function zgKarte(){
     const id = z.dataset.zg, a = L.find(x => x.id === id);
     z.querySelector('[data-zgf]').onclick = async ev => { const b = ev.currentTarget; b.disabled = true;
       try{ const r = await SVB.admin('freigeben', { user_id:id, role:z.querySelector('[data-zgr]').value });
+        const sp = z.querySelector('[data-zgs]'); if(sp && sp.value){ try{ const x = await SVB.sb.rpc('konto_spieler_setzen', { p_user:id, p_spieler:sp.value }); if(x.error) throw x.error; }catch(e){ kToast('⚠️ Spieler nicht zugeordnet: ' + (e.message || e)); } }
         kToast(`✓ ${a.name || a.email} ist freigeschaltet${r && r.mail === 'gesendet' ? ', die Mail ist raus' : ''}`); await svAdminRender(true); }
       catch(e){ b.disabled = false; kToast('⚠️ ' + e.message); } };
     z.querySelector('[data-zga]').onclick = async ev => { const b = ev.currentTarget; b.disabled = true;
@@ -31885,6 +31901,157 @@ async function svFrageAntwort(id,wert,via){
 // Startseite: Fragen mitladen und anzeigen
 { const _h=typeof htRender==='function'?htRender:null;
   if(_h){ htRender=function(){ const r=_h.apply(this,arguments); frLaden().then(frKarte); return r; }; } }
+
+/* =====================================================================
+   Beta 0.99.8 · App-Test: wer hat sich über /test.html angemeldet, wie weit ist er (142_app_tester.sql)
+   Albert, 12.11.2026: „Leute sollen sich über den Funnel entscheiden, ob Play oder Apple, Daten eintragen. Will die User.“
+   Karte in Nutzer & Rollen für Admin und Vorstand: Zähler je Handy, Liste mit Schritt, Konto und Store-App.
+   Der Admin stellt hier um, sobald Google oder Apple freigeben, und schickt allen Wartenden mit einem Tipp Bescheid.
+   ===================================================================== */
+const AT93 = { L:null };
+const AT93_SCHRITT = { android:['Eingetragen','Mail bestätigt','In der Gruppe','Tester bei Google','Installiert','Fertig'], ios:['Eingetragen','Mail bestätigt','TestFlight da','Installiert','Fertig'] };
+const AT93_KONTO = { frei:'Zugang frei', anfrage:'wartet auf Freigabe', ohne:'noch kein Konto', gesperrt:'gesperrt' };
+function at93Css(){ if(document.getElementById('svm93css')) return; const s = document.createElement('style'); s.id = 'svm93css';
+  s.textContent = `.at-karte .at-zahl{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.at-zahl div{flex:1;min-width:120px;padding:12px;border-radius:12px;background:var(--surface2,rgba(148,163,196,.08))}
+.at-zahl b{display:block;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}.at-zahl span{font-size:12.5px;color:var(--ink2,#a9b3c7)}
+.at-bal{height:6px;border-radius:6px;background:rgba(148,163,196,.2);overflow:hidden;margin-top:8px}.at-bal i{display:block;height:100%;background:var(--brand,#2f6bff);border-radius:6px}
+.at-liste{display:grid;gap:8px;margin-top:10px}.at-z{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 12px;border-radius:12px;background:var(--surface2,rgba(148,163,196,.08))}
+.at-z small{grid-column:1/-1;color:var(--ink2,#a9b3c7);font-size:13px}.at-g{font-size:12px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:99px;border:1px solid rgba(148,163,196,.35);align-self:start}
+.at-g.ok{border-color:rgba(62,207,142,.6);color:#3ecf8e}.at-st{display:grid;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(148,163,196,.2)}
+.at-st .at-r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.at-st input[type=url]{flex:1;min-width:200px;min-height:44px}.at-st label{display:flex;gap:8px;align-items:center;min-height:44px}`;
+  document.head.appendChild(s); }
+async function at93Karte(){
+  const P = document.getElementById('panel-admin'); if(!P || typeof canManage !== 'function' || !canManage()) return;
+  let D = null; try{ const { data, error } = await SVB.sb.rpc('app_tester_liste'); if(error) throw error; D = data; }catch(e){ return; }
+  AT93.L = D; at93Css(); P.querySelectorAll('.at-karte').forEach(x => x.remove());
+  const T = (D && D.tester) || [], S = (D && D.stand) || {}, ADM = typeof isAdmin === 'function' && isAdmin();
+  const nA = T.filter(t => t.geraet === 'android').length, nI = T.filter(t => t.geraet === 'ios').length, ziel = +S.ziel || 12;
+  const wA = T.filter(t => t.geraet === 'android' && !t.benachrichtigt).length, wI = T.filter(t => t.geraet === 'ios' && !t.benachrichtigt).length;
+  const zeile = t => { const st = (AT93_SCHRITT[t.geraet] || [])[Math.min(t.schritt || 0, (AT93_SCHRITT[t.geraet] || []).length - 1)] || '';
+    const store = t.store ? 'nutzt die Store-App' : '';
+    return `<div class="at-z"><b>${svEsc(t.name || t.email)}</b><span class="at-g${t.store ? ' ok' : ''}">${t.geraet === 'ios' ? 'IPHONE' : 'ANDROID'}</span>
+      <small>${svEsc([store || st, AT93_KONTO[t.konto] || '', typeof svAgo === 'function' ? svAgo(t.am) : ''].filter(Boolean).join(' · '))}</small></div>`; };
+  const k = document.createElement('div'); k.className = 'card at-karte';
+  k.innerHTML = `<div class="adm-head"><div><h3 style="margin:0">App-Test</h3>
+      <p style="margin:6px 0 0;font-size:13.5px">Wer sich unter <b>svbsc.kaderwerk.pro/test.html</b> einträgt, steht hier. Der Zugang zur App läuft wie gewohnt über die Zugangsanfragen.</p></div></div>
+    <div class="at-zahl"><div><b>${nA}</b><span>Android, Ziel ${ziel}</span><div class="at-bal"><i style="width:${Math.min(100, Math.round(nA / ziel * 100))}%"></i></div></div>
+      <div><b>${nI}</b><span>iPhone</span></div><div><b>${T.filter(t => t.store).length + ((D && D.ohne_anmeldung) || []).length}</b><span>nutzen die Store-App</span></div></div>
+    ${T.length ? `<div class="at-liste">${T.map(zeile).join('')}</div>` : '<p class="note">Noch niemand eingetragen. Schick den Link an die Mannschaften.</p>'}
+    ${ADM ? `<div class="at-st"><b>Stand auf der Seite</b>
+      <div class="at-r"><label><input type="checkbox" data-at="android"${S.android === 'offen' ? ' checked' : ''}> Android ist bei Google freigegeben</label>
+        <button type="button" class="btn sm ghost" data-atb="android"${S.android === 'offen' && wA ? '' : ' disabled'}>${wA} Wartenden Bescheid geben</button></div>
+      <div class="at-r"><label><input type="checkbox" data-at="ios"${S.ios === 'offen' ? ' checked' : ''}> iPhone ist bei Apple freigegeben</label>
+        <button type="button" class="btn sm ghost" data-atb="ios"${S.ios === 'offen' && S.testflight && wI ? '' : ' disabled'}>${wI} Wartenden Bescheid geben</button></div>
+      <div class="at-r"><input type="url" data-attf placeholder="Öffentlicher TestFlight-Link (https://testflight.apple.com/join/…)" value="${svEsc(S.testflight || '')}" aria-label="TestFlight-Link">
+        <button type="button" class="btn sm" data-atsp>Speichern</button></div>
+      <p class="note" style="margin:0">Erst speichern, dann Bescheid geben. Jede Person bekommt die Mail genau einmal.</p></div>` : ''}`;
+  const zg = P.querySelector('.zg-karte'); if(zg) zg.after(k); else P.insertBefore(k, P.firstChild);
+  try{ await at93Spieler(k); }catch(e){}
+  if(!ADM) return;
+  k.querySelector('[data-atsp]').onclick = async ev => { const b = ev.currentTarget; b.disabled = true;
+    try{ const tf = k.querySelector('[data-attf]').value.trim();
+      if(tf && !/^https:\/\/testflight\.apple\.com\/join\/[A-Za-z0-9]{4,20}$/.test(tf)) throw new Error('Der TestFlight-Link sieht anders aus: https://testflight.apple.com/join/…');
+      if(k.querySelector('[data-at="ios"]').checked && !tf) throw new Error('Fürs iPhone fehlt noch der TestFlight-Link');
+      const { error } = await SVB.sb.rpc('app_test_setzen', { p:{ android:k.querySelector('[data-at="android"]').checked ? 'offen' : 'bald', ios:k.querySelector('[data-at="ios"]').checked ? 'offen' : 'bald', testflight:tf } });
+      if(error) throw error; kToast('✓ Stand gespeichert, die Seite zeigt ihn sofort'); await at93Karte(); }
+    catch(e){ b.disabled = false; kToast('⚠️ ' + (e.message || e)); } };
+  k.querySelectorAll('[data-atb]').forEach(b => b.onclick = async () => { const g = b.dataset.atb; b.disabled = true;
+    try{ const r = await SVB.admin('test_bescheid', { geraet:g }); kToast(`✓ ${r.gesendet || 0} Mail${r.gesendet === 1 ? '' : 's'} sind raus${r.fehler ? ', ' + r.fehler + ' mit Fehler' : ''}`); await at93Karte(); }
+    catch(e){ b.disabled = false; kToast('⚠️ ' + (e.message || e)); } });
+}
+// 0.99.9: Welches Konto gehört zu welchem Spieler? Nur dann kommen Trainingsabfragen als Frage aufs Handy (143_startklar.sql).
+async function at93Spieler(k){
+  const { data, error } = await SVB.sb.rpc('konto_spieler_liste'); if(error) return; const K = data || [];
+  let eig = []; try{ eig = players.filter(p => p.own && !p.isJugend).slice().sort((x, y) => String(x.name).localeCompare(String(y.name), 'de')); }catch(e){}
+  if(!eig.length || !K.length) return;
+  const vergeben = new Set(K.map(x => x.spieler).filter(Boolean)), nm = id => (eig.find(p => p.id === id) || {}).name || id;
+  const N = t => String(t || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z]/g, '');
+  const box = document.createElement('div'); box.className = 'at-st at-sp';
+  box.innerHTML = `<b>Konten und Spieler <span style="font-weight:400;color:var(--ink2,#a9b3c7)">${K.filter(x => x.spieler).length} von ${K.length} zugeordnet</span></b>
+    <p class="note" style="margin:0">Nur wer einem Spieler zugeordnet ist, bekommt Training und Spiel als Frage mit Zusagen und Absagen aufs Handy.</p>
+    ${K.map(x => `<div class="at-r" data-atk="${svEsc(x.id)}"><span style="flex:1;min-width:140px"><b>${svEsc(x.name || '')}</b>${x.spieler ? ` <small style="color:#3ecf8e">ist ${svEsc(nm(x.spieler))}</small>` : ''}</span>
+      <select data-atsel aria-label="Spieler zu ${svEsc(x.name || '')}" style="min-height:44px;max-width:230px"><option value="">kein Spieler</option>${eig.filter(p => p.id === x.spieler || !vergeben.has(p.id)).map(p => `<option value="${svEsc(p.id)}"${p.id === x.spieler || (!x.spieler && x.art === 'spieler' && N(p.name) === N(x.name)) ? ' selected' : ''}>${svEsc(p.name)}</option>`).join('')}</select>
+      <button type="button" class="btn sm ghost" data-atset>Speichern</button></div>`).join('')}`;
+  k.appendChild(box);
+  box.querySelectorAll('[data-atk]').forEach(z => z.querySelector('[data-atset]').onclick = async ev => { const b = ev.currentTarget; b.disabled = true;
+    try{ const { data:r, error:e } = await SVB.sb.rpc('konto_spieler_setzen', { p_user:z.dataset.atk, p_spieler:z.querySelector('[data-atsel]').value || null }); if(e) throw e;
+      kToast(r && r.spieler ? `✓ Zugeordnet: ${r.spieler}${r.fragen ? ', ' + r.fragen + ' offene Abfrage' + (r.fragen > 1 ? 'n' : '') + ' ist raus' : ''}` : '✓ Zuordnung entfernt'); await at93Karte(); }
+    catch(e){ b.disabled = false; kToast('⚠️ ' + (e.message || e)); } });
+}
+{ const _ar93 = svAdminRender; svAdminRender = async function(){ const r = await _ar93.apply(this, arguments); try{ await at93Karte(); }catch(e){} return r; }; }
+
+/* =====================================================================
+   Beta 0.99.9 · Willkommen beim ersten Start (Albert, 12.11.2026)
+   „Wenn die jemand installiert, soll es ein Onboarding geben … alle Berechtigungen, die wir brauchen, gleich mit einholen.
+    Auch wegen Push-Nachrichten, die sind ja super wichtig für uns.“
+   Ein kurzer Ablauf über den ganzen Bildschirm, einmal je Person: Begrüßung, Mitteilungen erlauben (erst erklären, dann fragt
+   das Handy), im Browser der Hinweis auf den Startbildschirm, fertig. Danach übernimmt „Deine ersten Schritte“ (svm52.js).
+   Gemerkt wird es bei der Person (lernen_setzen, Schlüssel w:fertig), nicht im Gerät. Mikrofon fragt die Store-App erst ab
+   der nächsten Fassung ab, die Berechtigung fehlt in Build 4 noch.
+   ===================================================================== */
+const W94 = { i:0, offen:false, S:[] };
+function w94Css(){ if(document.getElementById('svm94css')) return; const s = document.createElement('style'); s.id = 'svm94css';
+  s.textContent = `#w94{position:fixed;inset:0;z-index:9000;background:var(--bg,#05070c);color:var(--ink,#eef2fb);display:flex;flex-direction:column;padding:calc(22px + env(safe-area-inset-top,0px)) 22px calc(22px + env(safe-area-inset-bottom,0px));overflow:auto;
+  background-image:radial-gradient(120% 55% at 50% -10%,rgba(47,107,255,.28),transparent 60%)}
+#w94 .w-in{max-width:480px;width:100%;margin:auto;display:grid;gap:18px}
+#w94 .w-sch{display:flex;gap:6px}#w94 .w-sch i{flex:1;height:4px;border-radius:4px;background:rgba(148,163,196,.25)}#w94 .w-sch i.an{background:var(--brand,#2f6bff)}
+#w94 .w-bild{width:76px;height:76px;border-radius:22px;background:rgba(47,107,255,.16);display:grid;place-items:center;font-size:38px}
+#w94 h2{font-size:30px;line-height:1.1;margin:0;text-wrap:balance}#w94 p{margin:0;color:var(--ink2,#a9b3c7);font-size:16.5px;line-height:1.55}
+#w94 ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}#w94 li{display:flex;gap:10px;color:var(--ink2,#a9b3c7)}#w94 li b{color:var(--ink,#eef2fb)}
+#w94 li::before{content:'';flex:none;width:8px;height:8px;border-radius:50%;background:var(--brand2,#5b9bff);margin-top:9px}
+#w94 .w-akt{display:grid;gap:10px;margin-top:6px}#w94 .btn{min-height:54px;font-size:16.5px;justify-content:center}
+#w94 .w-leise{background:none;border:0;color:var(--ink2,#a9b3c7);font:inherit;padding:10px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+#w94 .w-ok{color:#3ecf8e;font-weight:650}
+@media (prefers-reduced-motion:no-preference){#w94 .w-in{animation:w94rein .3s cubic-bezier(.2,.7,.2,1) both}@keyframes w94rein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}}`;
+  document.head.appendChild(s); }
+function w94Nativ(){ try{ return !!(typeof SVN !== 'undefined' && SVN.nativ); }catch(e){ return false; } }
+function w94Schritte(){
+  const me = (typeof SVU !== 'undefined' && SVU) || {}, vn = String(me.name || '').split(' ')[0];
+  const S = [{ id:'hallo', bild:'\u{1F44B}', t:`Willkommen${vn ? ', ' + vn : ''}!`, x:'Schön, dass du dabei bist. Das ist die App des SV/BSC. In einer Minute ist alles eingerichtet.',
+    punkte:[['Zusagen mit einem Tipp', 'Training und Spiel beantwortest du direkt in der Mitteilung.'], ['Deine Aufgaben', 'Was für dich ansteht, steht oben auf der Startseite.'], ['Alles an einem Ort', 'Termine, Helferplan und Neuigkeiten aus dem Verein.']], los:'Los geht es' }];
+  S.push({ id:'push', bild:'\u{1F514}', t:'Mitteilungen erlauben', x:'Darüber kommen Trainingsabfragen, Erinnerungen und deine Aufgaben. Ohne Mitteilungen verpasst du das Wichtigste. Wir schicken nur, was dich betrifft.',
+    hinweis: (typeof i1IOS === 'function' && i1IOS() && !w94Nativ() && typeof i1App === 'function' && !i1App()) ? 'Auf dem iPhone gehen Mitteilungen im Browser erst, wenn die App auf dem Startbildschirm liegt. Das kommt im nächsten Schritt.' : 'Gleich fragt dein Handy nach. Bitte „Erlauben“ antippen.',
+    los:'Mitteilungen erlauben', aktion:'push', spaeter:'Später' });
+  if(!w94Nativ() && typeof i1App === 'function' && !i1App()) S.push({ id:'app', bild:'\u{1F4F2}', t:'Auf den Startbildschirm', x:'So startet die Sportzentrale wie eine richtige App und bleibt angemeldet.', los:'Zeig mir, wie', aktion:'app', spaeter:'Später' });
+  S.push({ id:'fertig', bild:'✅', t:'Fertig. Du bist startklar.', x:'Oben auf der Startseite steht, was für dich ansteht. Unter „Deine ersten Schritte“ findest du einen kurzen Rundgang.', los:'Zur Startseite' });
+  return S;
+}
+function w94Zeig(){
+  const s = W94.S[W94.i]; let el = document.getElementById('w94');
+  if(!s){ if(el) el.remove(); W94.offen = false; document.body.classList.remove('w94-offen'); return; }
+  if(!el){ el = document.createElement('div'); el.id = 'w94'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Willkommen'); document.body.appendChild(el); }
+  el.innerHTML = `<div class="w-in" data-w="${svEsc(s.id)}"><div class="w-sch">${W94.S.map((_, i) => `<i class="${i <= W94.i ? 'an' : ''}"></i>`).join('')}</div>
+    <div class="w-bild" aria-hidden="true">${s.bild}</div><h2 tabindex="-1">${svEsc(s.t)}</h2><p>${svEsc(s.x)}</p>
+    ${s.punkte ? `<ul>${s.punkte.map(p => `<li><span><b>${svEsc(p[0])}.</b> ${svEsc(p[1])}</span></li>`).join('')}</ul>` : ''}
+    ${s.hinweis ? `<p style="font-size:14.5px">${svEsc(s.hinweis)}</p>` : ''}<p class="w-ok" id="w94ok" hidden></p>
+    <div class="w-akt"><button type="button" class="btn" id="w94los">${svEsc(s.los)}</button>${s.spaeter ? `<button type="button" class="w-leise" id="w94sp">${svEsc(s.spaeter)}</button>` : ''}</div></div>`;
+  const weiter = () => { W94.i++; if(W94.i >= W94.S.length) w94Ende(); else w94Zeig(); };
+  el.querySelector('#w94los').onclick = async ev => { const b = ev.currentTarget;
+    if(s.aktion === 'push'){ b.disabled = true; b.textContent = 'Einen Moment …'; let an = false;
+      try{ an = !!(await svPushOn()); }catch(e){ an = false; }
+      try{ if(an && typeof o1Setzen === 'function'){ await o1Setzen({ 's:push':true }); if(typeof N2 !== 'undefined' && N2.me) N2.me.push = true; } }catch(e){}
+      try{ if(typeof n2Ev === 'function') n2Ev(an ? 'a:willkommen:push_an' : 'a:willkommen:push_aus'); }catch(e){}
+      if(an){ const o = el.querySelector('#w94ok'); o.hidden = false; o.textContent = '✓ Mitteilungen sind an.'; b.disabled = false; b.textContent = 'Weiter'; s.aktion = null; return; }
+      b.disabled = false; b.textContent = 'Weiter'; s.aktion = null; const o = el.querySelector('#w94ok'); o.hidden = false; o.style.color = 'inherit';
+      o.textContent = 'Noch nicht eingeschaltet. Du kannst es jederzeit unter Mein Konto nachholen.'; return; }
+    if(s.aktion === 'app'){ s.aktion = null; try{ if(typeof I1 !== 'undefined') I1.gezeigt = false; el.style.display = 'none'; await i1Zeigen('app'); }catch(e){} el.style.display = ''; b.textContent = 'Weiter'; return; }
+    weiter(); };
+  const sp = el.querySelector('#w94sp'); if(sp) sp.onclick = weiter;
+  try{ el.querySelector('h2').focus({ preventScroll:true }); }catch(e){}
+}
+async function w94Ende(){ const el = document.getElementById('w94'); if(el) el.remove(); W94.offen = false; document.body.classList.remove('w94-offen');
+  try{ if(typeof o1Setzen === 'function') await o1Setzen({ 'w:fertig':true, 'w:am':Date.now(), 'w:wo':w94Nativ() ? 'store' : 'web' }); }catch(e){}
+  try{ if(typeof o1Karte === 'function') o1Karte(); }catch(e){} }
+async function w94Start(force){
+  if(W94.offen) return; if(typeof SVU === 'undefined' || !SVU || !SVU.id) return;
+  if(!force && navigator.webdriver && !window.W94_TEST) return;   // automatische Tests der anderen Runden laufen ohne den Ablauf, Runde 147 schaltet ihn ein
+  try{ if(typeof N2 !== 'undefined' && N2.meP) await N2.meP; }catch(e){}
+  const L = (typeof o1L === 'function' && o1L()) || {};
+  if(!force && L['w:fertig']) return;
+  if(!force && (document.querySelector('#overlay.open') || document.getElementById('svnSperre'))) { setTimeout(() => w94Start(), 4000); return; }
+  w94Css(); W94.S = w94Schritte(); W94.i = 0; W94.offen = true; document.body.classList.add('w94-offen'); w94Zeig();
+}
+if(typeof svCockpit === 'function'){ const _ck94 = svCockpit; let einmal = false; svCockpit = function(){ const r = _ck94.apply(this, arguments); if(!einmal){ einmal = true; setTimeout(() => { try{ w94Start(); }catch(e){} }, 1800); } return r; }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm92css'; s.textContent="/* Beta 0.99.4 · Fragen mit Ja und Nein */\n.fr-karte{border:1px solid rgba(91,155,255,.45)!important;margin-bottom:14px}\n.fr-h{margin:0 0 10px;font-size:17px}\n.fr-liste{display:flex;flex-direction:column;gap:10px}\n.fr-z{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08));transition:box-shadow .3s,background .3s}\n.fr-z.fr-hin{box-shadow:0 0 0 2px var(--brand,#2f6bff)}\n.fr-tx{display:flex;flex-direction:column;gap:2px;min-width:0}\n.fr-tx span,.fr-tx small{color:var(--ink3);font-size:13.5px;overflow-wrap:anywhere}\n.fr-akt{display:flex;gap:8px;flex:none}\n.fr-akt .btn{min-height:44px;white-space:nowrap}\n.fr-akt .btn[disabled]{opacity:.5}\n@media (max-width:640px){.fr-z{grid-template-columns:1fr}.fr-akt .btn{flex:1}}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm80css'; s.textContent="/* ===== Beta 0.82 · Rollen und Bereiche ===== */\n.r80-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}\n.rolecard.r80{display:flex;flex-direction:column;gap:2px;}\n.r80-dl{margin:4px 0 10px;display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:13px;line-height:1.4;}\n.r80-dl dt{color:var(--ink3);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;padding-top:1px;white-space:nowrap;}\n.r80-dl dd{margin:0;color:var(--ink2);}\n.r80-alles{margin:4px 0 10px;font-size:13px;color:var(--ink2);font-weight:650;}\n.r80-note{margin:-4px 0 10px;}\n.svr-gh{margin:10px 0 0;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);}\n.svr-gh:first-child{margin-top:0;}\n.svr-auf{margin-top:12px;}\n.svr-auf h3{margin:0;font-size:15px;}\n.svr-auf .note{margin:4px 0 10px;}\n.svr-auf-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;}\n.svr-auf-b{font:inherit;text-align:left;display:flex;flex-direction:column;gap:3px;padding:10px 12px;min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);color:inherit;cursor:pointer;}\n.svr-auf-b b{font-size:13.5px;}\n.svr-auf-b span{font-size:13px;color:var(--ink3);}\n.svr-auf-b.on{border-color:var(--brand2);background:rgba(91,155,255,.10);}\n.svr-auf-b.on b::after{content:' ✓';color:var(--ok);}\n.svr-auf-b:disabled{opacity:.55;}\n.svr-vt tr.svr-vg th{padding-top:12px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);text-align:left;}\n/* Schalter „an“ auch im hellen Design grün (die helle Fassung färbte an und aus gleich grau) */\nhtml[data-theme=\"hell\"] .svr-sw.on,.svr-sw.on{background:#16a34a;}\n/* 0.83 · Funktionen je Bereich */\n.svr-fs{margin-top:12px;}\n.svr-fs h3{margin:0 0 6px;font-size:15px;}\n.svr-fl{display:flex;flex-wrap:wrap;gap:6px;}\n.svr-fchip{display:inline-flex;gap:6px;align-items:baseline;padding:5px 10px;border-radius:999px;background:rgba(91,155,255,.12);font-size:13px;}\n.svr-kopf{align-items:flex-start;}\n.svr-stand{font-size:13px!important;color:var(--ink3)!important;}\n.svr-stand.an{color:var(--ink2)!important;font-weight:600;}\n.svr-fk{flex:none;min-height:44px;max-width:46%;font:inherit;font-size:14px;font-weight:650;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg2,transparent);color:inherit;}\n.svr-row.abw .svr-fk{border-color:var(--brand2);}\n.svr-kopf .svr-rt b::after{content:none!important;}\n.svr-ab{font-style:normal;font-size:11px;font-weight:700;color:var(--ink3);margin-left:4px;}\ndetails.svr-auf{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;}\ndetails.svr-auf summary{cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;}\ndetails.svr-auf summary::-webkit-details-marker{display:none;}\ndetails.svr-auf summary h3::before{content:'▸ ';color:var(--ink3);}\ndetails.svr-auf[open] summary h3::before{content:'▾ ';}\n.r80-edit{margin-top:auto;align-self:flex-start;min-height:44px;}\n.r80-rl{display:flex;flex-direction:column;gap:8px;margin-top:12px;}\n/* 0.83 · Mannschaft */\n.s81-sort{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;}\n.s81-sort span{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-right:4px;}\n.s81-sort button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.s81-sort button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n.s81-inj{white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;}\n.k1-leiste{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;}\n.s81-feste .adm-head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;}\n.s81-l{display:flex;flex-direction:column;gap:6px;margin-top:12px;}\n.s81-l.vorbei{opacity:.7;}\n.s81-ev{font:inherit;color:inherit;text-align:left;display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);cursor:pointer;}\n.s81-d{display:flex;flex-direction:column;min-width:78px;font-size:13px;}\n.s81-d small,.s81-t small{color:var(--ink3);font-size:12.5px;}\n.s81-t{display:flex;flex-direction:column;flex:1;min-width:0;}\n.s81-h{margin:16px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);}\n.q50-del{margin-left:auto;}\n.q50-del.sure{color:#b42318;border-color:#b42318;}\n/* 0.83 · Mini-Apps */\n.ma-karte{margin-top:12px;}\n.ma-kopf{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}\n.ma-kopf h3{margin:0;font-size:16px;}\n.ma-tage{display:flex;flex-direction:column;gap:10px;margin-top:10px;}\n.ma-tag{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}\n.ma-tk{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}\n.ma-tk span{color:var(--ink2);}\n.ma-zahlen{display:flex;flex-wrap:wrap;gap:6px;}\n.ma-zahlen span{font-size:13px;font-weight:650;padding:3px 9px;border-radius:999px;}\n.ma-zahlen .offen{background:rgba(234,88,12,.12);color:#c2410c;}\n.ma-zahlen .ok{background:rgba(22,163,74,.12);color:#15803d;}\n.ma-auf{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid var(--line2);font-size:14px;}\n.ma-auf span{color:var(--ink2);font-size:13px;}\n.ma-auf.offen span{color:#c2410c;font-weight:650;}\n.ma-filter{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}\n.ma-filter button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.ma-filter button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n\n.ma-kl{display:flex;flex-direction:column;}\n.ma-mehr{margin-top:10px;}\n.ma-such{margin-bottom:8px;}\n.ma-k{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line2);}\n.ma-k small{display:block;color:var(--ink3);font-size:12.5px;}\n.ma-kt{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;}\n.ma-p,.ma-g{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}\n.ma-p{background:rgba(91,155,255,.14);}\n.ma-g{background:rgba(148,163,196,.18);}\n.svr-sw.sure{outline:3px solid #f59e0b;outline-offset:2px;}\n@media (max-width:560px){ .svr-kopf{flex-wrap:wrap;} .svr-kopf .svr-fk{max-width:none;width:100%;order:3;} }\n/* 0.84 · Einladen mit Funktionen */\n.r80-invf{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;}\n.r80-invh{margin:-4px 0 0;font-size:13px;color:var(--ink2);}\n.r80-invl{display:flex;flex-direction:column;gap:10px;}\n.r80-invz{display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:center;}\n.r80-invs{display:grid;grid-template-columns:1fr minmax(140px,200px);gap:8px;}\n.r80-invz select{min-height:44px;width:100%;}\n.r80-invz .iconbtn{width:44px;height:44px;}\n.r80-invadd{align-self:flex-start;min-height:44px;}\n@media (max-width:560px){ .r80-invs{grid-template-columns:1fr;gap:6px;} .r80-invz{padding:8px;border:1px solid var(--line);border-radius:12px;} }\n/* 0.84 · Funktionen in der Team-Liste: eigene Zeile über die ganze Breite */\n.urow .r80-hid{display:none!important;}\n.urow > .r80-uf{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;}\n.urow > .r80-uf span{font-size:12px;font-weight:650;line-height:1.35;padding:3px 9px;border-radius:999px;background:rgba(91,155,255,.14);color:var(--ink);word-break:normal;overflow-wrap:break-word;max-width:100%;}\n.r80-fb{min-height:44px;gap:6px;font-size:13px;}\n.r80-fb svg{width:16px;height:16px;}\n/* 0.85 · Funktionsrollen */\n.r80-invfr{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:12px;background:rgba(91,155,255,.12);color:var(--ink);font-size:13px;}\n"; document.head.appendChild(s); }catch(e){} })();

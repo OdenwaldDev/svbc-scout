@@ -78,6 +78,25 @@ details p{margin-top:8px;font-size:15px}
 .stand small{color:var(--ink2);font-variant-numeric:tabular-nums}
 .fertig-z{width:56px;height:56px;border-radius:50%;background:rgba(62,207,142,.14);color:var(--ok);display:grid;place-items:center;font-size:28px}
 .pc{display:none}
+form{display:grid;gap:14px}
+.feld{display:grid;gap:6px}
+.feld label,.feld legend{font-size:13.5px;font-weight:600;color:var(--ink2);padding:0}
+.feld input,.feld select{width:100%;min-height:52px;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:16.5px;padding:12px 14px;-webkit-appearance:none;appearance:none}
+.feld select{background-image:linear-gradient(45deg,transparent 50%,var(--ink3) 50%),linear-gradient(135deg,var(--ink3) 50%,transparent 50%);background-position:calc(100% - 20px) 23px,calc(100% - 14px) 23px;background-size:6px 6px;background-repeat:no-repeat;padding-right:38px}
+.feld input:focus,.feld select:focus{outline:2px solid var(--brand2);outline-offset:1px;border-color:transparent}
+.feld small{color:var(--ink3);font-size:13px}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+.umschalt{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.umschalt label{position:relative;display:block}
+.umschalt input{position:absolute;opacity:0;inset:0;min-height:0}
+.umschalt span{display:grid;place-items:center;min-height:50px;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--ink2);font-weight:650}
+.umschalt input:checked+span{border-color:var(--brand);color:#fff;background:linear-gradient(180deg,rgba(47,107,255,.28),rgba(47,107,255,.1))}
+.umschalt input:focus-visible+span{outline:2px solid var(--brand2);outline-offset:2px}
+.ja{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;color:var(--ink2)}
+.ja input{flex:none;width:24px;height:24px;margin:1px 0 0;accent-color:var(--brand)}
+.falle{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.fehler{color:#ff8f8f;font-size:14.5px;min-height:1.2em}
+.prim[disabled]{opacity:.6}
 footer{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--ink3);border-top:1px solid var(--line);padding-top:16px}
 footer a{color:var(--ink2)}
 a{color:var(--brand2)}
@@ -107,8 +126,30 @@ a{color:var(--brand2)}
     <button class="geraet" data-geraet="ios"><strong>iPhone</strong><small id="s-ios">Über TestFlight</small></button>
   </div>
   <button class="leise" id="weiter" hidden>Da weitermachen, wo du warst</button>
-  <div class="karte stand" id="stand" hidden><div class="zeile"><b id="stand-t"></b><small id="stand-z"></small></div><div class="bal"><b id="stand-b" style="width:0"></b></div><p class="hinweis">Google lässt die App erst für alle in den Play Store, wenn zwölf Tester 14 Tage dabei waren.</p></div>
+  <div class="karte stand" id="stand" hidden><div class="zeile"><b id="stand-t"></b><small id="stand-z"></small></div><div class="bal"><b id="stand-b" style="width:0"></b></div><p class="hinweis">Google lässt die App erst für alle in den Play Store, wenn zwölf Tester 14 Tage dabei waren. Jede Anmeldung zählt.</p></div>
   <div class="karte pc"><b>Am Handy geht es am einfachsten.</b><p>Öffne dort diese Seite: <b>svbsc.kaderwerk.pro/test.html</b></p></div>
+</section>
+
+<section id="anm" class="weg" hidden aria-labelledby="t-anm">
+  <p class="auge" id="a-auge">DEIN TESTZUGANG</p>
+  <h2 id="t-anm" tabindex="-1">Kurz eintragen. <em>Dann geht es los.</em></h2>
+  <p class="intro" id="a-text"></p>
+  <form id="formular" novalidate>
+    <fieldset class="feld"><legend>Dein Handy</legend><div class="umschalt">
+      <label><input type="radio" name="geraet" value="android"><span>Android</span></label>
+      <label><input type="radio" name="geraet" value="ios"><span>iPhone</span></label></div></fieldset>
+    <div class="feld"><label for="f-name">Vor- und Nachname</label><input id="f-name" name="name" autocomplete="name" maxlength="80" required></div>
+    <div class="feld"><label for="f-mail">E-Mail</label><input id="f-mail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="120" required aria-describedby="f-mail-h"><small id="f-mail-h"></small></div>
+    <div class="feld"><label for="f-art">Wer bist du im Verein?</label><select id="f-art" name="art" required>
+      <option value="">Bitte wählen</option><option value="spieler">Spieler/in</option><option value="trainer">Trainer/in</option><option value="eltern">Eltern</option><option value="helfer">Helfer/in</option><option value="sonstiges">Mitglied, Fan oder etwas anderes</option></select></div>
+    <div class="feld" id="f-team-z" hidden><label for="f-team">Mannschaft <span style="font-weight:400;color:var(--ink3)">(wenn du magst)</span></label><input id="f-team" name="team" maxlength="40" placeholder="zum Beispiel 1. Mannschaft oder A-Jugend"></div>
+    <div class="falle" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
+    <label class="ja"><input type="checkbox" name="ok" required><span>Ich möchte die App testen und einen Zugang bekommen. Ihr dürft mir dazu Mails schicken. <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></span></label>
+    <p class="fehler" id="f-fehler" role="alert"></p>
+    <button class="prim" id="f-los" type="submit">Eintragen und weiter</button>
+    <p class="hinweis">Du nutzt die App schon im Browser? Trag dieselbe E-Mail ein. Dein Zugang bleibt, wie er ist.</p>
+  </form>
+  <div class="zeile"><button class="leise" id="a-zurueck">← Zurück</button></div>
 </section>
 
 <section id="weg" class="weg" hidden aria-live="polite">
@@ -127,10 +168,10 @@ a{color:var(--brand2)}
 <section class="karte" aria-labelledby="t-fragen">
   <h2 id="t-fragen" style="font-size:26px;margin-bottom:6px">Gut zu wissen</h2>
   <details><summary>Kostet das etwas?</summary><p>Nein. Die App ist kostenlos, ohne Werbung und ohne Käufe.</p></details>
-  <details><summary>Brauche ich einen Zugang vom Verein?</summary><p>Ja. Die App ist für Mitglieder, Spieler, Trainer und Helfer der Fußballabteilung. Wer noch keinen Zugang hat, tippt in der App auf „Zugang anfragen“. Die Abteilung gibt dich dann frei.</p></details>
+  <details><summary>Brauche ich einen Zugang vom Verein?</summary><p>Ja, und den bekommst du hier gleich mit: Mit dem Eintragen legen wir deinen Zugang an. Du bestätigst deine E-Mail, legst ein Passwort fest, und die Abteilung gibt dich frei. Die App ist für Mitglieder, Spieler, Trainer, Eltern und Helfer der Fußballabteilung.</p></details>
   <details><summary>Warum eine Testgruppe und 14 Tage?</summary><p>Das verlangt Google bei neuen Apps: Mindestens zwölf Tester müssen 14 Tage am Stück angemeldet sein. Erst danach darf die App für alle in den Play Store. Bitte bleib so lange im Test und öffne die App ab und zu.</p></details>
   <details><summary>Geht es auch ohne Store?</summary><p>Ja. Die App läuft auch im Browser unter <a href="./">svbsc.kaderwerk.pro</a> und lässt sich von dort auf den Startbildschirm legen.</p></details>
-  <details><summary>Was passiert mit meinen Daten?</summary><p>Für den Test brauchst du nur dein Google-Konto oder deine Apple-ID, so wie bei jeder App. Was die App selbst speichert, steht im <a href="datenschutz.html">Datenschutz</a>.</p></details>
+  <details><summary>Was passiert mit meinen Daten?</summary><p>Wir speichern, was du hier einträgst: Name, E-Mail, deine Rolle im Verein und ob du Android oder iPhone nutzt. Damit legen wir deinen Zugang an und sagen dir Bescheid, wenn es weitergeht. Mehr steht im <a href="datenschutz.html">Datenschutz</a>.</p></details>
   <details><summary>Wem schreibe ich, wenn etwas hakt?</summary><p>An <a href="mailto:fussball@sv-moerlenbach.de?subject=SVBSC%20App-Test">fussball@sv-moerlenbach.de</a>. Schreib dazu, welches Handy du hast und bei welchem Schritt es nicht weitergeht.</p></details>
 </section>
 </main>
@@ -148,14 +189,19 @@ var S={android:'bald',ios:'bald',gruppe:'',gruppe_name:'SVBSC Tester',play_test:
   play_store:'https://play.google.com/store/apps/details?id=pro.kaderwerk.svbsc',testflight:'',dabei:null,ziel:12};
 var TF='https://apps.apple.com/app/testflight/id899247664', MAIL='mailto:fussball@sv-moerlenbach.de?subject=SVBSC%20App-Test';
 var $=function(s){return document.querySelector(s)}, KEY='svbsc-test';
-var geraet=null, schritt=0;
-function merken(){try{localStorage.setItem(KEY,JSON.stringify({g:geraet,s:schritt,t:Date.now()}))}catch(e){}}
-function gemerkt(){try{var m=JSON.parse(localStorage.getItem(KEY)||'null');if(m&&(m.g==='android'||m.g==='ios')&&Date.now()-m.t<30*864e5)return m}catch(e){}return null}
+var geraet=null, schritt=0, kennung=null, busy=false;
+function merken(){try{localStorage.setItem(KEY,JSON.stringify({g:geraet,s:schritt,k:kennung,t:Date.now()}))}catch(e){}}
+function gemerkt(){try{var m=JSON.parse(localStorage.getItem(KEY)||'null');if(m&&m.k&&(m.g==='android'||m.g==='ios')&&Date.now()-m.t<60*864e5)return m}catch(e){}return null}
+function ruf(fn,body){if(!CFG||!CFG.url)return Promise.resolve(null);
+  return fetch(CFG.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:CFG.anon,'content-type':'application/json'},body:JSON.stringify(body||{})}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
+function melde(){if(kennung)ruf('app_tester_schritt',{p_token:kennung,p_schritt:Math.min(9,schritt)})}
 
-var ANMELDEN=['Öffne die App und melde dich mit deinem Zugang an. Noch keinen? Tippe unten auf „Zugang anfragen“, die Abteilung gibt dich frei.',
-  'Erlaube Mitteilungen. Dann kommen Training, Spiel und Termine direkt aufs Handy.'];
+var ANMELDEN=['Öffne die App und melde dich mit deiner E-Mail und deinem Passwort an.','Erlaube Mitteilungen. Dann kommen Training, Spiel und Termine direkt aufs Handy.'];
+var POST={t:'Schau in dein <em>Postfach.</em>',x:'Wir haben dir gerade eine Mail geschickt. Damit legst du deinen Zugang zur App an.',
+  tun:['Öffne die Mail von der SV/BSC Sportzentrale.','Tippe auf den Knopf und lege dein Passwort fest.','Die Abteilung schaltet dich frei, meist noch am selben Tag. Mach hier ruhig schon weiter.'],
+  link:null,ok:'Erledigt',hilfe:'Keine Mail da? Schau im Spam-Ordner nach. Nach fünf Minuten kannst du dich einfach noch einmal eintragen. Wenn du schon einen Zugang hast, steht in der Mail ein Knopf zum Anmelden.'};
 function wege(){
-  var A=[{t:'Erst in die <em>Testgruppe.</em>',x:'Google braucht diesen Schritt, damit du die App installieren darfst.',
+  var A=[POST,{t:'Jetzt in die <em>Testgruppe.</em>',x:'Google braucht diesen Schritt, damit du die App installieren darfst.',
       tun:['Öffne unsere Google-Gruppe „'+S.gruppe_name+'“.','Melde dich mit dem Google-Konto an, das du im Play Store nutzt, und tippe auf „Gruppe beitreten“.','Komm danach auf diese Seite zurück.'],
       link:['Testgruppe öffnen',S.gruppe],ok:'Ich bin in der Gruppe',
       hilfe:'Steht dort „Beitritt beantragen“, bist du noch kein Mitglied. Warte dann auf die Bestätigung per Mail. Bist du mit mehreren Google-Konten angemeldet, wähle oben rechts das Konto, das auch dein Play Store nutzt.'}];
@@ -172,11 +218,11 @@ function wege(){
       tun:ANMELDEN.concat(['Bleib bitte 14 Tage im Test und öffne die App ab und zu. So lange braucht Google, bevor die App für alle in den Play Store darf.']),
       link:null,ok:'Fertig, ich bin dabei',hilfe:'Anmeldung klappt nicht oder die Freigabe dauert? Schreib uns an fussball@sv-moerlenbach.de.'});
   }else{
-    A.push({t:'Fast geschafft. <em>Google prüft noch.</em>',x:'Du bist in der Gruppe, mehr brauchst du gerade nicht zu tun.',
-      tun:['Sobald Google den Test freigibt, bekommst du eine Mail über die Gruppe.','Dann geht es hier mit „Tester werden“ und „Installieren“ weiter. Das dauert zwei Minuten.','Bis dahin kannst du die App schon im Browser nutzen.'],
+    A.push({t:'Du bist dabei. <em>Google prüft noch.</em>',x:'Mehr brauchst du gerade nicht zu tun.',
+      tun:['Sobald Google den Test freigibt, bekommst du von uns eine Mail mit dem Link.','Dann fehlen nur noch „Tester werden“ und „Installieren“. Das dauert zwei Minuten.','Bis dahin kannst du die App schon im Browser nutzen.'],
       link:['App im Browser öffnen','./'],ok:null,warten:true,hilfe:'Die Prüfung bei Google dauert meist wenige Tage. Du musst nichts weiter tun.'});
   }
-  var I=[];
+  var I=[POST];
   if(S.ios==='offen'&&S.testflight){
     I.push({t:'Erst <em>TestFlight</em> holen.',x:'Das ist Apples kostenlose App für Testversionen.',tun:['Öffne den App Store über den Knopf.','Lade TestFlight und komm hierher zurück.'],
       link:['TestFlight im App Store',TF],ok:'TestFlight ist installiert',hilfe:'TestFlight ist von Apple und kostenlos. Du brauchst dafür nur deine Apple-ID.'});
@@ -184,20 +230,28 @@ function wege(){
       link:['Testversion öffnen',S.testflight],ok:'Ist installiert',hilfe:'Öffnet sich nur der App Store, fehlt TestFlight noch. Geh einen Schritt zurück.'});
     I.push({t:'Anmelden und <em>loslegen.</em>',x:'Fast fertig. Jetzt noch rein in die App.',tun:ANMELDEN,link:null,ok:'Fertig, ich bin dabei',hilfe:'Anmeldung klappt nicht oder die Freigabe dauert? Schreib uns an fussball@sv-moerlenbach.de.'});
   }else{
-    I.push({t:'Apple prüft <em>noch.</em>',x:'Die Testversion fürs iPhone liegt bei Apple zur Prüfung. Das dauert meist ein bis zwei Tage. Bis dahin läuft die App schon im Browser, auch als Symbol auf dem Startbildschirm.',
+    I.push({t:'Du stehst auf <em>der Liste.</em>',x:'Die Testversion fürs iPhone liegt bei Apple zur Prüfung. Sobald sie frei ist, bekommst du von uns eine Mail mit dem Link. Bis dahin läuft die App schon im Browser, auch als Symbol auf dem Startbildschirm.',
       tun:['Öffne die App in Safari über den Knopf.','Tippe unten auf Teilen, das Quadrat mit dem Pfeil.','Wähle „Zum Home-Bildschirm“.'],
-      link:['App in Safari öffnen','./'],ok:null,warten:true,hilfe:'Sobald Apple fertig ist, steht hier der Link zur Testversion. Schau in ein, zwei Tagen noch einmal vorbei.'});
+      link:['App in Safari öffnen','./'],ok:null,warten:true,hilfe:'Die Prüfung bei Apple dauert meist ein bis zwei Tage. Du musst nichts weiter tun.'});
   }
   return {android:A,ios:I};
 }
+function nur(id){['start','anm','weg'].forEach(function(x){$('#'+x).hidden=x!==id});var el=$('#'+id);el.classList.remove('rein');void el.offsetWidth;el.classList.add('rein')}
 function zeigStart(fokus){
-  $('#start').hidden=false;$('#weg').hidden=true;$('#start').classList.add('rein');
-  var m=gemerkt();$('#weiter').hidden=!(m&&m.s>0);
+  nur('start');var m=gemerkt();$('#weiter').hidden=!m;
   if(fokus){$('#t-start').focus({preventScroll:true});window.scrollTo(0,0)}
+}
+function zeigAnm(g){
+  nur('anm');var F=$('#formular');F.elements.geraet.value=g;anmText();
+  $('#t-anm').focus({preventScroll:true});window.scrollTo(0,0);
+}
+function anmText(){var g=$('#formular').elements.geraet.value;
+  $('#a-text').textContent=g==='ios'?'Trag dich ein. Sobald Apple die Testversion freigibt, bekommst du den Link per Mail. Dein Zugang zur App wird gleich mit angelegt.':'Trag dich ein, dann führen wir dich Schritt für Schritt bis zur installierten App. Dein Zugang wird gleich mit angelegt.';
+  $('#f-mail-h').textContent=g==='ios'?'An diese Adresse kommt der Link zur Testversion.':'An diese Adresse kommen dein Zugang und der Link zum Test.';
 }
 function zeig(){
   var W=wege()[geraet];if(schritt>W.length)schritt=W.length;
-  $('#start').hidden=true;var sec=$('#weg');sec.hidden=false;sec.classList.remove('rein');void sec.offsetWidth;sec.classList.add('rein');
+  nur('weg');
   var name=geraet==='android'?'ANDROID':'IPHONE', fertig=schritt>=W.length, s=W[Math.min(schritt,W.length-1)];
   $('#schiene').innerHTML=W.map(function(_,i){return '<i class="'+(fertig||i<schritt?'fertig':i===schritt?'an':'')+'"></i>'}).join('');
   if(fertig){
@@ -210,33 +264,55 @@ function zeig(){
     $('#w-tun').innerHTML='';s.tun.forEach(function(t){var li=document.createElement('li');var sp=document.createElement('span');sp.textContent=t;li.appendChild(sp);$('#w-tun').appendChild(li)});
     var L=$('#w-link');L.hidden=!(s.link&&s.link[1]);if(s.link&&s.link[1]){L.textContent=s.link[0]+(s.link[1]==='./'?'':' ↗');L.href=s.link[1];if(s.link[1]==='./')L.removeAttribute('target');else L.target='_blank'}
     var ok=$('#w-ok');ok.hidden=!s.ok;ok.textContent=s.ok?s.ok+' →':'';ok.className=s.link&&s.link[1]?'sek':'prim';
-    var ohne=schritt===0&&geraet==='android'&&!S.gruppe;
-    $('#w-hinweis').textContent=ohne?'Die Testgruppe wird gerade eingerichtet. Schau in Kürze noch einmal vorbei.':s.warten?'':s.link&&s.link[1]&&s.link[1]!=='./'?'Öffnet sich in einem neuen Tab. Diese Seite bleibt für dich offen.':'';
+    var ohne=s.link&&s.link[0]==='Testgruppe öffnen'&&!S.gruppe;
+    $('#w-hinweis').textContent=ohne?'Die Testgruppe wird gerade eingerichtet. Schau in Kürze noch einmal vorbei.':s.warten?'Wir melden uns per Mail. Du kannst die Seite jetzt schließen.':s.link&&s.link[1]&&s.link[1]!=='./'?'Öffnet sich in einem neuen Tab. Diese Seite bleibt für dich offen.':'';
     if(ohne)ok.hidden=true;
     $('#w-hilfe').hidden=false;$('#w-hilfe').open=false;$('#w-hilfe-t').textContent=s.hilfe;
   }
-  $('#w-zurueck').textContent=schritt>0?'← Voriger Schritt':'← Anderes Handy';
-  merken();$('#w-titel').focus({preventScroll:true});window.scrollTo(0,0);
+  $('#w-zurueck').hidden=schritt===0;$('#w-zurueck').textContent='← Voriger Schritt';
+  merken();melde();$('#w-titel').focus({preventScroll:true});window.scrollTo(0,0);
 }
-document.querySelectorAll('[data-geraet]').forEach(function(b){b.onclick=function(){var m=gemerkt();geraet=b.dataset.geraet;schritt=m&&m.g===geraet?m.s:0;zeig()}});
-$('#weiter').onclick=function(){var m=gemerkt();if(m){geraet=m.g;schritt=m.s;zeig()}};
+document.querySelectorAll('[data-geraet]').forEach(function(b){b.onclick=function(){var m=gemerkt();if(m&&m.g===b.dataset.geraet){geraet=m.g;schritt=m.s;kennung=m.k;zeig()}else zeigAnm(b.dataset.geraet)}});
+$('#weiter').onclick=function(){var m=gemerkt();if(m){geraet=m.g;schritt=m.s;kennung=m.k;zeig()}};
 $('#w-ok').onclick=function(){schritt++;zeig()};
-$('#w-zurueck').onclick=function(){if(schritt>0){schritt--;zeig()}else{zeigStart(true)}};
+$('#w-zurueck').onclick=function(){if(schritt>0){schritt--;zeig()}};
 $('#w-start').onclick=function(){zeigStart(true)};
-function stand(){
-  $('#s-android').textContent=S.android==='offen'?'Über Google Play':'Testgruppe ist offen';
-  $('#s-ios').textContent=S.ios==='offen'&&S.testflight?'Über TestFlight':'Vorerst im Browser';
+$('#a-zurueck').onclick=function(){zeigStart(true)};
+var F=$('#formular');
+F.elements.geraet.forEach(function(r){r.onchange=anmText});
+F.addEventListener('input',function(){$('#f-fehler').textContent=''});
+F.elements.art.onchange=function(){var a=F.elements.art.value;$('#f-team-z').hidden=!(a==='spieler'||a==='trainer'||a==='eltern')};
+F.onsubmit=function(e){e.preventDefault();if(busy)return;
+  var name=F.elements.name.value.trim(),mail=F.elements.email.value.trim().toLowerCase(),art=F.elements.art.value,g=F.elements.geraet.value,fe=$('#f-fehler');
+  var f=name.length<3||name.indexOf(' ')<1?['name','Bitte Vor- und Nachnamen eintragen.']:!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(mail)?['email','Bitte eine gültige E-Mail-Adresse eintragen.']:!art?['art','Bitte auswählen, wer du im Verein bist.']:!F.elements.ok.checked?['ok','Bitte das Häkchen setzen.']:null;
+  if(f){fe.textContent=f[1];F.elements[f[0]].focus();return}
+  if(!CFG||!CFG.url){fe.textContent='Die Anmeldung ist gerade nicht erreichbar. Bitte später noch einmal versuchen.';return}
+  busy=true;fe.textContent='';var B=$('#f-los');B.disabled=true;B.textContent='Wird eingetragen …';
+  var ctl=new AbortController(),tm=setTimeout(function(){ctl.abort()},25000);
+  fetch(CFG.url+'/functions/v1/admin-users',{method:'POST',signal:ctl.signal,headers:{apikey:CFG.anon,authorization:'Bearer '+CFG.anon,'content-type':'application/json'},
+    body:JSON.stringify({action:'anfrage',email:mail,name:name,art:art,team:F.elements.team.value.trim(),website:F.elements.website.value,app_url:location.origin+'/',test:{geraet:g}})})
+   .then(function(r){return r.json().then(function(d){return {s:r.status,d:d}})})
+   .then(function(x){if(x.s===200&&x.d&&x.d.ok){geraet=g;schritt=0;kennung=x.d.token||('ohne-'+Date.now());zeig();ruf('app_test_stand').then(function(d){if(d&&typeof d.dabei==='number'){S.dabei=d.dabei;stand(true)}})}
+      else fe.textContent=(x.d&&x.d.error)||'Das hat gerade nicht geklappt. Bitte gleich noch einmal versuchen.'})
+   .catch(function(){fe.textContent='Keine Verbindung. Bitte Internet prüfen und noch einmal versuchen. Deine Eingaben bleiben stehen.'})
+   .then(function(){clearTimeout(tm);busy=false;B.disabled=false;B.textContent='Eintragen und weiter'});
+};
+function stand(nurZahl){
+  $('#s-android').textContent=S.android==='offen'?'Über Google Play':'Jetzt eintragen';
+  $('#s-ios').textContent=S.ios==='offen'&&S.testflight?'Über TestFlight':'Auf die Liste';
   var n=typeof S.dabei==='number'?S.dabei:null, z=S.ziel||12;
   $('#stand').hidden=n===null;
-  if(n!==null){$('#stand-t').textContent=n>=z?'Geschafft: '+n+' Tester sind dabei':'Noch '+(z-n)+' bis zum Ziel';$('#stand-z').textContent=n+' von '+z+' Android-Testern';setTimeout(function(){$('#stand-b').style.width=Math.min(100,Math.round(n/z*100))+'%'},60)}
-  if(!$('#weg').hidden)zeig();
+  if(n!==null){$('#stand-t').textContent=n>=z?'Geschafft: '+n+' Tester sind angemeldet':'Noch '+(z-n)+' bis zum Ziel';$('#stand-z').textContent=n+' von '+z+' Android-Testern';setTimeout(function(){$('#stand-b').style.width=Math.min(100,Math.round(n/z*100))+'%'},60)}
+  if(!nurZahl&&!$('#weg').hidden)zeig();
 }
 var ua=navigator.userAgent, vor=/iPhone|iPad|iPod/.test(ua)?'ios':/Android/.test(ua)?'android':null;
 if(vor)document.querySelector('[data-geraet="'+vor+'"]').classList.add('vor');
 stand();zeigStart(false);
-var q=new URLSearchParams(location.search).get('geraet');if(q==='android'||q==='ios'){geraet=q;var m0=gemerkt();schritt=m0&&m0.g===q?m0.s:0;zeig()}
-if(CFG&&CFG.url)fetch(CFG.url+'/rest/v1/rpc/app_test_stand',{method:'POST',headers:{apikey:CFG.anon,'content-type':'application/json'},body:'{}'})
-  .then(function(r){return r.ok?r.json():null}).then(function(d){if(d&&typeof d==='object'){Object.keys(S).forEach(function(k){if(d[k]!==undefined&&d[k]!==null&&d[k]!=='')S[k]=d[k]});if(d.dabei===null)S.dabei=null;stand()}}).catch(function(){});
+var q=new URLSearchParams(location.search).get('geraet');
+var P0=new URLSearchParams(location.search);
+// Link aus der Mail „Es geht los“: wer schon eingetragen ist, landet direkt beim nächsten Schritt, auch auf einem anderen Gerät
+if(q==='android'||q==='ios'){var m0=gemerkt();if(m0&&m0.g===q){geraet=q;schritt=Math.max(m0.s,P0.get('weiter')?1:0);kennung=m0.k;zeig()}else if(P0.get('weiter')){geraet=q;schritt=1;kennung='mail-'+Date.now();zeig()}else zeigAnm(q)}
+ruf('app_test_stand').then(function(d){if(d&&typeof d==='object'){Object.keys(S).forEach(function(k){if(d[k]!==undefined&&d[k]!==null&&d[k]!=='')S[k]=d[k]});if(d.dabei===null)S.dabei=null;stand()}});
 })();
 </script>
 </body></html>
