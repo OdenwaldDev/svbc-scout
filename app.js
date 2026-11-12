@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.9', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.11', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,18 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.11',v:'0.99.11',datum:'2026-11-12',titel:'Einladung zum Training: einmal statt doppelt',kurz:'Wer Trainingsabfragen in der App beantwortet, bekommt die Einladung nur noch dort und nicht zusätzlich per WhatsApp.',
+   punkte:[
+    {ic:'\u{1F4F2}',t:'App statt WhatsApp',d:'Sobald du eine Abfrage in der App oder direkt in der Mitteilung beantwortet hast, kommt die nächste Einladung nur noch dort.'},
+    {ic:'\u{1F6DF}',t:'Niemand fällt durch',d:'Wer am Trainingstag noch nicht geantwortet hat, bekommt wie bisher die Erinnerung per WhatsApp. Wer die App länger nicht nutzt, bekommt von selbst wieder die Einladung per WhatsApp.'},
+   ]},
+  {id:'0.99.10',v:'0.99.10',datum:'2026-11-12',titel:'Deine Einsätze: der Helferplan kommt aufs Handy',kurz:'Wer im Helferplan steht und ein Konto hat, sieht seine Einsätze auf der Startseite und bekommt sie ein paar Tage vorher als Frage mit Zusagen und Absagen.',
+   punkte:[
+    {ic:'\u{1F9E1}',t:'Deine Einsätze auf der Startseite',d:'Tag, Aufgabe und Spiel auf einen Blick. Dazu der Stand: eingeplant, zugesagt oder abgesagt.'},
+    {ic:'\u{1F514}',t:'Kurze Frage vor dem Einsatz',d:'Ein paar Tage vorher fragt die App, ob es bei dir klappt. Ein Tipp in der Mitteilung genügt.'},
+    {ic:'\u{1F4E3}',r:'admin',t:'Absagen landen sofort bei der Leitung',d:'Sagt jemand ab, kommt eine Mitteilung mit Aufgabe und Tag. Der Helferplan selbst bleibt, wo er gepflegt wird.'},
+    {ic:'\u{1F517}',r:'admin',t:'Helferplan und Konten verbinden',d:'In der Karte „App-Test“. Gleiche E-Mail oder gleicher Name verbinden sich von selbst, den Rest ordnest du mit zwei Tipps zu.'},
+   ]},
   {id:'0.99.9',v:'0.99.9',datum:'2026-11-12',titel:'Startklar: Training als Frage aufs Handy',kurz:'Spieler mit Konto bekommen jede Trainingsabfrage als Mitteilung mit Zusagen und Absagen. Neue Nutzer führt die App beim ersten Start durch die Einrichtung.',
    punkte:[
     {ic:'\u{1F514}',t:'Zusagen direkt in der Mitteilung',d:'Wer als Spieler zugeordnet ist, bekommt Training und Spiel aufs Handy und antwortet mit einem Tipp. Die Antwort steht sofort in der Abstimmung des Trainers.'},
@@ -32052,6 +32064,79 @@ async function w94Start(force){
   w94Css(); W94.S = w94Schritte(); W94.i = 0; W94.offen = true; document.body.classList.add('w94-offen'); w94Zeig();
 }
 if(typeof svCockpit === 'function'){ const _ck94 = svCockpit; let einmal = false; svCockpit = function(){ const r = _ck94.apply(this, arguments); if(!einmal){ einmal = true; setTimeout(() => { try{ w94Start(); }catch(e){} }, 1800); } return r; }; }
+
+/* =====================================================================
+   Beta 0.99.10 · Deine Einsätze (144_helfer_konto.sql)
+   Albert, 12.11.2026: „… die Helfer, dass die ihre Aufgaben, To-Dos kriegen.“
+   Wer im Helferplan steht und ein Konto hat, sieht seine kommenden Einsätze oben auf der Startseite: Tag, Aufgabe, Spiel.
+   Die Zusage kommt wenige Tage vorher als Frage (svm92.js). Hier steht nur, was ansteht und was schon beantwortet ist.
+   Der Helferplan selbst bleibt, wo er gepflegt wird. Die Karte liest nur.
+   ===================================================================== */
+const E95 = { liste:[], geladen:0, laeuft:null };
+function e95Css(){ if(document.getElementById('svm95css')) return; const s = document.createElement('style'); s.id = 'svm95css';
+  s.textContent = `.e95{margin-bottom:14px}.e95 h3{margin:0 0 10px;font-size:17px}.e95-l{display:grid;gap:8px}
+.e95-z{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:11px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08))}
+.e95-d{min-width:54px;text-align:center;font-variant-numeric:tabular-nums;line-height:1.15}.e95-d b{display:block;font-size:19px}.e95-d small{color:var(--ink2,#a9b3c7);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em}
+.e95-t{display:grid;gap:2px;min-width:0}.e95-t b{overflow-wrap:anywhere}.e95-t span{color:var(--ink2,#a9b3c7);font-size:14px;overflow-wrap:anywhere}
+.e95-s{font-size:13px;font-weight:650;white-space:nowrap;padding:4px 10px;border-radius:999px;background:rgba(148,163,196,.14);color:var(--ink2,#a9b3c7)}
+.e95-s.ja{background:rgba(62,207,142,.16);color:#3ecf8e}.e95-s.nein{background:rgba(255,107,107,.16);color:#ff8f8f}
+.e95-f{margin:10px 0 0;color:var(--ink2,#a9b3c7);font-size:13.5px}
+@media (max-width:480px){.e95-z{grid-template-columns:auto 1fr}.e95-s{grid-column:2;justify-self:start}}`;
+  document.head.appendChild(s); }
+async function e95Laden(force){
+  if(!force && Date.now() - E95.geladen < 60000) return E95.liste;
+  if(E95.laeuft) return E95.laeuft;
+  E95.laeuft = (async () => {
+    try{ const { data, error } = await SVB.sb.rpc('meine_einsaetze'); if(error) throw error; E95.liste = Array.isArray(data) ? data : []; }
+    catch(e){ E95.liste = []; }
+    E95.geladen = Date.now(); E95.laeuft = null; return E95.liste; })();
+  return E95.laeuft;
+}
+function e95Tag(d){ try{ const t = new Date(d + 'T12:00:00'); return { wt:t.toLocaleDateString('de-DE', { weekday:'short' }).replace('.', ''), tm:String(t.getDate()).padStart(2, '0') + '.' + String(t.getMonth() + 1).padStart(2, '0') + '.' }; }catch(e){ return { wt:'', tm:String(d || '') }; } }
+function e95Karte(){
+  const home = document.getElementById('panel-home'); if(!home) return;
+  let k = document.getElementById('e95Karte');
+  if(!E95.liste.length){ if(k) k.remove(); return; }
+  e95Css();
+  if(!k){ k = document.createElement('section'); k.id = 'e95Karte'; k.className = 'card e95'; k.setAttribute('aria-label', 'Deine Einsätze'); }
+  // direkt unter den offenen Fragen, sonst unter der Begrüßung
+  const fr = document.getElementById('frKarte'), hello = document.getElementById('svHello');
+  const nach = (fr && fr.parentNode === home) ? fr : ((hello && hello.parentNode === home) ? hello : null), soll = nach ? nach.nextSibling : home.firstChild;
+  if(soll !== k) home.insertBefore(k, soll);
+  const L = E95.liste.slice(0, 5), mehr = E95.liste.length - L.length;
+  k.innerHTML = `<h3>${E95.liste.length === 1 ? 'Dein nächster Einsatz' : 'Deine Einsätze'}</h3><div class="e95-l">${L.map(e => { const t = e95Tag(e.datum);
+    const st = e.antwort === 'ja' ? ['ja', 'Zugesagt'] : e.antwort === 'nein' ? ['nein', 'Abgesagt'] : ['', 'Eingeplant'];
+    return `<div class="e95-z" data-e95="${svEsc(e.datum)}"><div class="e95-d"><small>${svEsc(t.wt)}</small><b>${svEsc(t.tm)}</b></div>
+      <div class="e95-t"><b>${svEsc(e.titel || e.aufgabe)}</b>${e.spiel ? `<span>${svEsc(e.spiel)}</span>` : ''}</div><span class="e95-s ${st[0]}">${st[1]}</span></div>`; }).join('')}</div>
+    <p class="e95-f">${mehr > 0 ? `Dazu ${mehr === 1 ? 'kommt ein weiterer Einsatz' : 'kommen ' + mehr + ' weitere Einsätze'}. ` : ''}Ein paar Tage vorher fragen wir kurz nach, ob es bei dir klappt.</p>`;
+}
+async function e95Zeig(force){ try{ if(typeof SVU === 'undefined' || !SVU || !SVU.id) return; await e95Laden(force); e95Karte(); }catch(e){} }
+if(typeof svCockpit === 'function'){ const _ck95 = svCockpit; svCockpit = function(){ const r = _ck95.apply(this, arguments); try{ e95Karte(); e95Zeig(); }catch(e){} return r; }; }
+// Nach einer Antwort auf eine Frage stimmt der Stand in der Karte sofort
+if(typeof svFrageAntwort === 'function'){ const _fa95 = svFrageAntwort; svFrageAntwort = async function(){ const r = await _fa95.apply(this, arguments); try{ if(r) e95Zeig(true); }catch(e){} return r; }; }
+
+// Für die Leitung, in der Karte „App-Test“: Wer im Helferplan steht, gehört zu welchem Konto?
+// Eindeutige Fälle (gleiche E-Mail, gleicher Name) verbindet der Server von selbst. Der Rest braucht einen Tipp.
+async function e95Admin(k){
+  if(!k || k.querySelector('.e95-adm')) return;
+  const { data, error } = await SVB.sb.rpc('einsatz_personen'); if(error || !data) return;
+  const P = data.personen || [], K = data.konten || []; if(!P.length || !K.length) return;
+  const nm = id => (K.find(x => x.id === id) || {}).name || '';
+  const box = document.createElement('div'); box.className = 'at-st at-sp e95-adm';
+  box.innerHTML = `<b>Helferplan und Konten <span style="font-weight:400;color:var(--ink2,#a9b3c7)">${P.filter(x => x.konto).length} von ${P.length} verbunden</span></b>
+    <p class="note" style="margin:0">Wer verbunden ist, sieht seine Einsätze auf der Startseite und bekommt sie ein paar Tage vorher als Frage mit Zusagen und Absagen aufs Handy. Eine Absage landet bei der Leitung.</p>
+    ${P.map(x => `<div class="at-r" data-e95p="${svEsc(x.key)}"><span style="flex:1;min-width:140px"><b>${svEsc(x.name || '')}</b> <small style="color:var(--ink2,#a9b3c7)">${x.einsaetze} ${x.einsaetze === 1 ? 'Einsatz' : 'Einsätze'}</small>${x.konto ? ` <small style="color:#3ecf8e">Konto: ${svEsc(nm(x.konto))}</small>` : ''}</span>
+      <select data-e95sel aria-label="Konto zu ${svEsc(x.name || '')}" style="min-height:44px;max-width:230px"><option value="">kein Konto</option>${K.map(c => `<option value="${svEsc(c.id)}"${c.id === x.konto ? ' selected' : ''}>${svEsc(c.name || '')}</option>`).join('')}</select>
+      <button type="button" class="btn sm ghost" data-e95set>Speichern</button></div>`).join('')}`;
+  k.appendChild(box);
+  box.querySelectorAll('[data-e95p]').forEach(z => z.querySelector('[data-e95set]').onclick = async ev => { const b = ev.currentTarget; b.disabled = true;
+    try{ const u = z.querySelector('[data-e95sel]').value || null;
+      const { data:r, error:e } = await SVB.sb.rpc('einsatz_person_setzen', { p_key:z.dataset.e95p, p_user:u }); if(e) throw e;
+      kToast(u ? `✓ Verbunden${r && r.fragen ? ', ' + r.fragen + (r.fragen > 1 ? ' Fragen sind' : ' Frage ist') + ' raus' : ''}` : '✓ Verbindung gelöst');
+      E95.geladen = 0; if(typeof at93Karte === 'function') await at93Karte(); }
+    catch(e){ b.disabled = false; kToast('⚠️ ' + String((e && e.message) || e)); } });
+}
+if(typeof at93Spieler === 'function'){ const _sp95 = at93Spieler; at93Spieler = async function(k){ try{ await _sp95.apply(this, arguments); }catch(e){} try{ await e95Admin(k); }catch(e){} }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm92css'; s.textContent="/* Beta 0.99.4 · Fragen mit Ja und Nein */\n.fr-karte{border:1px solid rgba(91,155,255,.45)!important;margin-bottom:14px}\n.fr-h{margin:0 0 10px;font-size:17px}\n.fr-liste{display:flex;flex-direction:column;gap:10px}\n.fr-z{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08));transition:box-shadow .3s,background .3s}\n.fr-z.fr-hin{box-shadow:0 0 0 2px var(--brand,#2f6bff)}\n.fr-tx{display:flex;flex-direction:column;gap:2px;min-width:0}\n.fr-tx span,.fr-tx small{color:var(--ink3);font-size:13.5px;overflow-wrap:anywhere}\n.fr-akt{display:flex;gap:8px;flex:none}\n.fr-akt .btn{min-height:44px;white-space:nowrap}\n.fr-akt .btn[disabled]{opacity:.5}\n@media (max-width:640px){.fr-z{grid-template-columns:1fr}.fr-akt .btn{flex:1}}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm80css'; s.textContent="/* ===== Beta 0.82 · Rollen und Bereiche ===== */\n.r80-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}\n.rolecard.r80{display:flex;flex-direction:column;gap:2px;}\n.r80-dl{margin:4px 0 10px;display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:13px;line-height:1.4;}\n.r80-dl dt{color:var(--ink3);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;padding-top:1px;white-space:nowrap;}\n.r80-dl dd{margin:0;color:var(--ink2);}\n.r80-alles{margin:4px 0 10px;font-size:13px;color:var(--ink2);font-weight:650;}\n.r80-note{margin:-4px 0 10px;}\n.svr-gh{margin:10px 0 0;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);}\n.svr-gh:first-child{margin-top:0;}\n.svr-auf{margin-top:12px;}\n.svr-auf h3{margin:0;font-size:15px;}\n.svr-auf .note{margin:4px 0 10px;}\n.svr-auf-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;}\n.svr-auf-b{font:inherit;text-align:left;display:flex;flex-direction:column;gap:3px;padding:10px 12px;min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);color:inherit;cursor:pointer;}\n.svr-auf-b b{font-size:13.5px;}\n.svr-auf-b span{font-size:13px;color:var(--ink3);}\n.svr-auf-b.on{border-color:var(--brand2);background:rgba(91,155,255,.10);}\n.svr-auf-b.on b::after{content:' ✓';color:var(--ok);}\n.svr-auf-b:disabled{opacity:.55;}\n.svr-vt tr.svr-vg th{padding-top:12px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);text-align:left;}\n/* Schalter „an“ auch im hellen Design grün (die helle Fassung färbte an und aus gleich grau) */\nhtml[data-theme=\"hell\"] .svr-sw.on,.svr-sw.on{background:#16a34a;}\n/* 0.83 · Funktionen je Bereich */\n.svr-fs{margin-top:12px;}\n.svr-fs h3{margin:0 0 6px;font-size:15px;}\n.svr-fl{display:flex;flex-wrap:wrap;gap:6px;}\n.svr-fchip{display:inline-flex;gap:6px;align-items:baseline;padding:5px 10px;border-radius:999px;background:rgba(91,155,255,.12);font-size:13px;}\n.svr-kopf{align-items:flex-start;}\n.svr-stand{font-size:13px!important;color:var(--ink3)!important;}\n.svr-stand.an{color:var(--ink2)!important;font-weight:600;}\n.svr-fk{flex:none;min-height:44px;max-width:46%;font:inherit;font-size:14px;font-weight:650;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg2,transparent);color:inherit;}\n.svr-row.abw .svr-fk{border-color:var(--brand2);}\n.svr-kopf .svr-rt b::after{content:none!important;}\n.svr-ab{font-style:normal;font-size:11px;font-weight:700;color:var(--ink3);margin-left:4px;}\ndetails.svr-auf{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;}\ndetails.svr-auf summary{cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;}\ndetails.svr-auf summary::-webkit-details-marker{display:none;}\ndetails.svr-auf summary h3::before{content:'▸ ';color:var(--ink3);}\ndetails.svr-auf[open] summary h3::before{content:'▾ ';}\n.r80-edit{margin-top:auto;align-self:flex-start;min-height:44px;}\n.r80-rl{display:flex;flex-direction:column;gap:8px;margin-top:12px;}\n/* 0.83 · Mannschaft */\n.s81-sort{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;}\n.s81-sort span{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-right:4px;}\n.s81-sort button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.s81-sort button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n.s81-inj{white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;}\n.k1-leiste{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;}\n.s81-feste .adm-head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;}\n.s81-l{display:flex;flex-direction:column;gap:6px;margin-top:12px;}\n.s81-l.vorbei{opacity:.7;}\n.s81-ev{font:inherit;color:inherit;text-align:left;display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);cursor:pointer;}\n.s81-d{display:flex;flex-direction:column;min-width:78px;font-size:13px;}\n.s81-d small,.s81-t small{color:var(--ink3);font-size:12.5px;}\n.s81-t{display:flex;flex-direction:column;flex:1;min-width:0;}\n.s81-h{margin:16px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);}\n.q50-del{margin-left:auto;}\n.q50-del.sure{color:#b42318;border-color:#b42318;}\n/* 0.83 · Mini-Apps */\n.ma-karte{margin-top:12px;}\n.ma-kopf{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}\n.ma-kopf h3{margin:0;font-size:16px;}\n.ma-tage{display:flex;flex-direction:column;gap:10px;margin-top:10px;}\n.ma-tag{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}\n.ma-tk{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}\n.ma-tk span{color:var(--ink2);}\n.ma-zahlen{display:flex;flex-wrap:wrap;gap:6px;}\n.ma-zahlen span{font-size:13px;font-weight:650;padding:3px 9px;border-radius:999px;}\n.ma-zahlen .offen{background:rgba(234,88,12,.12);color:#c2410c;}\n.ma-zahlen .ok{background:rgba(22,163,74,.12);color:#15803d;}\n.ma-auf{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid var(--line2);font-size:14px;}\n.ma-auf span{color:var(--ink2);font-size:13px;}\n.ma-auf.offen span{color:#c2410c;font-weight:650;}\n.ma-filter{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}\n.ma-filter button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.ma-filter button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n\n.ma-kl{display:flex;flex-direction:column;}\n.ma-mehr{margin-top:10px;}\n.ma-such{margin-bottom:8px;}\n.ma-k{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line2);}\n.ma-k small{display:block;color:var(--ink3);font-size:12.5px;}\n.ma-kt{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;}\n.ma-p,.ma-g{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}\n.ma-p{background:rgba(91,155,255,.14);}\n.ma-g{background:rgba(148,163,196,.18);}\n.svr-sw.sure{outline:3px solid #f59e0b;outline-offset:2px;}\n@media (max-width:560px){ .svr-kopf{flex-wrap:wrap;} .svr-kopf .svr-fk{max-width:none;width:100%;order:3;} }\n/* 0.84 · Einladen mit Funktionen */\n.r80-invf{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;}\n.r80-invh{margin:-4px 0 0;font-size:13px;color:var(--ink2);}\n.r80-invl{display:flex;flex-direction:column;gap:10px;}\n.r80-invz{display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:center;}\n.r80-invs{display:grid;grid-template-columns:1fr minmax(140px,200px);gap:8px;}\n.r80-invz select{min-height:44px;width:100%;}\n.r80-invz .iconbtn{width:44px;height:44px;}\n.r80-invadd{align-self:flex-start;min-height:44px;}\n@media (max-width:560px){ .r80-invs{grid-template-columns:1fr;gap:6px;} .r80-invz{padding:8px;border:1px solid var(--line);border-radius:12px;} }\n/* 0.84 · Funktionen in der Team-Liste: eigene Zeile über die ganze Breite */\n.urow .r80-hid{display:none!important;}\n.urow > .r80-uf{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;}\n.urow > .r80-uf span{font-size:12px;font-weight:650;line-height:1.35;padding:3px 9px;border-radius:999px;background:rgba(91,155,255,.14);color:var(--ink);word-break:normal;overflow-wrap:break-word;max-width:100%;}\n.r80-fb{min-height:44px;gap:6px;font-size:13px;}\n.r80-fb svg{width:16px;height:16px;}\n/* 0.85 · Funktionsrollen */\n.r80-invfr{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:12px;background:rgba(91,155,255,.12);color:var(--ink);font-size:13px;}\n"; document.head.appendChild(s); }catch(e){} })();
