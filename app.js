@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.5', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.6', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.6',v:'0.99.6',datum:'2026-11-12',titel:'Auch bei den anderen Vereinen fehlt niemand mehr',kurz:'Spieler aus unseren sechs Ligen, die spielen, aber noch nicht getroffen haben, kommen jetzt von selbst ins Scouting.',
+   punkte:[
+    {ic:'\u{1F4E1}',r:'scout',t:'Neue Spieler der Umgebung',d:'Wer in dieser Saison drei oder mehr Spiele für einen Verein aus Gruppenliga, Kreisoberliga oder den Kreisligen A bis D hat, steht im Bestand. Bisher kamen neue Namen nur über die Torjägerliste.'},
+    {ic:'\u{1F195}',r:'scout',t:'Erkennbar am Zeichen für neue Spieler',d:'Die Einträge tragen das Zeichen für Neue in dieser Saison. Position und Alter kommen mit, wenn sie bekannt sind.'},
+   ]},
   {id:'0.99.5',v:'0.99.5',datum:'2026-11-12',titel:'Wer spielt, steht im Kader',kurz:'Spieler, die bei fussball.de im Spielbericht stehen, fehlen nicht mehr in den Listen. Die App legt sie von selbst an.',
    punkte:[
     {ic:'\u{1F9D1}\u200D\u{1F91D}\u200D\u{1F9D1}',t:'Kein Spieler geht mehr verloren',d:'Bisher kamen neue Spieler nur über die Torjägerliste in die App. Wer spielte, aber nicht traf, blieb unsichtbar. Jetzt reicht ein Einsatz in einem Pflichtspiel der Ersten oder Zweiten.'},
