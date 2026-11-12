@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.4', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.5', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.5',v:'0.99.5',datum:'2026-11-12',titel:'Wer spielt, steht im Kader',kurz:'Spieler, die bei fussball.de im Spielbericht stehen, fehlen nicht mehr in den Listen. Die App legt sie von selbst an.',
+   punkte:[
+    {ic:'\u{1F9D1}\u200D\u{1F91D}\u200D\u{1F9D1}',t:'Kein Spieler geht mehr verloren',d:'Bisher kamen neue Spieler nur über die Torjägerliste in die App. Wer spielte, aber nicht traf, blieb unsichtbar. Jetzt reicht ein Einsatz in einem Pflichtspiel der Ersten oder Zweiten.'},
+    {ic:'\u{1F50E}',r:'admin',t:'Bei ähnlichen Namen entscheidet ein Mensch',d:'Heißt ein eigener Spieler fast genauso, fragt die Datenprüfung nach: derselbe Spieler oder jemand anderes. Der Admin bekommt dazu eine Mitteilung.'},
+   ]},
   {id:'0.99.4',v:'0.99.4',datum:'2026-11-11',titel:'Ja oder Nein direkt in der Mitteilung',kurz:'Einladungen und Rückfragen kommen mit zwei Knöpfen. Ein Tipp auf Ja oder Nein, und die Antwort ist gespeichert. Wer die Mitteilung wegwischt, findet die Frage oben auf der Startseite.',
    punkte:[
     {ic:'\u{1F44D}',t:'Zwei Knöpfe statt App öffnen und suchen',d:'Training, Helfereinsatz oder eine Rückfrage vom Trainer: Die Mitteilung hat die Knöpfe gleich dabei. Beim Training ist das Ja zugleich die Zusage in der Abstimmung.'},
@@ -20538,12 +20543,19 @@ function dpVarianten(){
   try{ if(typeof VR!=='undefined'&&VR.atLoaded&&(VR.at||[]).length){ const idx=vrIdx(), frei=eigen.filter(p=>!idx.byPlayer.has(p.id));
       VR.at.filter(r=>!idx.used.has(r.key)&&(r.spiele||0)>=3).forEach(r=>{ const e=dpEnt('variante','at:'+r.key); if(e)return;
         const vor=dpAehnlich(r.name,frei); if(vor.length)out.push({art:'at',key:'at:'+r.key,atKey:r.key,name:r.name,quelle:'Vereinsstatistik',info:`${r.spiele} Spiele, ${r.tore||0} Tore`,vor}); }); } }catch(e){ console.warn('Varianten Allzeit',e); }
+  // c) Kader-Abgleich des Servers (139): spielt für uns, ist keinem Spieler zugeordnet, ein eigener Spieler heißt ähnlich
+  try{ (DP.fehl||[]).forEach(f=>{ if(f.art!=='aehnlich'||!f.name)return; const key='fde:'+f.k; if(out.some(v=>v.key===key)||dpEnt('variante',key))return;
+      const vor=(f.aehnlich||[]).map(a=>({p:trP(a.id)||{id:a.id,name:a.name},r:{t:'Ähnlicher Name',p:40}})); if(!vor.length)return;
+      const n=f.einsaetze||0; out.push({art:'fde',key,name:f.name,quelle:'fussball.de-Spielbericht',info:`${n?n+' Einsatz'+(n>1?'e':''):(f.bank||0)+' Mal im Aufgebot'} ${f.zweite?'der 2. Mannschaft':''}`.trim(),vor}); }); }catch(e){ console.warn('Varianten Kader-Abgleich',e); }
   return out;
 }
+async function dpFehlLaden(){ if(DP.fehlLade)return; DP.fehlLade=true;
+  try{ const {data,error}=await SVB.sb.rpc('kader_fehlende_liste'); if(error)throw error; DP.fehl=data||[]; }catch(e){ DP.fehl=[]; }
+  dpRender(); }
 function dpVarHtml(V){
   const lade=(typeof FB!=='undefined'&&!FB.loaded)||(typeof VR!=='undefined'&&!VR.atLoaded);
   if(!V.length)return `<div class="card"><p class="note">${lade?'Lade Spielberichte und Vereinsstatistik …':'<b>✓ Keine offenen Namensvarianten.</b> Alle Namen aus den fussball.de-Spielberichten und der Vereinsstatistik sind einem Spieler zugeordnet oder geprüft.'}</p></div>`;
-  return `<p class="note dp-intro">Diese Namen stehen in einer Quelle, passen aber zu keinem Spieler genau. Ist es derselbe Mensch, merkt sich die App die Schreibweise dauerhaft und ordnet ihn ab dann überall richtig zu. Die Zuordnung zu FuPa läuft weiter über den Spieler-Abgleich.</p>
+  return `<p class="note dp-intro">Diese Namen stehen in einer Quelle, passen aber zu keinem Spieler genau. Ist es derselbe Mensch, merkt sich die App die Schreibweise dauerhaft und ordnet ihn ab dann überall richtig zu. Ist es jemand anderes und er spielt für uns, legt die App ihn als neuen Spieler an. Die Zuordnung zu FuPa läuft weiter über den Spieler-Abgleich.</p>
     ${V.map(v=>`<div class="card dp-v" data-vk="${dpE(v.key)}"><div class="dp-dh"><span class="dp-q">${dpE(v.quelle)}</span><span><b>„${dpE(v.name)}“</b> ${dpE(v.info)}</span></div>
       <div class="dp-vv">${v.vor.map((x,i)=>`<label class="dp-p${i===0?' on':''}"><input type="radio" name="dpv${dpE(v.key)}" value="${dpE(x.p.id)}" ${i===0?'checked':''}><span class="dp-pn"><b data-svp="${dpE(x.p.id)}">${dpE(x.p.name)}</b><small>${dpE(x.r.t)}${x.p.kader?' · '+x.p.kader+'. Mannschaft':''}</small></span></label>`).join('')}</div>
       <div class="btnrow"><button type="button" class="btn sm" data-vgo="${dpE(v.key)}">Ist derselbe Spieler</button><button type="button" class="btn sm ghost" data-vno="${dpE(v.key)}">Ist jemand anderes</button></div></div>`).join('')}`;
@@ -20671,6 +20683,7 @@ function dpRender(){
   if(!DP.ent){ P.innerHTML='<div class="card"><div class="empty">Lade …</div></div>'; dpEntLaden(); return; }
   if(typeof FB!=='undefined'&&!FB.loaded&&!FB.loading){ try{ const r=fbLoad(); if(r&&r.then)r.then(()=>dpRender(),()=>{}); }catch(e){} }
   if(typeof VR!=='undefined'&&!VR.atLoaded&&!DP.atLade){ DP.atLade=1; try{ vrLoadAllTime().then(()=>dpRender(),()=>{}); }catch(e){} }
+  if(!DP.fehl&&!DP.fehlLade)dpFehlLaden();
   const D=dpDubletten(), V=dpVarianten(); let R=[];
   if(DP.sicht==='spiel'){ dpSpieleLaden(); R=dpSpiele(); }
   const nSp=DP.sicht==='spiel'?R.filter(r=>r.n&&!(dpSpielStatus(r)&&!dpSpielStatus(r).alt)).length:null;
@@ -20705,7 +20718,10 @@ function dpRender(){
       await dpEntscheiden('variante',k,'bestaetigt',{pid,name:v.name}); kToast('✓ '+v.name+' gehört jetzt zu '+((trP(pid)||{}).name||'dem Spieler')); dpRender(); }
     catch(e){ b.disabled=false; kToast('⚠️ '+(/spieler_alias|function|schema cache/i.test(e.message||'')?'Dafür fehlt noch die Datenbank-Erweiterung 080.':(e.message||e))); } });
   P.querySelectorAll('[data-vno]').forEach(b=>b.onclick=async()=>{ const k=b.dataset.vno, v=V.find(x=>x.key===k); b.disabled=true;
-    try{ await dpEntscheiden('variante',k,'abgelehnt',{name:v&&v.name}); kToast('Gemerkt'); dpRender(); }catch(e){ b.disabled=false; kToast('⚠️ '+(e.message||e)); } });
+    try{ await dpEntscheiden('variante',k,'abgelehnt',{name:v&&v.name});
+      let neu=0; if(v&&v.art==='fde'&&!DP.ohneDb){ try{ const {data,error}=await SVB.sb.rpc('kader_abgleich_jetzt'); if(!error&&data)neu=(data.angelegt||0)+(data.uebernommen||0); }catch(e){}
+        if(neu){ DP.fehl=null; DP.fehlLade=false; try{ FB.map=null; }catch(e){} try{ if(typeof svDatenNeuLaden==='function')await svDatenNeuLaden(); }catch(e){} } }
+      kToast(neu?'✓ '+(v.name||'Der Spieler')+' ist jetzt als eigener Spieler angelegt':'Gemerkt'); dpRender(); }catch(e){ b.disabled=false; kToast('⚠️ '+(e.message||e)); } });
   // Spiele
   P.querySelectorAll('[data-dpt]').forEach(b=>b.onclick=()=>{ DP.team=b.dataset.dpt; dpRender(); });
   const rOf=d=>R.find(r=>r.g.d===d);
