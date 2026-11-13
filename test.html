@@ -187,6 +187,7 @@ footer{align-items:center}
       <label><input type="radio" name="geraet" value="ios"><span>iPhone</span></label></div></fieldset>
     <div class="feld"><label for="f-name">Vor- und Nachname</label><input id="f-name" name="name" autocomplete="name" maxlength="80" required></div>
     <div class="feld"><label for="f-mail">E-Mail</label><input id="f-mail" name="email" type="email" autocomplete="email" inputmode="email" maxlength="120" required aria-describedby="f-mail-h"><small id="f-mail-h"></small></div>
+    <div class="feld"><label for="f-tel">Handynummer</label><input id="f-tel" name="tel" type="tel" autocomplete="tel" inputmode="tel" maxlength="25" placeholder="zum Beispiel 0171 2345678" required></div>
     <div class="feld"><label for="f-art">Wer bist du im Verein?</label><select id="f-art" name="art" required>
       <option value="">Bitte wählen</option><option value="spieler">Spieler/in</option><option value="trainer">Trainer/in</option><option value="eltern">Eltern</option><option value="helfer">Helfer/in</option><option value="sonstiges">Mitglied, Fan oder etwas anderes</option></select></div>
     <div class="feld" id="f-team-z" hidden><label for="f-team">Mannschaft <span style="font-weight:400;color:var(--ink3)">(wenn du magst)</span></label><input id="f-team" name="team" maxlength="40" placeholder="zum Beispiel 1. Mannschaft oder A-Jugend"></div>
@@ -218,7 +219,7 @@ footer{align-items:center}
   <details><summary>Brauche ich einen Zugang vom Verein?</summary><p>Ja, und den bekommst du hier gleich mit: Mit dem Eintragen legen wir deinen Zugang an. Du bestätigst deine E-Mail, legst ein Passwort fest, und die Abteilung gibt dich frei. Die App ist für Mitglieder, Spieler, Trainer, Eltern und Helfer der Fußballabteilung.</p></details>
   <details><summary>Warum eine Testgruppe und 14 Tage?</summary><p>Das verlangt Google bei neuen Apps: Mindestens zwölf Tester müssen 14 Tage am Stück angemeldet sein. Erst danach darf die App für alle in den Play Store. Bitte bleib so lange im Test und öffne die App ab und zu.</p></details>
   <details><summary>Geht es auch ohne Store?</summary><p>Ja. Die App läuft auch im Browser unter <a href="./">svbsc.kaderwerk.pro</a> und lässt sich von dort auf den Startbildschirm legen.</p></details>
-  <details><summary>Was passiert mit meinen Daten?</summary><p>Wir speichern, was du hier einträgst: Name, E-Mail, deine Rolle im Verein und ob du Android oder iPhone nutzt. Damit legen wir deinen Zugang an und sagen dir Bescheid, wenn es weitergeht. Mehr steht im <a href="datenschutz.html">Datenschutz</a>.</p></details>
+  <details><summary>Was passiert mit meinen Daten?</summary><p>Wir speichern, was du hier einträgst: Name, E-Mail, Handynummer, deine Rolle im Verein und ob du Android oder iPhone nutzt. Die Handynummer sieht nur die Abteilungsleitung, für Rückfragen zur Freigabe. Damit legen wir deinen Zugang an und sagen dir Bescheid, wenn es weitergeht. Mehr steht im <a href="datenschutz.html">Datenschutz</a>.</p></details>
   <details><summary>Wem schreibe ich, wenn etwas hakt?</summary><p>An <a href="mailto:fussball@sv-moerlenbach.de?subject=SVBSC%20App-Test">fussball@sv-moerlenbach.de</a>. Schreib dazu, welches Handy du hast und bei welchem Schritt es nicht weitergeht.</p></details>
 </section>
 </main>
@@ -338,14 +339,14 @@ F.elements.geraet.forEach(function(r){r.onchange=anmText});
 F.addEventListener('input',function(){$('#f-fehler').textContent=''});
 F.elements.art.onchange=function(){var a=F.elements.art.value;$('#f-team-z').hidden=!(a==='spieler'||a==='trainer'||a==='eltern')};
 F.onsubmit=function(e){e.preventDefault();if(busy)return;
-  var name=F.elements.name.value.trim(),mail=F.elements.email.value.trim().toLowerCase(),art=F.elements.art.value,g=F.elements.geraet.value,fe=$('#f-fehler');
-  var f=name.length<3||name.indexOf(' ')<1?['name','Bitte Vor- und Nachnamen eintragen.']:!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(mail)?['email','Bitte eine gültige E-Mail-Adresse eintragen.']:!art?['art','Bitte auswählen, wer du im Verein bist.']:!F.elements.ok.checked?['ok','Bitte das Häkchen setzen.']:null;
+  var name=F.elements.name.value.trim(),mail=F.elements.email.value.trim().toLowerCase(),art=F.elements.art.value,g=F.elements.geraet.value,tel=F.elements.tel.value.trim(),fe=$('#f-fehler');
+  var f=name.length<3||name.indexOf(' ')<1?['name','Bitte Vor- und Nachnamen eintragen.']:!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(mail)?['email','Bitte eine gültige E-Mail-Adresse eintragen.']:!/^\+?[0-9][0-9 \/()\-]{5,24}$/.test(tel)?['tel','Bitte deine Handynummer eintragen.']:!art?['art','Bitte auswählen, wer du im Verein bist.']:!F.elements.ok.checked?['ok','Bitte das Häkchen setzen.']:null;
   if(f){fe.textContent=f[1];F.elements[f[0]].focus();return}
   if(!CFG||!CFG.url){fe.textContent='Die Anmeldung ist gerade nicht erreichbar. Bitte später noch einmal versuchen.';return}
   busy=true;fe.textContent='';var B=$('#f-los');B.disabled=true;B.textContent='Wird eingetragen …';
   var ctl=new AbortController(),tm=setTimeout(function(){ctl.abort()},25000);
   fetch(CFG.url+'/functions/v1/admin-users',{method:'POST',signal:ctl.signal,headers:{apikey:CFG.anon,authorization:'Bearer '+CFG.anon,'content-type':'application/json'},
-    body:JSON.stringify({action:'anfrage',email:mail,name:name,art:art,team:F.elements.team.value.trim(),website:F.elements.website.value,app_url:location.origin+'/',test:{geraet:g}})})
+    body:JSON.stringify({action:'anfrage',email:mail,name:name,art:art,team:F.elements.team.value.trim(),tel:tel,website:F.elements.website.value,app_url:location.origin+'/',test:{geraet:g}})})
    .then(function(r){return r.json().then(function(d){return {s:r.status,d:d}})})
    .then(function(x){if(x.s===200&&x.d&&x.d.ok){pers=false;off=0;vorname='';geraet=g;schritt=0;kennung=x.d.token||('ohne-'+Date.now());zeig();ruf('app_test_stand').then(function(d){if(d&&typeof d.dabei==='number'){S.dabei=d.dabei;stand(true)}})}
       else fe.textContent=(x.d&&x.d.error)||'Das hat gerade nicht geklappt. Bitte gleich noch einmal versuchen.'})

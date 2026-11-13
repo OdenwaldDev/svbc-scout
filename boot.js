@@ -181,12 +181,13 @@ async function oauthKnoepfe(box,m){ if(!box)return; const O=await oauthAn(); con
 const ZG_ARTEN=[['spieler','Spieler/in'],['eltern','Eltern'],['helfer','Helfer/in'],['trainer','Trainer/in'],['sonstiges','Sonstiges']];
 function viewAnfrage(email){
   card.innerHTML=`<h2>Zugang anfragen</h2>
-    <p class="sub">Drei Angaben, dann bekommst du eine Mail. Darin legst du dein Passwort fest, und die Leitung schaltet dich frei.</p>
+    <p class="sub">Ein paar Angaben, dann bekommst du eine Mail. Darin legst du dein Passwort fest, und die Leitung schaltet dich frei.</p>
     <div class="g-oauth" id="gOauth"></div>
     <form class="g-form" id="gAnf" autocomplete="on">
       <div class="g-msg" id="gMsg"></div>
       <div class="g-field"><label for="gName">Vor- und Nachname</label><div class="g-in"><input id="gName" autocomplete="name" placeholder="z. B. Max Muster" required maxlength="80"></div></div>
       <div class="g-field"><label for="gEmail">E-Mail</label><div class="g-in"><input id="gEmail" type="email" autocomplete="email" inputmode="email" placeholder="name@beispiel.de" required value="${esc(email||'')}"></div></div>
+      <div class="g-field"><label for="gTel">Handynummer</label><div class="g-in"><input id="gTel" type="tel" autocomplete="tel" inputmode="tel" placeholder="z. B. 0171 2345678" required minlength="6" maxlength="25" pattern="\\+?[0-9][0-9 /()\\-]{5,24}"></div></div>
       <div class="g-field"><span class="g-lab">Ich bin</span><div class="g-chips" role="radiogroup" aria-label="Ich bin">${ZG_ARTEN.map(([k,t],i)=>`<label class="g-chip"><input type="radio" name="gArt" value="${k}"${i===0?' required':''}><span>${t}</span></label>`).join('')}</div></div>
       <div class="g-field"><label for="gTeam">Mannschaft (wenn passend)</label><div class="g-in"><input id="gTeam" placeholder="z. B. Zweite, D1, Helferpool" maxlength="40"></div></div>
       <input id="gWeb" name="website" tabindex="-1" autocomplete="off" class="g-falle" aria-hidden="true">
@@ -201,7 +202,7 @@ function viewAnfrage(email){
   document.getElementById('gAnf').onsubmit=async e=>{
     e.preventDefault(); const b=document.getElementById('gGo'); msg(m,'',''); busy(b,true,'Senden …');
     const art=(card.querySelector('input[name=gArt]:checked')||{}).value||'';
-    const body={action:'anfrage',app_url:svBasis(),name:document.getElementById('gName').value.trim(),email:document.getElementById('gEmail').value.trim(),art,team:document.getElementById('gTeam').value.trim(),website:document.getElementById('gWeb').value};
+    const body={action:'anfrage',app_url:svBasis(),name:document.getElementById('gName').value.trim(),email:document.getElementById('gEmail').value.trim(),art,team:document.getElementById('gTeam').value.trim(),tel:document.getElementById('gTel').value.trim(),website:document.getElementById('gWeb').value};
     try{ const {data,error}=await sb.functions.invoke('admin-users',{body});
       if(error){ let t=error.message; try{ const j=await error.context.json(); if(j&&j.error)t=j.error; }catch(_){} throw new Error(t); }
       if(data&&data.error)throw new Error(data.error);
@@ -236,14 +237,17 @@ function viewAngaben(prof){
       <div class="g-msg" id="gMsg"></div>
       <div class="g-field"><label for="gName">Vor- und Nachname</label><div class="g-in"><input id="gName" autocomplete="name" required maxlength="80" value="${esc((prof&&prof.name)||'')}"></div></div>
       <div class="g-field"><span class="g-lab">Ich bin</span><div class="g-chips" role="radiogroup" aria-label="Ich bin">${ZG_ARTEN.map(([k,t],i)=>`<label class="g-chip"><input type="radio" name="gArt" value="${k}"${i===0?' required':''}><span>${t}</span></label>`).join('')}</div></div>
+      <div class="g-field"><label for="gTel">Handynummer</label><div class="g-in"><input id="gTel" type="tel" autocomplete="tel" inputmode="tel" placeholder="z. B. 0171 2345678" required minlength="6" maxlength="25" pattern="\\+?[0-9][0-9 /()\\-]{5,24}"></div></div>
       <div class="g-field"><label for="gTeam">Mannschaft (wenn passend)</label><div class="g-in"><input id="gTeam" maxlength="40"></div></div>
       <button class="g-btn" id="gGo" type="submit">Anfrage abschicken ${I('chev')}</button>
     </form>`;
   showCard();
   const m=document.getElementById('gMsg');
   document.getElementById('gAng').onsubmit=async e=>{ e.preventDefault(); const b=document.getElementById('gGo'); busy(b,true,'Senden …');
-    try{ const {error}=await sb.rpc('zugang_angaben',{p_name:document.getElementById('gName').value,p_art:(card.querySelector('input[name=gArt]:checked')||{}).value||'',p_team:document.getElementById('gTeam').value});
-      if(error)throw error; await enter({}); }
+    try{ try{ await sb.rpc('zugang_tel_selbst',{p_tel:document.getElementById('gTel').value}); }catch(_){}   // 149: Handynummer zuerst, damit sie in der Mitteilung an die Leitung steht
+      const {error}=await sb.rpc('zugang_angaben',{p_name:document.getElementById('gName').value,p_art:(card.querySelector('input[name=gArt]:checked')||{}).value||'',p_team:document.getElementById('gTeam').value});
+      if(error)throw error;
+      await enter({}); }
     catch(err){ busy(b,false); msg(m,'err',String(err.message||err).replace(/^.*?: /,'')); } };
 }
 function viewCode(email,sent,reset){
