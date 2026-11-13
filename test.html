@@ -114,7 +114,8 @@ a{color:var(--brand2)}
 <main id="main">
 <section id="start" class="weg rein" aria-labelledby="t-start">
   <h1 id="t-start" tabindex="-1">Unser Verein.<br><em>Auf deinem Handy.</em></h1>
-  <p class="intro">Die App des SV/BSC ist fertig und geht jetzt in die Testphase. Hol sie dir in wenigen Minuten und hilf mit, dass sie für alle in den Store kommt.</p>
+  <p class="hinweis" id="s-hinweis" hidden></p>
+  <p class="intro" id="s-intro">Die App des SV/BSC ist fertig und geht jetzt in die Testphase. Hol sie dir in wenigen Minuten und hilf mit, dass sie für alle in den Store kommt.</p>
   <ul class="nutzen">
     <li><i>1</i><span><b>Zusagen mit einem Tipp.</b> Training und Spiel direkt in der Mitteilung beantworten.</span></li>
     <li><i>2</i><span><b>Alles an einem Ort.</b> Termine, Helferplan und was im Verein ansteht.</span></li>
@@ -190,11 +191,14 @@ var S={android:'bald',ios:'bald',gruppe:'',gruppe_name:'SVBSC Tester',play_test:
 var TF='https://apps.apple.com/app/testflight/id899247664', MAIL='mailto:fussball@sv-moerlenbach.de?subject=SVBSC%20App-Test';
 var $=function(s){return document.querySelector(s)}, KEY='svbsc-test';
 var geraet=null, schritt=0, kennung=null, busy=false;
-function merken(){try{localStorage.setItem(KEY,JSON.stringify({g:geraet,s:schritt,k:kennung,t:Date.now()}))}catch(e){}}
+// Persönlicher Link (?k=…, 146): Vorname bekannt, kein Formular; off=1 heißt, der Schritt „Postfach“ entfällt, weil der Zugang schon besteht
+var pers=false, off=0, vorname='';
+function merken(){try{localStorage.setItem(KEY,JSON.stringify({g:geraet,s:schritt,k:kennung,t:Date.now(),p:pers?1:0,o:off,v:vorname}))}catch(e){}}
+function nimm(m){geraet=m.g;schritt=m.s;kennung=m.k;pers=!!m.p;off=m.o?1:0;vorname=String(m.v||'')}
 function gemerkt(){try{var m=JSON.parse(localStorage.getItem(KEY)||'null');if(m&&m.k&&(m.g==='android'||m.g==='ios')&&Date.now()-m.t<60*864e5)return m}catch(e){}return null}
 function ruf(fn,body){if(!CFG||!CFG.url)return Promise.resolve(null);
   return fetch(CFG.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:CFG.anon,'content-type':'application/json'},body:JSON.stringify(body||{})}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
-function melde(){if(kennung)ruf('app_tester_schritt',{p_token:kennung,p_schritt:Math.min(9,schritt)})}
+function melde(){if(kennung)ruf('app_tester_schritt',{p_token:kennung,p_schritt:Math.min(9,schritt+off)})}
 
 var ANMELDEN=['Öffne die App und melde dich mit deiner E-Mail und deinem Passwort an.','Erlaube Mitteilungen. Dann kommen Training, Spiel und Termine direkt aufs Handy.'];
 var POST={t:'Schau in dein <em>Postfach.</em>',x:'Wir haben dir gerade eine Mail geschickt. Damit legst du deinen Zugang zur App an.',
@@ -234,8 +238,9 @@ function wege(){
       tun:['Öffne die App in Safari über den Knopf.','Tippe unten auf Teilen, das Quadrat mit dem Pfeil.','Wähle „Zum Home-Bildschirm“.'],
       link:['App in Safari öffnen','./'],ok:null,warten:true,hilfe:'Die Prüfung bei Apple dauert meist ein bis zwei Tage. Du musst nichts weiter tun.'});
   }
-  return {android:A,ios:I};
+  return {android:A.slice(off),ios:I.slice(off)};
 }
+function gruss(){return vorname?'HI '+vorname.toUpperCase()+' · ':''}
 function nur(id){['start','anm','weg'].forEach(function(x){$('#'+x).hidden=x!==id});var el=$('#'+id);el.classList.remove('rein');void el.offsetWidth;el.classList.add('rein')}
 function zeigStart(fokus){
   nur('start');var m=gemerkt();$('#weiter').hidden=!m;
@@ -255,12 +260,12 @@ function zeig(){
   var name=geraet==='android'?'ANDROID':'IPHONE', fertig=schritt>=W.length, s=W[Math.min(schritt,W.length-1)];
   $('#schiene').innerHTML=W.map(function(_,i){return '<i class="'+(fertig||i<schritt?'fertig':i===schritt?'an':'')+'"></i>'}).join('');
   if(fertig){
-    $('#w-auge').textContent=name+' · GESCHAFFT';$('#w-titel').innerHTML='Danke. <em>Du bist dabei.</em>';
+    $('#w-auge').textContent=gruss()+name+' · GESCHAFFT';$('#w-titel').innerHTML='Danke. <em>Du bist dabei.</em>';
     $('#w-text').textContent=geraet==='android'?'Bleib bitte 14 Tage im Test. Wenn dir etwas auffällt, schreib uns. Jede Rückmeldung hilft.':'Wenn dir etwas auffällt, schreib uns. Jede Rückmeldung hilft.';
     $('#w-tun').innerHTML='';$('#w-link').hidden=false;$('#w-link').textContent='Rückmeldung schreiben';$('#w-link').href=MAIL;$('#w-link').removeAttribute('target');
     $('#w-ok').hidden=true;$('#w-hinweis').textContent='Kennst du noch jemanden im Verein? Schick die Seite weiter: svbsc.kaderwerk.pro/test.html';$('#w-hilfe').hidden=true;
   }else{
-    $('#w-auge').textContent=name+' · SCHRITT '+(schritt+1)+' VON '+W.length;$('#w-titel').innerHTML=s.t;$('#w-text').textContent=s.x;
+    $('#w-auge').textContent=gruss()+name+(W.length>1?' · SCHRITT '+(schritt+1)+' VON '+W.length:'');$('#w-titel').innerHTML=s.t;$('#w-text').textContent=s.x;
     $('#w-tun').innerHTML='';s.tun.forEach(function(t){var li=document.createElement('li');var sp=document.createElement('span');sp.textContent=t;li.appendChild(sp);$('#w-tun').appendChild(li)});
     var L=$('#w-link');L.hidden=!(s.link&&s.link[1]);if(s.link&&s.link[1]){L.textContent=s.link[0]+(s.link[1]==='./'?'':' ↗');L.href=s.link[1];if(s.link[1]==='./')L.removeAttribute('target');else L.target='_blank'}
     var ok=$('#w-ok');ok.hidden=!s.ok;ok.textContent=s.ok?s.ok+' →':'';ok.className=s.link&&s.link[1]?'sek':'prim';
@@ -272,8 +277,11 @@ function zeig(){
   $('#w-zurueck').hidden=schritt===0;$('#w-zurueck').textContent='← Voriger Schritt';
   merken();melde();$('#w-titel').focus({preventScroll:true});window.scrollTo(0,0);
 }
-document.querySelectorAll('[data-geraet]').forEach(function(b){b.onclick=function(){var m=gemerkt();if(m&&m.g===b.dataset.geraet){geraet=m.g;schritt=m.s;kennung=m.k;zeig()}else zeigAnm(b.dataset.geraet)}});
-$('#weiter').onclick=function(){var m=gemerkt();if(m){geraet=m.g;schritt=m.s;kennung=m.k;zeig()}};
+document.querySelectorAll('[data-geraet]').forEach(function(b){b.onclick=function(){var g=b.dataset.geraet,m=gemerkt();
+  // mit persönlichem Link: Handy wählen oder wechseln, ohne Formular
+  if(pers&&kennung){if(geraet!==g){ruf('app_tester_start',{p_token:kennung,p_geraet:g});schritt=0}geraet=g;zeig();return}
+  if(m&&m.g===g){nimm(m);zeig()}else zeigAnm(g)}});
+$('#weiter').onclick=function(){var m=gemerkt();if(m){nimm(m);zeig()}};
 $('#w-ok').onclick=function(){schritt++;zeig()};
 $('#w-zurueck').onclick=function(){if(schritt>0){schritt--;zeig()}};
 $('#w-start').onclick=function(){zeigStart(true)};
@@ -292,7 +300,7 @@ F.onsubmit=function(e){e.preventDefault();if(busy)return;
   fetch(CFG.url+'/functions/v1/admin-users',{method:'POST',signal:ctl.signal,headers:{apikey:CFG.anon,authorization:'Bearer '+CFG.anon,'content-type':'application/json'},
     body:JSON.stringify({action:'anfrage',email:mail,name:name,art:art,team:F.elements.team.value.trim(),website:F.elements.website.value,app_url:location.origin+'/',test:{geraet:g}})})
    .then(function(r){return r.json().then(function(d){return {s:r.status,d:d}})})
-   .then(function(x){if(x.s===200&&x.d&&x.d.ok){geraet=g;schritt=0;kennung=x.d.token||('ohne-'+Date.now());zeig();ruf('app_test_stand').then(function(d){if(d&&typeof d.dabei==='number'){S.dabei=d.dabei;stand(true)}})}
+   .then(function(x){if(x.s===200&&x.d&&x.d.ok){pers=false;off=0;vorname='';geraet=g;schritt=0;kennung=x.d.token||('ohne-'+Date.now());zeig();ruf('app_test_stand').then(function(d){if(d&&typeof d.dabei==='number'){S.dabei=d.dabei;stand(true)}})}
       else fe.textContent=(x.d&&x.d.error)||'Das hat gerade nicht geklappt. Bitte gleich noch einmal versuchen.'})
    .catch(function(){fe.textContent='Keine Verbindung. Bitte Internet prüfen und noch einmal versuchen. Deine Eingaben bleiben stehen.'})
    .then(function(){clearTimeout(tm);busy=false;B.disabled=false;B.textContent='Eintragen und weiter'});
@@ -311,7 +319,21 @@ stand();zeigStart(false);
 var q=new URLSearchParams(location.search).get('geraet');
 var P0=new URLSearchParams(location.search);
 // Link aus der Mail „Es geht los“: wer schon eingetragen ist, landet direkt beim nächsten Schritt, auch auf einem anderen Gerät
-if(q==='android'||q==='ios'){var m0=gemerkt();if(m0&&m0.g===q){geraet=q;schritt=Math.max(m0.s,P0.get('weiter')?1:0);kennung=m0.k;zeig()}else if(P0.get('weiter')){geraet=q;schritt=1;kennung='mail-'+Date.now();zeig()}else zeigAnm(q)}
+if(q==='android'||q==='ios'){var m0=gemerkt();if(m0&&m0.g===q){nimm(m0);schritt=Math.max(m0.s,P0.get('weiter')&&!off?1:0);zeig()}else if(P0.get('weiter')){geraet=q;schritt=1;kennung='mail-'+Date.now();zeig()}else zeigAnm(q)}
+// Persönlicher Link aus der Karte „App-Test“: test.html?k=<Kennung>
+var kq=P0.get('k');
+if(kq&&/^[0-9a-f]{20,80}$/.test(kq)){
+  ruf('app_tester_start',{p_token:kq}).then(function(d){
+    if(!d||!d.ok){var h=$('#s-hinweis');h.hidden=false;h.textContent='Dieser persönliche Link gilt nicht mehr. Wähle unten dein Handy und trag dich kurz neu ein.';return}
+    var m=gemerkt();pers=true;kennung=kq;vorname=String(d.vorname||'').slice(0,40);off=d.konto==='frei'?1:0;
+    if(d.geraet==='android'||d.geraet==='ios'){geraet=d.geraet;schritt=Math.max(0,(+d.schritt||0)-off);if(m&&m.k===kq&&m.g===geraet)schritt=Math.max(schritt,m.s);zeig();return}
+    // Handy noch offen: Begrüßung mit Vornamen, dann nur noch Android oder iPhone wählen
+    geraet=null;var t=$('#t-start');t.textContent='';t.appendChild(document.createTextNode(vorname?'Hi '+vorname+'.':'Hallo.'));t.appendChild(document.createElement('br'));
+    var em=document.createElement('em');em.textContent='Schön, dass du testest.';t.appendChild(em);
+    $('#s-intro').textContent=off?'Dein Zugang zur App steht schon. Sag uns nur noch, welches Handy du hast, dann führen wir dich Schritt für Schritt zur App.':'Sag uns nur noch, welches Handy du hast, dann führen wir dich Schritt für Schritt zur App.';
+    $('#weiter').hidden=true;zeigStart(true);$('#weiter').hidden=true;
+  });
+}
 ruf('app_test_stand').then(function(d){if(d&&typeof d==='object'){Object.keys(S).forEach(function(k){if(d[k]!==undefined&&d[k]!==null&&d[k]!=='')S[k]=d[k]});if(d.dabei===null)S.dabei=null;stand()}});
 })();
 </script>

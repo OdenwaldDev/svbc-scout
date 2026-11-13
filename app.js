@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.11', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.12', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.12',v:'0.99.12',datum:'2026-11-12',titel:'Persönlicher Link zum App-Test',kurz:'Wer schon einen Zugang hat, bekommt einen eigenen Link zur Testversion. Ohne Formular, mit Vornamen, Schritt für Schritt bis zur installierten App.',
+   punkte:[
+    {ic:'\u{1F517}',r:'admin',t:'„Link teilen“ in der Karte „App-Test“',d:'Je Konto ein Tipp: Der Link geht mit einem kurzen Text in WhatsApp oder in die Zwischenablage. Von selbst wird nichts verschickt.'},
+    {ic:'\u{1F44B}',t:'Die Seite kennt dich',d:'Sie begrüßt dich mit Vornamen, überspringt Formular und Postfach und zeigt gleich die Schritte für dein Handy.'},
+    {ic:'\u{1F4CB}',r:'admin',t:'Fortschritt im Blick',d:'Wie weit jede Person ist und wer die Store-App schon nutzt, steht in derselben Karte.'},
+   ]},
   {id:'0.99.11',v:'0.99.11',datum:'2026-11-12',titel:'Einladung zum Training: einmal statt doppelt',kurz:'Wer Trainingsabfragen in der App beantwortet, bekommt die Einladung nur noch dort und nicht zusätzlich per WhatsApp.',
    punkte:[
     {ic:'\u{1F4F2}',t:'App statt WhatsApp',d:'Sobald du eine Abfrage in der App oder direkt in der Mitteilung beantwortet hast, kommt die nächste Einladung nur noch dort.'},
@@ -31941,7 +31947,7 @@ async function at93Karte(){
   const wA = T.filter(t => t.geraet === 'android' && !t.benachrichtigt).length, wI = T.filter(t => t.geraet === 'ios' && !t.benachrichtigt).length;
   const zeile = t => { const st = (AT93_SCHRITT[t.geraet] || [])[Math.min(t.schritt || 0, (AT93_SCHRITT[t.geraet] || []).length - 1)] || '';
     const store = t.store ? 'nutzt die Store-App' : '';
-    return `<div class="at-z"><b>${svEsc(t.name || t.email)}</b><span class="at-g${t.store ? ' ok' : ''}">${t.geraet === 'ios' ? 'IPHONE' : 'ANDROID'}</span>
+    return `<div class="at-z"><b>${svEsc(t.name || t.email)}</b><span class="at-g${t.store ? ' ok' : ''}">${t.geraet === 'ios' ? 'IPHONE' : t.geraet === 'android' ? 'ANDROID' : 'HANDY OFFEN'}</span>
       <small>${svEsc([store || st, AT93_KONTO[t.konto] || '', typeof svAgo === 'function' ? svAgo(t.am) : ''].filter(Boolean).join(' · '))}</small></div>`; };
   const k = document.createElement('div'); k.className = 'card at-karte';
   k.innerHTML = `<div class="adm-head"><div><h3 style="margin:0">App-Test</h3>
@@ -31958,6 +31964,7 @@ async function at93Karte(){
         <button type="button" class="btn sm" data-atsp>Speichern</button></div>
       <p class="note" style="margin:0">Erst speichern, dann Bescheid geben. Jede Person bekommt die Mail genau einmal.</p></div>` : ''}`;
   const zg = P.querySelector('.zg-karte'); if(zg) zg.after(k); else P.insertBefore(k, P.firstChild);
+  try{ await at93Links(k); }catch(e){}
   try{ await at93Spieler(k); }catch(e){}
   if(!ADM) return;
   k.querySelector('[data-atsp]').onclick = async ev => { const b = ev.currentTarget; b.disabled = true;
@@ -31991,6 +31998,37 @@ async function at93Spieler(k){
     catch(e){ b.disabled = false; kToast('⚠️ ' + (e.message || e)); } });
 }
 { const _ar93 = svAdminRender; svAdminRender = async function(){ const r = await _ar93.apply(this, arguments); try{ await at93Karte(); }catch(e){} return r; }; }
+
+// 0.99.12: Persönlicher Link zum App-Test je Konto (146_tester_link.sql). Albert, 12.11.2026: „Brauche nen Funnellink je User.“
+// Die Leitung teilt den Link selbst weiter (WhatsApp, Mail). Die Seite kennt dann den Vornamen und führt ohne Formular zur App.
+async function at93Links(k){
+  const { data, error } = await SVB.sb.rpc('app_tester_konten'); if(error) return; const K = data || []; if(!K.length) return;
+  const basis = (typeof svBasis === 'function' ? svBasis() : location.origin + '/');
+  const box = document.createElement('div'); box.className = 'at-st at-links';
+  box.innerHTML = `<b>Persönliche Links <span style="font-weight:400;color:var(--ink2,#a9b3c7)">${K.filter(x => x.store).length} von ${K.length} nutzen die Store-App</span></b>
+    <p class="note" style="margin:0">Für alle, die schon einen Zugang haben. Tippe auf „Link teilen“ und schick ihn zum Beispiel per WhatsApp. Die Seite begrüßt die Person mit Vornamen und führt ohne Formular bis zur installierten App. Von selbst wird nichts verschickt.</p>
+    ${K.map(x => { const st = x.store ? 'nutzt die Store-App' : x.link ? ((AT93_SCHRITT[x.geraet] || [])[Math.min(x.schritt || 0, (AT93_SCHRITT[x.geraet] || []).length - 1)] || 'Link erstellt') : '';
+      return `<div class="at-r" data-atl="${svEsc(x.id)}" style="align-items:center"><span style="flex:1;min-width:140px"><b>${svEsc(x.name || '')}</b>${st ? ` <small style="color:${x.store ? '#3ecf8e' : 'var(--ink2,#a9b3c7)'}">${svEsc(st)}</small>` : ''}</span>
+      <select data-atlg aria-label="Handy von ${svEsc(x.name || '')}" style="min-height:44px"><option value="">Handy offen</option><option value="android"${x.geraet === 'android' ? ' selected' : ''}>Android</option><option value="ios"${x.geraet === 'ios' ? ' selected' : ''}>iPhone</option></select>
+      <button type="button" class="btn sm" data-atlb>Link teilen</button>
+      <input type="text" readonly data-atlu hidden aria-label="Persönlicher Link für ${svEsc(x.name || '')}" style="flex-basis:100%;min-height:44px;font-size:13px"></div>`; }).join('')}`;
+  const vor = k.querySelector('.at-st'); if(vor) k.insertBefore(box, vor); else k.appendChild(box);
+  const teilen = async (z) => { const text = z.dataset.text; if(!text) return false;
+    if(navigator.share){ try{ await navigator.share({ text }); return true; }catch(e){ if(e && e.name === 'AbortError') return true; } }
+    try{ await navigator.clipboard.writeText(text); kToast('✓ Text mit Link kopiert'); return true; }catch(e){ return false; } };
+  box.querySelectorAll('[data-atl]').forEach(z => { const b = z.querySelector('[data-atlb]'), sel = z.querySelector('[data-atlg]'), u = z.querySelector('[data-atlu]');
+    sel.onchange = () => { delete z.dataset.text; };
+    u.onfocus = () => { try{ u.select(); }catch(e){} };
+    b.onclick = async () => {
+      if(z.dataset.text){ if(!(await teilen(z))) kToast('Link steht unten zum Kopieren'); return; }   // zweiter Tipp: sofort teilen, ohne Wartezeit dazwischen
+      b.disabled = true;
+      try{ const { data:r, error:e } = await SVB.sb.rpc('app_tester_link', { p_user:z.dataset.atl, p_geraet:sel.value || null }); if(e) throw e;
+        const url = basis + 'test.html?k=' + r.token;
+        z.dataset.text = `Hi ${r.vorname || ''}, hier ist dein persönlicher Link zum Test der SVBSC-App. Am Handy öffnen, die Seite führt dich Schritt für Schritt: ${url}`.replace('Hi ,', 'Hi,');
+        u.value = url; u.hidden = false; b.disabled = false; b.textContent = 'Jetzt teilen';
+        if(!(await teilen(z))) kToast('Link ist da. Noch einmal tippen zum Teilen oder unten kopieren.'); }
+      catch(e){ b.disabled = false; kToast('⚠️ ' + String((e && e.message) || e)); } }; });
+}
 
 /* =====================================================================
    Beta 0.99.9 · Willkommen beim ersten Start (Albert, 12.11.2026)
