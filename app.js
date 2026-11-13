@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.12', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.13', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,15 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.13',v:'0.99.13',datum:'2026-11-13',titel:'Spielerkonto: dein Stand, deine Strafen, die Bestenliste',kurz:'Jeder Spieler mit Konto sieht seinen Stand aus Siegprämien und Strafen, seine Trainingsbeteiligung und die Bestenliste seiner Mannschaft. Strafen lassen sich mit einem Satz hinterfragen.',
+   punkte:[
+    {ic:'\u{1F4B6}',t:'Dein Stand auf einen Blick',d:'Offene Siegprämien minus offene Strafen, dazu jede Strafe und jede Prämie einzeln. Bezahlt und ausgezahlt wird wie gewohnt.'},
+    {ic:'\u{1F451}',t:'Bestenliste und Ehrentitel',d:'Top 3 im Monat, in der Saison und All-Time. Wer vorne liegt, trägt den Titel: Tunnel-Magnet, Kassenkönig, Trainingsweltmeister. Die Liste sieht nur die eigene Mannschaft.'},
+    {ic:'\u{1F514}',t:'Mitteilung bei neuer Strafe und neuer Prämie',d:'Mit einem lockeren Spruch statt erhobenem Zeigefinger. Nach einem Sieg kommt die Prämie von selbst dazu.'},
+    {ic:'\u{1F914}',t:'Strafe hinterfragen',d:'Ein Tipp, ein Satz. Der Kassenwart prüft und du bekommst sofort Bescheid, ob sie bleibt oder gestrichen ist.'},
+    {ic:'\u{1F3C3}',t:'Trainingsbeteiligung',d:'Deine Quote, deine Serie und dein Platz in der Mannschaft. Verletzt oder krank zählt nicht gegen dich.'},
+    {ic:'\u{1F9FE}',r:'admin',t:'Für Kassenwarte und Leitung',d:'Kassenwarte entscheiden hinterfragte Strafen im Spielerkonto. Admin und Vorstand sehen die Prämien der Mannschaft und haken Auszahlungen ab.'},
+   ]},
   {id:'0.99.12',v:'0.99.12',datum:'2026-11-12',titel:'Persönlicher Link zum App-Test',kurz:'Wer schon einen Zugang hat, bekommt einen eigenen Link zur Testversion. Ohne Formular, mit Vornamen, Schritt für Schritt bis zur installierten App.',
    punkte:[
     {ic:'\u{1F517}',r:'admin',t:'„Link teilen“ in der Karte „App-Test“',d:'Je Konto ein Tipp: Der Link geht mit einem kurzen Text in WhatsApp oder in die Zwischenablage. Von selbst wird nichts verschickt.'},
@@ -32095,7 +32104,9 @@ async function w94Ende(){ const el = document.getElementById('w94'); if(el) el.r
 async function w94Start(force){
   if(W94.offen) return; if(typeof SVU === 'undefined' || !SVU || !SVU.id) return;
   if(!force && navigator.webdriver && !window.W94_TEST) return;   // automatische Tests der anderen Runden laufen ohne den Ablauf, Runde 147 schaltet ihn ein
-  try{ if(typeof N2 !== 'undefined' && N2.meP) await N2.meP; }catch(e){}
+  // 0.99.13: den eigenen Stand sicher laden, bevor entschieden wird. Sonst kam der Ablauf bei langsamer Verbindung ein zweites Mal.
+  let me = null; try{ if(typeof n2Meine === 'function') me = await n2Meine(); }catch(e){}
+  if(!force && (!me || typeof me.lernen !== 'object' || me.lernen === null)){ W94.versuch = (W94.versuch || 0) + 1; if(W94.versuch <= 3) setTimeout(() => { try{ n2Meine(true).then(() => w94Start()); }catch(e){} }, 4000); return; }
   const L = (typeof o1L === 'function' && o1L()) || {};
   if(!force && L['w:fertig']) return;
   if(!force && (document.querySelector('#overlay.open') || document.getElementById('svnSperre'))) { setTimeout(() => w94Start(), 4000); return; }
@@ -32175,6 +32186,264 @@ async function e95Admin(k){
     catch(e){ b.disabled = false; kToast('⚠️ ' + String((e && e.message) || e)); } });
 }
 if(typeof at93Spieler === 'function'){ const _sp95 = at93Spieler; at93Spieler = async function(k){ try{ await _sp95.apply(this, arguments); }catch(e){} try{ await e95Admin(k); }catch(e){} }; }
+
+/* =====================================================================
+   Beta 0.99.13 · Spielerkonto (147_spielerkonto.sql)
+   Albert, 13.11.2026: „Ich will ein bisschen die Ernsthaftigkeit rauskriegen aus dem Thema Strafenkatalog. Top 3, wer im Monat
+   am meisten hat, im Jahr, All-Time. Für die Spieler ein Konto, wo die ihre Strafen sehen und was die aktuell haben, in einem
+   schönen Dashboard. Eine Strafe hinterfragen, dann kriegt der Julian ein Pop-up. Und die Trainingsbeteiligung als eigenen Score.“
+   - Spieler (Konto ist einem Spieler zugeordnet): eigener Stand, Strafen, Siegprämien, Trainingsbeteiligung, Ehrentitel.
+   - Bestenlisten sieht nur die eigene Mannschaft, das Trainerteam beide.
+   - Kassenwarte prüfen hinterfragte Strafen. Admin und Vorstand sehen die Prämien der Mannschaft und haken Auszahlungen ab.
+   Gerechnet wird auf dem Server. Hier wird nur gezeigt.
+   ===================================================================== */
+const SK96 = { d:null, geladen:0, laeuft:null, team:null, zeit:'monat', liste:null, pruef:null, praem:null };
+const SK96_ZEIT = { monat:'Dieser Monat', saison:'Saison', immer:'All-Time' };
+const sk96E = v => svEsc(v == null ? '' : String(v));
+const sk96Eur = v => (Math.round((+v || 0) * 100) / 100).toLocaleString('de-DE', { style:'currency', currency:'EUR' });
+const sk96Kst = v => { const n = +v || 0; return n === 1 ? '1 Kasten' : n.toLocaleString('de-DE') + ' Kästen'; };
+const sk96Wert = b => b.einheit === 'kasten' ? sk96Kst(b.betrag) : sk96Eur(b.betrag);
+const sk96Tag = d => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '.' + m[2] + '.' : String(d || ''); };
+const sk96TeamT = t => t === '2' ? '2. Mannschaft' : '1. Mannschaft';
+const sk96Ruhig = () => { try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return true; } };
+
+function sk96Css(){ if(document.getElementById('svm96css')) return; const s = document.createElement('style'); s.id = 'svm96css';
+  s.textContent = `#panel-spielerkonto{display:none}#panel-spielerkonto.active{display:block}
+.sk-wrap{display:grid;gap:14px;max-width:860px}.sk-wrap h3{margin:0 0 10px;font-size:17px}.sk-wrap .note{margin:0;color:var(--ink2);font-size:13.5px;line-height:1.5}
+.sk-held{display:grid;gap:16px}.sk-saldo small{display:block;color:var(--ink2);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.sk-saldo b{display:block;font-size:44px;line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:4px 0}
+.sk-saldo b.plus{color:var(--green,#1a8f55)}.sk-saldo b.minus{color:var(--red,#d14343)}.sk-saldo span{color:var(--ink2);font-size:13.5px}
+.sk-kacheln{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.sk-k{padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.1));display:grid;gap:2px}
+.sk-k small{color:var(--ink2);font-size:12.5px}.sk-k b{font-size:22px;font-variant-numeric:tabular-nums}.sk-k i{font-style:normal;color:var(--ink2);font-size:12.5px}
+.sk-titel{display:flex;gap:8px;flex-wrap:wrap}.sk-chip{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border-radius:999px;background:rgba(234,179,8,.16);color:var(--ink);font-size:13.5px;font-weight:650}
+.sk-chip small{font-weight:400;color:var(--ink2)}
+.sk-tr{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center}
+.sk-ring{position:relative;width:112px;height:112px}.sk-ring svg{width:112px;height:112px;transform:rotate(-90deg)}
+.sk-ring circle{fill:none;stroke-width:10}.sk-ring .bg{stroke:rgba(148,163,196,.22)}.sk-ring .fg{stroke:var(--green,#1a8f55);stroke-linecap:round;transition:stroke-dashoffset .9s cubic-bezier(.2,.7,.2,1)}
+.sk-ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:24px;font-variant-numeric:tabular-nums}
+.sk-fakten{display:grid;gap:6px;font-size:14.5px}.sk-fakten span{color:var(--ink2)}.sk-fakten b{font-variant-numeric:tabular-nums}
+.sk-l{display:grid;gap:8px}.sk-z{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:11px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.1))}
+.sk-z .d{color:var(--ink2);font-size:13px;font-variant-numeric:tabular-nums;min-width:44px}.sk-z .t{min-width:0;overflow-wrap:anywhere}.sk-z .t small{display:block;color:var(--ink2);font-size:13px}
+.sk-z .w{font-weight:650;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}.sk-z .w.plus{color:var(--green,#1a8f55)}
+.sk-z .u{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sk-st{font-size:12.5px;font-weight:650;padding:3px 9px;border-radius:999px;background:rgba(148,163,196,.18);color:var(--ink2)}
+.sk-st.ok{background:rgba(26,143,85,.16);color:var(--green,#1a8f55)}.sk-st.warn{background:rgba(234,179,8,.2);color:var(--ink)}
+.sk-z textarea,.sk-z input[type=text]{flex:1;min-width:200px;min-height:44px;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line,rgba(148,163,196,.4));background:var(--card,transparent);color:inherit}
+.sk-z textarea{min-height:76px;flex-basis:100%;resize:vertical}
+.sk-seg{display:inline-flex;padding:3px;border-radius:12px;background:var(--surface2,rgba(148,163,196,.14));gap:2px;flex-wrap:wrap}
+.sk-seg button{border:0;background:none;color:var(--ink2);font:inherit;font-size:13.5px;font-weight:600;padding:9px 13px;border-radius:9px;cursor:pointer;min-height:40px}
+.sk-seg button[aria-pressed=true]{background:var(--card,#fff);color:var(--ink);box-shadow:0 1px 3px rgba(15,23,42,.14)}
+.sk-kopf{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px}.sk-kopf h3{margin:0}
+.sk-pod{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:end;margin:6px 0 14px;min-height:150px}
+.sk-p{display:grid;gap:6px;text-align:center;justify-items:center;min-width:0}.sk-p .n{font-weight:650;font-size:14px;overflow-wrap:anywhere;line-height:1.2}
+.sk-p .e{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink2)}
+.sk-p .s{width:100%;border-radius:12px 12px 4px 4px;display:grid;place-items:center;font-size:22px;font-weight:800;color:#fff;height:var(--h);transform-origin:bottom}
+.sk-p.r1 .s{background:linear-gradient(180deg,#f0b429,#d99a0b)}.sk-p.r2 .s{background:linear-gradient(180deg,#94a3b8,#7c8ba1)}.sk-p.r3 .s{background:linear-gradient(180deg,#c98a5a,#b0713f)}
+.sk-p.ich .n{color:var(--accent,#2f6bff)}.sk-rest .sk-z.ich{box-shadow:inset 0 0 0 2px var(--accent,#2f6bff)}
+.sk-arten{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:6px}
+.sk-a{padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.1));display:grid;gap:6px}.sk-a b{font-size:15px}.sk-a small{color:var(--ink2);font-size:12.5px}
+.sk-a ol{margin:0;padding:0;list-style:none;display:grid;gap:3px;font-size:14px}.sk-a li{display:flex;justify-content:space-between;gap:8px}.sk-a li span:last-child{font-variant-numeric:tabular-nums;color:var(--ink2)}
+.sk-a li:first-child{font-weight:650}.sk-leer{padding:16px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.1));color:var(--ink2);font-size:14.5px}
+.sk-sum{font-size:14px;color:var(--ink2);margin:0 0 10px}.sk-unter{margin:16px 0 8px;font-size:14px;color:var(--ink2);font-weight:650;letter-spacing:.03em;text-transform:uppercase}
+#sk96Karte{margin-bottom:14px;cursor:pointer;text-align:left;width:100%;font:inherit;color:inherit;display:grid;gap:8px}
+#sk96Karte .kz{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline}#sk96Karte .kz b{font-size:24px;font-variant-numeric:tabular-nums}#sk96Karte .kz small{display:block;color:var(--ink2);font-size:12.5px}
+#sk96Karte h3{margin:0;font-size:17px;display:flex;justify-content:space-between;gap:8px;align-items:center}#sk96Karte .rot{color:var(--red,#d14343);font-weight:650;font-size:14px}
+@media (max-width:520px){.sk-kacheln{grid-template-columns:1fr 1fr}.sk-kacheln .sk-k:last-child:nth-child(odd){grid-column:1/-1}.sk-saldo b{font-size:38px}.sk-tr{grid-template-columns:1fr;justify-items:start}.sk-z{grid-template-columns:auto 1fr}.sk-z .w{grid-column:2;text-align:left}}
+@media (prefers-reduced-motion:no-preference){.sk-p .s{animation:sk96hoch .7s cubic-bezier(.2,.7,.2,1) both}.sk-p.r2 .s{animation-delay:.08s}.sk-p.r1 .s{animation-delay:.16s}.sk-p.r3 .s{animation-delay:0s}
+  @keyframes sk96hoch{from{transform:scaleY(.08);opacity:.4}to{transform:none;opacity:1}}.sk-wrap>section{animation:sk96rein .35s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes sk96rein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}}`;
+  document.head.appendChild(s); }
+
+async function sk96Laden(force){
+  if(!force && SK96.d && Date.now() - SK96.geladen < 60000) return SK96.d;
+  if(SK96.laeuft) return SK96.laeuft;
+  SK96.laeuft = (async () => {
+    try{ const { data, error } = await SVB.sb.rpc('spielerkonto'); if(error) throw error; SK96.d = data || null; }catch(e){ SK96.d = SK96.d || null; }
+    SK96.geladen = Date.now(); SK96.laeuft = null;
+    if(SK96.d && !SK96.team) SK96.team = (SK96.d.ich && SK96.d.ich.team) || (SK96.d.teams || [])[0] || null;
+    return SK96.d; })();
+  return SK96.laeuft;
+}
+function sk96Darf(){ const d = SK96.d; return !!(d && (d.ich || d.trainer || d.pruefer)); }
+function sk96Saldo(d){ return (+((d.praemien || {}).offen) || 0) - (+((d.offen || {}).eur) || 0); }
+
+// Zahlen zählen hoch, wenn Bewegung erwünscht ist
+function sk96Zaehl(root){
+  root.querySelectorAll('[data-zu]').forEach(el => { const ziel = +el.dataset.zu || 0, art = el.dataset.fmt;
+    const zeig = v => { el.textContent = art === 'eur' ? sk96Eur(v) : art === 'saldo' ? (v > 0 ? '+' : '') + sk96Eur(v) : Math.round(v) + (art === 'pct' ? ' %' : ''); };
+    if(sk96Ruhig() || !ziel){ zeig(ziel); return; }
+    const t0 = performance.now(), dauer = 700; const schritt = t => { const p = Math.min(1, (t - t0) / dauer), e = 1 - Math.pow(1 - p, 3); zeig(ziel * e); if(p < 1) requestAnimationFrame(schritt); else zeig(ziel); };
+    zeig(0); requestAnimationFrame(schritt); });
+  root.querySelectorAll('.sk-ring .fg').forEach(c => { const u = +c.dataset.u || 0, q = Math.max(0, Math.min(100, +c.dataset.q || 0)); c.style.strokeDasharray = u; c.style.strokeDashoffset = sk96Ruhig() ? u * (1 - q / 100) : u;
+    if(!sk96Ruhig()) requestAnimationFrame(() => requestAnimationFrame(() => { c.style.strokeDashoffset = u * (1 - q / 100); })); });
+}
+
+function sk96Held(d){
+  const pr = d.praemien || {}, of = d.offen || {}, tr = (d.training || {}).saison, hatPr = pr.regel != null || (pr.liste || []).length, saldo = sk96Saldo(d);
+  const kopf = hatPr
+    ? `<div class="sk-saldo"><small>Dein Stand</small><b class="${saldo > 0 ? 'plus' : saldo < 0 ? 'minus' : ''}" data-zu="${saldo}" data-fmt="saldo">${(saldo > 0 ? '+' : '') + sk96Eur(saldo)}</b><span>Offene Siegprämien minus offene Strafen. Ausgezahlt und bezahlt wird wie gewohnt.</span></div>`
+    : `<div class="sk-saldo"><small>Offen in der Mannschaftskasse</small><b data-zu="${+of.eur || 0}" data-fmt="eur">${sk96Eur(of.eur)}</b><span>${+of.eur ? 'Bezahlen kannst du wie gewohnt beim Kassenwart.' : 'Alles bezahlt. So soll es sein.'}</span></div>`;
+  return `<section class="card sk-held" aria-label="Dein Stand">${kopf}
+    <div class="sk-kacheln">${hatPr ? `<div class="sk-k"><small>Siegprämien offen</small><b data-zu="${+pr.offen || 0}" data-fmt="eur">${sk96Eur(pr.offen)}</b><i>${(pr.liste || []).length} ${(pr.liste || []).length === 1 ? 'Sieg' : 'Siege'} in dieser Saison</i></div>` : ''}
+      <div class="sk-k"><small>Strafen offen</small><b data-zu="${+of.eur || 0}" data-fmt="eur">${sk96Eur(of.eur)}</b><i>${+of.kasten ? 'dazu ' + sk96Kst(of.kasten) : (+of.n ? of.n + (of.n === 1 ? ' Eintrag' : ' Einträge') : 'weiße Weste')}</i></div>
+      <div class="sk-k"><small>Training in dieser Saison</small><b ${tr ? `data-zu="${tr.quote}" data-fmt="pct"` : ''}>${tr ? tr.quote + ' %' : 'noch offen'}</b><i>${tr ? tr.da + ' von ' + tr.einheiten + ' Einheiten' : 'sobald Einheiten erfasst sind'}</i></div></div>
+    ${(d.titel || []).length ? `<div class="sk-titel">${d.titel.map(t => `<span class="sk-chip">👑 ${sk96E(t.titel)} <small>${sk96E(t.wert || '')}</small></span>`).join('')}</div>` : ''}</section>`;
+}
+function sk96Training(d){
+  const T = d.training || {}, s = T.saison, w = T.wochen; if(!s) return '';
+  const r = 46, u = Math.round(2 * Math.PI * r * 100) / 100;
+  return `<section class="card" aria-label="Trainingsbeteiligung"><h3>Trainingsbeteiligung</h3><div class="sk-tr">
+    <div class="sk-ring"><svg viewBox="0 0 112 112" aria-hidden="true"><circle class="bg" cx="56" cy="56" r="${r}"/><circle class="fg" cx="56" cy="56" r="${r}" data-u="${u}" data-q="${s.quote}"/></svg><b data-zu="${s.quote}" data-fmt="pct">${s.quote} %</b></div>
+    <div class="sk-fakten"><div><b>${s.da} von ${s.einheiten}</b> <span>Einheiten in dieser Saison dabei</span></div>
+      ${T.rang ? `<div><b>Platz ${T.rang}</b> <span>von ${T.von} in der Mannschaft</span></div>` : ''}
+      <div><b>${s.serie}</b> <span>${s.serie === 1 ? 'Einheit' : 'Einheiten'} in Folge dabei</span></div>
+      ${w ? `<div><b>${w.quote} %</b> <span>in den letzten acht Wochen</span></div>` : ''}
+      ${s.spaet ? `<div><b>${s.spaet} Mal</b> <span>zu spät</span></div>` : ''}</div></div>
+    <p class="note" style="margin-top:12px">Verletzt oder krank zählt nicht gegen dich.</p></section>`;
+}
+function sk96Strafen(d){
+  const L = d.strafen || [];
+  const st = b => b.status === 'bezahlt' ? ['ok', 'Bezahlt'] : b.status === 'erlassen' ? ['ok', 'Gestrichen'] : b.status === 'gemeldet' ? ['warn', 'Als bezahlt gemeldet'] : ['', 'Offen'];
+  return `<section class="card" aria-label="Deine Strafen"><h3>Deine Strafen und Beiträge</h3>
+    ${L.length ? `<div class="sk-l">${L.map(b => { const s = st(b), e = b.einspruch;
+      return `<div class="sk-z" data-skb="${sk96E(b.id)}"><span class="d">${sk96E(sk96Tag(b.datum))}</span><span class="t"><b>${sk96E(b.titel)}</b></span><span class="w">${sk96E(sk96Wert(b))}</span>
+        <div class="u"><span class="sk-st ${s[0]}">${s[1]}</span>${e ? `<span class="sk-st ${e.status === 'gestrichen' ? 'ok' : e.status === 'offen' ? 'warn' : ''}">${e.status === 'offen' ? 'Wird geprüft' : e.status === 'gestrichen' ? 'Einspruch berechtigt' : 'Geprüft: bleibt'}</span>${e.antwort ? `<small style="color:var(--ink2)">${sk96E(e.antwort)}</small>` : ''}` : ''}
+        ${b.hinterfragbar ? `<button type="button" class="btn sm ghost" data-skh>Hinterfragen</button>` : ''}</div></div>`; }).join('')}</div>`
+      : '<div class="sk-leer">Weiße Weste. Bei dir ist nichts eingetragen.</div>'}
+    <p class="note" style="margin-top:12px">Stimmt etwas nicht? Tippe auf „Hinterfragen“. Der Kassenwart sieht sich die Strafe an und du bekommst Bescheid.</p></section>`;
+}
+function sk96Praemien(d){
+  const P = d.praemien || {}, L = P.liste || []; if(P.regel == null && !L.length) return '';
+  return `<section class="card" aria-label="Deine Siegprämien"><h3>Deine Siegprämien</h3>
+    ${L.length ? `<div class="sk-l">${L.map(p => `<div class="sk-z"><span class="d">${sk96E(sk96Tag(p.datum))}</span><span class="t"><b>${sk96E(p.ergebnis || '')} gegen ${sk96E(p.gegner || '')}</b></span><span class="w plus">+${sk96E(sk96Eur(p.betrag))}</span>
+        <div class="u"><span class="sk-st ${p.status === 'ausgezahlt' ? 'ok' : ''}">${p.status === 'ausgezahlt' ? 'Ausgezahlt' : 'Offen'}</span></div></div>`).join('')}</div>`
+      : '<div class="sk-leer">Noch kein Sieg mit dir auf dem Platz in dieser Saison. Der nächste kommt.</div>'}
+    <p class="note" style="margin-top:12px">${P.regel != null ? sk96E(sk96Eur(P.regel)) + ' je Sieg in der Liga für jeden, der eingesetzt wurde. Die Prämie kommt nach dem Spielbericht von selbst dazu.' : ''}</p></section>`;
+}
+function sk96Bestenliste(){
+  const d = SK96.d, T = d.teams || [], L = SK96.liste; if(!T.length) return '';
+  const seg = (name, werte, aktiv) => `<div class="sk-seg" role="group" aria-label="${name}">${werte.map(w => `<button type="button" data-sk${name}="${sk96E(w[0])}" aria-pressed="${w[0] === aktiv}">${sk96E(w[1])}</button>`).join('')}</div>`;
+  let innen = '<div class="sk-leer">Lädt …</div>';
+  if(L && L.team === SK96.team && L.zeit === SK96.zeit){
+    const G = L.geld || [], ich = L.ich, top = G.slice(0, 3), max = Math.max(1, ...top.map(x => +x.eur || 0));
+    const pod = [top[1], top[0], top[2]].map((x, i) => { if(!x) return '<div></div>'; const rang = [2, 1, 3][i], h = Math.round(46 + 74 * ((+x.eur || 0) / max));
+      return `<div class="sk-p r${rang}${x.id === ich ? ' ich' : ''}"><span class="n">${sk96E(x.name)}</span><span class="e">${sk96E(sk96Eur(x.eur))} · ${x.n} Mal</span><span class="s" style="--h:${h}px">${rang}</span></div>`; }).join('');
+    innen = G.length ? `<p class="sk-sum">${sk96E(sk96Eur((L.gesamt || {}).eur))} für die Mannschaftskasse aus ${(L.gesamt || {}).n} ${(L.gesamt || {}).n === 1 ? 'Strafe' : 'Strafen'}${+(L.gesamt || {}).kasten ? ', dazu ' + sk96Kst(L.gesamt.kasten) : ''}.</p>
+      <div class="sk-pod" aria-label="Die ersten drei">${pod}</div>
+      ${G.length > 3 ? `<div class="sk-l sk-rest">${G.slice(3).map((x, i) => `<div class="sk-z${x.id === ich ? ' ich' : ''}"><span class="d">${i + 4}.</span><span class="t"><b>${sk96E(x.name)}</b></span><span class="w">${sk96E(sk96Eur(x.eur))}</span></div>`).join('')}</div>` : ''}
+      ${(L.arten || []).length ? `<p class="sk-unter">Wer führt wobei</p><div class="sk-arten">${L.arten.map(a => `<div class="sk-a"><b>${sk96E(a.titel || a.art)}</b><small>${sk96E(a.titel ? a.art + ', ' : '')}${a.n} Mal insgesamt</small>
+        <ol>${(a.top || []).map(t => `<li${t.id === ich ? ' style="color:var(--accent,#2f6bff)"' : ''}><span>${sk96E(t.name)}</span><span>${t.n}</span></li>`).join('')}</ol></div>`).join('')}</div>` : ''}`
+      : `<div class="sk-leer">${SK96.zeit === 'monat' ? 'In diesem Monat ist noch nichts eingetragen. Sauberer Start.' : 'Hier ist noch nichts eingetragen.'}</div>`;
+    if((L.training || []).length) innen += `<p class="sk-unter">Trainingsfleißigste</p><div class="sk-l">${L.training.map((x, i) => `<div class="sk-z${x.id === ich ? ' ich' : ''}"><span class="d">${i + 1}.</span><span class="t"><b>${sk96E(x.name)}</b><small>${x.da} von ${x.einheiten} Einheiten</small></span><span class="w plus">${x.quote} %</span></div>`).join('')}</div>`;
+  }
+  return `<section class="card sk-best" aria-label="Bestenliste"><div class="sk-kopf"><h3>Bestenliste ${sk96E(sk96TeamT(SK96.team))}</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${T.length > 1 ? seg('team', T.map(t => [t, t === '2' ? 'Zweite' : 'Erste']), SK96.team) : ''}${seg('zeit', Object.entries(SK96_ZEIT), SK96.zeit)}</div></div>
+    <div id="sk96Liste">${innen}</div>
+    <p class="note" style="margin-top:12px">Diese Liste sieht nur die eigene Mannschaft. Jeder Euro landet in der Mannschaftskasse.</p></section>`;
+}
+function sk96Pruefung(){
+  const d = SK96.d; if(!d.pruefer) return ''; const L = SK96.pruef;
+  if(!L) return '<section class="card" aria-label="Hinterfragte Strafen"><h3>Hinterfragte Strafen</h3><div class="sk-leer">Lädt …</div></section>';
+  const offen = L.filter(x => x.status === 'offen'), alt = L.filter(x => x.status !== 'offen').slice(0, 6);
+  return `<section class="card" aria-label="Hinterfragte Strafen"><h3>Hinterfragte Strafen ${offen.length ? `<span class="sk-st warn">${offen.length} offen</span>` : ''}</h3>
+    ${offen.length ? `<div class="sk-l">${offen.map(x => `<div class="sk-z" data-ske="${sk96E(x.id)}"><span class="d">${sk96E(sk96Tag(x.datum))}</span><span class="t"><b>${sk96E(x.name)}</b><small>${sk96E(x.titel)} · ${sk96E(sk96TeamT(x.team))}</small></span><span class="w">${sk96E(sk96Wert(x))}</span>
+        <div class="u"><span style="flex-basis:100%">„${sk96E(x.grund)}“</span><input type="text" maxlength="300" placeholder="Kurze Antwort an den Spieler (freiwillig)" aria-label="Antwort an ${sk96E(x.name)}" data-skant>
+          <button type="button" class="btn sm ghost" data-skent="bleibt">Strafe bleibt</button><button type="button" class="btn sm" data-skent="gestrichen">Streichen</button></div></div>`).join('')}</div>`
+      : '<div class="sk-leer">Gerade wird nichts hinterfragt.</div>'}
+    ${alt.length ? `<p class="sk-unter">Zuletzt entschieden</p><div class="sk-l">${alt.map(x => `<div class="sk-z"><span class="d">${sk96E(sk96Tag(x.datum))}</span><span class="t"><b>${sk96E(x.name)}</b><small>${sk96E(x.titel)}</small></span><span class="w">${sk96E(sk96Wert(x))}</span>
+        <div class="u"><span class="sk-st ${x.status === 'gestrichen' ? 'ok' : ''}">${x.status === 'gestrichen' ? 'Gestrichen' : 'Bleibt'}</span></div></div>`).join('')}</div>` : ''}</section>`;
+}
+function sk96Leitung(){
+  const d = SK96.d; if(!d.leitung) return ''; const P = SK96.praem;
+  if(!P) return '<section class="card" aria-label="Siegprämien der Mannschaft"><h3>Siegprämien der Mannschaft</h3><div class="sk-leer">Lädt …</div></section>';
+  const S = P.spieler || [], R = (P.regeln || []).filter(r => r.aktiv);
+  return `<section class="card" aria-label="Siegprämien der Mannschaft"><h3>Siegprämien der Mannschaft</h3>
+    <p class="sk-sum">${R.length ? R.map(r => sk96E(sk96Eur(r.betrag)) + ' je Sieg, ' + sk96E(sk96TeamT(r.team)) + ', seit ' + sk96E(sk96Tag(r.ab))).join(' · ') : 'Keine Regel aktiv.'} Offen insgesamt: <b>${sk96E(sk96Eur(P.offen))}</b>. Diese Übersicht sehen nur Admin und Vorstand.</p>
+    ${S.length ? `<div class="sk-l">${S.map(x => `<div class="sk-z"><span class="d">${x.siege}×</span><span class="t"><b>${sk96E(x.name)}</b>${+x.ausgezahlt ? `<small>${sk96E(sk96Eur(x.ausgezahlt))} schon ausgezahlt</small>` : ''}</span><span class="w plus">${sk96E(sk96Eur(x.offen))}</span></div>`).join('')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn sm ghost" data-skaus>Alles bis heute als ausgezahlt abhaken</button></div>`
+      : '<div class="sk-leer">Noch keine Prämie in dieser Saison.</div>'}
+    <p class="note" style="margin-top:12px">Gezählt werden Siege in der Liga laut Spielbericht. Pokal und Freundschaftsspiele zählen nicht mit.</p></section>`;
+}
+
+function sk96Panel(){ let P = document.getElementById('panel-spielerkonto'); if(P) return P;
+  const ref = document.getElementById('panel-home') || document.querySelector('.panel'); if(!ref) return null;
+  P = document.createElement('section'); P.className = 'panel'; P.id = 'panel-spielerkonto'; ref.parentNode.insertBefore(P, ref.nextSibling); return P; }
+function sk96Render(){
+  const P = sk96Panel(); if(!P) return; sk96Css(); const d = SK96.d;
+  if(!d){ P.innerHTML = '<div class="sk-wrap"><div class="card sk-leer">Lädt …</div></div>'; return; }
+  const kopf = `<div class="vst-kopf"><div><h2>${d.ich ? sk96E(d.ich.name) : 'Die Mannschaften'}</h2><p>${d.ich ? sk96E(sk96TeamT(d.ich.team)) : 'Bestenlisten, hinterfragte Strafen und Prämien'}</p></div></div>`;
+  const ohne = !d.ich && !d.trainer && !d.pruefer ? '<section class="card sk-leer"><b>Dein Konto ist noch keinem Spieler zugeordnet.</b><br>Sag kurz deinem Trainer Bescheid. Danach siehst du hier deine Strafen, deine Trainingsbeteiligung und die Bestenliste deiner Mannschaft.</section>' : '';
+  P.innerHTML = `${kopf}<div class="sk-wrap">${ohne}${d.pruefer ? sk96Pruefung() : ''}${d.ich ? sk96Held(d) + sk96Training(d) + sk96Strafen(d) + sk96Praemien(d) : ''}${sk96Bestenliste()}${sk96Leitung()}</div>`;
+  sk96Zaehl(P); sk96Binden(P);
+}
+function sk96Binden(P){
+  P.querySelectorAll('[data-skteam]').forEach(b => b.onclick = () => { SK96.team = b.dataset.skteam; SK96.liste = null; sk96Render(); sk96ListeHolen(); });
+  P.querySelectorAll('[data-skzeit]').forEach(b => b.onclick = () => { SK96.zeit = b.dataset.skzeit; SK96.liste = null; sk96Render(); sk96ListeHolen(); });
+  P.querySelectorAll('[data-skh]').forEach(b => b.onclick = () => { const z = b.closest('[data-skb]'), u = z.querySelector('.u'); if(z.querySelector('textarea')) return;
+    b.hidden = true; const box = document.createElement('div'); box.style.cssText = 'flex-basis:100%;display:flex;gap:8px;flex-wrap:wrap';
+    box.innerHTML = `<textarea maxlength="500" placeholder="Was stimmt nicht? Zum Beispiel: Ich war entschuldigt." aria-label="Grund"></textarea><button type="button" class="btn sm" data-sksend>Absenden</button><button type="button" class="btn sm ghost" data-skab>Abbrechen</button>`;
+    u.appendChild(box); const ta = box.querySelector('textarea'); try{ ta.focus(); }catch(e){}
+    box.querySelector('[data-skab]').onclick = () => { box.remove(); b.hidden = false; };
+    box.querySelector('[data-sksend]').onclick = async ev => { const k = ev.currentTarget, g = ta.value.trim(); if(g.length < 5){ kToast('Schreib bitte kurz dazu, was nicht stimmt'); try{ ta.focus(); }catch(e){} return; }
+      k.disabled = true;
+      try{ const { error } = await SVB.sb.rpc('sk_einspruch', { p_buchung:z.dataset.skb, p_grund:g }); if(error) throw error;
+        kToast('✓ Ist beim Kassenwart. Du bekommst Bescheid.'); await sk96Laden(true); sk96Render(); sk96Karte(); }
+      catch(e){ k.disabled = false; kToast('⚠️ ' + String((e && e.message) || e)); } }; });
+  P.querySelectorAll('[data-skent]').forEach(b => b.onclick = async () => { const z = b.closest('[data-ske]'); z.querySelectorAll('button').forEach(x => x.disabled = true);
+    try{ const { error } = await SVB.sb.rpc('sk_einspruch_entscheiden', { p_id:z.dataset.ske, p_status:b.dataset.skent, p_antwort:z.querySelector('[data-skant]').value.trim() || null }); if(error) throw error;
+      kToast(b.dataset.skent === 'gestrichen' ? '✓ Gestrichen, der Spieler weiß Bescheid' : '✓ Bleibt, der Spieler weiß Bescheid'); SK96.pruef = null; SK96.liste = null; await sk96Laden(true); sk96Render(); sk96Nachladen(); sk96Karte(); }
+    catch(e){ z.querySelectorAll('button').forEach(x => x.disabled = false); kToast('⚠️ ' + String((e && e.message) || e)); } });
+  const aus = P.querySelector('[data-skaus]');
+  if(aus) aus.onclick = async () => { if(!aus.dataset.sicher){ aus.dataset.sicher = '1'; aus.textContent = 'Wirklich alles abhaken? Noch einmal tippen'; setTimeout(() => { if(aus.isConnected){ delete aus.dataset.sicher; aus.textContent = 'Alles bis heute als ausgezahlt abhaken'; } }, 5000); return; }
+    aus.disabled = true;
+    try{ const h = new Date(), heute = h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0');
+      const { data, error } = await SVB.sb.rpc('praemien_ausgezahlt', { p_bis:heute }); if(error) throw error;
+      kToast(`✓ ${(data && data.anzahl) || 0} Prämien abgehakt`); SK96.praem = null; await sk96Laden(true); sk96Render(); sk96Nachladen(); }
+    catch(e){ aus.disabled = false; kToast('⚠️ ' + String((e && e.message) || e)); } };
+}
+async function sk96ListeHolen(){ const d = SK96.d; if(!d || !SK96.team || !(d.teams || []).includes(SK96.team)) return; const t = SK96.team, z = SK96.zeit;
+  try{ const { data, error } = await SVB.sb.rpc('sk_bestenliste', { p_team:t, p_zeit:z }); if(error) throw error; if(SK96.team !== t || SK96.zeit !== z) return; SK96.liste = data; }
+  catch(e){ SK96.liste = { team:t, zeit:z, geld:[], arten:[], training:[], gesamt:{} }; }
+  if(typeof svCurTab === 'function' && svCurTab() === 'spielerkonto') sk96Render(); }
+async function sk96Nachladen(){ const d = SK96.d; if(!d) return; const auf = [];
+  if(!SK96.liste) auf.push(sk96ListeHolen());
+  if(d.pruefer && !SK96.pruef) auf.push(SVB.sb.rpc('sk_einsprueche').then(r => { SK96.pruef = r.error ? [] : (r.data || []); }));
+  if(d.leitung && !SK96.praem) auf.push(SVB.sb.rpc('praemien_stand').then(r => { SK96.praem = r.error ? { spieler:[], regeln:[], offen:0 } : r.data; }));
+  await Promise.all(auf).catch(() => {}); if(typeof svCurTab === 'function' && svCurTab() === 'spielerkonto') sk96Render(); }
+async function sk96Oeffnen(){ sk96Render(); await sk96Laden(true); sk96Render(); await sk96Nachladen(); }
+
+// Karte auf der Startseite: der eigene Stand auf einen Blick, ein Tipp öffnet das Konto
+function sk96Karte(){
+  const home = document.getElementById('panel-home'); if(!home) return; const d = SK96.d; let k = document.getElementById('sk96Karte');
+  const zeig = d && (d.ich || (d.pruefer && +d.einsprueche_offen)); if(!zeig){ if(k) k.remove(); return; }
+  sk96Css();
+  if(!k){ k = document.createElement('button'); k.type = 'button'; k.id = 'sk96Karte'; k.className = 'card'; k.onclick = () => goTab('spielerkonto'); }
+  const vor = ['e95Karte', 'frKarte', 'svHello'].map(i => document.getElementById(i)).find(x => x && x.parentNode === home), soll = vor ? vor.nextSibling : home.firstChild;
+  if(soll !== k) home.insertBefore(k, soll);
+  const pr = (d.praemien || {}), of = d.offen || {}, tr = d.ich ? (d.training || {}).saison : null, hatPr = d.ich && (pr.regel != null || (pr.liste || []).length), saldo = d.ich ? sk96Saldo(d) : 0;
+  k.setAttribute('aria-label', 'Spielerkonto öffnen');
+  k.innerHTML = `<h3><span>${d.ich ? 'Dein Spielerkonto' : 'Spielerkonto'}</span><span aria-hidden="true">${typeof SVI === 'function' ? SVI('chev') : '›'}</span></h3>
+    ${d.ich ? `<div class="kz">${hatPr ? `<div><small>Dein Stand</small><b style="color:${saldo > 0 ? 'var(--green,#1a8f55)' : saldo < 0 ? 'var(--red,#d14343)' : 'inherit'}">${(saldo > 0 ? '+' : '') + sk96E(sk96Eur(saldo))}</b></div>` : ''}
+      <div><small>Strafen offen</small><b>${sk96E(sk96Eur(of.eur))}</b></div>${tr ? `<div><small>Training</small><b>${tr.quote} %</b></div>` : ''}</div>
+      ${(d.titel || []).length ? `<div class="sk-titel">${d.titel.map(t => `<span class="sk-chip">👑 ${sk96E(t.titel)}</span>`).join('')}</div>` : ''}` : ''}
+    ${d.pruefer && +d.einsprueche_offen ? `<span class="rot">${d.einsprueche_offen === 1 ? 'Eine Strafe wird hinterfragt' : d.einsprueche_offen + ' Strafen werden hinterfragt'}. Bitte ansehen.</span>` : ''}`;
+}
+
+/* ---------- Einhängen: Bereich, Startseite, Navigation ---------- */
+try{ SVR_TAB.spielerkonto = null; }catch(e){}
+SV_TBL.spielerkonto = ['wallet', 'Spielerkonto'];
+Object.assign(SV_PAGES, { spielerkonto:['Spielerkonto', 'Dein Stand, deine Strafen, die Bestenliste deiner Mannschaft'] });
+{ const _ta96 = svTabAllowed; svTabAllowed = function(t){ if(t === 'spielerkonto') return sk96Darf(); return _ta96.apply(this, arguments); }; }
+{ const _gt96 = goTab; goTab = function(tab){ if(tab === 'spielerkonto') sk96Panel(); const war = svCurTab(); const r = _gt96.apply(this, arguments);
+    try{ if(svCurTab() === 'spielerkonto' && war !== 'spielerkonto') sk96Oeffnen(); }catch(e){ console.warn('Spielerkonto', e); } return r; }; }
+try{ HT_ZIEL.spielerkonto = ['spielerkonto', 'wallet', 'Spielerkonto', '#16a34a']; HT_TEXT.spielerkonto = 'Stand, Strafen, Bestenliste';
+  Object.keys(HT_ROLLE).forEach(r => { if(!HT_ROLLE[r].z.includes('spielerkonto')) HT_ROLLE[r].z = ['spielerkonto'].concat(HT_ROLLE[r].z); }); }catch(e){}
+if(typeof svCockpit === 'function'){ const _ck96 = svCockpit; let erst = true; svCockpit = function(){ const r = _ck96.apply(this, arguments);
+    try{ sk96Karte(); if(typeof SVU !== 'undefined' && SVU && SVU.id) sk96Laden(erst).then(() => { const neu = erst; erst = false; sk96Karte(); if(neu && sk96Darf() && typeof htRender === 'function' && svCurTab() === 'home') htRender(); }); }catch(e){}
+    return r; }; }
+// Die Startseite ordnet sich bei jedem Aufbau neu. Danach rückt die Karte wieder nach oben, direkt unter Begrüßung, Fragen und Einsätze.
+if(typeof htRender === 'function'){ const _hr96 = htRender; htRender = function(){ const r = _hr96.apply(this, arguments); try{ sk96Karte(); }catch(e){} return r; }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm92css'; s.textContent="/* Beta 0.99.4 · Fragen mit Ja und Nein */\n.fr-karte{border:1px solid rgba(91,155,255,.45)!important;margin-bottom:14px}\n.fr-h{margin:0 0 10px;font-size:17px}\n.fr-liste{display:flex;flex-direction:column;gap:10px}\n.fr-z{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08));transition:box-shadow .3s,background .3s}\n.fr-z.fr-hin{box-shadow:0 0 0 2px var(--brand,#2f6bff)}\n.fr-tx{display:flex;flex-direction:column;gap:2px;min-width:0}\n.fr-tx span,.fr-tx small{color:var(--ink3);font-size:13.5px;overflow-wrap:anywhere}\n.fr-akt{display:flex;gap:8px;flex:none}\n.fr-akt .btn{min-height:44px;white-space:nowrap}\n.fr-akt .btn[disabled]{opacity:.5}\n@media (max-width:640px){.fr-z{grid-template-columns:1fr}.fr-akt .btn{flex:1}}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm80css'; s.textContent="/* ===== Beta 0.82 · Rollen und Bereiche ===== */\n.r80-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}\n.rolecard.r80{display:flex;flex-direction:column;gap:2px;}\n.r80-dl{margin:4px 0 10px;display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:13px;line-height:1.4;}\n.r80-dl dt{color:var(--ink3);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;padding-top:1px;white-space:nowrap;}\n.r80-dl dd{margin:0;color:var(--ink2);}\n.r80-alles{margin:4px 0 10px;font-size:13px;color:var(--ink2);font-weight:650;}\n.r80-note{margin:-4px 0 10px;}\n.svr-gh{margin:10px 0 0;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);}\n.svr-gh:first-child{margin-top:0;}\n.svr-auf{margin-top:12px;}\n.svr-auf h3{margin:0;font-size:15px;}\n.svr-auf .note{margin:4px 0 10px;}\n.svr-auf-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;}\n.svr-auf-b{font:inherit;text-align:left;display:flex;flex-direction:column;gap:3px;padding:10px 12px;min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);color:inherit;cursor:pointer;}\n.svr-auf-b b{font-size:13.5px;}\n.svr-auf-b span{font-size:13px;color:var(--ink3);}\n.svr-auf-b.on{border-color:var(--brand2);background:rgba(91,155,255,.10);}\n.svr-auf-b.on b::after{content:' ✓';color:var(--ok);}\n.svr-auf-b:disabled{opacity:.55;}\n.svr-vt tr.svr-vg th{padding-top:12px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);text-align:left;}\n/* Schalter „an“ auch im hellen Design grün (die helle Fassung färbte an und aus gleich grau) */\nhtml[data-theme=\"hell\"] .svr-sw.on,.svr-sw.on{background:#16a34a;}\n/* 0.83 · Funktionen je Bereich */\n.svr-fs{margin-top:12px;}\n.svr-fs h3{margin:0 0 6px;font-size:15px;}\n.svr-fl{display:flex;flex-wrap:wrap;gap:6px;}\n.svr-fchip{display:inline-flex;gap:6px;align-items:baseline;padding:5px 10px;border-radius:999px;background:rgba(91,155,255,.12);font-size:13px;}\n.svr-kopf{align-items:flex-start;}\n.svr-stand{font-size:13px!important;color:var(--ink3)!important;}\n.svr-stand.an{color:var(--ink2)!important;font-weight:600;}\n.svr-fk{flex:none;min-height:44px;max-width:46%;font:inherit;font-size:14px;font-weight:650;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg2,transparent);color:inherit;}\n.svr-row.abw .svr-fk{border-color:var(--brand2);}\n.svr-kopf .svr-rt b::after{content:none!important;}\n.svr-ab{font-style:normal;font-size:11px;font-weight:700;color:var(--ink3);margin-left:4px;}\ndetails.svr-auf{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;}\ndetails.svr-auf summary{cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;}\ndetails.svr-auf summary::-webkit-details-marker{display:none;}\ndetails.svr-auf summary h3::before{content:'▸ ';color:var(--ink3);}\ndetails.svr-auf[open] summary h3::before{content:'▾ ';}\n.r80-edit{margin-top:auto;align-self:flex-start;min-height:44px;}\n.r80-rl{display:flex;flex-direction:column;gap:8px;margin-top:12px;}\n/* 0.83 · Mannschaft */\n.s81-sort{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;}\n.s81-sort span{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-right:4px;}\n.s81-sort button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.s81-sort button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n.s81-inj{white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;}\n.k1-leiste{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;}\n.s81-feste .adm-head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;}\n.s81-l{display:flex;flex-direction:column;gap:6px;margin-top:12px;}\n.s81-l.vorbei{opacity:.7;}\n.s81-ev{font:inherit;color:inherit;text-align:left;display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);cursor:pointer;}\n.s81-d{display:flex;flex-direction:column;min-width:78px;font-size:13px;}\n.s81-d small,.s81-t small{color:var(--ink3);font-size:12.5px;}\n.s81-t{display:flex;flex-direction:column;flex:1;min-width:0;}\n.s81-h{margin:16px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);}\n.q50-del{margin-left:auto;}\n.q50-del.sure{color:#b42318;border-color:#b42318;}\n/* 0.83 · Mini-Apps */\n.ma-karte{margin-top:12px;}\n.ma-kopf{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}\n.ma-kopf h3{margin:0;font-size:16px;}\n.ma-tage{display:flex;flex-direction:column;gap:10px;margin-top:10px;}\n.ma-tag{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}\n.ma-tk{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}\n.ma-tk span{color:var(--ink2);}\n.ma-zahlen{display:flex;flex-wrap:wrap;gap:6px;}\n.ma-zahlen span{font-size:13px;font-weight:650;padding:3px 9px;border-radius:999px;}\n.ma-zahlen .offen{background:rgba(234,88,12,.12);color:#c2410c;}\n.ma-zahlen .ok{background:rgba(22,163,74,.12);color:#15803d;}\n.ma-auf{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid var(--line2);font-size:14px;}\n.ma-auf span{color:var(--ink2);font-size:13px;}\n.ma-auf.offen span{color:#c2410c;font-weight:650;}\n.ma-filter{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}\n.ma-filter button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.ma-filter button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n\n.ma-kl{display:flex;flex-direction:column;}\n.ma-mehr{margin-top:10px;}\n.ma-such{margin-bottom:8px;}\n.ma-k{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line2);}\n.ma-k small{display:block;color:var(--ink3);font-size:12.5px;}\n.ma-kt{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;}\n.ma-p,.ma-g{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}\n.ma-p{background:rgba(91,155,255,.14);}\n.ma-g{background:rgba(148,163,196,.18);}\n.svr-sw.sure{outline:3px solid #f59e0b;outline-offset:2px;}\n@media (max-width:560px){ .svr-kopf{flex-wrap:wrap;} .svr-kopf .svr-fk{max-width:none;width:100%;order:3;} }\n/* 0.84 · Einladen mit Funktionen */\n.r80-invf{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;}\n.r80-invh{margin:-4px 0 0;font-size:13px;color:var(--ink2);}\n.r80-invl{display:flex;flex-direction:column;gap:10px;}\n.r80-invz{display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:center;}\n.r80-invs{display:grid;grid-template-columns:1fr minmax(140px,200px);gap:8px;}\n.r80-invz select{min-height:44px;width:100%;}\n.r80-invz .iconbtn{width:44px;height:44px;}\n.r80-invadd{align-self:flex-start;min-height:44px;}\n@media (max-width:560px){ .r80-invs{grid-template-columns:1fr;gap:6px;} .r80-invz{padding:8px;border:1px solid var(--line);border-radius:12px;} }\n/* 0.84 · Funktionen in der Team-Liste: eigene Zeile über die ganze Breite */\n.urow .r80-hid{display:none!important;}\n.urow > .r80-uf{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;}\n.urow > .r80-uf span{font-size:12px;font-weight:650;line-height:1.35;padding:3px 9px;border-radius:999px;background:rgba(91,155,255,.14);color:var(--ink);word-break:normal;overflow-wrap:break-word;max-width:100%;}\n.r80-fb{min-height:44px;gap:6px;font-size:13px;}\n.r80-fb svg{width:16px;height:16px;}\n/* 0.85 · Funktionsrollen */\n.r80-invfr{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:12px;background:rgba(91,155,255,.12);color:var(--ink);font-size:13px;}\n"; document.head.appendChild(s); }catch(e){} })();
