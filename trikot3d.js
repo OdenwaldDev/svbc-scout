@@ -36,9 +36,9 @@ window.TRIKOT3D = (function(){
     }
   };
   const FOTO = {   // Plätze auf den Produktfotos (Pixel im Foto, Drehung in Grad), nur Trikot; gemeinde: Gemeindewappen oben in der Mitte [x, y, b, h]
-    heim:{ vorn:{ bild:'foto-heim-vorn.webp', w:397, h:505, brust:[204,226,148,74,0], aermel_l:[349,158,46,34,24], aermel_r:[57,160,46,34,-22], wappen:[268,150,44], gemeinde:[204,146,35,36] },
+    heim:{ vorn:{ bild:'foto-heim-vorn.webp', w:397, h:505, brust:[204,226,148,74,0], aermel_l:[344,163,32,21,24], aermel_r:[60,162,32,21,-22], wappen:[268,150,44], gemeinde:[204,146,35,36] },
            hinten:{ bild:'foto-heim-hinten.webp', w:437, h:539, jungs:[222,102,74], name:[222,128,128], nummer:[222,204,124] } },
-    auswaerts:{ vorn:{ bild:'foto-ausw-vorn.webp', w:447, h:555, brust:[222,232,150,76,0], aermel_l:[387,170,46,34,24], aermel_r:[62,170,46,34,-22], wappen:[288,153,44], gemeinde:[222,149,36,37] },
+    auswaerts:{ vorn:{ bild:'foto-ausw-vorn.webp', w:447, h:555, brust:[222,232,150,76,0], aermel_l:[375,162,35,23,24], aermel_r:[63,162,35,23,-22], wappen:[288,153,44], gemeinde:[222,149,36,37] },
            hinten:{ bild:'foto-ausw-hinten.webp', w:453, h:525, jungs:[224,78,76], name:[226,105,130], nummer:[228,180,124] } }
   };
   // 3D aus den Produktfotos: Atlas (links vorn, rechts hinten, 1024 × 1216 je Seite, aus den hochgerechneten Fotos in tools/trikot_hd),
@@ -47,14 +47,48 @@ window.TRIKOT3D = (function(){
   const FOTO3D = {
     A:[1024, 1216], N:[160, 192], hoehe:.76, dmax:.14, saum:-.03,
     heim:{ atlas:'foto3d-heim.webp', tiefe:'foto3d-heim-tiefe.png', maske:'foto3d-heim-maske.png', breite:0.5935,
-      brust:[523,515,425,213,0], aermel_l:[939,334,132,98,24], aermel_r:[101,340,132,98,-22], wappen:[707,313,126], gemeinde:[523,302,101,103],
+      brust:[523,515,425,213,0], aermel_l:[924,348,92,56,24], aermel_r:[108,344,92,56,-22], wappen:[707,313,126], gemeinde:[523,302,101,103],
       jungs:[1528,122,188], name:[1529,182,328], nummer:[1529,356,308] },
     auswaerts:{ atlas:'foto3d-auswaerts.webp', tiefe:'foto3d-auswaerts-tiefe.png', maske:'foto3d-auswaerts-maske.png', breite:0.6048,
-      brust:[521,493,392,199,0], aermel_l:[952,340,120,89,24], aermel_r:[102,340,120,89,-22], wappen:[693,298,115], gemeinde:[521,288,94,97],
+      brust:[521,493,392,199,0], aermel_l:[922,319,92,56,24], aermel_r:[106,320,92,56,-22], wappen:[693,298,115], gemeinde:[521,288,94,97],
       jungs:[1511,127,218], name:[1514,190,393], nummer:[1513,364,344] }
   };
   function platzListe(art){ return Object.keys(PLAETZE[art === 'anzug' ? 'anzug' : 'trikot']); }
   function platzInfo(art, k){ return PLAETZE[art === 'anzug' ? 'anzug' : 'trikot'][k] || null; }
+
+  /* ---------- 0.99.14: Druck auf Stoff ---------- */
+  // Logo auf dem Ärmel: zur Außenkante hin gestaucht, wie auf einem runden Ärmel, der sich vom Betrachter wegdreht
+  function rundDruck(a, b, w, h, aussen){
+    const iw = b.width || b.naturalWidth, ih = b.height || b.naturalHeight; if(!iw || !ih) return;
+    if(!aussen){ a.drawImage(b, -w / 2, -h / 2, w, h); return; }
+    const N = 48, t0 = .1, t1 = 1.0, s0 = Math.sin(t0), sp = Math.sin(t1) - s0, g = u => (Math.sin(t0 + u * (t1 - t0)) - s0) / sp;
+    const xBei = u => aussen > 0 ? (g(u) - .5) * w : (.5 - g(1 - u)) * w;   // u: Anteil im Logo von links
+    for(let i = 0; i < N; i++){ const x0 = xBei(i / N), x1 = xBei((i + 1) / N); a.drawImage(b, i / N * iw, 0, iw / N, ih, x0, -h / 2, x1 - x0 + .6, h); }
+  }
+  // Der Druck folgt dem Stoff: an den Falten leicht verschoben (aus der weichen Helligkeit des Fotos) und mit Licht und Schatten des Stoffs
+  function stoffDruck(pd, fd, ref, quelle){
+    const W = pd.width, H = pd.height, P = pd.data, Q = fd.data, S = P.slice(), TK = 32, tw = Math.ceil(W / TK), th = Math.ceil(H / TK), an = new Uint8Array(tw * th);
+    for(let y = 0; y < H; y++){ const ty = (y / TK | 0) * tw; for(let x = 0, i = y * W * 4 + 3; x < W; x++, i += 4) if(S[i]) an[ty + (x / TK | 0)] = 1; }
+    const w = Math.max(8, W >> 4), h = Math.max(8, H >> 4), k = document.createElement('canvas'); k.width = w; k.height = h;
+    const kx = k.getContext('2d', { willReadFrequently:true }); kx.imageSmoothingQuality = 'high'; kx.drawImage(quelle, 0, 0, w, h);
+    const q = kx.getImageData(0, 0, w, h).data, L = new Float32Array(w * h); for(let i = 0; i < w * h; i++) L[i] = q[i * 4] * .3 + q[i * 4 + 1] * .59 + q[i * 4 + 2] * .11;
+    const Lg = (x, y) => { x = kl(x, 0, w - 1.001); y = kl(y, 0, h - 1.001); const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, i = y0 * w + x0; return lerp(lerp(L[i], L[i + 1], fx), lerp(L[i + w], L[i + w + 1], fx), fy); };
+    const m = W / 2048, K = .22 * m, MAX = 3 * m, sx = (w - 1) / (W - 1), sy = (h - 1) / (H - 1), Z4 = W * 4;
+    for(let ty = 0; ty < th; ty++) for(let tx = 0; tx < tw; tx++){
+      let aktiv = 0; for(let b = -1; b <= 1 && !aktiv; b++) for(let c = -1; c <= 1; c++){ const X = tx + c, Y = ty + b; if(X >= 0 && Y >= 0 && X < tw && Y < th && an[Y * tw + X]){ aktiv = 1; break; } }
+      if(!aktiv) continue;
+      const x1 = Math.min(W, (tx + 1) * TK), y1 = Math.min(H, (ty + 1) * TK);
+      for(let y = ty * TK; y < y1; y++) for(let x = tx * TK; x < x1; x++){
+        const gx = x * sx, gy = y * sy, dx = kl((Lg(gx + .5, gy) - Lg(gx - .5, gy)) * K, -MAX, MAX), dy = kl((Lg(gx, gy + .5) - Lg(gx, gy - .5)) * K, -MAX, MAX);
+        const px = x - dx, py = y - dy, i = (y * W + x) * 4;
+        if(px < 0 || py < 0 || px > W - 1.001 || py > H - 1.001){ P[i + 3] = 0; continue; }
+        const x0 = px | 0, y0 = py | 0, fx = px - x0, fy = py - y0, j = (y0 * W + x0) * 4;
+        const a00 = S[j + 3] * (1 - fx) * (1 - fy), a10 = S[j + 7] * fx * (1 - fy), a01 = S[j + Z4 + 3] * (1 - fx) * fy, a11 = S[j + Z4 + 7] * fx * fy, al = a00 + a10 + a01 + a11;
+        if(al < .5){ P[i + 3] = 0; continue; }
+        const l = Q[i] * .3 + Q[i + 1] * .59 + Q[i + 2] * .11, f = kl(Math.pow(l / ref, .9), .55, 1.14);
+        for(let c = 0; c < 3; c++) P[i + c] = (S[j + c] * a00 + S[j + 4 + c] * a10 + S[j + Z4 + c] * a01 + S[j + Z4 + 4 + c] * a11) / al * f;
+        P[i + 3] = al; } }
+  }
 
   /* ---------- Laden ---------- */
   let threeP = null;
@@ -81,7 +115,7 @@ window.TRIKOT3D = (function(){
   /* ---------- Schnitte ---------- */
   const SCHNITT = {
     trikot:{ H:.74, Wb:.243, Wc:.252, ya:.47, Xs:.222, nr:.082, ndf:.064, ndb:.014, nd:.07, D:.118, kragen:'rund' },
-    anzug:{ H:.72, Wb:.25, Wc:.268, ya:.46, Xs:.2, nr:.078, ndf:.03, ndb:.008, nd:.074, D:.136, kragen:'steh' }
+    anzug:{ H:.72, Wb:.25, Wc:.268, ya:.46, Xs:.2, nr:.078, ndf:.03, ndb:.008, nd:.074, D:.136, kragen:'steh', sq:1.9 }
   };
   // Rumpf: Spalten rund um den Körper (phi, vorn Mitte = 0), Zeilen vom Saum zur Schulter (t)
   function rumpf(S){
@@ -89,7 +123,7 @@ window.TRIKOT3D = (function(){
     const W = y => y < S.ya ? lerp(S.Wb, S.Wc, sst(0, S.ya, y)) : lerp(S.Wc, S.Xs, Math.pow(kl((y - S.ya) / (S.H - .06 - S.ya), 0, 1), 1.6));
     const oben = (x, vorn) => { const a = Math.abs(x);
       if(a < S.nr){ const q = Math.sqrt(1 - (a / S.nr) ** 2); return S.H - .012 - (vorn ? S.ndf : S.ndb) * q; }
-      return S.H - .012 - .34 * (a - S.nr); };
+      return S.H - .012 - .34 * (a - S.nr) - (S.sq || 0) * (a - S.nr) * (a - S.nr); };   // 0.99.14: Schulter der Jacke fällt rund ab statt als gerade Kante
     const saum = s => .012 * s * s;
     function P(phi, t){
       const s = Math.sin(phi), c = Math.cos(phi), vorn = c >= 0;
@@ -365,17 +399,17 @@ window.TRIKOT3D = (function(){
       } else {
         const pts = kurve.getSpacedPoints(160), pos = [], idx = [], uvs = [];
         pts.forEach((p, i) => { const r = Math.hypot(p.x, p.z + .008) || 1, ox = p.x / r * .012, oz = (p.z + .008) / r * .012;
-          pos.push(p.x, p.y - .006, p.z, p.x + ox * .4, p.y + .062, p.z + oz * .4); uvs.push(i / 160, 0, i / 160, 1); });
+          pos.push(p.x, p.y - .006, p.z, p.x - ox * .9, p.y + .05, p.z - oz * .9); uvs.push(i / 160, 0, i / 160, 1); });   // 0.99.14: Kragen niedriger und nach oben leicht enger
         for(let i = 0; i < pts.length - 1; i++){ const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
         const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new T.Float32BufferAttribute(uvs, 2)); g.setIndex(idx); g.computeVertexNormals();
-        const km = new T.MeshPhysicalMaterial({ color:new T.Color(mischen(grund, '#000000', .22)), roughness:.86, sheen:.4, sheenColor:new T.Color(mischen(grund, '#ffffff', .25)), side:T.DoubleSide, envMapIntensity:.2 }); mats.push(km);
+        const km = new T.MeshPhysicalMaterial({ color:new T.Color(mischen(grund, '#000000', .45)), roughness:.92, sheen:.15, sheenColor:new T.Color(mischen(grund, '#ffffff', .12)), side:T.DoubleSide, envMapIntensity:.1 }); mats.push(km);
         gruppe.add(new T.Mesh(g, km));
         // Reißverschluss am Kragen und Zipper
         const zm = new T.MeshStandardMaterial({ color:0x1b1d22, roughness:.4, metalness:.6 }); mats.push(zm);
-        const vorn = kurve.getPointAt(0); const zip = new T.Mesh(new T.BoxGeometry(.008, .062, .004), zm); zip.position.set(vorn.x, vorn.y + .025, vorn.z + .006); gruppe.add(zip);
-        const zg = new T.Mesh(new T.BoxGeometry(.012, .028, .004), zm); zg.position.set(vorn.x, vorn.y + .045, vorn.z + .011); zg.rotation.x = -.25; gruppe.add(zg);
+        const vorn = kurve.getPointAt(0); const zip = new T.Mesh(new T.BoxGeometry(.008, .05, .004), zm); zip.position.set(vorn.x, vorn.y + .02, vorn.z + .004); gruppe.add(zip);
+        const zg = new T.Mesh(new T.BoxGeometry(.012, .026, .004), zm); zg.position.set(vorn.x, vorn.y + .034, vorn.z + .008); zg.rotation.x = -.25; gruppe.add(zg);
       }
-      Z.form = R; Z.unten = FM ? FOTO3D.saum : -.012; Z.oben = FM ? FOTO3D.saum + FOTO3D.hoehe : S.H + (S.kragen === 'steh' ? .06 : .0);
+      Z.form = R; Z.unten = FM ? FOTO3D.saum : -.012; Z.oben = FM ? FOTO3D.saum + FOTO3D.hoehe : S.H + (S.kragen === 'steh' ? .05 : .0);
       Z.schatten.position.y = Z.unten - .06;
       ankerBerechnen();
     }
@@ -392,21 +426,54 @@ window.TRIKOT3D = (function(){
       const dzx = (fotoTiefe(FM, gx + e, gy, hinten) - fotoTiefe(FM, gx - e, gy, hinten)) / (2 * e * mx), dzy = (fotoTiefe(FM, gx, gy - e, hinten) - fotoTiefe(FM, gx, gy + e, hinten)) / (2 * e * my);
       const n = hinten ? norm([-dzx, -dzy, -1]) : norm([-dzx, -dzy, 1]);
       return { P:[x, y, z], n, r:hinten ? [-1, 0, 0] : [1, 0, 0], o:[0, 1, 0] }; }
+    // 0.99.14: Abstand zum Umriss (aus der weichen Maske, je Seite) und Tiefe mit aufgefülltem Rand
+    function fotoRand(FM){ if(FM.rand) return FM.rand;
+      const DW = 512, DH = 608, c = leinwand(DW * 2, DH), x = c.getContext('2d', { willReadFrequently:true }); x.imageSmoothingQuality = 'high'; x.drawImage(FM.maske, 0, 0, DW * 2, DH);
+      const px = x.getImageData(0, 0, DW * 2, DH).data, W2 = Math.SQRT2, seiten = [];
+      for(const hinten of [0, 1]){ const d = new Float32Array(DW * DH);
+        for(let j = 0; j < DH; j++) for(let i = 0; i < DW; i++){ const sx = hinten ? DW * 2 - 1 - i : i; d[j * DW + i] = px[(j * DW * 2 + sx) * 4] > 127 ? 1e6 : 0; }
+        for(let j = 0; j < DH; j++) for(let i = 0; i < DW; i++){ const k = j * DW + i; let v = d[k]; if(!v) continue;
+          if(i > 0) v = Math.min(v, d[k - 1] + 1); if(j > 0){ v = Math.min(v, d[k - DW] + 1); if(i > 0) v = Math.min(v, d[k - DW - 1] + W2); if(i < DW - 1) v = Math.min(v, d[k - DW + 1] + W2); } d[k] = v; }
+        for(let j = DH - 1; j >= 0; j--) for(let i = DW - 1; i >= 0; i--){ const k = j * DW + i; let v = d[k]; if(!v) continue;
+          if(i < DW - 1) v = Math.min(v, d[k + 1] + 1); if(j < DH - 1){ v = Math.min(v, d[k + DW] + 1); if(i < DW - 1) v = Math.min(v, d[k + DW + 1] + W2); if(i > 0) v = Math.min(v, d[k + DW - 1] + W2); } d[k] = v; }
+        seiten.push(d); }
+      return FM.rand = { DW, DH, seiten }; }
+    function fotoRandBei(R, hinten, u, v){   // u, v: 0..1 im Bild der Vorderseite; Ergebnis in Bildbreiten (innen positiv, außen leicht negativ)
+      const d = R.seiten[hinten], gx = u * (R.DW - 1), gy = v * (R.DH - 1), x0 = kl(Math.floor(gx), 0, R.DW - 2), y0 = kl(Math.floor(gy), 0, R.DH - 2), fx = gx - x0, fy = gy - y0, k = y0 * R.DW + x0;
+      const w = lerp(lerp(d[k], d[k + 1], fx), lerp(d[k + R.DW], d[k + R.DW + 1], fx), fy);
+      return (w - .5) / R.DW; }
+    function fotoTiefeVoll(FM){   // Tiefe aus der Tiefenkarte, der Rand nach außen fortgesetzt (sonst fiele sie schon vor dem Umriss ab)
+      if(!FM.tv){ const [NW, NH] = FOTO3D.N, t = FM.t, n = NW * NH, a = [new Float32Array(n), new Float32Array(n)], gut = new Uint8Array(n);
+        for(let k = 0; k < n; k++){ gut[k] = t[k * 4 + 2] > 127 ? 1 : 0; a[0][k] = t[k * 4]; a[1][k] = t[k * 4 + 1]; }
+        for(let r = 0; r < 3; r++){ const neu = [];
+          for(let j = 0; j < NH; j++) for(let i = 0; i < NW; i++){ const k = j * NW + i; if(gut[k]) continue; let s0 = 0, s1 = 0, m = 0;
+            for(let q = -1; q <= 1; q++) for(let p = -1; p <= 1; p++){ const x = i + p, y = j + q; if(x < 0 || y < 0 || x >= NW || y >= NH) continue; const kk = y * NW + x; if(gut[kk]){ s0 += a[0][kk]; s1 += a[1][kk]; m++; } }
+            if(m) neu.push([k, s0 / m, s1 / m]); }
+          neu.forEach(([k, v0, v1]) => { gut[k] = 1; a[0][k] = v0; a[1][k] = v1; }); }
+        FM.tv = a; }
+      const [NW, NH] = FOTO3D.N, a = FM.tv;
+      return (gx, gy, hinten) => { const x0 = kl(Math.floor(gx), 0, NW - 2), y0 = kl(Math.floor(gy), 0, NH - 2), fx = kl(gx - x0, 0, 1), fy = kl(gy - y0, 0, 1), d = a[hinten ? 1 : 0], k = y0 * NW + x0;
+        return lerp(lerp(d[k], d[k + 1], fx), lerp(d[k + NW], d[k + NW + 1], fx), fy) / 255 * FOTO3D.dmax; }; }
     function fotoKoerper(satz, FM){
-      const M = FOTO3D[satz], [NW, NH] = FOTO3D.N, t = FM.t, innen = new Uint8Array(NW * NH), dabei = new Uint8Array(NW * NH);
-      for(let k = 0; k < NW * NH; k++) innen[k] = t[k * 4 + 2] > 127 ? 1 : 0;
-      // Netz: Umriss plus zwei Zellen Rand (Tiefe 0), damit vorn und hinten sich am Rand treffen; die Maske im Shader schneidet sauber
-      for(let j = 0; j < NH; j++) for(let i = 0; i < NW; i++){ let d = 0; for(let b = -2; b <= 2 && !d; b++) for(let a = -2; a <= 2; a++){ const x = i + a, y = j + b; if(x >= 0 && y >= 0 && x < NW && y < NH && innen[y * NW + x]){ d = 1; break; } } dabei[j * NW + i] = d; }
-      const pos = [], uv = [], idx = [], nr = new Int32Array(NW * NH * 2).fill(-1);
-      for(const hinten of [0, 1]) for(let j = 0; j < NH; j++) for(let i = 0; i < NW; i++){ const k = j * NW + i; if(!dabei[k]) continue;
-        const z = innen[k] ? t[k * 4 + hinten] / 255 * FOTO3D.dmax : 0;   // außerhalb 0; der Saum liegt in der letzten Zeile und bleibt offen
-        nr[hinten * NW * NH + k] = pos.length / 3;
-        pos.push((i / (NW - 1) - .5) * M.breite, FOTO3D.saum + (1 - j / (NH - 1)) * FOTO3D.hoehe, hinten ? -z : z);
-        uv.push(hinten ? .5 + (1 - i / (NW - 1)) * .5 : i / (NW - 1) * .5, 1 - j / (NH - 1)); }
-      for(const hinten of [0, 1]) for(let j = 0; j < NH - 1; j++) for(let i = 0; i < NW - 1; i++){
-        const o = hinten * NW * NH, a = nr[o + j * NW + i], b = nr[o + j * NW + i + 1], c = nr[o + (j + 1) * NW + i], d = nr[o + (j + 1) * NW + i + 1];
-        if(a < 0 || b < 0 || c < 0 || d < 0) continue;
-        if(hinten) idx.push(a, b, c, b, d, c); else idx.push(a, c, b, b, c, d); }
+      const M = FOTO3D[satz], [NW, NH] = FOTO3D.N, F = 2, GW = (NW - 1) * F + 1, GH = (NH - 1) * F + 1;
+      // 0.99.14: feineres Netz (doppelt so dicht) und eine Tiefe, die am Umriss weich auf null läuft. Vorher sprang die Tiefe an der groben
+      // Netzgrenze auf null, beim Drehen sah man das als Treppenkante und als Sprenkel am Rand. Jetzt treffen sich vorn und hinten genau am Umriss.
+      const R = fotoRand(FM), tf = fotoTiefeVoll(FM), RAD = .011;   // Rundung am Rand: gut ein Zentimeter
+      const pos = [], uv = [], idx = [], nr = new Int32Array(GW * GH * 2).fill(-1), mx = M.breite / (GW - 1), dabei = new Uint8Array(GW * GH), drin = new Float32Array(GW * GH), info = { ecken:0, rand:0, dicke:0, aussen:0 };
+      for(const hinten of [0, 1]){
+        for(let j = 0; j < GH; j++) for(let i = 0; i < GW; i++) drin[j * GW + i] = fotoRandBei(R, hinten, i / (GW - 1), j / (GH - 1)) * M.breite;   // Abstand zum Umriss in Metern, innen positiv
+        for(let j = 0; j < GH; j++) for(let i = 0; i < GW; i++){ let d = 0; for(let q = -1; q <= 1 && !d; q++) for(let p = -1; p <= 1; p++){ const x = i + p, y = j + q; if(x >= 0 && y >= 0 && x < GW && y < GH && drin[y * GW + x] > -mx * .5){ d = 1; break; } } dabei[j * GW + i] = d; }
+        for(let j = 0; j < GH; j++) for(let i = 0; i < GW; i++){ const k = j * GW + i; if(!dabei[k]) continue;
+          const d = drin[k], u = kl(d / RAD, 0, 1), rund = Math.sqrt(1 - (1 - u) * (1 - u));
+          const z = d > 0 ? tf(i / F, j / F, hinten) * rund : 0;   // der Saum liegt in der letzten Zeile und bleibt offen
+          nr[hinten * GW * GH + k] = pos.length / 3; info.ecken++; if(z > info.dicke) info.dicke = z; if(d <= 0 && z > info.aussen) info.aussen = z; if(d <= mx && j < GH - 2 && z > info.rand) info.rand = z;
+          pos.push((i / (GW - 1) - .5) * M.breite, FOTO3D.saum + (1 - j / (GH - 1)) * FOTO3D.hoehe, hinten ? -z : z);
+          uv.push(hinten ? .5 + (1 - i / (GW - 1)) * .5 : i / (GW - 1) * .5, 1 - j / (GH - 1)); }
+        for(let j = 0; j < GH - 1; j++) for(let i = 0; i < GW - 1; i++){
+          const o = hinten * GW * GH, a = nr[o + j * GW + i], b = nr[o + j * GW + i + 1], c = nr[o + (j + 1) * GW + i], d = nr[o + (j + 1) * GW + i + 1];
+          if(a < 0 || b < 0 || c < 0 || d < 0) continue;
+          if(hinten) idx.push(a, b, c, b, d, c); else idx.push(a, c, b, b, c, d); }
+      }
       const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
       const cv = leinwand(FOTO3D.A[0] * 2, FOTO3D.A[1]), map = new T.CanvasTexture(cv);   // 0.82: Atlas in voller Größe (2048 × 1216), nicht mehr hochskaliert
       map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); map.generateMipmaps = true; map.minFilter = T.LinearMipmapLinearFilter;
@@ -414,11 +481,11 @@ window.TRIKOT3D = (function(){
       const mk = new T.Texture(FM.maske); mk.needsUpdate = true; mk.minFilter = T.LinearMipmapLinearFilter; mk.anisotropy = map.anisotropy;
       // 0.82: weiche Kante aus der Maske (Alpha statt Abschneiden, kein Treppenrand), nur Vorderseiten (kein dunkler Saum von innen),
       // Licht im Blickraum: von vorn sieht man das Foto unverändert, beim Drehen wandert ein sanfter Glanz über den Stoff.
-      const mat = new T.ShaderMaterial({ uniforms:{ map:{ value:map }, maske:{ value:mk } }, transparent:true, depthWrite:true, side:T.FrontSide,
+      const mat = new T.ShaderMaterial({ uniforms:{ map:{ value:map }, maske:{ value:mk } }, transparent:true, depthWrite:true, side:T.FrontSide, extensions:{ derivatives:true },
         vertexShader:'varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ vUv = uv; vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position, 1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',
-        fragmentShader:'uniform sampler2D map; uniform sampler2D maske; varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ float a = smoothstep(.34, .66, texture2D(maske, vUv).r); if(a < .01) discard; vec3 n = normalize(vN), v = normalize(vV); vec3 t = texture2D(map, vUv).rgb; vec3 L = normalize(vec3(-.35, .45, .82)); float l = max(dot(n, L), 0.0), l0 = .82; float r = pow(1.0 - max(dot(n, v), 0.0), 2.5); vec3 h = normalize(L + v); float g = pow(max(dot(n, h), 0.0), 28.0); vec3 c = t * clamp(1.0 + .32 * (l - l0), .7, 1.08) * (1.0 - .22 * r) + vec3(.05) * g * (1.0 - r); gl_FragColor = vec4(c, a); }' });
+        fragmentShader:'uniform sampler2D map; uniform sampler2D maske; varying vec2 vUv; varying vec3 vN; varying vec3 vV; void main(){ float m = texture2D(maske, vUv).r; float a = clamp((m - .5) / max(fwidth(m), .0001) + .5, 0.0, 1.0); vec3 n = normalize(vN), v = normalize(vV); a *= smoothstep(.03, .2, dot(n, v)); if(a < .01) discard; vec3 t = texture2D(map, vUv).rgb; vec3 L = normalize(vec3(-.35, .45, .82)); float l = max(dot(n, L), 0.0), l0 = .82; float r = pow(1.0 - max(dot(n, v), 0.0), 2.5); vec3 h = normalize(L + v); float g = pow(max(dot(n, h), 0.0), 28.0); vec3 c = t * clamp(1.0 + .32 * (l - l0), .7, 1.08) * (1.0 - .22 * r) + vec3(.05) * g * (1.0 - r); gl_FragColor = vec4(c, a); }' });
       mats.push(mat); mat.map = map; mat.maske = mk;
-      const o = new T.Mesh(geo, mat); gruppe.add(o); teile.foto = { cv, mat, teil:'foto', o, satz };
+      const o = new T.Mesh(geo, mat); gruppe.add(o); teile.foto = { cv, mat, teil:'foto', o, satz, info };
     }
     async function fotoMalen(fest, logos){   // Atlas mit Aufdrucken und Partnerlogos, schattiert wie im Foto
       const t = teile.foto, M = FOTO3D[t.satz], FM = Z.fm[t.satz], d = Z.daten, c = t.cv, x = c.getContext('2d'), s = c.width / (FOTO3D.A[0] * 2);
@@ -428,16 +495,16 @@ window.TRIKOT3D = (function(){
       if(t.grund && t.grundKey === schluessel){ x.clearRect(0, 0, c.width, c.height); x.drawImage(t.grund, 0, 0); return fotoRahmen(x, M, d, s, t); }
       x.clearRect(0, 0, c.width, c.height); x.imageSmoothingQuality = 'high'; x.drawImage(FM.atlas, 0, 0, c.width, c.height);
       const A = leinwand(c.width, c.height), a = A.getContext('2d', { willReadFrequently:true });
-      const setze = (q, b, wq, hq, gr) => { if(!q || !b) return; const iw = b.width || b.naturalWidth, ih = b.height || b.naturalHeight; if(!iw || !ih) return;
-        const k = Math.min(wq * s / iw, hq * s / ih) * (gr || 1); a.save(); a.translate(q[0] * s, q[1] * s); a.rotate((q[4] || 0) * PI / 180); a.drawImage(b, -iw * k / 2, -ih * k / 2, iw * k, ih * k); a.restore(); };
+      const setze = (q, b, wq, hq, gr, aussen) => { if(!q || !b) return; const iw = b.width || b.naturalWidth, ih = b.height || b.naturalHeight; if(!iw || !ih) return;
+        const k = Math.min(wq * s / iw, hq * s / ih) * (gr || 1); a.save(); a.translate(q[0] * s, q[1] * s); a.rotate((q[4] || 0) * PI / 180); rundDruck(a, b, iw * k, ih * k, aussen || 0); a.restore(); };
       setze(M.wappen, fest.wappen, M.wappen[2], M.wappen[2] * .6); setze(M.gemeinde, fest.gemeinde, M.gemeinde[2], M.gemeinde[3]);
       setze(M.jungs, fest.jungs, M.jungs[2], M.jungs[2] * .2); setze(M.name, textBild('SV/BSC MÖRLENBACH', 120, '#ffffff', 700), M.name[2], M.name[2] * .2);
       setze(M.nummer, textBild(String(d.nummer || '10'), 400, '#ffffff', 700), M.nummer[2], M.nummer[2] * 1.05);
-      Object.entries(logos).forEach(([k, L]) => { const q = M[k]; if(!q) return; const b = d.belegung[k]; setze(q, L, q[2], q[3], kl(+b.groesse || 1, .5, 1.5) * .92); });
+      Object.entries(logos).forEach(([k, L]) => { const q = M[k]; if(!q) return; const b = d.belegung[k]; setze(q, L, q[2], q[3], kl(+b.groesse || 1, .5, 1.5) * .92, k === 'aermel_l' ? 1 : k === 'aermel_r' ? -1 : 0); });
       // Schattierung: Helligkeit des Fotos unter dem Druck (Falten, Licht)
       const pd = a.getImageData(0, 0, A.width, A.height), fd = x.getImageData(0, 0, c.width, c.height), P = pd.data, Q = fd.data;
       const ref = FM.ref || (FM.ref = (() => { let s0 = 0, n = 0; for(let i = 0; i < Q.length; i += 4 * 13){ if(Q[i + 3] < 250) continue; const l = Q[i] * .3 + Q[i + 1] * .59 + Q[i + 2] * .11; if(l < 235 && l > 30){ s0 += l; n++; } } return n ? s0 / n : 128; })());
-      for(let i = 0; i < P.length; i += 4){ if(!P[i + 3]) continue; const l = Q[i] * .3 + Q[i + 1] * .59 + Q[i + 2] * .11, f = kl(Math.pow(l / ref, .8), .62, 1.12); P[i] *= f; P[i + 1] *= f; P[i + 2] *= f; }
+      stoffDruck(pd, fd, ref, c);
       a.putImageData(pd, 0, 0); x.globalCompositeOperation = 'source-atop'; x.globalAlpha = .96; x.drawImage(A, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
       if(!t.grund){ t.grund = leinwand(c.width, c.height); } const gx = t.grund.getContext('2d'); gx.clearRect(0, 0, c.width, c.height); gx.drawImage(c, 0, 0); t.grundKey = schluessel;
       fotoRahmen(x, M, d, s, t);
@@ -664,7 +731,7 @@ window.TRIKOT3D = (function(){
     }
     function markeStil(m, k, p, b, sicht, x, y){
       const frei = !b.status || b.status === 'frei', name = (opt.name && opt.name(k)) || p.n;
-      m.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`; m.classList.toggle('weg', !sicht); m.tabIndex = sicht ? 0 : -1;
+      m.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;   // ganze Pixel: sonst misst der Browser die 44-px-Tippfläche als 43,99 m.classList.toggle('weg', !sicht); m.tabIndex = sicht ? 0 : -1;
       m.classList.toggle('belegt', !frei && !b.vorschau); m.classList.toggle('vorschau', !!b.vorschau); m.classList.toggle('an', Z.an === k); m.classList.toggle('nein', Z.nein === k);
       const t = frei ? `${name}: frei` : b.vorschau ? `${name}: Vorschau ${b.firma || ''}` : `${name}: ${b.status === 'reserviert' ? 'reserviert' : 'belegt'}${b.firma ? ', ' + b.firma : ''}`;
       if(m.getAttribute('aria-label') !== t){ m.setAttribute('aria-label', t); m.querySelector('span').textContent = frei ? name : (b.firma || name); }
@@ -692,15 +759,15 @@ window.TRIKOT3D = (function(){
       // Arbeitsfläche in Fotopixeln, danach mit dem Stoff schattieren
       const A = document.createElement('canvas'); A.width = F.w * 2; A.height = F.h * 2; const a = A.getContext('2d'); a.scale(2, 2);
       const setze = (q, bildX, wM, hM, gr) => { if(!q || !bildX) return; const [cx, cy, w, h, rot] = q; const iw = bildX.width || bildX.naturalWidth, ih = bildX.height || bildX.naturalHeight;
-        const k = Math.min(w / iw, (h || w) / ih) * (gr || 1); a.save(); a.translate(cx, cy); a.rotate((rot || 0) * PI / 180); a.drawImage(bildX, -iw * k / 2, -ih * k / 2, iw * k, ih * k); a.restore(); void wM; void hM; };
+        const k = Math.min(w / iw, (h || w) / ih) * (gr || 1); a.save(); a.translate(cx, cy); a.rotate((rot || 0) * PI / 180); rundDruck(a, bildX, iw * k, ih * k, hM || 0); a.restore(); void wM; };
       if(seite === 'vorn'){ setze([...F.wappen, F.wappen[2] * .6, 0], fest.wappen); setze([F.gemeinde[0], F.gemeinde[1], F.gemeinde[2], F.gemeinde[3], 0], fest.gemeinde); }
       else { setze([...F.jungs, F.jungs[2] * .2, 0], fest.jungs); setze([...F.name, F.name[2] * .2, 0], textBild('SV/BSC MÖRLENBACH', 120, '#ffffff', 700)); setze([...F.nummer, F.nummer[2] * 1.05, 0], textBild(String(d.nummer || '10'), 400, '#ffffff', 700)); }
-      Object.entries(logos).forEach(([k, L]) => { const b = d.belegung[k]; setze(F[k], L, 0, 0, kl(+b.groesse || 1, .5, 1.5) * .92); });
+      Object.entries(logos).forEach(([k, L]) => { const b = d.belegung[k]; setze(F[k], L, 0, k === 'aermel_l' ? 1 : k === 'aermel_r' ? -1 : 0, kl(+b.groesse || 1, .5, 1.5) * .92); });
       // Schattierung: Helligkeit des Fotos unter dem Druck übernehmen (Falten, Licht)
       const G = document.createElement('canvas'); G.width = A.width; G.height = A.height; const g = G.getContext('2d'); g.drawImage(img, 0, 0, A.width, A.height);
       const pd = a.getImageData(0, 0, A.width, A.height), fd = g.getImageData(0, 0, A.width, A.height), P = pd.data, Q = fd.data;
       const ref = F.ref || (F.ref = (() => { let s0 = 0, n = 0; for(let i = 0; i < Q.length; i += 4 * 9){ const l = Q[i] * .3 + Q[i + 1] * .59 + Q[i + 2] * .11; if(l < 235 && l > 30){ s0 += l; n++; } } return n ? s0 / n : 128; })());
-      for(let i = 0; i < P.length; i += 4){ if(!P[i + 3]) continue; const l = Q[i] * .3 + Q[i + 1] * .59 + Q[i + 2] * .11, f = kl(Math.pow(l / ref, .8), .62, 1.12); P[i] *= f; P[i + 1] *= f; P[i + 2] *= f; }
+      stoffDruck(pd, fd, ref, G);
       a.setTransform(1, 0, 0, 1, 0, 0); a.putImageData(pd, 0, 0);
       x.globalAlpha = .96; x.drawImage(A, ox, oy, F.w * s, F.h * s); x.globalAlpha = 1;
       // Rahmen für freie Plätze
@@ -756,7 +823,7 @@ window.TRIKOT3D = (function(){
       for(let i = 0; i < 64; i++){ gl.readPixels(Math.floor(w * (.3 + .4 * (i % 8) / 7)), Math.floor(h * (.25 + .6 * Math.floor(i / 8) / 7)), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p.subarray(i * 4, i * 4 + 4)); if(p[i * 4 + 3] > 0) n++; } return n / 64; }
 
     const bereit = (Z.modus === '3d' ? start3d().catch(e => { Z.fehler = e; Z.modus = 'foto'; modusZeigen(); }) : Promise.resolve()).then(() => { modusZeigen(); });
-    return { bereit, setzen, drehen, fokus, modus, platzBei, hervorheben, png, zerstoeren, pixelTest,
+    return { bereit, setzen, drehen, fokus, modus, platzBei, hervorheben, png, zerstoeren, pixelTest, netz:() => teile.foto ? teile.foto.info : null,
       get modusJetzt(){ return Z.modus; }, get fotoModell(){ return Z.foto3d || null; }, get fokusJetzt(){ return Z.fokusZiel; }, get sicht(){ return Z.sicht; }, get webgl(){ return Z.gl; }, get winkel(){ return Z.winkel; }, wurzel };
   }
 

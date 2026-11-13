@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.13', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.15', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,15 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.15',v:'0.99.15',datum:'2026-11-13',titel:'Ein neuer Einstieg zur Test-App',kurz:'Auf der Testseite siehst du gleich, wie es auf Android oder iPhone weitergeht.',
+   punkte:[{ic:'📱',t:'Schritt für Schritt zur App',d:'Die Testseite zeigt den nächsten Schritt. Ist dein Gerät noch nicht freigegeben, kannst du die Vereinsapp schon im Browser öffnen.'}]},
+  {id:'0.99.14',v:'0.99.14',datum:'2026-11-13',titel:'Trikots in 3D sehen echter aus',kurz:'Beim Drehen bleibt der Rand der Trikots glatt, Logos sitzen wie gedruckt auf dem Stoff und die Ärmellogos liegen ganz auf dem Ärmel.',
+   punkte:[
+    {ic:'\u{1F455}',t:'Glatter Rand beim Drehen',d:'Heim und Auswärts: keine Treppenkante und keine Sprenkel mehr am Umriss. Das Netz ist doppelt so fein und läuft am Rand rund aus.'},
+    {ic:'\u{1F3A8}',t:'Logos wie gedruckt',d:'Der Druck folgt den Falten und übernimmt Licht und Schatten des Stoffs, im 3D-Trikot und in der Foto-Ansicht.'},
+    {ic:'\u{1F4AA}',t:'Ärmellogos auf dem Ärmel',d:'Etwas kleiner und weiter innen, zur Außenkante hin leicht gestaucht wie auf einem runden Ärmel. Nichts wird mehr abgeschnitten.'},
+    {ic:'\u{1F9E5}',t:'Trainingsjacke weniger kantig',d:'Die Schultern fallen rund ab, der Kragen ist niedriger und passt in der Farbe zur Jacke.'}
+   ]},
   {id:'0.99.13',v:'0.99.13',datum:'2026-11-13',titel:'Spielerkonto: dein Stand, deine Strafen, die Bestenliste',kurz:'Jeder Spieler mit Konto sieht seinen Stand aus Siegprämien und Strafen, seine Trainingsbeteiligung und die Bestenliste seiner Mannschaft. Strafen lassen sich mit einem Satz hinterfragen.',
    punkte:[
     {ic:'\u{1F4B6}',t:'Dein Stand auf einen Blick',d:'Offene Siegprämien minus offene Strafen, dazu jede Strafe und jede Prämie einzeln. Bezahlt und ausgezahlt wird wie gewohnt.'},

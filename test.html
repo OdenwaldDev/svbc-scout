@@ -8,7 +8,7 @@
 <meta property="og:description" content="Training zusagen, Termine sehen, nichts verpassen. In wenigen Schritten zur Testversion.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://svbsc.kaderwerk.pro/icon-512.png">
-<meta name="theme-color" content="#05070c">
+<meta name="theme-color" content="#101a32">
 <meta name="robots" content="noindex">
 <link rel="icon" href="favicon-64.png">
 <link rel="preload" href="fonts/barlowc-800.woff2" as="font" type="font/woff2" crossorigin>
@@ -105,22 +105,63 @@ a{color:var(--brand2)}
 @keyframes rein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.rein{animation:none}*{transition:none!important}}
 @media (min-width:860px){.pc{display:block}.shell{padding-top:44px}}
+
+/* Die Gestaltung folgt dem Vereinsblau und lässt die Gerätewahl im ersten Blick. */
+:root{--bg:#101a32;--card:#182642;--line:#3c506e;--ink:#fff;--ink2:#d9e3f6;--ink3:#b7c7e1;--brand:#2f5fd0;--brand2:#b1cdff;--r:20px}
+body{background-image:linear-gradient(165deg,#182b52 0,transparent 560px)}
+.shell{max-width:1024px;gap:24px;padding-inline:max(16px,env(safe-area-inset-left),env(safe-area-inset-right))}
+header{min-height:48px}
+header img{border-radius:0;object-fit:contain}
+.chip{letter-spacing:.08em;color:var(--ink2);border-color:var(--line)}
+#start,#anm,#weg{min-width:0}
+.hero{isolation:isolate;position:relative;overflow:hidden;border-radius:var(--r);border:1px solid #536e9c;display:grid;align-content:end;gap:12px;min-height:260px;padding:24px 19px;background:#162b53}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#0d1830 3%,#0d1830ed 32%,#0d18304d 100%),url('plakat/foto/ball-flutlicht.webp') center 55% / cover no-repeat}
+.hero h1{font-size:clamp(43px,12vw,84px);text-wrap:initial;overflow-wrap:anywhere}
+.hero .intro{font-size:15px;color:#edf3ff}
+.frage{font-size:14px;line-height:1.4;letter-spacing:0;text-transform:none;color:var(--ink)}
+.wahl{grid-template-columns:repeat(2,minmax(0,1fr))}
+.geraet{min-height:88px;padding:14px;gap:6px;background:#1b315c;border-color:#5979b6}
+.geraet strong{font-size:27px;text-transform:none}
+.geraet small{color:var(--ink2);line-height:1.3}
+.geraet small::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#ffc483;margin:0 7px 2px 0}
+.geraet[data-offen="true"] small::before{background:var(--ok)}
+.geraet.vor{border-color:#b1cdff}
+.nutzen{gap:0;border-top:1px solid var(--line)}
+.nutzen li{padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.nutzen i{background:transparent;color:var(--brand2);width:20px}
+#anm,#weg{padding:clamp(16px,4vw,32px);background:#172543;border:1px solid var(--line);border-radius:var(--r)}
+#weg[data-phase="warten"]{border-top:4px solid var(--brand2)}
+#weg[data-phase="fertig"]{border-top:4px solid var(--ok)}
+#weg[data-phase="fertig"] .schiene{margin-bottom:4px}
+#weg h2,#anm h2{text-transform:none;font-size:clamp(39px,10vw,62px);overflow-wrap:anywhere}
+.schiene i{height:6px}
+.schiene i.an{background:var(--brand2)}
+.leise,summary,footer a,.ja a,details p a{min-height:44px}
+footer a,.ja a,details p a{display:inline-flex;align-items:center}
+summary{align-items:center}
+details{padding-top:0}
+details+details{margin-top:0}
+details p{margin:0 0 12px;overflow-wrap:anywhere}
+.ja{min-height:44px}
+.feld,.feld select{min-width:0}
+.fehler:empty,.hinweis:empty{display:none}
+footer{align-items:center}
+@media(min-width:720px){
+  .hero{min-height:365px;padding:42px}
+  #start .nutzen{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:18px;border-top:0}
+  #anm,#weg{width:min(100%,660px);justify-self:center}
+}
 </style>
 </head>
 <body>
 <div class="shell">
-<header><img src="icon-192.png" alt="" width="44" height="44"><div><b>SVBSC</b><small>SV/BSC Mörlenbach · Fußball</small></div><span class="chip">TESTPHASE</span></header>
+<header><img src="kit/wappen.png" alt="" width="44" height="44"><div><b>SVBSC</b><small>SV/BSC Mörlenbach · Fußball</small></div><span class="chip">TESTPHASE</span></header>
 
 <main id="main">
 <section id="start" class="weg rein" aria-labelledby="t-start">
-  <h1 id="t-start" tabindex="-1">Unser Verein.<br><em>Auf deinem Handy.</em></h1>
+  <div class="hero"><h1 id="t-start" tabindex="-1">Unser Verein.<br><em>Auf deinem Handy.</em></h1>
   <p class="hinweis" id="s-hinweis" hidden></p>
-  <p class="intro" id="s-intro">Die App des SV/BSC ist fertig und geht jetzt in die Testphase. Hol sie dir in wenigen Minuten und hilf mit, dass sie für alle in den Store kommt.</p>
-  <ul class="nutzen">
-    <li><i>1</i><span><b>Zusagen mit einem Tipp.</b> Training und Spiel direkt in der Mitteilung beantworten.</span></li>
-    <li><i>2</i><span><b>Alles an einem Ort.</b> Termine, Helferplan und was im Verein ansteht.</span></li>
-    <li><i>3</i><span><b>Nichts verpassen.</b> Wichtiges kommt als Mitteilung aufs Handy.</span></li>
-  </ul>
+  <p class="intro" id="s-intro">Teste die Vereinsapp auf deinem Handy. Wähle dein Gerät und sieh, wie du mitmachen kannst.</p></div>
   <p class="frage" id="f-geraet">Welches Handy hast du?</p>
   <div class="wahl" role="group" aria-labelledby="f-geraet">
     <button class="geraet" data-geraet="android"><strong>Android</strong><small id="s-android">Über Google Play</small></button>
@@ -128,6 +169,11 @@ a{color:var(--brand2)}
   </div>
   <button class="leise" id="weiter" hidden>Da weitermachen, wo du warst</button>
   <div class="karte stand" id="stand" hidden><div class="zeile"><b id="stand-t"></b><small id="stand-z"></small></div><div class="bal"><b id="stand-b" style="width:0"></b></div><p class="hinweis">Google lässt die App erst für alle in den Play Store, wenn zwölf Tester 14 Tage dabei waren. Jede Anmeldung zählt.</p></div>
+  <ul class="nutzen">
+    <li><i aria-hidden="true">✓</i><span><b>Zusagen mit einem Tipp.</b> Training und Spiel direkt in der Mitteilung beantworten.</span></li>
+    <li><i aria-hidden="true">✓</i><span><b>Alles an einem Ort.</b> Termine, Helferplan und was im Verein ansteht.</span></li>
+    <li><i aria-hidden="true">✓</i><span><b>Nichts verpassen.</b> Wichtiges kommt als Mitteilung aufs Handy.</span></li>
+  </ul>
   <div class="karte pc"><b>Am Handy geht es am einfachsten.</b><p>Öffne dort diese Seite: <b>svbsc.kaderwerk.pro/test.html</b></p></div>
 </section>
 
@@ -224,7 +270,7 @@ function wege(){
   }else{
     A.push({t:'Du bist dabei. <em>Google prüft noch.</em>',x:'Mehr brauchst du gerade nicht zu tun.',
       tun:['Sobald Google den Test freigibt, bekommst du von uns eine Mail mit dem Link.','Dann fehlen nur noch „Tester werden“ und „Installieren“. Das dauert zwei Minuten.','Bis dahin kannst du die App schon im Browser nutzen.'],
-      link:['App im Browser öffnen','./'],ok:null,warten:true,hilfe:'Die Prüfung bei Google dauert meist wenige Tage. Du musst nichts weiter tun.'});
+      link:['App im Browser öffnen','./'],ok:null,warten:true,hilfe:'Du bekommst eine Nachricht, sobald der Android-Test startet.'});
   }
   var I=[POST];
   if(S.ios==='offen'&&S.testflight){
@@ -236,7 +282,7 @@ function wege(){
   }else{
     I.push({t:'Du stehst auf <em>der Liste.</em>',x:'Die Testversion fürs iPhone liegt bei Apple zur Prüfung. Sobald sie frei ist, bekommst du von uns eine Mail mit dem Link. Bis dahin läuft die App schon im Browser, auch als Symbol auf dem Startbildschirm.',
       tun:['Öffne die App in Safari über den Knopf.','Tippe unten auf Teilen, das Quadrat mit dem Pfeil.','Wähle „Zum Home-Bildschirm“.'],
-      link:['App in Safari öffnen','./'],ok:null,warten:true,hilfe:'Die Prüfung bei Apple dauert meist ein bis zwei Tage. Du musst nichts weiter tun.'});
+      link:['App in Safari öffnen','./'],ok:null,warten:true,hilfe:'Du bekommst eine Nachricht, sobald der iPhone-Test startet.'});
   }
   return {android:A.slice(off),ios:I.slice(off)};
 }
@@ -259,6 +305,7 @@ function zeig(){
   nur('weg');
   var name=geraet==='android'?'ANDROID':'IPHONE', fertig=schritt>=W.length, s=W[Math.min(schritt,W.length-1)];
   $('#schiene').innerHTML=W.map(function(_,i){return '<i class="'+(fertig||i<schritt?'fertig':i===schritt?'an':'')+'"></i>'}).join('');
+  $('#weg').dataset.phase=fertig?'fertig':s.warten?'warten':'schritt';
   if(fertig){
     $('#w-auge').textContent=gruss()+name+' · GESCHAFFT';$('#w-titel').innerHTML='Danke. <em>Du bist dabei.</em>';
     $('#w-text').textContent=geraet==='android'?'Bleib bitte 14 Tage im Test. Wenn dir etwas auffällt, schreib uns. Jede Rückmeldung hilft.':'Wenn dir etwas auffällt, schreib uns. Jede Rückmeldung hilft.';
@@ -306,6 +353,8 @@ F.onsubmit=function(e){e.preventDefault();if(busy)return;
    .then(function(){clearTimeout(tm);busy=false;B.disabled=false;B.textContent='Eintragen und weiter'});
 };
 function stand(nurZahl){
+  $('[data-geraet="android"]').dataset.offen=S.android==='offen';
+  $('[data-geraet="ios"]').dataset.offen=S.ios==='offen'&&!!S.testflight;
   $('#s-android').textContent=S.android==='offen'?'Über Google Play':'Jetzt eintragen';
   $('#s-ios').textContent=S.ios==='offen'&&S.testflight?'Über TestFlight':'Auf die Liste';
   var n=typeof S.dabei==='number'?S.dabei:null, z=S.ziel||12;
