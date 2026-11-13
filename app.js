@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.15', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.16', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.16',v:'0.99.16',datum:'2026-11-13',titel:'Zugangsanfragen direkt aus der Mitteilung freigeben',kurz:'Fragt jemand einen Zugang an, bekommen Admins und Vorstand eine Mitteilung mit zwei Knöpfen: freigeben oder ablehnen.',
+   punkte:[
+    {ic:'\u{1F514}',t:'Freigeben ohne Umweg',d:'Die Mitteilung fragt „Zugang für … freigeben?“. Ein Tipp auf den Knopf reicht, die App muss dafür nicht offen sein. Auf dem iPhone heißen die Knöpfe Ja und Nein.',r:'admin'},
+    {ic:'\u{2709}\u{FE0F}',t:'Die Person bekommt sofort Bescheid',d:'Nach der Freigabe geht die Mail „Du bist freigeschaltet“ von selbst raus. Trainer werden als Trainer freigegeben, alle anderen als Gast. Die Rolle änderst du später unter Nutzer & Rollen.',r:'admin'},
+    {ic:'\u{1F91D}',t:'Einer entscheidet, für alle erledigt',d:'Sobald jemand aus der Leitung geantwortet hat oder die Anfrage in der Karte Zugangsanfragen erledigt ist, verschwindet die Frage bei den anderen.',r:'admin'}
+   ]},
   {id:'0.99.15',v:'0.99.15',datum:'2026-11-13',titel:'Ein neuer Einstieg zur Test-App',kurz:'Auf der Testseite siehst du gleich, wie es auf Android oder iPhone weitergeht.',
    punkte:[{ic:'📱',t:'Schritt für Schritt zur App',d:'Die Testseite zeigt den nächsten Schritt. Ist dein Gerät noch nicht freigegeben, kannst du die Vereinsapp schon im Browser öffnen.'}]},
   {id:'0.99.14',v:'0.99.14',datum:'2026-11-13',titel:'Trikots in 3D sehen echter aus',kurz:'Beim Drehen bleibt der Rand der Trikots glatt, Logos sitzen wie gedruckt auf dem Stoff und die Ärmellogos liegen ganz auf dem Ärmel.',
