@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.18', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.19', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18575,6 +18575,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.19',v:'0.99.19',datum:'2026-11-13',titel:'Zusammenführen lässt jeden in seiner Mannschaft, Hüte ohne Doppelungen',kurz:'Wird ein doppelter Spieler zusammengeführt, bleibt der Spieler sicher in seiner Mannschaft. Dazu steht jeder Hut nur noch einmal da.',
+   punkte:[
+    {ic:'\u{1F6E1}\u{FE0F}',t:'Niemand fällt aus seiner Mannschaft',d:'Beim Zusammenführen doppelter Spieler bleiben Mannschaft, Kader, Verein und Position des Spielers, der bleibt, immer wie sie sind. Würde sich daran etwas ändern, bricht die App ab und speichert nichts.',r:'admin'},
+    {ic:'\u{1F3A9}',t:'Ein Hut, ein Schild',d:'Wer einen Bereich leitet und zusätzlich in dessen Helferliste steht, sah den Hut bisher zweimal. Jetzt steht er einmal da, mit der höchsten Stufe.'},
+    {ic:'\u{1F4CB}',t:'Jeder Name einmal',d:'Hat eine Person zwei Konten, steht ihr Name in „Wer bekommt was“ trotzdem nur einmal. Die Mitteilung kommt weiter auf beiden Konten an.',r:'admin'}
+   ]},
   {id:'0.99.18',v:'0.99.18',datum:'2026-11-13',titel:'Jeder trägt seine Hüte, Mitteilungen gehen an die Zuständigen',kurz:'Die App kennt jetzt alle Aufgaben einer Person an einer Stelle. Unter Mein Konto siehst du deine Hüte. Die ersten Mitteilungen gehen nur noch an den zuständigen Hut statt an alle Admins.',
    punkte:[
     {ic:'\u{1F3A9}',t:'Deine Hüte',d:'Unter Mein Konto steht, wie dich die App im Verein kennt: zum Beispiel Spieler, Kapitän, Seniorenleitung oder Partner-Team. Danach richtet sich, welche Mitteilungen du bekommst.'},
@@ -20781,7 +20787,8 @@ function dpRender(){
       if(DP.ohneDb)await dpEntscheiden('dublette',k,'zusammengefuehrt',{bleibt:neu});
       else if(DP.ent)DP.ent.set('dublette§'+k,{art:'dublette',s:k,e:'zusammengefuehrt',d:{bleibt:neu}});
       const n=data&&data.umgehaengt?Object.values(data.umgehaengt).reduce((s,x)=>s+x,0):0;
-      kToast(`✓ ${alt.name} ist jetzt Teil von ${trP(neu)?trP(neu).name:'dem Spieler'}${n?` · ${n} Einträge umgehängt`:''}`);
+      const nu=data&&Array.isArray(data.nicht_uebernommen)?data.nicht_uebernommen.length:0;   // 0.99.19: Saisonplanung, die den bleibenden Spieler aus seiner Mannschaft genommen hätte
+      kToast(`✓ ${alt.name} ist jetzt Teil von ${trP(neu)?trP(neu).name:'dem Spieler'}${n?` · ${n} Einträge umgehängt`:''}${nu?' · Mannschaft bleibt, die Saisonplanung des doppelten Eintrags wurde nicht übernommen':''}`);
       try{ if(typeof svDatenNeuLaden==='function')await svDatenNeuLaden(); }catch(e){}
       delete DP.sure[k]; dpRender(); }
     catch(e){ b.disabled=false; b.textContent='Zusammenführen'; DP.sure[k]=false; kToast('⚠️ '+(e.message||e)); } });
@@ -32552,8 +32559,10 @@ if(typeof htRender === 'function'){ const _hr96 = htRender; htRender = function(
    ===================================================================== */
 const HU = { ich:null, alle:null };
 const huStufe = s => s === 'leitung' ? 'Leitung' : s === 'stellv' ? 'Stellvertretung' : '';
+// Hüte, bei denen „Leitung“ nichts sagt: man trägt sie oder nicht
+const HU_OHNE_STUFE = ['runde', 'bereich', 'abteilungsleitung', 'technik', 'strafenkatalog', 'helferplanung', 'spieler', 'helfer', 'gast', 'kapitaen', 'spielerrat'];
 function huChip(h){
-  const zusatz = [h.hut === 'runde' || h.hut === 'bereich' ? '' : huStufe(h.stufe), h.detail && h.detail !== h.titel ? h.detail : ''].filter(Boolean).join(' · ');
+  const zusatz = [HU_OHNE_STUFE.includes(h.hut) && h.stufe !== 'stellv' ? '' : huStufe(h.stufe), h.detail && h.detail !== h.titel ? h.detail : ''].filter(Boolean).join(' · ');
   return `<span class="hu-chip hu-${svEsc(h.stufe || 'team')}" data-hut="${svEsc(h.hut)}"><b>${svEsc(h.hut === 'runde' && h.detail ? h.detail : h.titel)}</b>${zusatz && h.hut !== 'runde' ? `<small>${svEsc(zusatz)}</small>` : ''}</span>`;
 }
 async function huMeine(force){
