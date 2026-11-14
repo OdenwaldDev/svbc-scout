@@ -2876,6 +2876,8 @@ const BANDE = (() => {
 
   /* ---------- Platzszene: Bandenreihe am Spielfeldrand, Tageslicht ---------- */
   // o: { haupt:{L,res}, nachbarn:[{L,res}] (optional), unscharf:true }. Gibt die Kamera zurück (für Tests).
+  // o.nachbarFest (0.99.24): die wirklichen Nachbarn je Platz neben der eigenen Bande, { '-1':{L,res}, '1':{frei:true,nr:7}, '2':false … }.
+  //   {L,res} = Bande, {frei,nr} = freier Platz mit Nummer, null = neutrale Bande, false = hier endet die Reihe.
   function szene(cv, o){
     const dpr = Math.min(2, window.devicePixelRatio || 1), r = cv.getBoundingClientRect();
     const Wc = Math.max(10, Math.round(r.width * dpr)), Hc = Math.max(10, Math.round(r.height * dpr)); cv.width = Wc; cv.height = Hc;
@@ -2928,11 +2930,15 @@ const BANDE = (() => {
     // Banden: Haupt in der Mitte, links eine, rechts mehrere Nachbarn (gleiches Format, Einheitslook)
     const nb = o.nachbarn || [], reihe = [];
     const nLinks = 2, nRechts = Math.max(4, Math.ceil(26 / (wB + luecke)));
-    for(let i = -nLinks; i <= nRechts; i++){ const x0 = -wB / 2 + i * (wB + luecke); reihe.push({ i, x0, x1:x0 + wB, haupt:i === 0, q:i === 0 ? o.haupt : nb.length ? nb[(i + nLinks + nb.length * 4) % nb.length] : null }); }
+    const fest = o.nachbarFest || null;
+    for(let i = -nLinks; i <= nRechts; i++){ const x0 = -wB / 2 + i * (wB + luecke); if(fest && i !== 0 && fest[i] === false) continue;
+      reihe.push({ i, x0, x1:x0 + wB, haupt:i === 0, q:i === 0 ? o.haupt : fest ? (fest[i] || null) : nb.length ? nb[(i + nLinks + nb.length * 4) % nb.length] : null }); }
     reihe.sort((a, b) => cam([b.x0 + wB / 2, 0, 0])[2] - cam([a.x0 + wB / 2, 0, 0])[2]);
     const tex = new Map(), texFuer = (q, ppm, unscharf) => { const k = q; if(tex.has(k)) return tex.get(k);
       let c; if(q){ c = bild(q.L, q.res, ppm, false); if(unscharf && 'filter' in x){ const u = document.createElement('canvas'); u.width = c.width; u.height = c.height; const ux = u.getContext('2d'); ux.filter = `blur(${Math.max(1, c.width / 520)}px)`; ux.drawImage(c, 0, 0); c = u; } }
       else c = platzhalter(L, ppm); tex.set(k, c); return c; };
+    // freier Platz: leere Tafel mit Nummer, damit man sieht, was neben der eigenen Bande noch zu haben ist
+    const texFrei = (q, ppm) => { const k = 'frei:' + q.nr + ':' + (q.frei ? 1 : 0); if(tex.has(k)) return tex.get(k); const c = freiTafel(L, ppm, q); tex.set(k, c); return c; };
     let hauptBox = null;
     reihe.forEach(b => {
       const a0 = cam([b.x0, 0, 0]), a1 = cam([b.x1, 0, 0]); if(a0[2] < NAH && a1[2] < NAH) return;
@@ -2943,7 +2949,7 @@ const BANDE = (() => {
       [b.x0 + wB * .08, b.x1 - wB * .08].forEach(px => { const u = pr([px, 0, .02]), v = pr([px, lift + .02, .02]); x.strokeStyle = '#4b4f55'; x.lineWidth = Math.max(1, foc * .035 / u[2]); x.beginPath(); x.moveTo(u[0], u[1]); x.lineTo(v[0], v[1]); x.stroke(); });
       const breitPx = Math.abs(pr([b.x1, lift, 0])[0] - pr([b.x0, lift, 0])[0]);
       const ppm = b.haupt ? Math.min(1.2, Math.max(.25, breitPx * 1.4 / L.W)) : Math.min(.35, Math.max(.08, breitPx * 1.2 / L.W));
-      const t = texFuer(b.q, ppm, !b.haupt && o.unscharf !== false);
+      const t = b.q && !b.q.L ? texFrei(b.q, ppm) : texFuer(b.q, ppm, !b.haupt && o.unscharf !== false);
       // Perspektivisch in senkrechten Streifen
       const n = Math.max(8, Math.ceil(breitPx / (2 * dpr)));
       for(let k = 0; k < n; k++){ const u0 = k / n, u1 = (k + 1) / n, X0 = b.x0 + u0 * wB, X1 = b.x0 + u1 * wB;
@@ -2964,6 +2970,15 @@ const BANDE = (() => {
     // leichte Vignette, damit der Blick auf der Bande bleibt
     g = x.createRadialGradient(Wc * .5, Hc * .55, Math.min(Wc, Hc) * .35, Wc * .5, Hc * .55, Math.max(Wc, Hc) * .75); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(10,20,30,.16)'); x.fillStyle = g; x.fillRect(0, 0, Wc, Hc);
     return { hauptBox, horizont:horizont / dpr };
+  }
+  // Freier oder namenloser Platz neben der eigenen Bande: helle Tafel mit der laufenden Nummer und „frei“
+  function freiTafel(L, ppm, q){
+    const c = document.createElement('canvas'); c.width = Math.max(4, Math.round(L.W * ppm)); c.height = Math.max(2, Math.round(L.H * ppm)); const x = c.getContext('2d'); x.scale(ppm, ppm);
+    const H = L.H, W = L.W, m = H * .09; x.fillStyle = q.frei ? '#f6f3ec' : '#fff'; x.fillRect(0, 0, W, H);
+    x.strokeStyle = 'rgba(29,39,96,.55)'; x.lineWidth = H * .022; x.setLineDash([H * .12, H * .08]); x.strokeRect(m, m, W - 2 * m, H - 2 * m); x.setLineDash([]);
+    x.fillStyle = 'rgba(29,39,96,.8)'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = `700 ${Math.round(H * .34)}px BandeT,Barlow,sans-serif`;
+    x.fillText(q.frei ? `Bande ${q.nr} · frei` : `Bande ${q.nr}`, W / 2, H / 2, W - 4 * m);
+    return c;
   }
   // Nachbarbande ohne Daten: Einheitslook mit ruhigen Formen statt fremder Namen
   function platzhalter(L, ppm){
