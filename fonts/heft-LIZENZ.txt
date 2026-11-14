@@ -1,0 +1,14 @@
+Schriften für das Stadionheft (heft-*.ttf)
+
+Barlow und Barlow Condensed
+Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow)
+Lizenz: SIL Open Font License, Version 1.1 (https://openfontlicense.org)
+
+heft-b400.ttf    Barlow Regular
+heft-b400i.ttf   Barlow Italic
+heft-b600.ttf    Barlow SemiBold
+heft-bc600.ttf   Barlow Condensed SemiBold
+heft-bc800.ttf   Barlow Condensed ExtraBold
+
+Die Schriften dürfen frei genutzt, eingebettet und weitergegeben werden, solange sie nicht einzeln verkauft werden
+und dieser Hinweis dabei bleibt.
