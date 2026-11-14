@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.20', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.21', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18589,6 +18589,14 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.21',v:'0.99.21',datum:'2026-11-14',titel:'Eigene Fotos im Spieltagsstudio',kurz:'Eigene Fotos lassen sich im Spieltagsstudio hochladen und bleiben gespeichert. Spielplakat, Ergebnis und Event greifen auf dieselbe Bildbibliothek zu.',
+   punkte:[
+    {ic:'\u{1F4E4}',t:'Eigenes Foto hochladen',d:'Im Spielplakat, bei Ergebnis und bei Event gibt es unter den Hintergründen „Eigenes Foto hochladen“. Das Bild wird gespeichert und steht danach allen im Spieltagsstudio zur Auswahl, auch am anderen Gerät. Bisher blieb es nur auf dem eigenen Gerät.',r:'team'},
+    {ic:'\u{1F5BC}\u{FE0F}',t:'Eine Bibliothek für alles',d:'Das Spielplakat zeigt jetzt hinter den festen Motiven auch die Bilder aus der Bibliothek, darunter sieben neue Herbstmotive. Ergebnis und Event zeigen dieselben Bilder.',r:'team'},
+    {ic:'\u{2728}',t:'Alle Motive klar zu sehen',d:'Im Spielplakat waren Motive, die nicht zur Lichtstimmung des Spiels passen, blasser dargestellt. Jetzt sind alle gleich gut zu sehen, die passenden stehen weiter vorne.',r:'team'},
+    {ic:'\u{2B07}\u{FE0F}',t:'Export mit Bibliotheksbild',d:'Ein Event-Plakat mit einem Bild aus der Bibliothek ließ sich nicht als PNG laden. Das klappt jetzt.',r:'team'},
+    {ic:'\u{1F5C2}\u{FE0F}',t:'Bildpool im Studio',d:'Wer im Studio ein Bild in den Bildpool lädt, findet es danach auch im Spieltagsstudio, wenn es groß genug ist. Umbenennen und Löschen bleibt im Bildpool.',r:'team'}
+   ]},
   {id:'0.99.20',v:'0.99.20',datum:'2026-11-13',titel:'Strafenkatalog selbst anordnen',kurz:'Im Bearbeiten lassen sich die Strafen innerhalb ihrer Kategorie mit zwei Pfeilen nach oben und unten schieben.',
    punkte:[
     {ic:'\u{2195}\u{FE0F}',t:'Reihenfolge mit Pfeilen',d:'Strafenkatalog, Bearbeiten: Jede Strafe hat einen Pfeil nach oben und einen nach unten. Verschoben wird innerhalb von Training, Spiel oder Allgemein, gespeichert wird sofort.'},
@@ -23918,7 +23926,8 @@ function pkBibEintrag(name){ if(!PK.bib || !name) return null;
   const k = pkNorm(name), ohne = k.replace(/(iii|ii|iv|[234])$/, '');
   return PK.bib.index.get(k) || PK.bib.index.get(ohne) || null; }
 function pkBild(src){ if(!src) return Promise.resolve(null); if(PK.bilder.has(src)) return Promise.resolve(PK.bilder.get(src));
-  return new Promise(ok => { const i = new Image(); i.onload = () => { PK.bilder.set(src, i); ok(i); }; i.onerror = () => ok(null); i.src = src; }); }
+  return new Promise(ok => { const i = new Image(); if(/^https?:/i.test(src)) i.crossOrigin = 'anonymous';   // 0.99.21: Bilder aus dem Speicher, sonst sperrt der Browser das PNG
+    i.onload = () => { PK.bilder.set(src, i); ok(i); }; i.onerror = () => ok(null); i.src = src; }); }
 function pkWappenQuelle(name, eigenes){
   if(eigenes) return eigenes;
   const b = pkBibEintrag(name); if(b) return 'plakat/wappen/' + b.datei;
@@ -24198,7 +24207,7 @@ async function pkStart(){
   if(PK.laedt) return;
   P.innerHTML = '<div class="card"><div class="empty">Lade Spielplan und Wappen …</div></div>';
   PK.laedt = true;
-  try{ await Promise.all([pkFontsLaden(), pkBib(), pkSpieleLaden()]); }
+  try{ await Promise.all([pkFontsLaden(), pkBib(), pkSpieleLaden(), sbBibLaden()]); }
   catch(e){ console.warn('Spieltagsstudio laden', e); }
   finally{ PK.laedt = false; }
   pkOberflaeche(P);
@@ -24258,6 +24267,7 @@ function pkOberflaeche(P){
       <div class="pk-f"><span>Hintergrund</span></div>
       <div class="pk-galerie" id="pkGalerie" role="list"></div>
       <p class="pk-hint" id="pkGalerieHint"></p>
+      <label class="btn sm ghost sb-up">${SVI('upload')} <span data-sbt>Eigenes Foto hochladen</span><input type="file" id="pkUpFoto" accept="image/*" hidden></label>
       <div class="pk-zwei">
         <label class="pk-f"><span>Vereinsblau</span><input id="pkBlau" type="color"></label>
         <label class="pk-f"><span>Orange</span><input id="pkOrange" type="color"></label>
@@ -24270,7 +24280,6 @@ function pkOberflaeche(P){
       <label class="pk-f"><span>Motto unten</span><input id="pkSpruch" maxlength="60"></label>
       <div class="pk-ebenen">${ebenen}</div>
       <div class="pk-uploads">
-        <label class="btn sm ghost">Eigenes Foto<input type="file" id="pkUpFoto" accept="image/*" hidden></label>
         <label class="btn sm ghost">Eigenes Wappen<input type="file" id="pkUpEigen" accept="image/*" hidden></label>
         <label class="btn sm ghost">Gegnerwappen<input type="file" id="pkUpGegner" accept="image/*" hidden></label>
         <button type="button" class="btn sm ghost" id="pkReset">Zurücksetzen</button>
@@ -24338,6 +24347,13 @@ function pkBindenBody(){
     pkGalerie();
     for(const [id, k] of [['pkUpFoto','foto'],['pkUpEigen','eigen'],['pkUpGegner','gegner']]){
       const e = document.getElementById(id); if(!e) continue;
+      // 0.99.21: das eigene Foto wird im Bildpool gespeichert und steht danach allen zur Auswahl
+      if(k === 'foto'){ e.onchange = async ev => { const f = ev.target.files && ev.target.files[0]; if(!f) return;
+          sbKnopf(e, true); const r = await sbHochladen(f); sbKnopf(e, false); e.value = '';
+          if(r.ok){ S.foto = 'bib:' + r.eintrag.pfad; delete PK.eigene.foto; pkGalerie(); await pkAssetsNeu(); pkMerken(); kToast(SB_GESPEICHERT); return; }
+          if(r.grund !== 'recht'){ kToast(r.text); return; }
+          const rd = new FileReader(); rd.onload = () => { PK.eigene.foto = rd.result; pkGalerie(); pkAssetsNeu(); kToast('Dein Foto bleibt nur auf diesem Gerät. ' + r.text); }; rd.readAsDataURL(f); };
+        continue; }
       e.onchange = ev => { const f = ev.target.files && ev.target.files[0]; if(!f) return;
         if(f.size > 6 * 1024 * 1024){ kToast('Das Bild ist größer als 6 MB'); return; }
         const r = new FileReader(); r.onload = () => { PK.eigene[k] = r.result; pkAssetsNeu(); }; r.readAsDataURL(f); };
@@ -24409,8 +24425,9 @@ async function pkSpielWaehlen(i){
 
 async function pkAssets(){
   const S = PK.s, L = pkLicht(S.datum, S.zeit, S.modus);
+  const bib = !PK.eigene.foto && /^bib:/.test(S.foto || '') ? await sbUrl(S.foto.slice(4)) : null;   // 0.99.21: Bild aus der Bibliothek, fehlt es, greift wieder „Auto“
   const [foto, eigen, gegner] = await Promise.all([
-    pkBild(PK.eigene.foto || `plakat/foto/${pkFotoAuswahl(S, L.stimmung)}.webp`),
+    pkBild(PK.eigene.foto || bib || `plakat/foto/${pkFotoAuswahl(S, L.stimmung)}.webp`),
     pkBild(pkWappenQuelle(S.absender, PK.eigene.eigen) || 'plakat/wappen/svbsc-moerlenbach.webp'),
     pkBild(pkWappenQuelle(S.gegner, PK.eigene.gegner))
   ]);
@@ -24450,18 +24467,19 @@ async function pkExport(){
 /* ---------- Hintergrund-Galerie (0.73) ---------- */
 function pkGalerie(){
   const G = document.getElementById('pkGalerie'); if(!G) return;
-  const S = PK.s, L = pkLicht(S.datum, S.zeit, S.modus), aktiv = PK.eigene.foto ? '' : pkFotoAuswahl(S, L.stimmung);
+  const S = PK.s, L = pkLicht(S.datum, S.zeit, S.modus), aktiv = PK.eigene.foto || /^bib:/.test(S.foto || '') ? '' : pkFotoAuswahl(S, L.stimmung);
   const passt = f => f.st.includes(L.stimmung === 'night' ? 'night' : L.stimmung);
   const reihe = [...PK_FOTOS.filter(passt), ...PK_FOTOS.filter(f => !passt(f))];
   G.innerHTML = `<button type="button" class="pk-gb pk-auto${!S.foto && !PK.eigene.foto ? ' on' : ''}" data-foto="" role="listitem"><b>Auto</b><span>je Spiel ein anderes</span></button>`
-    + reihe.map(f => `<button type="button" class="pk-gb${S.foto === f.id ? ' on' : ''}${!S.foto && aktiv === f.id ? ' auto-an' : ''}${passt(f) ? '' : ' fremd'}" data-foto="${pkEsc(f.id)}" role="listitem" title="${pkEsc(f.titel)}" aria-label="${pkEsc(f.titel)}"><img src="plakat/foto/klein/${pkEsc(f.id)}.webp" alt="" loading="lazy"></button>`).join('');
+    + reihe.map(f => `<button type="button" class="pk-gb${S.foto === f.id ? ' on' : ''}${!S.foto && aktiv === f.id ? ' auto-an' : ''}${passt(f) ? '' : ' fremd'}" data-foto="${pkEsc(f.id)}" role="listitem" title="${pkEsc(f.titel)}" aria-label="${pkEsc(f.titel)}"><img src="plakat/foto/klein/${pkEsc(f.id)}.webp" alt="" loading="lazy"></button>`).join('')
+    + sbListe().map(m => `<button type="button" class="pk-gb pk-bib${S.foto === 'bib:' + m.pfad && !PK.eigene.foto ? ' on' : ''}" data-foto="${pkEsc('bib:' + m.pfad)}" role="listitem" title="${pkEsc(m.name || 'Bibliothek')}" aria-label="${pkEsc(m.name || 'Bild aus der Bibliothek')}"><img src="${pkEsc(tkFotoUrl(m.pfad))}" alt="" loading="lazy"></button>`).join('');
   const h = document.getElementById('pkGalerieHint');
   if(h) h.textContent = PK.eigene.foto ? 'Gerade ist dein eigenes Foto aktiv. Ein Bild aus der Galerie ersetzt es.'
-    : S.foto ? 'Fest gewählt für dieses Spiel. „Auto“ wechselt wieder je Spiel.' : 'Auto nimmt passend zur Lichtstimmung je Spiel ein anderes Bild. Passende stehen vorne.';
+    : S.foto ? 'Fest gewählt für dieses Spiel. „Auto“ wechselt wieder je Spiel.' : 'Auto nimmt passend zur Lichtstimmung je Spiel ein anderes Bild. Passende stehen vorne, dahinter die Bilder aus der Bibliothek.';
   G.querySelectorAll('[data-foto]').forEach(b => b.onclick = () => { S.foto = b.dataset.foto; delete PK.eigene.foto; pkGalerie(); pkAssetsNeu(); pkMerken(); });
 }
 
-(function(){ try{ const s=document.createElement('style'); s.id='svm57css'; s.textContent="@font-face{font-family:'Anton';src:url('fonts/anton.woff2') format('woff2');font-weight:400;font-display:block;}\n/* Spieltagsstudio */\n.pk-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,420px);gap:16px;align-items:start}\n@media (max-width:980px){.pk-wrap{grid-template-columns:minmax(0,1fr)}}\n.pk-vorschau{padding:14px}\n.pk-buehne{background:repeating-conic-gradient(#e9e9ec 0% 25%,#f6f6f8 0% 50%) 0 0/18px 18px;border-radius:10px;padding:12px;display:grid;place-items:center;min-height:260px}\n.pk-buehne canvas{max-width:100%;max-height:min(68vh,760px);height:auto;border-radius:6px;box-shadow:0 14px 40px rgba(10,16,28,.28)}\n.pk-unten{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}\n.pk-fmts{display:flex;gap:6px;flex-wrap:wrap}\n.pk-fmt.on{background:var(--acc,#1d2760);color:#fff;border-color:transparent}\n.pk-aktion{display:flex;align-items:center;gap:10px;flex-wrap:wrap}\n.pk-masse{font-size:12.5px;opacity:.7;font-variant-numeric:tabular-nums}\n.pk-licht{margin:10px 2px 0;font-size:12.5px;line-height:1.5;opacity:.75}\n\n.pk-steuer{padding:14px}\n.pk-seg{display:flex;gap:4px;background:rgba(29,39,96,.06);padding:4px;border-radius:10px;margin-bottom:14px}\n.pk-seg button{flex:1;min-height:38px;border:0;background:none;border-radius:7px;font:inherit;font-size:13.5px;font-weight:650;color:inherit;cursor:pointer;opacity:.7}\n.pk-seg button.on{background:#fff;opacity:1;box-shadow:0 1px 3px rgba(10,16,28,.14)}\n.pk-body{display:grid;gap:12px}\n.pk-f{display:grid;gap:5px;font-size:13px;font-weight:650}\n.pk-f>span{opacity:.8}\n.pk-f>span b{font-weight:700;opacity:.9;font-variant-numeric:tabular-nums}\n.pk-f input,.pk-f select,.pk-f textarea{min-height:42px;padding:8px 10px;border:1.5px solid rgba(29,39,96,.16);border-radius:9px;font:inherit;font-weight:500;background:#fff;color:inherit;width:100%}\n.pk-f input[type=range]{min-height:30px;padding:0;border:0;background:none}\n.pk-f input[type=color]{padding:3px;min-height:42px}\n.pk-f textarea{min-height:70px;resize:vertical;line-height:1.5}\n.pk-zwei{display:grid;grid-template-columns:1fr 1fr;gap:10px}\n.pk-hint{font-size:12.5px;line-height:1.5;opacity:.7;margin:0}\n.pk-ebenen{display:grid;gap:6px;padding:10px;border:1px solid rgba(29,39,96,.12);border-radius:10px}\n.pk-eb{display:flex;align-items:center;gap:10px;min-height:34px;font-size:13.5px;font-weight:600;cursor:pointer}\n.pk-eb input{width:20px;height:20px;flex:none;accent-color:#1d2760}\n.pk-uploads{display:flex;gap:8px;flex-wrap:wrap}\n.pk-uploads label{cursor:pointer}\n.pk-box{display:grid;gap:6px}\n.pk-box-k{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}\n.pk-box textarea{width:100%;padding:10px;border:1.5px solid rgba(29,39,96,.16);border-radius:9px;font:inherit;font-size:13.5px;line-height:1.55;resize:vertical;background:#fff;color:inherit}\n.pk-karten{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}\n.pk-karte{border:1px solid rgba(29,39,96,.12);border-radius:10px;padding:10px;display:grid;gap:6px;background:#fff}\n.pk-karte img{width:100%;height:88px;object-fit:contain;background:repeating-conic-gradient(#ececed 0% 25%,#f7f7f8 0% 50%) 0 0/12px 12px;border-radius:6px}\n.pk-karte h4{margin:0;font-size:13.5px;line-height:1.3}\n.pk-karte p{margin:0;font-size:11.5px;line-height:1.45;opacity:.75}\n.pk-karte div{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}\n/* Hintergrund-Galerie (0.73) */\n.pk-galerie{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin:2px 0 6px}\n.pk-gb{position:relative;aspect-ratio:9/16;padding:0;border:2px solid transparent;border-radius:10px;overflow:hidden;background:var(--card2);cursor:pointer;color:inherit;font:inherit}\n.pk-gb img{width:100%;height:100%;object-fit:cover;display:block}\n.pk-gb.fremd{opacity:.55}\n.pk-gb.on{border-color:var(--accent);opacity:1}\n.pk-gb.auto-an{border-color:color-mix(in srgb,var(--accent) 45%,transparent);opacity:1}\n.pk-gb.pk-auto{display:grid;place-content:center;gap:4px;text-align:center;padding:6px;border:1px dashed var(--line)}\n.pk-gb.pk-auto.on{border:2px solid var(--accent)}\n.pk-gb.pk-auto b{font-size:14px}\n.pk-gb.pk-auto span{font-size:11px;line-height:1.25;color:var(--ink2)}\n.pk-gb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}\n"; document.head.appendChild(s); }catch(e){} })();
+(function(){ try{ const s=document.createElement('style'); s.id='svm57css'; s.textContent="@font-face{font-family:'Anton';src:url('fonts/anton.woff2') format('woff2');font-weight:400;font-display:block;}\n/* Spieltagsstudio */\n.pk-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,420px);gap:16px;align-items:start}\n@media (max-width:980px){.pk-wrap{grid-template-columns:minmax(0,1fr)}}\n.pk-vorschau{padding:14px}\n.pk-buehne{background:repeating-conic-gradient(#e9e9ec 0% 25%,#f6f6f8 0% 50%) 0 0/18px 18px;border-radius:10px;padding:12px;display:grid;place-items:center;min-height:260px}\n.pk-buehne canvas{max-width:100%;max-height:min(68vh,760px);height:auto;border-radius:6px;box-shadow:0 14px 40px rgba(10,16,28,.28)}\n.pk-unten{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}\n.pk-fmts{display:flex;gap:6px;flex-wrap:wrap}\n.pk-fmt.on{background:var(--acc,#1d2760);color:#fff;border-color:transparent}\n.pk-aktion{display:flex;align-items:center;gap:10px;flex-wrap:wrap}\n.pk-masse{font-size:12.5px;opacity:.7;font-variant-numeric:tabular-nums}\n.pk-licht{margin:10px 2px 0;font-size:12.5px;line-height:1.5;opacity:.75}\n\n.pk-steuer{padding:14px}\n.pk-seg{display:flex;gap:4px;background:rgba(29,39,96,.06);padding:4px;border-radius:10px;margin-bottom:14px}\n.pk-seg button{flex:1;min-height:38px;border:0;background:none;border-radius:7px;font:inherit;font-size:13.5px;font-weight:650;color:inherit;cursor:pointer;opacity:.7}\n.pk-seg button.on{background:#fff;opacity:1;box-shadow:0 1px 3px rgba(10,16,28,.14)}\n.pk-body{display:grid;gap:12px}\n.pk-f{display:grid;gap:5px;font-size:13px;font-weight:650}\n.pk-f>span{opacity:.8}\n.pk-f>span b{font-weight:700;opacity:.9;font-variant-numeric:tabular-nums}\n.pk-f input,.pk-f select,.pk-f textarea{min-height:42px;padding:8px 10px;border:1.5px solid rgba(29,39,96,.16);border-radius:9px;font:inherit;font-weight:500;background:#fff;color:inherit;width:100%}\n.pk-f input[type=range]{min-height:30px;padding:0;border:0;background:none}\n.pk-f input[type=color]{padding:3px;min-height:42px}\n.pk-f textarea{min-height:70px;resize:vertical;line-height:1.5}\n.pk-zwei{display:grid;grid-template-columns:1fr 1fr;gap:10px}\n.pk-hint{font-size:12.5px;line-height:1.5;opacity:.7;margin:0}\n.pk-ebenen{display:grid;gap:6px;padding:10px;border:1px solid rgba(29,39,96,.12);border-radius:10px}\n.pk-eb{display:flex;align-items:center;gap:10px;min-height:34px;font-size:13.5px;font-weight:600;cursor:pointer}\n.pk-eb input{width:20px;height:20px;flex:none;accent-color:#1d2760}\n.pk-uploads{display:flex;gap:8px;flex-wrap:wrap}\n.pk-uploads label{cursor:pointer}\n.pk-box{display:grid;gap:6px}\n.pk-box-k{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}\n.pk-box textarea{width:100%;padding:10px;border:1.5px solid rgba(29,39,96,.16);border-radius:9px;font:inherit;font-size:13.5px;line-height:1.55;resize:vertical;background:#fff;color:inherit}\n.pk-karten{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}\n.pk-karte{border:1px solid rgba(29,39,96,.12);border-radius:10px;padding:10px;display:grid;gap:6px;background:#fff}\n.pk-karte img{width:100%;height:88px;object-fit:contain;background:repeating-conic-gradient(#ececed 0% 25%,#f7f7f8 0% 50%) 0 0/12px 12px;border-radius:6px}\n.pk-karte h4{margin:0;font-size:13.5px;line-height:1.3}\n.pk-karte p{margin:0;font-size:11.5px;line-height:1.45;opacity:.75}\n.pk-karte div{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}\n/* Hintergrund-Galerie (0.73) */\n.pk-galerie{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin:2px 0 6px}\n.pk-gb{position:relative;aspect-ratio:9/16;padding:0;border:2px solid transparent;border-radius:10px;overflow:hidden;background:var(--card2);cursor:pointer;color:inherit;font:inherit}\n.pk-gb img{width:100%;height:100%;object-fit:cover;display:block}\n/* 0.99.21: Motive, die nicht zur Lichtstimmung passen, stehen hinten, sind aber nicht mehr blasser (Albert: „komischer Schleier“) */\n.pk-gb.fremd{opacity:1}\n.pk-gb.on{border-color:var(--accent);opacity:1}\n.pk-gb.auto-an{border-color:color-mix(in srgb,var(--accent) 45%,transparent);opacity:1}\n.pk-gb.pk-auto{display:grid;place-content:center;gap:4px;text-align:center;padding:6px;border:1px dashed var(--line)}\n.pk-gb.pk-auto.on{border:2px solid var(--accent)}\n.pk-gb.pk-auto b{font-size:14px}\n.pk-gb.pk-auto span{font-size:11px;line-height:1.25;color:var(--ink2)}\n.pk-gb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}\n"; document.head.appendChild(s); }catch(e){} })();
 /* =====================================================================
    Sportzentrale Beta 0.43 · SV/BSC Studio (Teil 1: Daten, Darstellung, Projektliste)
    Präsentationen und Dokumente im Vereinsdesign, gemeinsam bearbeiten.
@@ -25110,9 +25128,11 @@ async function stHochladen(files){ const out=[]; for(const f of files){ if(!/^im
     let blob=f, ext=(f.name.split('.').pop()||'png').toLowerCase(); try{ const r=await stVerkleinern(f); if(r){ blob=r.blob; ext=r.ext; } }catch(e){}
     const name=f.name.replace(/\.\w+$/,''); const pfad='assets/'+stSlug(name)+'-'+Date.now().toString(36).slice(-4)+'.'+ext;
     const {error}=await SVB.sb.storage.from('studio').upload(pfad,blob,{contentType:blob.type||f.type,upsert:false}); if(error){ kToast('⚠️ '+error.message); continue; }
-    const tags=/logo|wappen/i.test(name)?['logo']:/^p-|portrait|person/i.test(name)?['person']:/stadion|platz/i.test(name)?['stadion','foto']:['foto'];
-    await SVB.sb.from('studio_medien').insert({pfad,name,tags}); out.push(pfad); }
+    const tags=/logo|wappen/i.test(name)?['logo']:/(^|[^a-z])qr([^a-z]|$)/i.test(name)?['qr']:/^p-|portrait|person/i.test(name)?['person']:/stadion|platz/i.test(name)?['stadion','foto']:['foto'];
+    const mass=await stBildMass(blob);   // 0.99.21: Maße und Größe mitschreiben, das Spieltagsstudio zeigt nur Bilder mit bekannter Größe
+    await SVB.sb.from('studio_medien').insert({pfad,name,tags,breite:mass?mass.w:null,hoehe:mass?mass.h:null,bytes:blob.size||null}); out.push(pfad); }
   ST.medien=null; if(out.length){ await stUrlsLaden(out); kToast(`✓ ${out.length} Bild${out.length>1?'er':''} hochgeladen`); } return out; }
+function stBildMass(b){ return new Promise(res=>{ if(/svg/i.test(b.type||''))return res(null); const u=URL.createObjectURL(b), im=new Image(); im.onload=()=>{ URL.revokeObjectURL(u); res(im.naturalWidth&&im.naturalHeight?{w:im.naturalWidth,h:im.naturalHeight}:null); }; im.onerror=()=>{ URL.revokeObjectURL(u); res(null); }; im.src=u; }); }
 function stVerkleinern(f){ return new Promise(res=>{ const u=URL.createObjectURL(f), im=new Image(); im.onload=()=>{ const max=2400, s=Math.min(1,max/Math.max(im.width,im.height)); if(s===1&&f.size<1.5e6){ URL.revokeObjectURL(u); return res(null); }
     const c=document.createElement('canvas'); c.width=Math.round(im.width*s); c.height=Math.round(im.height*s); c.getContext('2d').drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(u);
     const png=f.type==='image/png'&&f.size<800000; c.toBlob(b=>res(b?{blob:b,ext:png?'png':'jpg'}:null),png?'image/png':'image/jpeg',0.88); }; im.onerror=()=>res(null); im.src=u; }); }
@@ -31480,7 +31500,7 @@ if(typeof svSheet === 'function'){ const _sh88 = svSheet; svSheet = function(ope
      dunkler Verlauf, zweizeilige Headline in Anton mit Patina (Zeile 1 warmweiß, Zeile 2 Vereinsblau), gesperrte Versalien.
    - Formate: Story, Feed, Quer (Social) und Plakat A4, Flyer A5 (Druck, 300 dpi).
    - Vorlage „Nachspielzeit“ mit allen Texten, alles änderbar. Gespeichert in plakat_spiel unter event-<datum>-<name>,
-     so sehen alle im Team denselben Stand. Eigene Fotos bleiben auf dem Gerät.
+     so sehen alle im Team denselben Stand. Eigene Fotos landen seit 0.99.21 im Bildpool (svm98.js).
    ===================================================================== */
 const EV_FORMATE = { story:[1080,1920,'Story 9:16'], feed:[1080,1350,'Feed 4:5'], quer:[1920,1080,'Quer 16:9'], a4:[1240,1754,'Plakat A4'], a5:[874,1240,'Flyer A5'] };
 const EV_EBENEN = [['foto','Hintergrundfoto'],['marke','Absender und Hinweis oben'],['titel','Headline'],['lead','Zwei Sätze'],['termin','Datum und Anlass'],['kasten','Programmkasten'],['spruch','Vereinsmotto']];
@@ -31623,15 +31643,12 @@ function evMalen(cv, S, A, skala){
 async function evAssets(){
   const S = EV.s; let foto = null;
   if(S.foto === 'eigen' && EV.eigen) foto = EV.eigen;
-  else if(S.foto && S.foto.startsWith('bib:') && typeof tkFotoUrl === 'function'){ const url = tkFotoUrl(S.foto.slice(4)); foto = url ? await pkBild(url) : null; }
+  else if(S.foto && S.foto.startsWith('bib:')){ const url = await sbUrl(S.foto.slice(4)); foto = url ? await pkBild(url) : null; }
   else if(S.foto && S.foto !== 'ohne') foto = await pkBild('plakat/foto/' + S.foto + '.webp');
   return { foto }; }
 let evBib = null;
-async function evBibLaden(){ if(evBib) return evBib;
-  try{ const { data } = await SVB.sb.from('studio_medien').select('pfad,name,tags,breite').gte('breite', 900).order('am', { ascending:false }).limit(30);
-    evBib = (data || []).filter(m => !(m.tags || []).includes('spieler') && /\.(jpe?g|png|webp)$/i.test(m.pfad));
-    if(typeof tkUrls === 'function') await tkUrls(evBib.map(m => m.pfad)); }catch(e){ evBib = []; }
-  return evBib; }
+// 0.99.21: dieselbe Bibliothek wie Spielplakat und Ergebnis (svm98.js)
+async function evBibLaden(neu){ if(evBib && !neu) return evBib; evBib = await sbBibLaden(neu); return evBib; }
 
 /* ---------- Speichern im Team ---------- */
 const evSchluessel = () => 'event-' + (EV.s.datum || 'ohne-datum') + '-' + (pkNorm(EV.s.zeile1 + EV.s.zeile2) || 'event').slice(0, 40);
@@ -31669,7 +31686,7 @@ function evOberflaeche(h){
   const gespeichert = EV.liste.map(r => { const e = (r.einstell || {}).event || {}; return opt(r.spiel, `${r.datum ? new Date(r.datum + 'T12:00:00').toLocaleDateString('de-DE') : 'ohne Datum'} · ${(e.zeile1 || '') + (e.zeile2 || '')}`, r.spiel === EV.id); }).join('');
   const foto = (id, titel, src) => `<button type="button" class="er-bg${S.foto === id ? ' on' : ''}" data-evb="${evE(id)}" title="${evE(titel)}">${src ? `<img src="${evE(src)}" alt="" loading="lazy">` : '<i class="ev-ohne"></i>'}<span>${evE(titel)}</span></button>`;
   const fotos = foto('ohne', 'Ohne Foto') + PK_FOTOS.map(f => foto(f.id, f.titel, 'plakat/foto/klein/' + f.id + '.webp')).join('')
-    + (evBib || []).slice(0, 12).map(m => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(m.pfad) : ''; return u ? foto('bib:' + m.pfad, m.name || 'Bibliothek', u) : ''; }).join('')
+    + sbListe().map(m => foto('bib:' + m.pfad, m.name || 'Bibliothek', tkFotoUrl(m.pfad))).join('')
     + (EV.eigen ? foto('eigen', EV.eigenName || 'Eigenes Foto', EV.eigen.src) : '');
   const feld = (id, label, wert, max, ph) => `<label class="tk-feld ev-feld"><span>${evE(label)}</span><input id="${id}" maxlength="${max}" value="${evE(wert)}"${ph ? ` placeholder="${evE(ph)}"` : ''}></label>`;
   h.innerHTML = `
@@ -31700,7 +31717,7 @@ function evOberflaeche(h){
       ${feld('evHinw', 'Hinweis (orange)', S.hinweis, 70, 'Essen vorbestellen bis Donnerstagabend.')}
       <h4 class="ev-h">Hintergrund</h4>
       <div class="er-bgs ev-bgs">${fotos}</div>
-      <label class="btn sm ghost ev-upload">${SVI('image')} Eigenes Foto wählen<input type="file" id="evDatei" accept="image/*" hidden></label>
+      <label class="btn sm ghost ev-upload sb-up">${SVI('upload')} <span data-sbt>Eigenes Foto hochladen</span><input type="file" id="evDatei" accept="image/*" hidden></label>
       <label class="tk-feld"><span>Dunkler für bessere Lesbarkeit</span><input type="range" id="evDunkel" min="0" max="80" value="${+S.dunkel || 0}"></label>
       <details class="tk-eb"><summary>Ebenen</summary><div>${EV_EBENEN.map(([k, t]) => `<label class="pk-eb"><input type="checkbox" data-eve="${k}"${S.ebenen[k] ? ' checked' : ''}><span>${evE(t)}</span></label>`).join('')}</div></details>
       <h4 class="ev-h">Text für WhatsApp und Instagram</h4>
@@ -31717,8 +31734,12 @@ function evOberflaeche(h){
   h.querySelector('#evDunkel').oninput = e => { S.dunkel = +e.target.value; evBald(); evMerken(); };
   h.querySelectorAll('[data-evb]').forEach(b => b.onclick = () => { S.foto = b.dataset.evb; h.querySelectorAll('[data-evb]').forEach(x => x.classList.toggle('on', x === b)); evZeichnen(); evMerken(); });
   h.querySelectorAll('[data-eve]').forEach(c => c.onchange = () => { S.ebenen[c.dataset.eve] = c.checked; evZeichnen(); evMerken(); });
-  h.querySelector('#evDatei').onchange = e => { const f = e.target.files && e.target.files[0]; if(!f) return;
-    const r = new FileReader(); r.onload = () => { const i = new Image(); i.onload = () => { EV.eigen = i; EV.eigenName = f.name.replace(/\.[^.]+$/, '').slice(0, 24); S.foto = 'eigen'; neu(); kToast('Eigenes Foto bleibt nur auf diesem Gerät'); }; i.src = r.result; }; r.readAsDataURL(f); };
+  // 0.99.21: das eigene Foto wird im Bildpool gespeichert; ohne Recht im Studio bleibt es wie früher auf dem Gerät
+  h.querySelector('#evDatei').onchange = async e => { const inp = e.target, f = inp.files && inp.files[0]; if(!f) return;
+    sbKnopf(inp, true); const erg = await sbHochladen(f); sbKnopf(inp, false); inp.value = '';
+    if(erg.ok){ evBib = SB.bib; S.foto = 'bib:' + erg.eintrag.pfad; neu(); evMerken(); kToast(SB_GESPEICHERT); return; }
+    if(erg.grund !== 'recht'){ kToast(erg.text); return; }
+    const r = new FileReader(); r.onload = () => { const i = new Image(); i.onload = () => { EV.eigen = i; EV.eigenName = f.name.replace(/\.[^.]+$/, '').slice(0, 24); S.foto = 'eigen'; neu(); kToast('Dein Foto bleibt nur auf diesem Gerät. ' + erg.text); }; i.src = r.result; }; r.readAsDataURL(f); };
   h.querySelector('#evVorlage').onchange = e => { const v = EV_VORLAGEN[e.target.value]; if(!v) return; Object.assign(S, v.s, { vorlage:e.target.value }); EV.id = ''; neu(); };
   h.querySelector('#evGespeichert').onchange = e => { const r = EV.liste.find(x => x.spiel === e.target.value);
     if(!r){ EV.id = ''; Object.assign(S, EV_VORLAGEN[S.vorlage || 'nachspielzeit'].s); neu(); return; }
@@ -32623,6 +32644,78 @@ async function huAdmin(){
 { const _ar97 = svAdminRender; svAdminRender = async function(){ const r = await _ar97.apply(this, arguments); try{ await huAdmin(); }catch(e){} return r; }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm97css'; s.textContent="/* Beta 0.99.18 · Hüte */\n.hu-liste,.hu-zeile{display:flex;flex-wrap:wrap;gap:6px}\n.hu-zeile{margin-top:6px}\n.hu-chip{display:inline-flex;align-items:baseline;gap:6px;padding:5px 10px;border-radius:999px;font-size:12.5px;line-height:1.2;background:rgba(148,163,196,.14);color:var(--ink,#eef2fb);max-width:100%}\n.hu-chip b{font-weight:650}\n.hu-chip small{font-size:11.5px;color:var(--ink3);overflow-wrap:anywhere}\n.hu-chip.hu-leitung{background:rgba(47,107,255,.18)}\n.hu-chip.hu-stellv{background:rgba(47,107,255,.10)}\n.hu-konto .hu-liste{margin:2px 0 10px}\n.hu-konto .hu-chip{font-size:13.5px;padding:7px 12px}\n.hu-post{display:flex;flex-direction:column}\n.hu-p{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:6px 16px;align-items:center;padding:12px 0;border-top:1px solid var(--line,rgba(148,163,196,.18))}\n.hu-p:first-child{border-top:0;padding-top:0}\n.hu-was{display:flex;flex-direction:column;min-width:0}\n.hu-was b{font-size:14.5px}\n.hu-was span{font-size:12.5px;color:var(--ink3)}\n.hu-wer{display:flex;flex-wrap:wrap;gap:6px;min-width:0}\n.hu-wer i{font-style:normal;font-size:13px;padding:5px 10px;border-radius:999px;background:rgba(148,163,196,.14)}\n.hu-wer em{flex-basis:100%;font-style:normal;font-size:12.5px;color:var(--ink3)}\n@media (max-width:640px){.hu-p{grid-template-columns:1fr}}\n"; document.head.appendChild(s); }catch(e){} })();
+/* =====================================================================
+   Beta 0.99.21 · Spieltagsstudio: eine Bildbibliothek für Spielplakat, Ergebnis und Event
+   Albert, 14.11.2026: „Die App braucht auf jeden Fall die Bilder und ich muss die Möglichkeit haben, da Bilder
+   selbst nochmal hochzuladen, die dann auch gespeichert werden.“
+   - Alle drei Bereiche lesen dieselbe Liste aus dem Bildpool des Studios (studio_medien, Speicher „studio“).
+   - „Eigenes Foto hochladen“ legt das Bild im Bildpool ab (Ordner assets/spieltag, Kategorien Foto, Hintergrund,
+     Spieltag, eigene Uploads). Es bleibt gespeichert, gehört zum Konto, das es hochgeladen hat (hochgeladen_von),
+     und steht danach allen im Spieltagsstudio zur Auswahl. Wer im Studio nicht bearbeiten darf, behält das Foto
+     wie früher nur auf dem eigenen Gerät.
+   - Als Hintergrund taugt, was an der kurzen Seite mindestens 700 Pixel hat und kein Spielerfoto, Logo, Wappen,
+     QR-Code oder Zierelement ist. Löschen und Umbenennen bleibt im Studio unter „Bildpool“.
+   ===================================================================== */
+const SB = { bib:null, klein:700, max:2400 };
+const SB_NICHT = ['spieler','person','logo','wappen','qr','element','ticker','freigestellt'];
+const sbPasst = m => !!m && +m.breite >= SB.klein && +m.hoehe >= SB.klein && /\.(jpe?g|png|webp)$/i.test(m.pfad || '') && !(m.tags || []).some(t => SB_NICHT.includes(t));
+
+// Liste aus dem Bildpool: neueste zuerst. Ohne Leserecht im Studio bleibt sie leer, die festen Motive gehen trotzdem.
+async function sbBibLaden(neu){ if(SB.bib && !neu) return SB.bib;
+  try{ const { data, error } = await SVB.sb.from('studio_medien').select('pfad,name,tags,breite,hoehe').gte('breite', SB.klein).order('am', { ascending:false }).limit(400);
+    if(error) throw error; SB.bib = (data || []).filter(sbPasst); await tkUrls(SB.bib.map(m => m.pfad)); }
+  catch(e){ console.warn('Bildbibliothek', e); SB.bib = SB.bib || []; }
+  return SB.bib; }
+// Bilder mit Adresse, wie die Auswahl sie zeigt
+const sbListe = (n = 48) => (SB.bib || []).filter(m => tkFotoUrl(m.pfad)).slice(0, n);
+// Ein gespeicherter Stand kann ein Bild nennen, das nicht in der Liste steht: Adresse nachholen
+async function sbUrl(pfad){ if(!pfad) return null; if(!tkFotoUrl(pfad)) await tkUrls([pfad]); return tkFotoUrl(pfad); }
+
+const sbSlug = n => String(n).toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'bild';
+// Bild einlesen, auf höchstens 2400 Pixel an der langen Seite bringen, Maße mitgeben
+function sbVorbereiten(file){ return new Promise(ok => { const u = URL.createObjectURL(file), im = new Image();
+  im.onerror = () => { URL.revokeObjectURL(u); ok(null); };
+  im.onload = () => { const s = Math.min(1, SB.max / Math.max(im.naturalWidth, im.naturalHeight)), w = Math.round(im.naturalWidth * s), h = Math.round(im.naturalHeight * s);
+    const bleibt = s === 1 && /^image\/(jpeg|webp)$/.test(file.type) && file.size <= 2.5e6;
+    if(bleibt){ URL.revokeObjectURL(u); return ok({ blob:file, ext:file.type === 'image/webp' ? 'webp' : 'jpg', w, h }); }
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+    g.fillStyle = '#0b1220'; g.fillRect(0, 0, w, h); g.drawImage(im, 0, 0, w, h); URL.revokeObjectURL(u);
+    c.toBlob(b => ok(b ? { blob:b, ext:'jpg', w, h } : null), 'image/jpeg', .9); };
+  im.src = u; }); }
+
+/* Hochladen und speichern. Antwort: { ok:true, eintrag } oder { ok:false, grund, text }
+   grund 'recht': die Person darf im Studio nicht bearbeiten, der Aufrufer nimmt das Foto dann nur für dieses Gerät. */
+let sbLaeuft = false;
+async function sbHochladen(file){
+  if(!file || !/^image\//.test(file.type || '')) return { ok:false, grund:'art', text:'Bitte ein Bild wählen (JPG, PNG oder WebP).' };
+  if(file.size > 25 * 1024 * 1024) return { ok:false, grund:'gross', text:'Das Bild ist größer als 25 MB.' };
+  if(sbLaeuft) return { ok:false, grund:'laeuft', text:'Ein Bild wird gerade hochgeladen.' };
+  sbLaeuft = true;
+  try{
+    const v = await sbVorbereiten(file); if(!v) return { ok:false, grund:'art', text:'Das Bild ließ sich nicht lesen.' };
+    if(Math.min(v.w, v.h) < SB.klein) return { ok:false, grund:'klein', text:`Das Bild ist zu klein (${v.w} × ${v.h}). Die kurze Seite braucht mindestens ${SB.klein} Pixel.` };
+    const name = (file.name || 'Foto').replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim().slice(0, 60) || 'Foto';
+    const pfad = `assets/spieltag/${sbSlug(name)}-${Date.now().toString(36)}.${v.ext}`;
+    const up = await SVB.sb.storage.from('studio').upload(pfad, v.blob, { contentType:v.blob.type || 'image/jpeg', upsert:false });
+    if(up.error){ const m = String(up.error.message || up.error), recht = /row-level security|not authorized|unauthorized|403/i.test(m + ' ' + (up.error.statusCode || up.error.status || ''));
+      return { ok:false, grund:recht ? 'recht' : 'fehler', text:recht ? 'Zum Speichern fehlt dir das Recht, im Studio zu bearbeiten.' : 'Hochladen hat nicht geklappt: ' + m }; }
+    const eintrag = { pfad, name, tags:['foto','hintergrund','spieltag','eigene'], breite:v.w, hoehe:v.h };
+    const ins = await SVB.sb.from('studio_medien').insert({ ...eintrag, bytes:v.blob.size });
+    if(ins.error){ try{ await SVB.sb.storage.from('studio').remove([pfad]); }catch(e){}
+      const recht = /row-level security|permission denied/i.test(ins.error.message || '');
+      return { ok:false, grund:recht ? 'recht' : 'fehler', text:recht ? 'Zum Speichern fehlt dir das Recht, im Studio zu bearbeiten.' : 'Speichern hat nicht geklappt: ' + ins.error.message }; }
+    await tkUrls([pfad]); SB.bib = [eintrag, ...(SB.bib || []).filter(m => m.pfad !== pfad)];
+    if(typeof ST !== 'undefined' && ST) ST.medien = null;   // der Bildpool im Studio lädt beim nächsten Öffnen neu
+    return { ok:true, eintrag };
+  }catch(e){ return { ok:false, grund:'fehler', text:'Hochladen hat nicht geklappt: ' + (e.message || e) }; }
+  finally{ sbLaeuft = false; } }
+
+// Knopf während des Hochladens sperren und beschriften
+function sbKnopf(input, an){ const l = input && input.closest('label'); if(!l) return; l.classList.toggle('sb-laedt', !!an); l.setAttribute('aria-busy', an ? 'true' : 'false'); input.disabled = !!an;
+  const t = l.querySelector('[data-sbt]'); if(t){ if(an){ t.dataset.alt = t.textContent; t.textContent = 'Lädt hoch …'; } else if(t.dataset.alt){ t.textContent = t.dataset.alt; } } }
+const SB_GESPEICHERT = 'Bild gespeichert. Es steht jetzt allen im Spieltagsstudio zur Auswahl.';
+
+(function(){ try{ const s=document.createElement('style'); s.id='svm98css'; s.textContent="/* Beta 0.99.21 · Spieltagsstudio: Bildbibliothek und eigene Fotos */\nlabel.btn.sb-up{cursor:pointer;min-height:44px!important;display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin:2px 0 8px}\n.sb-up.sb-laedt{opacity:.6;cursor:progress}\n.sb-up:focus-within{outline:2px solid var(--accent);outline-offset:2px}\n.pk-galerie{max-height:420px;overflow-y:auto;padding:2px}\n.er-bgs:not(.ev-bgs){max-height:330px;overflow-y:auto;padding:2px}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm92css'; s.textContent="/* Beta 0.99.4 · Fragen mit Ja und Nein */\n.fr-karte{border:1px solid rgba(91,155,255,.45)!important;margin-bottom:14px}\n.fr-h{margin:0 0 10px;font-size:17px}\n.fr-liste{display:flex;flex-direction:column;gap:10px}\n.fr-z{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08));transition:box-shadow .3s,background .3s}\n.fr-z.fr-hin{box-shadow:0 0 0 2px var(--brand,#2f6bff)}\n.fr-tx{display:flex;flex-direction:column;gap:2px;min-width:0}\n.fr-tx span,.fr-tx small{color:var(--ink3);font-size:13.5px;overflow-wrap:anywhere}\n.fr-akt{display:flex;gap:8px;flex:none}\n.fr-akt .btn{min-height:44px;white-space:nowrap}\n.fr-akt .btn[disabled]{opacity:.5}\n@media (max-width:640px){.fr-z{grid-template-columns:1fr}.fr-akt .btn{flex:1}}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm80css'; s.textContent="/* ===== Beta 0.82 · Rollen und Bereiche ===== */\n.r80-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}\n.rolecard.r80{display:flex;flex-direction:column;gap:2px;}\n.r80-dl{margin:4px 0 10px;display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:13px;line-height:1.4;}\n.r80-dl dt{color:var(--ink3);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;padding-top:1px;white-space:nowrap;}\n.r80-dl dd{margin:0;color:var(--ink2);}\n.r80-alles{margin:4px 0 10px;font-size:13px;color:var(--ink2);font-weight:650;}\n.r80-note{margin:-4px 0 10px;}\n.svr-gh{margin:10px 0 0;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);}\n.svr-gh:first-child{margin-top:0;}\n.svr-auf{margin-top:12px;}\n.svr-auf h3{margin:0;font-size:15px;}\n.svr-auf .note{margin:4px 0 10px;}\n.svr-auf-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;}\n.svr-auf-b{font:inherit;text-align:left;display:flex;flex-direction:column;gap:3px;padding:10px 12px;min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);color:inherit;cursor:pointer;}\n.svr-auf-b b{font-size:13.5px;}\n.svr-auf-b span{font-size:13px;color:var(--ink3);}\n.svr-auf-b.on{border-color:var(--brand2);background:rgba(91,155,255,.10);}\n.svr-auf-b.on b::after{content:' ✓';color:var(--ok);}\n.svr-auf-b:disabled{opacity:.55;}\n.svr-vt tr.svr-vg th{padding-top:12px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);text-align:left;}\n/* Schalter „an“ auch im hellen Design grün (die helle Fassung färbte an und aus gleich grau) */\nhtml[data-theme=\"hell\"] .svr-sw.on,.svr-sw.on{background:#16a34a;}\n/* 0.83 · Funktionen je Bereich */\n.svr-fs{margin-top:12px;}\n.svr-fs h3{margin:0 0 6px;font-size:15px;}\n.svr-fl{display:flex;flex-wrap:wrap;gap:6px;}\n.svr-fchip{display:inline-flex;gap:6px;align-items:baseline;padding:5px 10px;border-radius:999px;background:rgba(91,155,255,.12);font-size:13px;}\n.svr-kopf{align-items:flex-start;}\n.svr-stand{font-size:13px!important;color:var(--ink3)!important;}\n.svr-stand.an{color:var(--ink2)!important;font-weight:600;}\n.svr-fk{flex:none;min-height:44px;max-width:46%;font:inherit;font-size:14px;font-weight:650;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg2,transparent);color:inherit;}\n.svr-row.abw .svr-fk{border-color:var(--brand2);}\n.svr-kopf .svr-rt b::after{content:none!important;}\n.svr-ab{font-style:normal;font-size:11px;font-weight:700;color:var(--ink3);margin-left:4px;}\ndetails.svr-auf{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;}\ndetails.svr-auf summary{cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;}\ndetails.svr-auf summary::-webkit-details-marker{display:none;}\ndetails.svr-auf summary h3::before{content:'▸ ';color:var(--ink3);}\ndetails.svr-auf[open] summary h3::before{content:'▾ ';}\n.r80-edit{margin-top:auto;align-self:flex-start;min-height:44px;}\n.r80-rl{display:flex;flex-direction:column;gap:8px;margin-top:12px;}\n/* 0.83 · Mannschaft */\n.s81-sort{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;}\n.s81-sort span{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-right:4px;}\n.s81-sort button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.s81-sort button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n.s81-inj{white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;}\n.k1-leiste{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;}\n.s81-feste .adm-head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;}\n.s81-l{display:flex;flex-direction:column;gap:6px;margin-top:12px;}\n.s81-l.vorbei{opacity:.7;}\n.s81-ev{font:inherit;color:inherit;text-align:left;display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);cursor:pointer;}\n.s81-d{display:flex;flex-direction:column;min-width:78px;font-size:13px;}\n.s81-d small,.s81-t small{color:var(--ink3);font-size:12.5px;}\n.s81-t{display:flex;flex-direction:column;flex:1;min-width:0;}\n.s81-h{margin:16px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);}\n.q50-del{margin-left:auto;}\n.q50-del.sure{color:#b42318;border-color:#b42318;}\n/* 0.83 · Mini-Apps */\n.ma-karte{margin-top:12px;}\n.ma-kopf{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}\n.ma-kopf h3{margin:0;font-size:16px;}\n.ma-tage{display:flex;flex-direction:column;gap:10px;margin-top:10px;}\n.ma-tag{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}\n.ma-tk{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}\n.ma-tk span{color:var(--ink2);}\n.ma-zahlen{display:flex;flex-wrap:wrap;gap:6px;}\n.ma-zahlen span{font-size:13px;font-weight:650;padding:3px 9px;border-radius:999px;}\n.ma-zahlen .offen{background:rgba(234,88,12,.12);color:#c2410c;}\n.ma-zahlen .ok{background:rgba(22,163,74,.12);color:#15803d;}\n.ma-auf{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid var(--line2);font-size:14px;}\n.ma-auf span{color:var(--ink2);font-size:13px;}\n.ma-auf.offen span{color:#c2410c;font-weight:650;}\n.ma-filter{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}\n.ma-filter button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.ma-filter button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n\n.ma-kl{display:flex;flex-direction:column;}\n.ma-mehr{margin-top:10px;}\n.ma-such{margin-bottom:8px;}\n.ma-k{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line2);}\n.ma-k small{display:block;color:var(--ink3);font-size:12.5px;}\n.ma-kt{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;}\n.ma-p,.ma-g{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}\n.ma-p{background:rgba(91,155,255,.14);}\n.ma-g{background:rgba(148,163,196,.18);}\n.svr-sw.sure{outline:3px solid #f59e0b;outline-offset:2px;}\n@media (max-width:560px){ .svr-kopf{flex-wrap:wrap;} .svr-kopf .svr-fk{max-width:none;width:100%;order:3;} }\n/* 0.84 · Einladen mit Funktionen */\n.r80-invf{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;}\n.r80-invh{margin:-4px 0 0;font-size:13px;color:var(--ink2);}\n.r80-invl{display:flex;flex-direction:column;gap:10px;}\n.r80-invz{display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:center;}\n.r80-invs{display:grid;grid-template-columns:1fr minmax(140px,200px);gap:8px;}\n.r80-invz select{min-height:44px;width:100%;}\n.r80-invz .iconbtn{width:44px;height:44px;}\n.r80-invadd{align-self:flex-start;min-height:44px;}\n@media (max-width:560px){ .r80-invs{grid-template-columns:1fr;gap:6px;} .r80-invz{padding:8px;border:1px solid var(--line);border-radius:12px;} }\n/* 0.84 · Funktionen in der Team-Liste: eigene Zeile über die ganze Breite */\n.urow .r80-hid{display:none!important;}\n.urow > .r80-uf{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;}\n.urow > .r80-uf span{font-size:12px;font-weight:650;line-height:1.35;padding:3px 9px;border-radius:999px;background:rgba(91,155,255,.14);color:var(--ink);word-break:normal;overflow-wrap:break-word;max-width:100%;}\n.r80-fb{min-height:44px;gap:6px;font-size:13px;}\n.r80-fb svg{width:16px;height:16px;}\n/* 0.85 · Funktionsrollen */\n.r80-invfr{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:12px;background:rgba(91,155,255,.12);color:var(--ink);font-size:13px;}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm71css'; s.textContent="/* Beta 0.76 · Termine für Abteilungen, Mithelfen, Werbebild, Rückmeldungen. Ruhig: flache Flächen, eine Akzentfarbe, Tipp-Ziele 44 */\n.kal-hg{display:inline-block;align-self:flex-start;width:fit-content;margin-top:6px;font-style:normal;font-size:12.5px;font-weight:600;color:var(--brand2);background:var(--brandSoft);border-radius:99px;padding:3px 9px}\n.kal-hg.ich{color:var(--ink2);background:var(--surface2)}\n.kal-f2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}\n.kal-f2>.field,.kal-f2>label{min-width:0}\n.kal-f2 .kal-sicht>div{flex-wrap:wrap}\n.kal-f2 .kal-w{grid-column:1/-1}\n@media (max-width:520px){.kal-f2{grid-template-columns:minmax(0,1fr)}}\n.kal-gast{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}\n.kal-gast:empty{display:none}\n.kal-gp{display:inline-flex;align-items:center;gap:2px;padding:0 2px 0 12px;min-height:36px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-size:14px}\n.kal-gp button{all:unset;position:relative;cursor:pointer;width:44px;height:44px;margin:-4px -4px -4px 0;display:grid;place-items:center;color:var(--ink3)}\n.kal-gp button svg{width:14px;height:14px}\n.kal-gl{display:flex;flex-direction:column;gap:4px;margin-top:6px}\n.kal-gz{all:unset;position:relative;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:10px;background:var(--surface2);font-size:15px}\n.kal-gz svg{width:16px;height:16px;color:var(--brand2)}\n.kal-ag{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--surface2)}\n.kal-ag summary{cursor:pointer;list-style:none;display:flex;flex-direction:column;gap:2px;padding:12px 14px;min-height:44px;justify-content:center}\n.kal-ag summary::-webkit-details-marker{display:none}\n.kal-ag summary small{color:var(--ink2);font-size:13px}\n.kal-am{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px}\n.kal-zeile{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px}\n.kal-zeile select,.kal-zeile input{flex:1 1 200px;min-height:44px}\n.kal-zeile .btn{min-height:44px}\n.kal-helf{margin:14px 0 4px;border-top:1px solid var(--line);padding-top:12px}\n.kal-hs{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}\n.kal-hs:last-child{border-bottom:0}\n.kal-hs>div{display:flex;flex-direction:column;gap:2px;min-width:0}\n.kal-hs span{font-size:14.5px}\n.kal-hs small{font-size:13px;color:var(--ink2)}\n.kal-hs .btn{min-height:44px;flex:0 0 auto}\n\n/* Werbebild */\n.wb{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:18px;align-items:start}\n@media (max-width:700px){.wb{grid-template-columns:1fr}}\n.wb-vor{background:var(--surface2);border-radius:14px;padding:10px;display:grid;place-items:center}\n.wb-vor canvas{width:100%;height:auto;max-height:38vh;object-fit:contain;border-radius:6px;display:block}\n.wb-ein{display:flex;flex-direction:column;gap:12px;min-width:0}\n.wb-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}\n.wb-seg button{all:unset;position:relative;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:10px;min-height:52px;border-radius:10px;border:1px solid var(--line);background:var(--surface2)}\n.wb-seg button b{font-size:14.5px}\n.wb-seg button small{font-size:12px;color:var(--ink2)}\n.wb-seg button[aria-pressed=\"true\"]{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}\n.wb-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}\n.wb-f{all:unset;position:relative;cursor:pointer;box-sizing:border-box;aspect-ratio:9/16;max-height:110px;border-radius:8px;overflow:hidden;border:2px solid transparent;background:var(--surface2);display:grid;place-items:center;font-size:12.5px;color:var(--ink2);text-align:center}\n.wb-f img{width:100%;height:100%;object-fit:cover;display:block}\n.wb-f.on{border-color:var(--brand)}\n.wb-eig{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}\n.wb-eig svg{width:20px;height:20px}\n.wb-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}\n\n/* Rückmeldungen */\n.rm-seg{margin:12px 0}\n.rm-zahl{font-style:normal;font-size:12px;font-weight:700;background:var(--brand);color:#fff;border-radius:99px;padding:1px 7px;margin-left:4px}\n.rm-art{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}\n.rm-z{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;background:var(--surface2)}\n.rm-z p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}\n.rm-k{display:flex;align-items:center;gap:8px;flex-wrap:wrap}\n.rm-k small{color:var(--ink2);font-size:13px;margin-left:auto}\n.rm-st{font-style:normal;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--ink2)}\n.rm-st.s-neu{background:var(--brandSoft);color:var(--brand2)}\n.rm-st.s-umgesetzt{background:rgba(34,197,94,.16);color:#16a34a}\n.rm-ant{background:var(--brandSoft);border-radius:8px;padding:8px 10px}\n.rm-meta{display:block;margin-top:6px;color:var(--ink3);font-size:12.5px}\n.rm-bear{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}\n.rm-bear select{min-height:44px;flex:0 0 auto}\n.rm-bear input{min-height:44px;flex:1 1 180px}\n.rm-bear .btn{min-height:44px}\n.rm-badge[hidden]{display:none!important}\n\n/* 0.76 Prüfstraße Bedienung */\nhtml body:not(#_).kal-an main{padding-bottom:calc(170px + env(safe-area-inset-bottom))!important}\n.kal-sicht .kal-chip,.wb-chips .kal-chip,.rm-art .kal-chip{min-height:44px}\n.rm-seg button{min-height:44px}\n.kal-sieht{margin:10px 0 0;font-size:14px;color:var(--ink2)}\n.kal-shin{margin:0 0 8px}\n.kal-zeile input,.kal-zeile select,.rm-bear input,.rm-bear select{box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;padding:0 12px;font:inherit;font-size:16px}\n.kal-ag summary{position:relative;padding-right:40px}\n.kal-ag summary::after{content:'';position:absolute;right:16px;top:50%;width:8px;height:8px;border:solid var(--ink3);border-width:0 2px 2px 0;transform:translateY(-70%) rotate(45deg)}\n.kal-ag[open] summary::after{transform:translateY(-30%) rotate(-135deg)}\n#moreSheet .rm-sheet{background:var(--surface2)!important;border:1px solid var(--line)!important;box-shadow:none!important;background-image:none!important}\n"; document.head.appendChild(s); }catch(e){} })();
@@ -36909,7 +37002,7 @@ function erBgStandard(s){ const a = s ? s.ausgang : 'remis', L = ERG.bib.filter(
   if(L.length){ const k = String(s && s.id || '').split('').reduce((x, c) => x + c.charCodeAt(0), 0); return L[k % L.length].pfad; }
   return ER_STIL[a].bg; }
 async function erAssets(s){ const bgKey = ERG.bg || erBgStandard(s);
-  const bgSrc = ER_BG[bgKey] ? ER_BG[bgKey][0] : tkFotoUrl(bgKey);
+  const bgSrc = ER_BG[bgKey] ? ER_BG[bgKey][0] : await sbUrl(bgKey);
   const mwP = ERG.zeigeSpieler ? erMatchwinner(s) : null;
   await pkBib();
   const [bg, logo, gegner, foto] = await Promise.all([tkBild(bgSrc), tkBild(pkWappenQuelle('SV/BSC Mörlenbach') || 'logo.png'), tkBild(s ? pkWappenQuelle(s.gegner) : null), tkBild(mwP && tkFotoUrl(mwP.bild))]);
@@ -36929,8 +37022,9 @@ async function erStart(P){
   if(!ERG.spiele.length) ERG.idx = -1; else if(ERG.idx >= ERG.spiele.length) ERG.idx = 0;
   await erStandLaden(); erOberflaeche(h); erZeichnen(); }
 
-async function erBibLaden(){ try{ const { data } = await SVB.sb.from('studio_medien').select('pfad,name,tags,breite,hoehe').gte('breite', 700).order('am', { ascending:false }).limit(40);
-    ERG.bib = (data || []).filter(m => !(m.tags || []).includes('spieler') && /\.(jpe?g|png|webp)$/i.test(m.pfad)).sort((a, b) => ((b.tags || []).some(t => /^ergebnis-/.test(t)) ? 1 : 0) - ((a.tags || []).some(t => /^ergebnis-/.test(t)) ? 1 : 0)); await tkUrls(ERG.bib.map(m => m.pfad)); }catch(e){ ERG.bib = []; } }
+// 0.99.21: dieselbe Bibliothek wie Spielplakat und Event (svm98.js). Eigene Fotos zuerst, dann die Stimmungsbilder je Ausgang.
+const erRang = m => (m.tags || []).includes('spieltag') ? 0 : (m.tags || []).some(t => /^ergebnis-/.test(t)) ? 1 : 2;
+async function erBibLaden(neu){ try{ ERG.bib = [...await sbBibLaden(neu)].sort((a, b) => erRang(a) - erRang(b)); }catch(e){ ERG.bib = []; } }
 
 async function erStandLaden(){ const s = erSpiel(); ERG.wort = ''; ERG.bg = ''; ERG.spieler = ''; ERG.variante = 0; ERG.text = ''; ERG.zeigeSpieler = true;
   if(!s || s.hand) return;
@@ -36948,7 +37042,7 @@ function erOberflaeche(h){
   const fm = Object.entries(TK_FORMATE).map(([k, v]) => `<button type="button" class="btn sm ghost tk-fmt${ERG.format === k ? ' on' : ''}" data-erf="${k}">${erE(v[2])}</button>`).join('');
   const bgAkt = ERG.bg || erBgStandard(s);
   const bgs = Object.entries(ER_BG).map(([k, v]) => `<button type="button" class="er-bg${bgAkt === k ? ' on' : ''}" data-erb="${k}" title="${erE(v[1])}"><img src="${erE(v[0])}" alt="" loading="lazy"><span>${erE(v[1])}</span></button>`).join('')
-    + ERG.bib.slice(0, 12).map(m => { const u = tkFotoUrl(m.pfad); return u ? `<button type="button" class="er-bg${bgAkt === m.pfad ? ' on' : ''}" data-erb="${erE(m.pfad)}" title="${erE(m.name)}"><img src="${erE(u)}" alt="" loading="lazy"><span>${erE(m.name || 'Bibliothek')}</span></button>` : ''; }).join('');
+    + ERG.bib.slice(0, 48).map(m => { const u = tkFotoUrl(m.pfad); return u ? `<button type="button" class="er-bg${bgAkt === m.pfad ? ' on' : ''}" data-erb="${erE(m.pfad)}" title="${erE(m.name)}"><img src="${erE(u)}" alt="" loading="lazy"><span>${erE(m.name || 'Bibliothek')}</span></button>` : ''; }).join('');
   const kandidaten = s ? [...erKaderSpieler(s), ...[...(TKR.kader[s.sub] || [])].filter(p => p.bild && p.aktiv !== false)] : [];
   const gesehen = new Set(), mwOpt = kandidaten.filter(p => p.bild && !gesehen.has(p.id) && gesehen.add(p.id)).map(p => opt(p.id, `${p.nr !== '' && p.nr != null ? p.nr + ' ' : ''}${p.vorname} ${p.nachname}${p.tore ? ' (Tor)' : ''}`, ERG.spieler === p.id)).join('');
   const texte = erTexte(s), text = ERG.text || texte[ERG.variante % texte.length] || '';
@@ -36968,6 +37062,7 @@ function erOberflaeche(h){
       <div class="er-ausgang er-${s ? s.ausgang : 'remis'}">${erE(erAusgangText(s))}${s && s.tore.length ? ` · Tore: ${erE(erTorText(s))}` : ''}</div>
       <label class="tk-feld"><span>Schriftzug</span><input id="erWort" maxlength="14" value="${erE(ERG.wort || erWortStandard(s))}"></label>
       <div class="er-bgs" role="list" aria-label="Hintergrund">${bgs}</div>
+      <label class="btn sm ghost sb-up">${SVI('upload')} <span data-sbt>Eigenes Foto hochladen</span><input type="file" id="erDatei" accept="image/*" hidden></label>
       <label class="tk-profi"><input type="checkbox" id="erMw"${ERG.zeigeSpieler ? ' checked' : ''}><span><b>Matchwinner zeigen</b> <span id="erMwInfo"></span></span></label>
       ${mwOpt ? `<label class="tk-feld"><span>Spieler im Bild</span><select id="erMwWahl">${opt('', 'Automatisch: Torschütze mit Foto', !ERG.spieler)}${mwOpt}</select></label>` : ''}
       <div class="er-text"><div class="er-text-k"><b>Text zum Posten</b><span><button type="button" class="btn sm ghost" id="erAnders">${SVI('refresh')} Anderer Text</button><button type="button" class="btn sm" id="erKopie">${SVI('copy')} Kopieren</button></span></div>
@@ -36978,6 +37073,10 @@ function erOberflaeche(h){
   h.querySelector('#erSpiel').onchange = async e => { ERG.idx = +e.target.value; await erStandLaden(); neu(); };
   h.querySelectorAll('[data-erf]').forEach(b => b.onclick = () => { ERG.format = b.dataset.erf; h.querySelectorAll('[data-erf]').forEach(x => x.classList.toggle('on', x === b)); erZeichnen(); });
   h.querySelectorAll('[data-erb]').forEach(b => b.onclick = () => { ERG.bg = b.dataset.erb; h.querySelectorAll('[data-erb]').forEach(x => x.classList.toggle('on', x === b)); erZeichnen(); erMerken(); });
+  h.querySelector('#erDatei').onchange = async e => { const inp = e.target, f = inp.files && inp.files[0]; if(!f) return;
+    sbKnopf(inp, true); const erg = await sbHochladen(f); sbKnopf(inp, false); inp.value = '';
+    if(!erg.ok){ kToast(erg.text); return; }
+    await erBibLaden(); ERG.bg = erg.eintrag.pfad; neu(); erMerken(); kToast(SB_GESPEICHERT); };
   h.querySelector('#erWort').oninput = e => { ERG.wort = e.target.value.toUpperCase().trim(); erBald(); erMerken(); };
   h.querySelector('#erMw').onchange = e => { ERG.zeigeSpieler = e.target.checked; erZeichnen(); erMerken(); };
   const mwW = h.querySelector('#erMwWahl'); if(mwW) mwW.onchange = e => { ERG.spieler = e.target.value; erZeichnen(); erMerken(); };
