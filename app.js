@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.22', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.23', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -2221,6 +2221,10 @@ const svEsc=s=>svPolish(String(s==null?'':s)).replace(/[&<>"']/g,c=>({'&':'&amp;
 const svIni=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'?';
 const svFirst=n=>String(n||'').trim().split(/\s+/)[0]||'';
 function svRole(){ return SVU.role||'viewer'; }
+// 0.99.23: Gast, Spieler und Helfer arbeiten nicht in Kader, Scouting und Kasse mit. Wo früher „nicht Gast“ stand, gilt das für alle drei.
+function svGast(){ return ['viewer','spieler','helfer'].includes(svRole()); }
+// Angezeigter Rollenname. Wer als Gast eine Funktion in einem Bereich hat, heißt nach der Funktion: „Abteilungsleiter Partner“ (svm100.js)
+function svRolleT(){ try{ if(svRole()==='viewer'&&window.__SV_ROLLE_T)return window.__SV_ROLLE_T; }catch(e){} return SVB.ROLE_T[svRole()]||''; }
 function canEdit(){ const r=svRole(); return r==='admin'||r==='vorstand'||r==='planer'; }
 function canNotes(){ return canEdit()||svRole()==='trainer'; }
 function canContacts(){ return canEdit(); }
@@ -2305,7 +2309,7 @@ function kandContactCell(p,C){
     }
     svBadges(); return r; }; }
 function svGateModal(){
-  const M=document.getElementById('modal'); if(!M||svRole()!=='viewer')return;
+  const M=document.getElementById('modal'); if(!M||!svGast())return;
   M.querySelectorAll('.editsec').forEach(el=>{ el.style.display='none'; });
   const av=M.querySelector('#mAva'); if(av){ av.classList.remove('avaCam'); av.title=''; const c=av.cloneNode(true); av.replaceWith(c); }
 }
@@ -2326,7 +2330,7 @@ const SV_PAGES={home:['Übersicht','Dein Lagebild für die Kaderplanung'],scout:
   sxi:['Schattenelf','Backups und Wunschspieler je Position'],gems:['Rohdiamanten','Unterschätzte Spieler mit Potenzial'],
   jugend:['Jugend','Nachwuchs-Radar im Umkreis'],cmp:['Vergleich','Spieler direkt gegenüberstellen'],
   play:['Playbook','Wie datenbasierte Klubs Kader bauen'],model:['Modell','So rechnet der Scout'],admin:['Nutzer & Rollen','Wer hat Zugang, und was darf wer']};
-function svTabAllowed(t){ if(t==='admin')return canManage(); if(t==='kandidaten')return svRole()!=='viewer'; return true; }
+function svTabAllowed(t){ if(t==='admin')return canManage(); if(t==='kandidaten')return !svGast(); return true; }
 { const _gt=goTab; goTab=function(tab){
     if(!tab||!svTabAllowed(tab)||!document.getElementById('panel-'+tab))tab='home';
     _gt(tab);
@@ -2342,7 +2346,7 @@ function svTabAllowed(t){ if(t==='admin')return canManage(); if(t==='kandidaten'
   }; }
 function svSheet(open){ const s=document.getElementById('moreSheet'), bg=document.getElementById('sheetBg'); if(!s)return; s.classList.toggle('open',!!open); bg.classList.toggle('open',!!open); }
 function svBadges(){
-  try{ const due=kandList().filter(kandIsDue).length; document.querySelectorAll('[data-cnt="kandidaten"]').forEach(el=>{ el.textContent=due; el.style.display=due&&svRole()!=='viewer'?'':'none'; }); }catch(e){}
+  try{ const due=kandList().filter(kandIsDue).length; document.querySelectorAll('[data-cnt="kandidaten"]').forEach(el=>{ el.textContent=due; el.style.display=due&&!svGast()?'':'none'; }); }catch(e){}
 }
 
 /* ---------- Kennzahlen auf der Übersicht ---------- */
@@ -2352,7 +2356,7 @@ function svTiles(){
   let filled=0,total=11,form=''; try{ form=LINEUP.formation; const F=FORMATIONS[form]; total=F.length; filled=F.filter((_,i)=>LINEUP.slots[i]).length; }catch(e){}
   const stars=players.filter(p=>p.star).length, sen=players.filter(p=>!p.isJugend).length, jug=players.length-sen;
   const T=[];
-  if(svRole()!=='viewer')T.push({go:'kandidaten',ic:'kand',c:'b',v:kand.length,l:'Kandidaten in der Pipeline',s:due?`<b class="bad">${due} Kontakt${due>1?'e':''} überfällig</b>`:(kand.length?'<b class="ok">alles im Plan</b>':'noch keine aufgenommen')});
+  if(!svGast())T.push({go:'kandidaten',ic:'kand',c:'b',v:kand.length,l:'Kandidaten in der Pipeline',s:due?`<b class="bad">${due} Kontakt${due>1?'e':''} überfällig</b>`:(kand.length?'<b class="ok">alles im Plan</b>':'noch keine aufgenommen')});
   T.push({go:'elf',ic:'pitch',c:'g',v:filled+'<small>/'+total+'</small>',l:'Startelf besetzt',s:'Formation '+svEsc(form||'–')});
   T.push({go:'scout',ic:'gem',c:'v',v:stars,l:'Auf der Merkliste',s:'Favoriten im Blick'});
   T.push({go:'db',ic:'db',c:'y',v:sen.toLocaleString('de-DE'),l:'Spieler im Radar',s:(DATA.updated?'Stand '+new Date(DATA.updated).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})+' · ':'')+'7 Ligen'});
@@ -2367,7 +2371,7 @@ function svHello(){
   const h=new Date().getHours(), g=h<11?'Guten Morgen':h<17?'Hallo':'Guten Abend';
   const d=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
   const st=(typeof DATA!=='undefined'&&DATA.updated)?' · Daten vom '+new Date(DATA.updated).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}):'';
-  el.innerHTML=`<div><h2>${g}, <span>${svEsc(svFirst(SVU.name)||'Coach')}</span></h2><p><span class="hello-d">${svEsc(d+st)}</span> <span class="rolechip r-${svEsc(svRole())}"><i></i>${svEsc(SVB.ROLE_T[svRole()]||'')}</span></p></div>
+  el.innerHTML=`<div><h2>${g}, <span>${svEsc(svFirst(SVU.name)||'Coach')}</span></h2><p><span class="hello-d">${svEsc(d+st)}</span> <span class="rolechip r-${svEsc(svRole())}"><i></i>${svEsc(svRolleT())}</span></p></div>
     <div class="online" id="svOnline2"></div>`;
   svOnlineRender();
 }
@@ -2444,7 +2448,7 @@ function svSearchOpen(){ const box=document.getElementById('gSearchBox'), inp=do
 /* ---------- Mein Konto ---------- */
 function svModal(html){ const M=document.getElementById('modal'); M.innerHTML='<button class="close" id="svClose" aria-label="Schließen">✕</button>'+html; document.getElementById('overlay').classList.add('open'); document.getElementById('svClose').onclick=()=>closeOverlay(); return M; }
 function svAccount(){
-  const R=SVB.ROLE_T[svRole()]||'';
+  const R=svRolleT();
   const M=svModal(`<div class="mhead" style="gap:16px"><div class="uav r-${svEsc(svRole())}" style="width:58px;height:58px;border-radius:18px;font-size:20px">${svEsc(svIni(SVU.name||SVU.email))}</div>
       <div><h2 style="margin:0">${svEsc(SVU.name||'Mein Konto')}</h2><div class="msub">${svEsc(SVU.email||'')}</div><div style="margin-top:8px"><span class="rolechip r-${svEsc(svRole())}"><i></i>${svEsc(R)}</span></div></div></div>
     <div class="editsec" style="margin-top:22px"><h4>Passwort ändern</h4>
@@ -2512,7 +2516,7 @@ async function svAdminRender(reload){
         <div class="uav r-${svEsc(u.role)}">${svEsc(svIni(u.name||u.email))}</div>
         <div class="nm"><b>${svEsc(u.name||'–')}${me?' <span style="color:var(--ink3);font-weight:600">(du)</span>':''}</b><span>${svEsc(u.email)}</span></div>
         <div class="st">${st}<br>${svEsc(seen)}${u.invited_by_name?' · von '+svEsc(u.invited_by_name):''}</div>
-        ${ADM?`<select data-role="${svEsc(u.id)}"${me?' disabled title="Deine eigene Rolle kannst du nicht ändern"':''}>${svRoleOpts(u.role)}</select>`:`<span class="rolechip r-${svEsc(u.role)}" style="justify-self:start"><i></i>${svEsc((SV_ROLE_INFO[u.role]||{}).t||u.role)}</span>`}
+        ${ADM?`<select data-role="${svEsc(u.id)}"${me?' disabled title="Deine eigene Rolle kannst du nicht ändern"':''}>${svRoleOpts(u.role)}</select>`:`<span class="rolechip r-${svEsc(u.role)}" style="justify-self:start"><i></i>${svEsc(svRolleVon(u))}</span>`}
         <div class="acts">${me?'':`
           ${canLink?`<button class="iconbtn" data-link="${svEsc(u.id)}" title="${pend?'Neuen Einladungslink erstellen':'Neuen Anmelde-Link erstellen'}">${SVI('link')}</button>`:''}
           ${ADM?`<button class="iconbtn" data-act="${svEsc(u.id)}" title="${u.active?'Zugang sperren':'Zugang wieder freigeben'}">${SVI(u.active?'ban':'check')}</button>
@@ -2573,10 +2577,10 @@ function svLinkBox(link,name,role,kind){
 /* ---------- Start ---------- */
 function svInit(){
   document.body.classList.add('role-'+svRole()); if(!canEdit())document.body.classList.add('ro');
-  document.querySelectorAll('[data-tab="kandidaten"],[data-sheet="kandidaten"]').forEach(b=>{ if(svRole()==='viewer')b.style.display='none'; });
+  document.querySelectorAll('[data-tab="kandidaten"],[data-sheet="kandidaten"]').forEach(b=>{ if(svGast())b.style.display='none'; });
   document.querySelectorAll('[data-tab="admin"],[data-sheet="admin"],.adm-only').forEach(b=>{ if(!canManage())b.style.display='none'; });
   document.querySelectorAll('.tabbar .ti[data-tab="elf"]').forEach(b=>{ b.style.display=svRole()==='viewer'?'':'none'; });
-  const R=SVB.ROLE_T[svRole()]||'', nm=SVU.name||SVU.email||'';
+  const R=svRolleT(), nm=SVU.name||SVU.email||'';
   document.querySelectorAll('[data-me-name]').forEach(el=>el.textContent=nm);
   document.querySelectorAll('[data-me-role]').forEach(el=>el.textContent=R);
   document.querySelectorAll('[data-me-ini]').forEach(el=>{ el.textContent=svIni(nm); el.className='uav r-'+svRole(); });
@@ -2744,7 +2748,7 @@ function svBadges(){
   try{
     const all=kandList(), mine=svMyCands(), myDue=mine.filter(kandIsDue).length, due=all.filter(kandIsDue).length;
     const n=mine.length?myDue:due;
-    document.querySelectorAll('[data-cnt="kandidaten"]').forEach(el=>{ el.textContent=n; el.style.display=n&&svRole()!=='viewer'?'':'none'; el.title=mine.length?'deine fälligen Kontakte':'fällige Kontakte'; });
+    document.querySelectorAll('[data-cnt="kandidaten"]').forEach(el=>{ el.textContent=n; el.style.display=n&&!svGast()?'':'none'; el.title=mine.length?'deine fälligen Kontakte':'fällige Kontakte'; });
     if('setAppBadge' in navigator){ if(myDue)navigator.setAppBadge(myDue).catch(()=>{}); else navigator.clearAppBadge().catch(()=>{}); }
   }catch(e){}
 }
@@ -2753,7 +2757,7 @@ function svBadges(){
 function svRemindRender(){
   const host=document.getElementById('svHello'); if(!host)return;
   let el=document.getElementById('svRemind'); if(!el){ el=document.createElement('div'); el.id='svRemind'; host.after(el); }
-  if(svRole()==='viewer'){ el.innerHTML=''; return; }
+  if(svGast()){ el.innerHTML=''; return; }
   const mine=svMyCands(); if(!mine.length){ el.innerHTML=''; return; }
   const due=mine.filter(kandIsDue).sort((a,b)=>(daysSince(crmOf(b).lc)??1e9)-(daysSince(crmOf(a).lc)??1e9)||(crmOf(b).w||0)-(crmOf(a).w||0));
   const row=p=>{ const C=crmOf(p), ds=daysSince(C.lc), v=canContacts()?kandContactPlain(p):'', ph=v?kandPhone(v):null;
@@ -2934,7 +2938,7 @@ function svHookSave(pid){
 /* ---------- Mein Konto: Zuordnung + Erinnerungen ---------- */
 { const _acc=svAccount; svAccount=function(){
     const r=_acc.apply(this,arguments);
-    const M=document.getElementById('modal'), app=M&&[...M.querySelectorAll('.editsec')].pop(); if(!app||svRole()==='viewer')return r;
+    const M=document.getElementById('modal'), app=M&&[...M.querySelectorAll('.editsec')].pop(); if(!app||svGast())return r;
     const auto=kandPlanners().find(n=>svPlOf({name:SVU.name},n));
     const sec=document.createElement('div'); sec.className='editsec';
     sec.innerHTML=`<h4>Kandidaten &amp; Erinnerungen</h4>
@@ -4960,14 +4964,14 @@ function svInsights(){
     const inj=trSquad().filter(p=>trInjury(p.id)); if(inj.length)add(W.inj,'info',`${inj.length} verletzt`,inj.slice(0,4).map(p=>p.name.split(' ').pop()).join(', '),()=>{ TR.view='injuries'; goTab('training'); }); } }catch(e){}
   try{ if(canScout()){ const s=rdSeen(); VR.radar.filter(x=>x.lvl==='hoch'&&(x.created_at>s||x.stand>=TRC.addDays(trToday(),-4))).slice(0,2).forEach(x=>add(W.radar,'mittel','📡 '+x.titel,x.detail||'',()=>goTab('radar')));
     const n=VR.radar.filter(x=>x.created_at>s).length; if(n>2)add(W.radar+0.5,'info',`${n} neue Radar-Meldungen`,'Torserien, Überflieger, junge Talente',()=>goTab('radar')); } }catch(e){}
-  try{ if(r!=='viewer'){ const due=kandList().filter(kandIsDue).length; if(due)add(W.kand,due>3?'mittel':'info',`${due} Kandidaten-Kontakt${due>1?'e':''} fällig`,'Zeit für einen Anruf',()=>goTab('kandidaten')); } }catch(e){}
+  try{ if(!svGast()){ const due=kandList().filter(kandIsDue).length; if(due)add(W.kand,due>3?'mittel':'info',`${due} Kandidaten-Kontakt${due>1?'e':''} fällig`,'Zeit für einen Anruf',()=>goTab('kandidaten')); } }catch(e){}
   try{ if(VR.at.length){ const ms=vrRanks().L.filter(x=>{ const p=x.pid&&trP(x.pid); return p&&p.own&&!p.verzicht; }).map(x=>({p:trP(x.pid),m:vrMsDue(x.tot,x.pid)[0]})).filter(o=>o.m).sort((a,b)=>a.m.rest-b.m.rest);
     ms.slice(0,2).forEach(o=>{ add(W.ms,vrMsStufe(o.m)===1?'mittel':'info',`🎉 ${o.p.name}: noch ${o.m.rest} bis ${o.m.ziel} ${o.m.lab}`,vrMsText(o.m),()=>openModal(o.p.id)); out[out.length-1].ms=o.m.key; }); } }catch(e){}
   try{ if(team&&TR.loaded&&VR.evLoaded){ const risk=vrKader(false).map(p=>({p,rt:vrScores(p).rt})).filter(x=>x.rt.lvl).sort((a,b)=>b.rt.risk-a.rt.risk);
     risk.slice(0,2).forEach(x=>add(W.risk,x.rt.lvl,`Bindungsrisiko: ${x.p.name}`,x.rt.why.join(' · '),()=>vrWhy(x.p.id))); } }catch(e){}
   try{ if(TR.loaded){ const f=TRS.teamForm(TR.st); if(f.n>=3)add(W.form,f.winless>=3?'mittel':'info',`Form: ${f.res.slice(0,5).join(' ')}`,`${f.ppg.toFixed(2)} Punkte/Spiel · ${f.tf}:${f.ta} Tore${f.clean>=2?` · ${f.clean}× zu Null in Folge`:''}`,()=>goTab('training')); } }catch(e){}
   try{ if(team&&VR.evLoaded&&VR.ev.length){ const hs=vrHelpStats(VR_SEASON_START), never=vrKader(false).filter(p=>!hs.has(p.id)).length; if(never>=5)add(W.help,'info',`${never} Spieler der Ersten haben diese Saison noch nie geholfen`,'„Wer ist dran?“ verteilt die nächsten Dienste fair',()=>{ VR.view='events'; goTab('verein'); }); } }catch(e){}
-  try{ if(isAdmin()&&SVA.use){ const U=SVA.use, flag=U.filter(u=>u.flagN>0), heavy=U.filter(u=>u.ai24>=40), idle=U.filter(u=>u.active&&u.role!=='viewer'&&u.role!=='admin'&&(!u.last_seen||Date.now()-new Date(u.last_seen)>14*864e5));
+  try{ if(isAdmin()&&SVA.use){ const U=SVA.use, flag=U.filter(u=>u.flagN>0), heavy=U.filter(u=>u.ai24>=40), idle=U.filter(u=>u.active&&!['viewer','spieler','helfer','admin'].includes(u.role)&&(!u.last_seen||Date.now()-new Date(u.last_seen)>14*864e5));
     if(flag.length||heavy.length)add(W.use,'hoch',`⚠️ Co-Trainer: auffällige Nutzung`,[...heavy.map(u=>u.name+' ('+u.ai24+' Fragen/24 h)'),...flag.map(u=>u.name+' ('+u.flagN+'× abseits)')].join(' · '),()=>svUseOpen());
     if(idle.length)add(W.use+0.5,'mittel',`${idle.length} Teammitglied${idle.length>1?'er':''} seit 14+ Tagen nicht in der App`,idle.map(u=>u.name||u.email).join(', '),()=>svUseOpen()); } }catch(e){}
   return out.filter(x=>x.prio!=null).sort((a,b)=>a.prio-b.prio||({hoch:0,mittel:1,info:2}[a.lvl]-{hoch:0,mittel:1,info:2}[b.lvl])).slice(0,6);
@@ -5036,20 +5040,20 @@ async function svUseCard(P){
   if(!P||!isAdmin()||P.querySelector('#svUse'))return;
   const el=document.createElement('div'); el.className='card'; el.id='svUse'; el.innerHTML='<div class="empty">Lade Nutzung …</div>'; P.appendChild(el);
   const U=await svUseLoad()||[];
-  const warn=U.filter(u=>u.ai24>=40||u.flagN>0), idle=U.filter(u=>u.active&&u.role!=='viewer'&&u.role!=='admin'&&(!u.last_seen||Date.now()-new Date(u.last_seen)>14*864e5));
+  const warn=U.filter(u=>u.ai24>=40||u.flagN>0), idle=U.filter(u=>u.active&&!['viewer','spieler','helfer','admin'].includes(u.role)&&(!u.last_seen||Date.now()-new Date(u.last_seen)>14*864e5));
   el.innerHTML=`<div class="adm-head"><div><h3 style="margin:0;display:flex;gap:8px;align-items:center">${SVI('user')} Nutzung &amp; Aktivität <span class="pill wait">nur für dich</span></h3>
       <p style="margin:6px 0 0;font-size:13.5px">Zeit in der App, aktive Tage, meistgenutzte Bereiche und Fragen an den Co-Trainer (30 Tage). Sieht außer dir niemand, auch nicht der Vorstand.</p></div></div>
     ${warn.length?`<div class="tra l-hoch"><span class="tra-av team">${SVI('bell')}</span><div class="tra-b"><b>Auffällige KI-Nutzung</b><span>${warn.map(u=>`${svEsc(u.name||u.email)}: ${u.ai24} Fragen in 24 h${u.flagN?`, ${u.flagN}× Themen außerhalb des Vereins`:''}`).join(' · ')}</span></div></div>`:''}
-    ${idle.length?`<div class="tra l-mittel"><span class="tra-av team">${SVI('clock')}</span><div class="tra-b"><b>Länger nicht in der App</b><span>${idle.map(u=>`${svEsc(u.name||u.email)} (${svEsc(SVB.ROLE_T[u.role]||u.role)}, ${svAgo2(u.last_seen)})`).join(' · ')}</span></div></div>`:''}
+    ${idle.length?`<div class="tra l-mittel"><span class="tra-av team">${SVI('clock')}</span><div class="tra-b"><b>Länger nicht in der App</b><span>${idle.map(u=>`${svEsc(u.name||u.email)} (${svEsc(svRolleVon(u))}, ${svAgo2(u.last_seen)})`).join(' · ')}</span></div></div>`:''}
     <div class="trtw"><table class="trtab svuse"><thead><tr><th>Mitglied</th><th>Zuletzt</th><th>Zeit 7 T</th><th>Zeit 30 T</th><th>Aktive Tage</th><th>Meistgenutzt</th><th>Co-Trainer</th></tr></thead><tbody>
-    ${U.map(u=>`<tr data-use="${svEsc(u.id)}" class="${u.active?'':'off'}"><td><b>${svEsc(u.name||u.email)}</b><br><small>${svEsc(SVB.ROLE_T[u.role]||u.role)}${u.active?'':' · gesperrt'}</small></td><td>${svAgo2(u.last_seen)}</td><td>${svMin(u.secs7)}</td><td>${svMin(u.secsN)}</td><td>${u.daysN}</td>
+    ${U.map(u=>`<tr data-use="${svEsc(u.id)}" class="${u.active?'':'off'}"><td><b>${svEsc(u.name||u.email)}</b><br><small>${svEsc(svRolleVon(u))}${u.active?'':' · gesperrt'}</small></td><td>${svAgo2(u.last_seen)}</td><td>${svMin(u.secs7)}</td><td>${svMin(u.secsN)}</td><td>${u.daysN}</td>
       <td><small>${svEsc(svUseTop(u.views,3)||'–')}</small></td><td>${u.aiN}${u.flagN?` <b class="bad">⚠ ${u.flagN}</b>`:''}${u.ai24>=40?' <b class="bad">viel</b>':''}</td></tr>`).join('')}</tbody></table></div>
     <div class="note">Tipp: Antippen zeigt Details inkl. der letzten Fragen an den Co-Trainer. Die Mitglieder werden in „Mein Konto“ darauf hingewiesen, dass die Nutzung protokolliert wird.</div>`;
   el.querySelectorAll('[data-use]').forEach(r=>r.onclick=()=>svUseDetail(r.dataset.use));
 }
 function svUseDetail(id){
   const u=(SVA.use||[]).find(x=>x.id===id); if(!u)return;
-  svModal(`<div class="mhead"><div class="uav r-${svEsc(u.role)}" style="width:46px;height:46px;border-radius:14px">${svEsc(svIni(u.name||u.email))}</div><div><h2 style="margin:0">${svEsc(u.name||u.email)}</h2><div class="msub">${svEsc(SVB.ROLE_T[u.role]||u.role)} · zuletzt ${svAgo2(u.last_seen)}</div></div></div>
+  svModal(`<div class="mhead"><div class="uav r-${svEsc(u.role)}" style="width:46px;height:46px;border-radius:14px">${svEsc(svIni(u.name||u.email))}</div><div><h2 style="margin:0">${svEsc(u.name||u.email)}</h2><div class="msub">${svEsc(svRolleVon(u))} · zuletzt ${svAgo2(u.last_seen)}</div></div></div>
     <div class="trkpi" style="margin-top:14px"><div><b>${svMin(u.secs7)}</b><span>Zeit 7 Tage</span></div><div><b>${svMin(u.secsN)}</b><span>Zeit 30 Tage</span></div><div><b>${u.daysN}</b><span>aktive Tage</span></div><div><b>${u.aiN}</b><span>Co-Trainer-Fragen</span></div></div>
     <div class="sbsec"><h4>Bereiche (30 Tage)</h4><div class="vrchips">${Object.entries(u.views||{}).sort((a,b)=>b[1]-a[1]).map(([k,c])=>`<span>${svEsc(SV_TBL[k]?SV_TBL[k][1]:k)} <small>${c}×</small></span>`).join('')||'<span class="note">keine Daten</span>'}</div></div>
     <div class="sbsec"><h4>Letzte Fragen an den Co-Trainer</h4>${(u.fragen||[]).length?`<div class="svq">${u.fragen.map(f=>`<div class="${f.flagged?'flag':''}"><em>${new Date(f.at).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}${f.modus!=='chat'?' · '+svEsc(f.modus):''}${f.bilder?' · 🖼 '+f.bilder:''}${f.datei?' · 📎 '+svEsc(f.datei):''}</em>${svEsc(f.frage||'–')}${f.flagged?`<b>⚠ abseits: ${svEsc(f.grund||'')}</b>`:''}</div>`).join('')}</div>`:'<div class="note">Noch keine.</div>'}</div>`);
@@ -6390,7 +6394,7 @@ function svOnbStart(force){
 }
 function svOnbDots(){ return `<div class="onb-dots">${ONB.steps.map((s,i)=>`<i class="${i===ONB.i?'on':i<ONB.i?'done':''}"></i>`).join('')}</div>`; }
 function svOnbDraw(){
-  const el=document.getElementById('onb'); if(!el)return; const st=ONB.steps[ONB.i], A=svAufgaben(), vn=svFirst(SVU.name)||'Coach', R=SVB.ROLE_T[svRole()]||'';
+  const el=document.getElementById('onb'); if(!el)return; const st=ONB.steps[ONB.i], A=svAufgaben(), vn=svFirst(SVU.name)||'Coach', R=svRolleT();
   const auf=A.map(k=>SV_AUF[k]).filter(Boolean);
   let h='';
   if(st==='hallo')h=`<div class="onb-hero"><div class="onb-av r-${svEsc(svRole())}">${svEsc(svIni(SVU.name||SVU.email))}</div><div class="onb-wave">👋</div></div>
@@ -7528,8 +7532,8 @@ Object.assign(SV_SIDE,{
   viewer:['Übersicht','Scouting','Verein','Nachwuchs','Mannschaft','Kader','Wissen','Verwaltung']});
 for(const k in SV_TAB_ORDER)delete SV_TAB_ORDER[k];
 { const _ta4=svTabAllowed; svTabAllowed=function(t){
-  if(['kader','gespr','bedarf','sxi','kaderplan','elf'].includes(t))return sv4Can()||(t==='elf'&&svRole()!=='viewer');
-  if(['training','kabine','kasse'].includes(t))return typeof canTraining==='function'&&canTraining()||(t==='kasse'&&svRole()!=='viewer');
+  if(['kader','gespr','bedarf','sxi','kaderplan','elf'].includes(t))return sv4Can()||(t==='elf'&&!svGast());
+  if(['training','kabine','kasse'].includes(t))return typeof canTraining==='function'&&canTraining()||(t==='kasse'&&!svGast());
   if(t==='ejugend')return sv4Jugend();
   return _ta4(t); }; }
 function sv4Jugend(){ const r=svRole(); return ['admin','vorstand','planer','trainer'].includes(r)||(typeof svAufgaben==='function'&&svAufgaben().includes('jugend')); }
@@ -14878,7 +14882,7 @@ async function svrVorgCard(){
   const c=document.getElementById('svrVorgCard'); if(!c)return;
   const {data,error}=await SVB.sb.from('bereiche').select('key,titel,parent,sort,vorgabe').order('sort');
   if(error){ c.innerHTML='<div class="empty">Bereiche konnten nicht geladen werden.</div>'; return; }
-  const R=[['vorstand','Vorstand'],['planer','Planer'],['trainer','Trainer'],['viewer','Gast'],['jugend','Jugend']];
+  const R=[['vorstand','Vorstand'],['planer','Planer'],['trainer','Trainer'],['viewer','Gast'],['jugend','Jugend'],['spieler','Spieler'],['helfer','Helfer']];
   const top=(data||[]).filter(b=>!b.parent&&b.key!=='mannschaften'), kids=k=>(data||[]).filter(b=>b.parent===k);
   const row=(b,sub)=>`<tr class="${sub?'sub':''}"><th>${svEsc(b.titel)}</th>${R.map(([r])=>`<td><input type="checkbox" aria-label="${svEsc(b.titel)}: ${r}" data-svrv="${svEsc(b.key)}|${r}"${(b.vorgabe||[]).includes(r)?' checked':''}></td>`).join('')}</tr>`;
   c.innerHTML=`<details class="svr-vorg"><summary><h3 style="margin:0;display:inline">Vorgaben je Rolle</h3> <span class="note small">Was jede Rolle ohne Ausnahme sieht. Neue Bereiche bekommen automatisch nur Admin und Vorstand.</span></summary>
@@ -18589,6 +18593,15 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.23',v:'0.99.23',datum:'2026-11-14',titel:'Spieler, Helfer, Abteilungsleiter und Stellvertreter statt Gast',kurz:'Wer zum Verein gehört, steht nicht mehr als Gast in der App. Spieler und Helfer sind eigene Rollen, wer einen Bereich leitet oder vertritt, heißt Abteilungsleiter oder Stellvertreter.',
+   punkte:[
+    {ic:'\u{1F45F}',t:'Rolle Spieler',d:'Spieler sehen Termine, ihr Spielerkonto und neu „Meine Mannschaft“: Kader mit Name und Position, die nächsten Spiele, die letzten Ergebnisse und die Tabelle. Alles nur zum Ansehen. Scouting, Kaderplanung, Bewertungen, Verletzungen und Kontaktdaten sehen Spieler nicht.'},
+    {ic:'\u{1F91D}',t:'Rolle Helfer',d:'Helfer sehen Termine und ihre eigenen Einsätze.'},
+    {ic:'\u{2B50}',t:'Abteilungsleiter und Stellvertreter',d:'Wer einen Bereich leitet oder vertritt, zum Beispiel Partner, steht jetzt überall als Abteilungsleiter oder Stellvertreter mit seinem Bereich, nicht mehr als Gast. Beide Rollen stehen zur Auswahl: beim Einladen, in der Team-Liste und bei der Freigabe einer Anfrage. An den Rechten ändert sich nichts.'},
+    {ic:'\u{2705}',t:'Freigeben mit der richtigen Rolle',d:'Bei einer Zugangsanfrage schlägt die App jetzt Spieler oder Helfer vor, wenn die Person im Kader oder im Helferpool steht, und Abteilungsleiter oder Stellvertreter, wenn sie laut Organigramm einen Bereich leitet oder vertritt. Der Bereich „1. Mannschaft“ ist der Trainerbereich mit Schreibrechten und für Spieler nicht nötig.',r:'admin'},
+    {ic:'\u{26BD}',t:'Siege zählen sofort',d:'Nach jedem Abruf der Spielberichte wird ein Sieg gleich den eingesetzten Spielern angerechnet. Im Spielerkonto steht die Zahl der Siege mit Einsatz. Die Beträge für Prämien und Strafen sind noch vorläufig, das steht dort dabei.'},
+    {ic:'\u{1F4B6}',t:'Auszahlung je Spiel abhaken',d:'In der Übersicht der Siegprämien hakt die Leitung jetzt jedes Spiel einzeln ab. Ein Tipp auf „Zurück auf offen“ nimmt es zurück. Den Knopf, der alles auf einmal abgehakt hat, gibt es nicht mehr.',r:'admin'}
+   ]},
   {id:'0.99.22',v:'0.99.22',datum:'2026-11-14',titel:'Downloads in der App und sauberer Start',kurz:'In der App aus dem Store kommen Plakate und andere Dateien jetzt wirklich aufs Handy. Dazu ein sauberer Start ohne die kleine Kachel.',
    punkte:[
     {ic:'\u{1F4E5}',t:'Dateien landen auf dem Handy',d:'In der App aus dem Store hieß es „Plakat als PNG geladen“, auf dem Handy kam aber nichts an. Jetzt erscheint „Deine Datei ist fertig“ mit dem Knopf „Aufs Handy laden“. Er öffnet den Browser des Handys, die Datei liegt danach unter Downloads. Das gilt für Plakate, Excel, Kalender und PDF.'},
@@ -23063,8 +23076,8 @@ function n2Datenschutz(){
 
 // ---------- Funktionen, die je Rolle sinnvoll sind (Dashboard „ungenutzt“, Tipps, Onboarding) ----------
 const N2_FUNK=[
-  {id:'app',t:'Als App installiert',r:['admin','vorstand','planer','trainer','jugend','viewer'],k:['t:app:install']},
-  {id:'push',t:'Mitteilungen an',r:['admin','vorstand','planer','trainer','jugend'],k:['r:push_sub','t:push:push']},
+  {id:'app',t:'Als App installiert',r:['admin','vorstand','planer','trainer','jugend','viewer','spieler','helfer'],k:['t:app:install']},
+  {id:'push',t:'Mitteilungen an',r:['admin','vorstand','planer','trainer','jugend','spieler','helfer'],k:['r:push_sub','t:push:push']},
   {id:'kplan',t:'Kaderplanung',r:['admin','vorstand','planer'],k:['v:kplan']},
   {id:'topelf',t:'Top-Elf',r:['admin','vorstand','planer','trainer'],k:['v:topelf']},
   {id:'sbedarf',t:'Bedarfe',r:['admin','vorstand','planer'],k:['v:sbedarf']},
@@ -23234,6 +23247,8 @@ function o1Schritte(role){
   const ueb=id=>({id:'u:'+id,t:O1_UEB[id].t+' üben',d:O1_UEB[id].d,uebung:true,ok:()=>L['s:u:'+id],los:()=>o1Uebung(id)});
   if(['admin','vorstand','planer'].includes(role)){ S.push(ueb('eye'),ueb('kand'),{id:'v:kplan',t:'Kaderplanung ansehen',d:'Plan-Elf der nächsten Saison und was fehlt.',ok:()=>L['s:v:kplan']||g('v:kplan'),los:()=>goTab('kplan')}); }
   else if(role==='trainer'){ S.push(ueb('training'),ueb('abst'),ueb('eye'),{id:'v:verf',t:'Verfügbarkeit ansehen',d:'Wer diese Woche fehlt, auf einen Blick.',ok:()=>L['s:v:verf']||g('v:training:verf'),los:()=>sv4Go('training:verf')}); }
+  else if(role==='spieler'){ S.push({id:'v:meinteam',t:'Deine Mannschaft ansehen',d:'Kader, nächste Spiele und Tabelle.',ok:()=>L['s:v:meinteam'],los:()=>{ try{ o1Setzen({'s:v:meinteam':true}); }catch(e){} goTab('meinteam'); }}); }   // 0.99.23
+  else if(role==='helfer'){ }
   else S.push({id:'a:profil',t:'Ein Spielerprofil öffnen',d:'Stärke, Statistik und Verlauf eines Spielers.',ok:()=>L['s:a:profil']||g('a:profil'),los:()=>goTab('scout')});
   return S;
 }
@@ -26707,6 +26722,12 @@ const HT_FEED=['vrHome','homeTiles','homeKand','svAct','homeCrm','homeFocus','ho
 function htOffen(){ try{ const v=localStorage.getItem('sv_ht_feed'); if(v!=null)return v==='1'; }catch(e){} return svRole()==='planer'; }
 function htKlappe(){
   const home=document.getElementById('panel-home'); if(!home)return;
+  // 0.99.23: Spieler und Helfer haben mit Scouting, Radar und Kaderplanung nichts zu tun, die Listen gibt es für sie nicht
+  if(['spieler','helfer'].includes(svRole())){ HT_FEED.forEach(i=>{ const x=document.getElementById(i); if(!x)return; x.style.display='none'; const p=x.previousElementSibling; if(p&&p.classList.contains('sechead'))p.style.display='none'; });
+    // Auch das Cockpit (Scouting-Kacheln) und die feste Schnellsuche der Kaderplanung fallen weg. „Für dich“ oben trägt die Seite.
+    const ck=document.getElementById('svCockpit'); if(ck)ck.style.display='none';
+    [...home.children].forEach(x=>{ if(!x.id&&(x.classList.contains('sechead')||x.classList.contains('frow')))x.style.display='none'; });
+    const alt=document.getElementById('htFeedBtn'); if(alt)alt.remove(); return; }
   const offen=htOffen(); home.classList.add('ht-kompakt'); home.classList.toggle('ht-offen',offen);
   const erstes=HT_FEED.slice(1).map(i=>document.getElementById(i)).find(x=>x&&x.parentNode===home); if(!erstes)return;
   let b=document.getElementById('htFeedBtn');
@@ -26969,7 +26990,7 @@ async function vstPersonWahl(x){
     <input type="search" class="search" id="vpQ" placeholder="Name suchen" autocomplete="off">
     <div class="vst-pw" id="vpL">
       ${pool.length ? `<h4>Helferpool</h4>${pool.map(h => `<button type="button" class="vst-pz" data-hp="${vstE(h.id)}" data-q="${vstE((h.vorname + ' ' + h.nachname).toLowerCase())}"><b>${vstE(h.vorname + ' ' + h.nachname)}</b><small>${h.passt ? 'passt zur Veranstaltung' : vstE((h.bereiche || []).join(', '))}</small></button>`).join('')}` : ''}
-      ${leute.length ? `<h4>In der App</h4>${leute.map(p => `<button type="button" class="vst-pz" data-u="${vstE(p.id)}" data-q="${vstE(String(p.name).toLowerCase())}"><b>${vstE(p.name)}</b><small>${vstE(SVB.ROLE_T && SVB.ROLE_T[p.rolle] || p.rolle || '')}</small></button>`).join('')}` : ''}
+      ${leute.length ? `<h4>In der App</h4>${leute.map(p => `<button type="button" class="vst-pz" data-u="${vstE(p.id)}" data-q="${vstE(String(p.name).toLowerCase())}"><b>${vstE(p.name)}</b><small>${vstE(svRolleVon({ id:p.id, role:p.rolle }))}</small></button>`).join('')}` : ''}
     </div>
     <div class="vst-f"><label for="vpN">Oder nur einen Namen eintragen</label><div class="vst-zeile"><input id="vpN" type="text" maxlength="60" placeholder="Vor- und Nachname"><button class="btn" id="vpGo">Eintragen</button></div></div>`);
   let laeuft = false; const fertig = async p => { if(laeuft) return; laeuft = true; if(await vstAktion('vst_person', { p_schicht: x.id, p }, 'Eingetragen')) closeOverlay(); else laeuft = false; };
@@ -27223,7 +27244,7 @@ const EX_QUELLEN = [
   { k:'nutzer', gruppe:'Vorstand und Verwaltung', tab:'admin', titel:'Nutzer und Rollen', text:'Wer Zugang hat, mit Rolle und Stand der Einladung', formate:['xlsx', 'csv', 'pdf'], nurAdmin:true,
     bericht: async () => { const U = (await exRpc('admin_list')) || [];
       return { titel:'Nutzer und Rollen', sub: U.length + ' Konten, Stand ' + exD(exHeute()), sections:[{ t:'Nutzer', cols:['Name', 'E-Mail', 'Rolle', 'Aktiv', 'Passwort gesetzt'],
-        rows: U.map(u => [u.name || '', u.email || '', (SVB.ROLE_T && SVB.ROLE_T[u.role]) || u.role, u.active ? 'ja' : 'nein', u.pw_set ? 'ja' : 'eingeladen']) }] }; } }
+        rows: U.map(u => [u.name || '', u.email || '', svRolleVon(u), u.active ? 'ja' : 'nein', u.pw_set ? 'ja' : 'eingeladen']) }] }; } }
 ];
 async function exKal(){ const h = exHeute(), b = new Date(Date.now() + 183 * 864e5).toLocaleDateString('sv-SE');
   const d = await exRpc('kalender', { p_von: h, p_bis: b }); return ((d && d.items) || []).filter(i => i.k !== 'geb').sort((a, c) => (a.d + (a.z || '')).localeCompare(c.d + (c.z || ''))); }
@@ -27235,7 +27256,7 @@ function exDarf(q){ if(q.nurAdmin) return svRole() === 'admin'; try{ return svTa
 SVR_TAB.export = null;
 SV_TBL.export = ['download', 'Export'];
 Object.assign(SV_PAGES, { export:['Export', 'Alles als PDF, Excel, CSV, Kalender oder Kontakte'] });
-{ const _ta = svTabAllowed; svTabAllowed = function(t){ if(t === 'export') return svRole() !== 'viewer' && EX_QUELLEN.some(q => q.tab !== 'export' && exDarf(q)); return _ta.apply(this, arguments); }; }
+{ const _ta = svTabAllowed; svTabAllowed = function(t){ if(t === 'export') return !svGast() && EX_QUELLEN.some(q => q.tab !== 'export' && exDarf(q)); return _ta.apply(this, arguments); }; }
 function exPanel(){ let P = document.getElementById('panel-export'); if(P) return P;
   const ref = document.getElementById('panel-home') || document.querySelector('.panel'); if(!ref) return null;
   P = document.createElement('section'); P.className = 'panel'; P.id = 'panel-export'; ref.parentNode.insertBefore(P, ref.nextSibling); return P; }
@@ -28569,7 +28590,7 @@ if(typeof HT_TEXT !== 'undefined'){ HT_TEXT.orga = 'Checklisten für Heimspiele 
 
 /* ---------- 4. Unterreiter nach Rolle ---------- */
 { const _ta = svTabAllowed; svTabAllowed = function(t){
-  if(t === 'vorstand' && ['viewer', 'jugend'].includes(svRole())) return false;
+  if(t === 'vorstand' && ['viewer', 'jugend', 'spieler', 'helfer'].includes(svRole())) return false;
   return _ta.apply(this, arguments); }; }
 
 /* ---------- 6. und 7. Mehr-Menü und Seitenleiste ---------- */
@@ -30198,7 +30219,8 @@ async function r80TeamFunktionen(){
 /* ---------- 0.85 · Leitung, Stellvertretung und Helfer als Rolle wählbar ----------
    Technisch Rolle „Gast“ plus Funktion je Bereich. In der Auswahl stehen sie wie eigene Rollen,
    beim Einladen und in der Team-Liste. Die Rechte kommen nur aus den gewählten Bereichen. */
-const R80_FROLLE = { 'f:leitung':'Bereichsleitung', 'f:stellv':'Stellvertretung', 'f:helfer':'Helfer' };
+// 0.99.23: Albert nennt sie Abteilungsleiter und Stellvertreter. Technisch bleibt es Gast plus Funktion im Bereich.
+const R80_FROLLE = { 'f:leitung':'Abteilungsleiter', 'f:stellv':'Stellvertreter', 'f:helfer':'Helfer im Bereich' };
 const r80FOpts = cur => `<optgroup label="Funktion in Bereichen">${Object.entries(R80_FROLLE).map(([k, t]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${t}</option>`).join('')}</optgroup>`;
 function r80HoechsteStufe(F){ return F.some(x => x.stufe === 'leitung') ? 'f:leitung' : F.some(x => x.stufe === 'stellv') ? 'f:stellv' : F.some(x => x.stufe === 'helfer') ? 'f:helfer' : null; }
 // Einladen: Funktionsrollen in der Rollenauswahl, Stufe gleich in die Funktionszeilen übernehmen
@@ -31866,7 +31888,7 @@ async function lnProtokoll(pr){
   const ziel = pr.querySelector('div'); if(!ziel) return;
   try{ const { data, error } = await SVB.sb.rpc('rollen_protokoll', { p_limit:30 }); if(error) throw error;
     const was = { rolle:'Rolle geändert', notfall_uebernahme:'Notfall-Übernahme', notfall_nachfolger:'Nachfolger bestimmt', notfall_code_neu:'Neuer Mastercode', notfall_beantragt:'Übernahme beantragt', notfall_abgebrochen:'Übernahme abgebrochen' };
-    const R = { admin:'Admin', vorstand:'Vorstand', planer:'Kaderplaner', trainer:'Trainer', jugend:'Jugendtrainer', viewer:'Gast' };
+    const R = { admin:'Admin', vorstand:'Vorstand', planer:'Kaderplaner', trainer:'Trainer', jugend:'Jugendtrainer', viewer:'Gast', spieler:'Spieler', helfer:'Helfer' };
     const z = l => { if(l.was !== 'rolle' && l.was !== 'notfall_uebernahme') return '';
       const v = l.vorher || {}, n = l.nachher || {}, t = [];
       if(v.role !== n.role) t.push(`${R[v.role] || v.role} → ${R[n.role] || n.role}`); if(v.active !== n.active) t.push(n.active ? 'freigegeben' : 'gesperrt'); if(v.super !== n.super) t.push(n.super ? 'Super-Admin' : 'nicht mehr Super-Admin'); return t.join(', '); };
@@ -31902,8 +31924,13 @@ function lnCodeDialog(schonDa, fertig){
    Freigeben öffnet immer den Korb: wer hat was eingetragen, welche Hüte hat der Abgleich gefunden, welche Rolle, welche Bereiche.
    ===================================================================== */
 const ZG_ART_T = { spieler:'Spieler/in', eltern:'Eltern', helfer:'Helfer/in', trainer:'Trainer/in', sonstiges:'Sonstiges' };
-const ZG_ROLLE_VORSCHLAG = { trainer:'trainer' };
-const zgName = r => (typeof SV_ROLE_INFO !== 'undefined' && SV_ROLE_INFO[r] && SV_ROLE_INFO[r].t) || (typeof ROLE_T !== 'undefined' && ROLE_T[r]) || r;
+const ZG_ROLLE_VORSCHLAG = { trainer:'trainer', spieler:'spieler', helfer:'helfer' };   // 0.99.23: Spieler und Helfer sind eigene Rollen
+// Funktionsrollen (Abteilungsleiter, Stellvertreter) heißen wie unter Nutzer & Rollen (svm80.js). Technisch: Gast plus Funktion im Bereich.
+const zgFr = r => (typeof R80_FROLLE !== 'undefined' && R80_FROLLE[r]) || '';
+// Vorschlag aus dem Organigramm: wer einen Bereich leitet oder vertritt, ist Abteilungsleiter oder Stellvertreter (nur wenn sonst Gast, Spieler oder Helfer dran wäre)
+const zgFrVor = (korb, rolle) => { const H = (korb && korb.huete) || []; if(!['viewer', 'spieler', 'helfer'].includes(rolle)) return null;
+  return H.some(h => h.typ === 'leitung' && /^verantwortlich/.test(h.text || '')) ? 'f:leitung' : H.some(h => h.typ === 'stellv') ? 'f:stellv' : null; };
+const zgName = r => zgFr(r) || (typeof SV_ROLE_INFO !== 'undefined' && SV_ROLE_INFO[r] && SV_ROLE_INFO[r].t) || (typeof ROLE_T !== 'undefined' && ROLE_T[r]) || r;
 async function zgKarte(){
   const P = document.getElementById('panel-admin'); if(!P || typeof canManage !== 'function' || !canManage()) return;
   let L = [];
@@ -31913,17 +31940,18 @@ async function zgKarte(){
   L.filter(a => !a.frei).forEach(a => P.querySelectorAll(`.urow[data-u="${a.id}"]`).forEach(r => r.remove()));   // offene Anfragen nur oben, nicht doppelt als „gesperrt“
   if(!L.length) return;
   const ADM = typeof isAdmin === 'function' && isAdmin();
-  const rollen = (typeof SV_ROLES !== 'undefined' ? SV_ROLES : ['vorstand','planer','trainer','jugend','viewer']).filter(r => r !== 'admin' && (ADM || ['planer','trainer','viewer','jugend'].includes(r)));
+  const rollen = (typeof SV_ROLES !== 'undefined' ? SV_ROLES : ['vorstand','planer','trainer','jugend','viewer']).filter(r => r !== 'admin' && (ADM || ['planer','trainer','viewer','jugend','spieler','helfer'].includes(r)));
+  const FRL = ADM && typeof R80_FROLLE !== 'undefined';   // Abteilungsleiter und Stellvertreter zur Auswahl: Funktionen setzt nur ein Admin
   const k = document.createElement('div'); k.className = 'card zg-karte';
   k.innerHTML = `<div class="adm-head"><div><h3 style="margin:0">Zugangsanfragen <span class="zg-n">${L.length}</span></h3>
       <p style="margin:6px 0 0;font-size:13.5px">${L.some(a => !a.frei) ? 'Diese Personen haben sich selbst angemeldet und warten auf die Freigabe. Bis dahin sehen sie keine Daten.' : 'Schon freigeschaltet mit der einfachen Rolle. Im Korb liegt noch etwas, das du bestätigen solltest.'}</p></div></div>
-    <div class="zg-liste">${L.map(a => { const vor = (a.korb && a.korb.rolle) || ZG_ROLLE_VORSCHLAG[a.art] || 'viewer', wahl = rollen.includes(vor) ? vor : (ZG_ROLLE_VORSCHLAG[a.art] || 'viewer');
+    <div class="zg-liste">${L.map(a => { const vor = (a.korb && a.korb.rolle) || ZG_ROLLE_VORSCHLAG[a.art] || 'viewer', wahl0 = rollen.includes(vor) ? vor : (ZG_ROLLE_VORSCHLAG[a.art] || 'viewer'), wahl = (FRL && zgFrVor(a.korb, wahl0)) || wahl0;
       const hu = ((a.korb && a.korb.huete) || []).map(h => h.titel).filter((t, i, l) => l.indexOf(t) === i);
       return `<div class="zg-z" data-zg="${svEsc(a.id)}">
       <div class="zg-wer"><b>${svEsc(a.name || a.email)}</b><span>${svEsc(a.email)}${a.tel ? ' · ' + svEsc(a.tel) : ''}</span>
         <small>${svEsc([ZG_ART_T[a.art] || 'Angaben fehlen noch', a.team].filter(Boolean).join(' · '))} · ${svEsc(typeof svAgo === 'function' ? svAgo(a.am) : '')}${a.frei ? ' · freigeschaltet als ' + svEsc(zgName(a.rolle_jetzt)) + ', Korb noch offen' : a.bestaetigt ? '' : ' · E-Mail noch nicht bestätigt'}</small>
         ${hu.length ? `<div class="zg-hut">${hu.slice(0, 5).map(t => `<i>${svEsc(t)}</i>`).join('')}${hu.length > 5 ? `<i>+${hu.length - 5}</i>` : ''}</div>` : ''}</div>
-      <select data-zgr aria-label="Rolle für ${svEsc(a.name || a.email)}">${rollen.map(r => `<option value="${r}"${wahl === r ? ' selected' : ''}>${svEsc(zgName(r))}</option>`).join('')}</select>
+      <select data-zgr aria-label="Rolle für ${svEsc(a.name || a.email)}">${rollen.concat(FRL ? ['f:leitung', 'f:stellv'] : []).map(r => `<option value="${r}"${wahl === r ? ' selected' : ''}>${svEsc(zgName(r))}</option>`).join('')}</select>
       <div class="zg-akt"><button type="button" class="btn sm" data-zgf>${SVI('check')} ${a.frei ? 'Korb ansehen' : 'Freigeben'}</button>${a.frei ? '<button type="button" class="btn sm ghost" data-zgp>Passt so</button>' : '<button type="button" class="btn sm ghost" data-zga>Ablehnen</button>'}</div>
     </div>`; }).join('')}</div>`;
   P.insertBefore(k, P.firstChild);
@@ -31947,7 +31975,12 @@ async function zgKorb(id, rolleWahl){
   catch(e){ kToast('⚠️ ' + String(e.message || e).replace(/^.*?: /, '')); return; }
   const P = K.person || {}, rollen = K.rollen || ['viewer'], plus = {}; (K.plus || []).forEach(x => { plus[x.key] = x.grund; });
   const Z = { rolle: rollen.includes(rolleWahl) ? rolleWahl : rollen.includes(K.rolle) ? K.rolle : (rollen.includes(K.rolle_jetzt) ? K.rolle_jetzt : 'viewer'), hand:{}, spieler: !!K.spieler, helfer: !!K.helfer };
-  const std = k => { const b = (K.bereiche || []).find(x => x.key === k); return Z.rolle === 'admin' || !!(b && (b.vorgabe || []).includes(Z.rolle)); };
+  // 0.99.23: Wer laut Organigramm einen Bereich leitet oder vertritt, wird als Abteilungsleiter oder Stellvertreter vorgeschlagen, nicht als Gast.
+  // Funktionen setzt nur ein Admin (admin_funktion_set), darum gibt es die Auswahl nur für ihn.
+  const frDarf = !!K.rechte_aendern && rollen.includes('viewer') && typeof isAdmin === 'function' && isAdmin() && typeof R80_FROLLE !== 'undefined';
+  if(frDarf && zgFr(rolleWahl)) Z.rolle = rolleWahl; else if(frDarf && !rolleWahl) Z.rolle = zgFrVor(K, Z.rolle) || Z.rolle;
+  const eff = () => Z.rolle.startsWith('f:') ? 'viewer' : Z.rolle;   // Rolle, die wirklich im Konto steht
+  const std = k => { const b = (K.bereiche || []).find(x => x.key === k); return Z.rolle === 'admin' || !!(b && (b.vorgabe || []).includes(eff())); };
   const an = k => k in Z.hand ? Z.hand[k] : (std(k) || (!!K.rechte_aendern && k in plus));   // ohne das Recht dazu zeigt der Korb nur, was die Rolle wirklich bringt
   const zeile = (t, w) => `<div><dt>${t}</dt><dd>${w ? svEsc(w) : '<em>nicht angegeben</em>'}</dd></div>`;
   const M = svModal(`<div class="zk" id="zk">
@@ -31962,7 +31995,8 @@ async function zgKorb(id, rolleWahl){
         return `<label class="zk-hut${wahl ? '' : ' fest'}">${wahl ? `<input type="checkbox" data-zkh="${wahl}" checked>` : `<span class="zk-ic" aria-hidden="true">${ZK_ICON[h.typ] || '●'}</span>`}<span><b>${svEsc(h.titel)}</b><small>${svEsc(h.text || '')}</small></span></label>`; }).join('')
       : '<p class="zk-leer">Der Abgleich mit Kader, Organigramm und Helferpool hat nichts gefunden. Die Person kommt mit der einfachen Rolle rein.</p>'}</div>
     <h3>Freigeben als</h3>
-    <select id="zkRolle" aria-label="Rolle">${rollen.map(r => `<option value="${r}">${svEsc(zgName(r))}</option>`).join('')}</select>
+    <select id="zkRolle" aria-label="Rolle">${frDarf ? '<optgroup label="Rolle">' : ''}${rollen.map(r => `<option value="${r}">${svEsc(zgName(r))}</option>`).join('')}${frDarf ? '</optgroup><optgroup label="Funktion in Bereichen">' + ['f:leitung', 'f:stellv'].map(r => `<option value="${r}">${svEsc(zgName(r))}</option>`).join('') + '</optgroup>' : ''}</select>
+    <p class="zk-hinweis" id="zkRolleHinweis" hidden></p>
     ${K.rolle_moeglich === false ? `<p class="zk-hinweis">Vorschlag aus dem Organigramm: ${svEsc(zgName(K.rolle))}. Diese Rolle vergibt nur ein Admin.</p>` : ''}
     <h3>Mit diesen Rechten</h3>
     <div class="zk-rechte" id="zkRechte" role="group" aria-label="Bereiche"></div>
@@ -31972,6 +32006,9 @@ async function zgKorb(id, rolleWahl){
   </div>`);
   const R = M.querySelector('#zkRechte'), S = M.querySelector('#zkSatz'), sel = M.querySelector('#zkRolle'); sel.value = Z.rolle;
   const malen = () => {
+    { const hw = M.querySelector('#zkRolleHinweis'); if(hw){ const t = Z.rolle === 'spieler' ? 'Spieler sehen Termine, ihr Spielerkonto und ihre Mannschaft (Kader, Spiele, Tabelle), nur zum Ansehen. „1. Mannschaft“ unten ist der Trainerbereich mit Schreibrechten, Verletzungen und Kontaktdaten. Für Spieler bitte aus lassen.'
+        : Z.rolle === 'helfer' ? 'Helfer sehen Termine und ihre eigenen Einsätze.' : Z.rolle === 'viewer' ? 'Gäste sehen Termine, Rankings und Teile des Scoutings. Für Spieler, Helfer, Abteilungsleiter und Stellvertreter gibt es eigene Rollen.'
+        : Z.rolle.startsWith('f:') ? zgName(Z.rolle) + ': Tipp unten die Bereiche an, die die Person ' + (Z.rolle === 'f:leitung' ? 'leitet' : 'vertritt') + '. Dort bekommt sie alles, was zur Funktion gehört. Dazu sieht sie, was jeder Gast sieht.' : ''; hw.textContent = t; hw.hidden = !t; } }
     R.innerHTML = (K.bereiche || []).map(b => { const on = an(b.key), ab = on !== std(b.key);
       return `<button type="button" class="zk-b${on ? ' an' : ''}${ab ? ' ab' : ''}" data-zkb="${svEsc(b.key)}" aria-pressed="${on}"${K.rechte_aendern && Z.rolle !== 'admin' ? '' : ' disabled'}${plus[b.key] && on ? ` title="${svEsc('wegen: ' + plus[b.key])}"` : ''}>${svEsc(b.titel)}</button>`; }).join('');
     R.querySelectorAll('[data-zkb]').forEach(b => b.onclick = () => { const k = b.dataset.zkb; Z.hand[k] = !an(k); malen(); });
@@ -31984,13 +32021,20 @@ async function zgKorb(id, rolleWahl){
   M.querySelector('#zkAb').onclick = () => closeOverlay();
   const nein = M.querySelector('#zkNein'); if(nein) nein.onclick = async () => { nein.disabled = true;
     try{ await SVB.admin('ablehnen', { user_id:id }); kToast('Anfrage abgelehnt'); closeOverlay(); try{ if(typeof frLaden === 'function') frLaden(true).then(frKarte); }catch(e){} await svAdminRender(true); }catch(e){ nein.disabled = false; kToast('⚠️ ' + e.message); } };
-  M.querySelector('#zkOk').onclick = async ev => { const b = ev.currentTarget; b.disabled = true; const fehl = [];
+  M.querySelector('#zkOk').onclick = async ev => { const b = ev.currentTarget; const fehl = [];
+    const fs = Z.rolle.startsWith('f:') ? Z.rolle.slice(2) : null, rolle = eff();
+    if(fs && !(K.bereiche || []).some(x => an(x.key) && !std(x.key))){ kToast(zgName(Z.rolle) + ': bitte unten mindestens einen Bereich antippen.'); return; }
+    b.disabled = true;
     try{
       let mail = '';
-      if(!K.frei){ const r = await SVB.admin('freigeben', { user_id:id, role:Z.rolle }); mail = r && r.mail === 'gesendet' ? ', die Mail ist raus' : ''; }
-      else if(Z.rolle !== K.rolle_jetzt){ const { error } = await SVB.sb.rpc('admin_update', { p_id:id, p_role:Z.rolle, p_active:null, p_name:null }); if(error) throw error; }
+      if(!K.frei){ const r = await SVB.admin('freigeben', { user_id:id, role:rolle }); mail = r && r.mail === 'gesendet' ? ', die Mail ist raus' : ''; }
+      else if(rolle !== K.rolle_jetzt){ const { error } = await SVB.sb.rpc('admin_update', { p_id:id, p_role:rolle, p_active:null, p_name:null }); if(error) throw error; }
       if(K.rechte_aendern && Z.rolle !== 'admin') for(const x of (K.bereiche || [])){ const on = an(x.key);
-        if(on !== std(x.key)){ const { error } = await SVB.sb.rpc('admin_zugriff_set', { p_user:id, p_bereich:x.key, p_an:on }); if(error) fehl.push(x.titel); } }
+        if(on !== std(x.key)){ let error = true;
+          // Abteilungsleiter und Stellvertreter: der Bereich bekommt die Funktion (setzt die Rechte der Unterbereiche nach ihrer Stufe)
+          if(fs && on){ try{ error = (await SVB.sb.rpc('admin_funktion_set', { p_user:id, p_bereich:x.key, p_stufe:fs })).error; }catch(e){ error = e; } }
+          if(error) error = (await SVB.sb.rpc('admin_zugriff_set', { p_user:id, p_bereich:x.key, p_an:on })).error;
+          if(error) fehl.push(x.titel); } }
       if(Z.spieler && K.spieler){ const { error } = await SVB.sb.rpc('konto_spieler_setzen', { p_user:id, p_spieler:K.spieler.id }); if(error) fehl.push('Spieler'); }
       if(Z.helfer && K.helfer){ const { error } = await SVB.sb.rpc('einsatz_person_setzen', { p_key:'h:' + K.helfer.id, p_user:id }); if(error) fehl.push('Helfer'); }
       if(K.frei){ try{ await SVB.sb.rpc('zugang_korb_fertig', { p_id:id }); }catch(e){} }
@@ -32378,6 +32422,7 @@ function sk96Css(){ if(document.getElementById('svm96css')) return; const s = do
 .sk-z .d{color:var(--ink2);font-size:13px;font-variant-numeric:tabular-nums;min-width:44px}.sk-z .t{min-width:0;overflow-wrap:anywhere}.sk-z .t small{display:block;color:var(--ink2);font-size:13px}
 .sk-z .w{font-weight:650;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}.sk-z .w.plus{color:var(--green,#1a8f55)}
 .sk-z .u{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sk-h4{margin:18px 0 10px;font-size:15px}.sk-sp .u{justify-content:space-between}.sk-z .btn.sk-spk{min-height:44px!important}
 .sk-st{font-size:12.5px;font-weight:650;padding:3px 9px;border-radius:999px;background:rgba(148,163,196,.18);color:var(--ink2)}
 .sk-st.ok{background:rgba(26,143,85,.16);color:var(--green,#1a8f55)}.sk-st.warn{background:rgba(234,179,8,.2);color:var(--ink)}
 .sk-z textarea,.sk-z input[type=text]{flex:1;min-width:200px;min-height:44px;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line,rgba(148,163,196,.4));background:var(--card,transparent);color:inherit}
@@ -32505,6 +32550,13 @@ function sk96Pruefung(){
     ${alt.length ? `<p class="sk-unter">Zuletzt entschieden</p><div class="sk-l">${alt.map(x => `<div class="sk-z"><span class="d">${sk96E(sk96Tag(x.datum))}</span><span class="t"><b>${sk96E(x.name)}</b><small>${sk96E(x.titel)}</small></span><span class="w">${sk96E(sk96Wert(x))}</span>
         <div class="u"><span class="sk-st ${x.status === 'gestrichen' ? 'ok' : ''}">${x.status === 'gestrichen' ? 'Gestrichen' : 'Bleibt'}</span></div></div>`).join('')}</div>` : ''}</section>`;
 }
+// 0.99.23: Auszahlung je Spiel. Der alte Knopf hakte alles auf einmal ab und ließ sich nicht zurücknehmen.
+function sk96Spiele(L){ if(!L.length) return '';
+  return `<h4 class="sk-h4">Auszahlung je Spiel</h4><div class="sk-l">${L.map(x => { const zu = +x.offen === 0, teil = !zu && +x.offen < +x.spieler;
+    return `<div class="sk-z sk-sp" data-skm="${sk96E(x.match)}"><span class="d">${sk96E(sk96Tag(x.datum))}</span>
+      <span class="t"><b>${sk96E(x.ergebnis || '')} gegen ${sk96E(x.gegner || 'Gegner')}</b><small>${+x.spieler} Spieler · ${sk96E(sk96Eur(x.summe))} · ${sk96E(sk96TeamT(x.team))}</small></span>
+      <div class="u"><span class="sk-st ${zu ? 'ok' : ''}">${zu ? 'Ausgezahlt' + (x.ausgezahlt_am ? ' am ' + sk96E(sk96Tag(x.ausgezahlt_am)) : '') : teil ? +x.offen + ' von ' + +x.spieler + ' offen' : 'Offen'}</span>
+        <button type="button" class="btn sm ${zu ? 'ghost' : ''} sk-spk" data-skspiel="${zu ? '0' : '1'}">${zu ? 'Zurück auf offen' : 'Als ausgezahlt abhaken'}</button></div></div>`; }).join('')}</div>`; }
 function sk96Leitung(){
   const d = SK96.d; if(!d.leitung) return ''; const P = SK96.praem;
   if(!P) return '<section class="card" aria-label="Siegprämien der Mannschaft"><h3>Siegprämien der Mannschaft</h3><div class="sk-leer">Lädt …</div></section>';
@@ -32512,7 +32564,7 @@ function sk96Leitung(){
   return `<section class="card" aria-label="Siegprämien der Mannschaft"><h3>Siegprämien der Mannschaft</h3>
     <p class="sk-sum">${R.length ? R.map(r => sk96E(sk96Eur(r.betrag)) + ' je Sieg, ' + sk96E(sk96TeamT(r.team)) + ', seit ' + sk96E(sk96Tag(r.ab))).join(' · ') : 'Keine Regel aktiv.'} Offen insgesamt: <b>${sk96E(sk96Eur(P.offen))}</b>. Diese Übersicht sehen nur Admin und Vorstand.</p>
     ${S.length ? `<div class="sk-l">${S.map(x => `<div class="sk-z"><span class="d">${x.siege}×</span><span class="t"><b>${sk96E(x.name)}</b>${+x.ausgezahlt ? `<small>${sk96E(sk96Eur(x.ausgezahlt))} schon ausgezahlt</small>` : ''}</span><span class="w plus">${sk96E(sk96Eur(x.offen))}</span></div>`).join('')}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button type="button" class="btn sm ghost" data-skaus>Alles bis heute als ausgezahlt abhaken</button></div>`
+      ${sk96Spiele(P.spiele || [])}`
       : '<div class="sk-leer">Noch keine Prämie in dieser Saison.</div>'}
     <p class="note" style="margin-top:12px">Gezählt werden Siege in der Liga laut Spielbericht. Pokal und Freundschaftsspiele zählen nicht mit.</p></section>`;
 }
@@ -32545,13 +32597,14 @@ function sk96Binden(P){
     try{ const { error } = await SVB.sb.rpc('sk_einspruch_entscheiden', { p_id:z.dataset.ske, p_status:b.dataset.skent, p_antwort:z.querySelector('[data-skant]').value.trim() || null }); if(error) throw error;
       kToast(b.dataset.skent === 'gestrichen' ? '✓ Gestrichen, der Spieler weiß Bescheid' : '✓ Bleibt, der Spieler weiß Bescheid'); SK96.pruef = null; SK96.liste = null; await sk96Laden(true); sk96Render(); sk96Nachladen(); sk96Karte(); }
     catch(e){ z.querySelectorAll('button').forEach(x => x.disabled = false); kToast('⚠️ ' + String((e && e.message) || e)); } });
-  const aus = P.querySelector('[data-skaus]');
-  if(aus) aus.onclick = async () => { if(!aus.dataset.sicher){ aus.dataset.sicher = '1'; aus.textContent = 'Wirklich alles abhaken? Noch einmal tippen'; setTimeout(() => { if(aus.isConnected){ delete aus.dataset.sicher; aus.textContent = 'Alles bis heute als ausgezahlt abhaken'; } }, 5000); return; }
-    aus.disabled = true;
-    try{ const h = new Date(), heute = h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0');
-      const { data, error } = await SVB.sb.rpc('praemien_ausgezahlt', { p_bis:heute }); if(error) throw error;
-      kToast(`✓ ${(data && data.anzahl) || 0} Prämien abgehakt`); SK96.praem = null; await sk96Laden(true); sk96Render(); sk96Nachladen(); }
-    catch(e){ aus.disabled = false; kToast('⚠️ ' + String((e && e.message) || e)); } };
+  P.querySelectorAll('[data-skspiel]').forEach(b => b.onclick = async () => { const z = b.closest('[data-skm]'), m = z.dataset.skm, an = b.dataset.skspiel === '1';
+    const setzen = async wert => { const { data, error } = await SVB.sb.rpc('praemien_spiel', { p_match:m, p_ausgezahlt:wert }); if(error) throw error;
+      SK96.praem = null; await sk96Laden(true); sk96Render(); sk96Nachladen(); return (data && data.anzahl) || 0; };
+    b.disabled = true;
+    try{ const n = await setzen(an);
+      kToast(an ? `✓ ${n} ${n === 1 ? 'Prämie' : 'Prämien'} als ausgezahlt abgehakt` : `✓ ${n} ${n === 1 ? 'Prämie steht' : 'Prämien stehen'} wieder auf offen`, 'Rückgängig',
+        async () => { try{ await setzen(!an); kToast('✓ Zurückgenommen'); }catch(e){ kToast('⚠️ ' + String((e && e.message) || e)); } }); }
+    catch(e){ b.disabled = false; kToast('⚠️ ' + String((e && e.message) || e)); } });
 }
 async function sk96ListeHolen(){ const d = SK96.d; if(!d || !SK96.team || !(d.teams || []).includes(SK96.team)) return; const t = SK96.team, z = SK96.zeit;
   try{ const { data, error } = await SVB.sb.rpc('sk_bestenliste', { p_team:t, p_zeit:z }); if(error) throw error; if(SK96.team !== t || SK96.zeit !== z) return; SK96.liste = data; }
@@ -32816,6 +32869,152 @@ if(SVD.nativ){
 }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm99css'; s.textContent="/* Beta 0.99.22 · Store-App: Blatt „Deine Datei ist fertig“ */\n.svd-w{position:fixed;inset:0;z-index:4000;display:flex;align-items:flex-end;justify-content:center;background:rgba(4,6,11,.62);padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}\n.svd-b{width:100%;max-width:440px;max-height:calc(100vh - 40px);overflow:auto;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 24px 60px rgba(0,0,0,.4)}\n.svd-b h2{margin:0;font-size:18px;line-height:1.25}\n.svd-n{margin:0;font-size:12.5px;color:var(--ink2);overflow-wrap:anywhere}\n.svd-bild{align-self:center;max-width:100%}\n.svd-bild img{display:block;max-width:100%;max-height:34vh;border-radius:12px;border:1px solid var(--line)}\n.svd-bar{width:100%;height:4px;border-radius:9px;background:rgba(148,163,196,.2);overflow:hidden}\n.svd-bar i{display:block;height:100%;width:35%;background:var(--accent);border-radius:9px;animation:gind 1.1s ease-in-out infinite}\n.svd-b .note{margin:0}\n.svd-kn{display:flex;flex-direction:column;gap:8px;margin-top:4px}\n.svd-kn .btn{min-height:48px!important;justify-content:center;text-align:center;text-decoration:none}\n@media (min-width:700px){.svd-w{align-items:center}}\n@media (prefers-reduced-motion:reduce){.svd-bar i{animation:none;width:100%}}\n"; document.head.appendChild(s); }catch(e){} })();
+/* =====================================================================
+   Beta 0.99.23 · Rollen Spieler und Helfer, „Meine Mannschaft“, Prämien vorläufig (154_rollen_spieler_helfer.sql)
+   Albert, 14.11.2026: „Es muss ja auch die Rolle Spieler geben, sonst sind alles nur Gäste. Die Rolle Spieler und Helfer,
+   die muss es schon auch geben. Wenn es ein Spieler der ersten Mannschaft ist, soll der auch Einblick in die erste
+   Mannschaft haben.“
+   - Zwei neue Rollen. Beide dürfen weniger als ein Gast: kein Scouting, kein Kader, keine Bewertungen. Der Datenbestand
+     wird für sie gar nicht geladen (boot.js, sieht_erste in der Datenbank).
+   - Spieler: Termine, Spielerkonto und „Meine Mannschaft“ (Kader mit Name und Position, nächste Spiele, Ergebnisse,
+     Tabelle). Alles nur zum Ansehen. Was am Spieler hängt, hängt an der Verknüpfung des Kontos (profiles.spieler_id),
+     darum sehen es auch Spieler mit einer anderen Rolle.
+   - Helfer: Termine und die eigenen Einsätze (Karte auf der Startseite, svm95).
+   - Spielerkonto: Siege mit Einsatz als eigene Zahl und der Hinweis, dass die Beträge noch vorläufig sind.
+   Der Trainerbereich „1. Mannschaft“ bleibt, was er war: Schreibrechte, Verletzungen, Kontaktdaten. Für Spieler nie.
+   ===================================================================== */
+const MT100 = { d:null, laeuft:null, am:0, zusatz:null };
+const mt100E = v => svEsc(v == null ? '' : String(v));
+const mt100Tag = d => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); if(!m) return String(d || '');
+  const t = new Date(+m[1], +m[2] - 1, +m[3]); return ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][t.getDay()] + ', ' + m[3] + '.' + m[2] + '.'; };
+
+/* ---------- Die beiden Rollen überall bekannt machen ---------- */
+try{
+  SVB.ROLE_T.spieler = 'Spieler'; SVB.ROLE_T.helfer = 'Helfer';
+  SV_ROLE_INFO.spieler = { t:'Spieler', d:'Für Spieler der Ersten und Zweiten', yes:['Termine und Zusagen', 'Eigenes Spielerkonto', 'Meine Mannschaft: Kader, Spiele, Tabelle (nur ansehen)'], no:['Scouting, Kaderplanung, Bewertungen', 'Trainerbereich, Verletzungen, Kontaktdaten'] };
+  SV_ROLE_INFO.helfer = { t:'Helfer', d:'Für Helferinnen und Helfer', yes:['Termine', 'Eigene Einsätze'], no:['Scouting, Kader, Mannschaften', 'Verwaltung'] };
+  ['spieler', 'helfer'].forEach(r => { if(!SV_ROLES.includes(r)) SV_ROLES.push(r); if(!SV_VORSTAND_INVITE.includes(r)) SV_VORSTAND_INVITE.push(r); });
+}catch(e){ console.warn('Rollen', e); }
+try{ R80_ROLLE.spieler = { d:SV_ROLE_INFO.spieler.d, yes:SV_ROLE_INFO.spieler.yes, no:SV_ROLE_INFO.spieler.no }; R80_ROLLE.helfer = { d:SV_ROLE_INFO.helfer.d, yes:SV_ROLE_INFO.helfer.yes, no:SV_ROLE_INFO.helfer.no };
+  ['spieler', 'helfer'].forEach(r => { if(!R80_REIHE.includes(r)) R80_REIHE.splice(Math.max(0, R80_REIHE.indexOf('viewer')), 0, r); }); }catch(e){}
+try{ ST_ROLLEN.spieler = 'Spieler'; ST_ROLLEN.helfer = 'Helfer'; }catch(e){}
+try{ if(!E5_ROLLEN.some(x => x[0] === 'spieler')) E5_ROLLEN.push(['spieler', 'Spieler'], ['helfer', 'Helfer']); }catch(e){}
+
+/* ---------- Startseite und Tab-Leiste je Rolle ---------- */
+try{
+  HT_ZIEL.meinteam = ['meinteam', 'users', 'Meine Mannschaft', '#2563eb']; HT_TEXT.meinteam = 'Kader, Spiele, Tabelle';
+  HT_ROLLE.spieler = { h:'Für dich', z:['spielerkonto', 'meinteam', 'kalender'] };
+  HT_ROLLE.helfer = { h:'Für dich', z:['kalender'] };
+  SV_TABBAR.spieler = ['home', 'kalender', 'meinteam', 'spielerkonto'];
+  SV_TABBAR.helfer = ['home', 'kalender'];
+}catch(e){ console.warn('Startseite je Rolle', e); }
+
+/* ---------- Meine Mannschaft ---------- */
+function mt100Css(){ if(document.getElementById('svm100css')) return; const s = document.createElement('style'); s.id = 'svm100css';
+  s.textContent = `#panel-meinteam{display:none}#panel-meinteam.active{display:block}
+.mt-wrap{display:grid;gap:14px;max-width:860px}.mt-wrap h3{margin:0 0 10px;font-size:17px}.mt-wrap .note{margin:0;color:var(--ink2);font-size:13.5px;line-height:1.5}
+.mt-l{display:grid;gap:8px}.mt-z{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:11px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.1))}
+.mt-z .d{color:var(--ink2);font-size:13px;font-variant-numeric:tabular-nums;min-width:74px}.mt-z .t{min-width:0;overflow-wrap:anywhere}.mt-z .t small{display:block;color:var(--ink2);font-size:13px}
+.mt-z .w{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}.mt-z .w.s{color:var(--green,#1a8f55)}.mt-z .w.n{color:var(--red,#d14343)}
+.mt-kader{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.mt-sp{display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:12px;background:var(--surface2,rgba(148,163,196,.1));min-height:44px}
+.mt-sp i{font-style:normal;font-size:12px;font-weight:700;color:var(--ink2);min-width:28px}.mt-sp.ich{outline:2px solid var(--accent);outline-offset:-2px}
+.mt-tab{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}.mt-tab th{font-size:12px;color:var(--ink2);font-weight:600;text-align:right;padding:6px 8px}
+.mt-tab th:nth-child(2){text-align:left}.mt-tab td{padding:9px 8px;text-align:right;border-top:1px solid var(--line)}.mt-tab td:nth-child(2){text-align:left;overflow-wrap:anywhere}
+.mt-tab tr.wir td{font-weight:700;background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.mt-scroll{overflow-x:auto}.sk-vorl{border-left:3px solid #eab308;padding:10px 14px;border-radius:12px;background:rgba(234,179,8,.12);font-size:13.5px;line-height:1.5}
+@media (max-width:520px){.mt-z{grid-template-columns:1fr auto}.mt-z .d{grid-column:1/-1;min-width:0}.mt-tab .mt-weg{display:none}}`;
+  document.head.appendChild(s); }
+async function mt100Laden(neu){ if(MT100.laeuft) return MT100.laeuft; if(MT100.d && !neu && Date.now() - MT100.am < 60000) return MT100.d;
+  MT100.laeuft = (async () => { try{ const { data, error } = await SVB.sb.rpc('meine_mannschaft'); if(error) throw error; MT100.d = data || { ok:false }; }
+      catch(e){ MT100.d = MT100.d || { ok:false, grund:'fehler' }; } MT100.am = Date.now(); MT100.laeuft = null; return MT100.d; })();
+  return MT100.laeuft; }
+const mt100Darf = () => !!(MT100.d && MT100.d.ok);
+function mt100Panel(){ let P = document.getElementById('panel-meinteam'); if(P) return P;
+  const ref = document.getElementById('panel-home') || document.querySelector('.panel'); if(!ref) return null;
+  P = document.createElement('section'); P.className = 'panel'; P.id = 'panel-meinteam'; ref.parentNode.insertBefore(P, ref.nextSibling); return P; }
+function mt100Render(){ const P = mt100Panel(); if(!P) return; mt100Css(); const d = MT100.d;
+  if(!d){ P.innerHTML = '<div class="mt-wrap"><div class="card">Lädt …</div></div>'; return; }
+  if(!d.ok){ P.innerHTML = `<div class="mt-wrap"><div class="card"><h3>Meine Mannschaft</h3><p class="note">${d.grund === 'kein_spieler' ? 'Dein Konto ist noch keinem Spieler zugeordnet. Das macht die Abteilungsleitung, danach siehst du hier deine Mannschaft.'
+      : d.grund === 'keine_mannschaft' ? 'Du stehst gerade in keiner Mannschaft. Sprich die Abteilungsleitung an, wenn das nicht stimmt.' : 'Die Mannschaft lässt sich gerade nicht laden. Bitte später nochmal.'}</p></div></div>`; return; }
+  const name = d.team === '2' ? '2. Mannschaft' : '1. Mannschaft';
+  const spiele = (d.spiele || []).map(s => `<div class="mt-z"><span class="d">${mt100E(mt100Tag(s.datum))}${s.zeit ? ' · ' + mt100E(s.zeit) : ''}</span><span class="t">${s.heim ? 'Heim gegen ' : 'Auswärts bei '}${mt100E(s.gegner)}${s.wettbewerb ? `<small>${mt100E(s.wettbewerb)}</small>` : ''}</span><span></span></div>`).join('');
+  const erg = (d.ergebnisse || []).map(s => { const k = s.wir > s.die ? 's' : s.wir < s.die ? 'n' : '';
+    return `<div class="mt-z"><span class="d">${mt100E(mt100Tag(s.datum))}</span><span class="t">${s.heim ? 'Heim gegen ' : 'Auswärts bei '}${mt100E(s.gegner)}</span><span class="w ${k}" aria-label="${k === 's' ? 'Sieg' : k === 'n' ? 'Niederlage' : 'Unentschieden'} ${s.wir} zu ${s.die}">${s.wir}:${s.die}</span></div>`; }).join('');
+  const kader = (d.kader || []).map(p => `<div class="mt-sp${p.ich ? ' ich' : ''}"><i>${mt100E(p.pos || '')}</i><span>${mt100E(p.name)}${p.ich ? ' (du)' : ''}</span></div>`).join('');
+  const tab = (d.tabelle || []).map(x => `<tr class="${x.wir ? 'wir' : ''}"><td>${x.platz}</td><td>${mt100E(x.club)}</td><td>${x.spiele ?? ''}</td><td class="mt-weg">${x.tore ?? ''}:${x.gegentore ?? ''}</td><td>${x.punkte ?? ''}</td></tr>`).join('');
+  P.innerHTML = `<div class="mt-wrap">
+    <div class="card"><h3>Nächste Spiele · ${mt100E(name)}</h3>${spiele ? `<div class="mt-l">${spiele}</div>` : '<p class="note">Gerade steht kein Spiel im Plan.</p>'}
+      <p class="note" style="margin-top:10px">Training und deine Zusagen findest du unter Termine und oben auf der Startseite.</p></div>
+    <div class="card"><h3>Letzte Ergebnisse</h3>${erg ? `<div class="mt-l">${erg}</div>` : '<p class="note">Noch keine Ergebnisse in dieser Saison.</p>'}</div>
+    <div class="card"><h3>Tabelle</h3>${tab ? `<div class="mt-scroll"><table class="mt-tab"><thead><tr><th>#</th><th>Verein</th><th>Sp.</th><th class="mt-weg">Tore</th><th>Pkt.</th></tr></thead><tbody>${tab}</tbody></table></div>
+      ${d.tabelle_stand ? `<p class="note" style="margin-top:8px">Stand ${mt100E(mt100Tag(d.tabelle_stand))}</p>` : ''}` : '<p class="note">Die Tabelle ist noch nicht da.</p>'}</div>
+    <div class="card"><h3>Kader · ${(d.kader || []).length} Spieler</h3>${kader ? `<div class="mt-kader">${kader}</div>` : '<p class="note">Der Kader ist noch leer.</p>'}</div>
+    <p class="note">Du siehst hier, was die Mannschaft betrifft. Verletzungen, Kontaktdaten und Bewertungen stehen nur dem Trainerteam offen.</p></div>`; }
+async function mt100Oeffnen(){ mt100Render(); await mt100Laden(true); if(typeof svCurTab === 'function' && svCurTab() === 'meinteam') mt100Render(); }
+
+try{ SVR_TAB.meinteam = null; }catch(e){}
+SV_TBL.meinteam = ['users', 'Mannschaft'];
+Object.assign(SV_PAGES, { meinteam:['Meine Mannschaft', 'Kader, nächste Spiele, Ergebnisse und Tabelle'] });
+// Spieler und Helfer: nur was zu ihrer Rolle gehört. Ein Bereich darüber hinaus erscheint nur, wenn die Leitung ihn dieser Person ausdrücklich gegeben hat.
+const MT100_TABS = { spieler:['home', 'kalender', 'meinteam', 'spielerkonto'], helfer:['home', 'kalender'] };
+{ const _ta100 = svTabAllowed; svTabAllowed = function(t){ const r = svRole(), L = MT100_TABS[r];
+    if(t === 'meinteam') return mt100Darf() || r === 'spieler';
+    if(L && !L.includes(t)){ let dazu = false; try{ dazu = typeof svDarf === 'function' && svDarf(t) === true; }catch(e){} if(!dazu) return false; }
+    return _ta100.apply(this, arguments); }; }
+{ const _gt100 = goTab; goTab = function(tab){ if(tab === 'meinteam') mt100Panel(); const war = svCurTab(); const r = _gt100.apply(this, arguments);
+    try{ if(svCurTab() === 'meinteam' && war !== 'meinteam') mt100Oeffnen(); }catch(e){ console.warn('Meine Mannschaft', e); } return r; }; }
+
+/* ---------- Spielerkonto: Siege mit Einsatz und Hinweis auf vorläufige Beträge ---------- */
+async function sk100Laden(){ try{ const { data, error } = await SVB.sb.rpc('sk_zusatz'); if(error) throw error; MT100.zusatz = data || null; }catch(e){ MT100.zusatz = MT100.zusatz || null; } return MT100.zusatz; }
+function sk100Zeigen(){ const z = MT100.zusatz, W = document.querySelector('#panel-spielerkonto .sk-wrap'); if(!z || !z.ok || !W) return; mt100Css();
+  if(z.regel && z.vorlaeufig && !W.querySelector('.sk-vorl')){ const n = document.createElement('p'); n.className = 'sk-vorl'; n.setAttribute('role', 'note');
+    n.textContent = 'Die Beträge sind noch vorläufig. Siege und Einsätze werden schon gezählt, die genauen Werte für Prämien und Strafen legt der Verein noch fest.';
+    W.insertBefore(n, W.firstChild); }
+  if(z.regel && z.vorlaeufig){ const r = [...W.querySelectorAll('p.note')].find(x => /je Sieg in der Liga/.test(x.textContent) && !x.dataset.sk100);
+    if(r){ r.dataset.sk100 = '1'; r.textContent = 'Vorläufig gerechnet mit ' + r.textContent.replace(/\. Die Prämie kommt/, '. Der Verein legt den Betrag noch fest. Die Prämie kommt'); } }
+  const K = W.querySelector('.sk-kacheln'); if(K && z.regel && !K.querySelector('[data-sk100]')){ const k = document.createElement('div'); k.className = 'sk-k'; k.dataset.sk100 = '1';
+    k.innerHTML = `<small>Siege mit Einsatz</small><b>${+z.siege || 0}</b><i>in dieser Saison</i>`; K.appendChild(k); } }
+try{ const _r100 = sk96Render; sk96Render = function(){ const r = _r100.apply(this, arguments); try{ sk100Zeigen(); if(!MT100.zusatz) sk100Laden().then(sk100Zeigen); }catch(e){} return r; }; }catch(e){}
+
+/* ---------- Funktionsrollen statt „Gast“ ----------
+   Albert, 14.11.2026: „Tim Stellvertreter, Sven Abteilungsleiter. Gast ist Quatsch.“ Wer einen Bereich leitet oder vertritt, hat technisch die
+   Rolle Gast plus eine Funktion im Bereich (person_funktionen, 118_funktionen.sql). Die Rechte stimmten, nur stand überall „Gast“.
+   Jetzt heißt die Person überall nach ihrer Funktion: „Abteilungsleiter Partner“, „Stellvertreter Partner“. An den Rechten ändert sich nichts. */
+const FR100 = { T:{ leitung:'Abteilungsleiter', stellv:'Stellvertreter', helfer:'Helfer' }, alle:null, laedt:null, ich:null };
+function fr100Titel(F){ F = (F || []).filter(x => x && x.stufe && x.stufe !== 'aus'); if(!F.length) return '';
+  const s = ['leitung', 'stellv', 'helfer'].find(k => F.some(x => x.stufe === k)); if(!s) return '';
+  const B = F.filter(x => x.stufe === s).map(x => { try{ return SVR.titel[x.bereich] || ''; }catch(e){ return ''; } }).filter(Boolean);
+  return B.length ? FR100.T[s] + ' ' + B.slice(0, 2).join(', ') + (B.length > 2 ? ' und mehr' : '') : (s === 'helfer' ? 'Helfer im Bereich' : FR100.T[s]); }
+const fr100Key = () => 'sv_frolle:' + ((SVU && SVU.id) || '');
+function fr100Setzen(t){ t = t || ''; const alt = window.__SV_ROLLE_T || ''; window.__SV_ROLLE_T = t;
+  try{ if(t) localStorage.setItem(fr100Key(), t); else localStorage.removeItem(fr100Key()); }catch(e){}
+  if(alt !== t){ try{ svHello(); }catch(e){} try{ document.querySelectorAll('[data-me-role]').forEach(el => { el.textContent = svRolleT(); }); }catch(e){} } }
+// Eigene Funktionen: die eigene Zeile darf jede Person lesen. Die Titel der Bereiche kommen mit den Rechten, darum nach svrApply noch einmal.
+async function fr100Ich(neu){ if(svRole() !== 'viewer' || !SVU || !SVU.id) return;
+  try{ if(neu || !FR100.ich){ const { data, error } = await SVB.sb.from('person_funktionen').select('bereich,stufe').eq('user_id', SVU.id); if(error) throw error; FR100.ich = data || []; }
+    fr100Setzen(fr100Titel(FR100.ich)); }catch(e){} }
+// Alle Funktionen, für die Listen der Admins (Nutzung, Export). Andere Rollen dürfen fremde Zeilen nicht lesen und sehen dort weiter die Rolle.
+function fr100Alle(){ if(!isAdmin()) return Promise.resolve(); if(FR100.laedt) return FR100.laedt;
+  FR100.laedt = (async () => { try{ const { data, error } = await SVB.sb.from('person_funktionen').select('user_id,bereich,stufe'); if(error) throw error; FR100.alle = data || []; }catch(e){ FR100.laedt = null; } })();
+  return FR100.laedt; }
+function svRolleVon(u){ if(!u) return ''; const r = u.role || u.rolle || '';
+  if(r === 'viewer' && u.id){ let L = []; try{ L = (typeof R80_LF !== 'undefined' && R80_LF.length ? R80_LF : FR100.alle) || []; }catch(e){}
+    const t = fr100Titel(L.filter(x => x.user_id === u.id)); if(t) return t; }
+  return (SVB.ROLE_T && SVB.ROLE_T[r]) || (typeof SV_ROLE_INFO !== 'undefined' && SV_ROLE_INFO[r] && SV_ROLE_INFO[r].t) || r; }
+try{ if(svRole() === 'viewer') window.__SV_ROLLE_T = localStorage.getItem(fr100Key()) || ''; }catch(e){}
+{ const _sa100 = svrApply; svrApply = function(){ const r = _sa100.apply(this, arguments); try{ fr100Ich(); }catch(e){} return r; }; }
+function fr100Start(){ try{ fr100Ich(true); }catch(e){} try{ fr100Alle(); }catch(e){} }
+try{ if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(fr100Start, 900)); else setTimeout(fr100Start, 900); }catch(e){}
+
+/* ---------- Beim Start: wer Spieler ist, bekommt Mannschaft in Navigation und Startseite ---------- */
+async function mt100Start(){ try{ await mt100Laden(); if(!mt100Darf()) return;
+    Object.keys(HT_ROLLE).forEach(r => { const z = HT_ROLLE[r].z; if(!z.includes('meinteam')){ const i = z.indexOf('spielerkonto'); z.splice(i < 0 ? 0 : i + 1, 0, 'meinteam'); } });
+    try{ if(typeof svBuildTabbar === 'function') svBuildTabbar(); }catch(e){}
+    try{ if(typeof svCurTab === 'function' && svCurTab() === 'home' && typeof htRender === 'function') htRender(); }catch(e){}
+  }catch(e){} }
+try{ if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(mt100Start, 1500)); else setTimeout(mt100Start, 1500); }catch(e){}
+
 (function(){ try{ const s=document.createElement('style'); s.id='svm92css'; s.textContent="/* Beta 0.99.4 · Fragen mit Ja und Nein */\n.fr-karte{border:1px solid rgba(91,155,255,.45)!important;margin-bottom:14px}\n.fr-h{margin:0 0 10px;font-size:17px}\n.fr-liste{display:flex;flex-direction:column;gap:10px}\n.fr-z{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08));transition:box-shadow .3s,background .3s}\n.fr-z.fr-hin{box-shadow:0 0 0 2px var(--brand,#2f6bff)}\n.fr-tx{display:flex;flex-direction:column;gap:2px;min-width:0}\n.fr-tx span,.fr-tx small{color:var(--ink3);font-size:13.5px;overflow-wrap:anywhere}\n.fr-akt{display:flex;gap:8px;flex:none}\n.fr-akt .btn{min-height:44px;white-space:nowrap}\n.fr-akt .btn[disabled]{opacity:.5}\n@media (max-width:640px){.fr-z{grid-template-columns:1fr}.fr-akt .btn{flex:1}}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm80css'; s.textContent="/* ===== Beta 0.82 · Rollen und Bereiche ===== */\n.r80-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));}\n.rolecard.r80{display:flex;flex-direction:column;gap:2px;}\n.r80-dl{margin:4px 0 10px;display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:13px;line-height:1.4;}\n.r80-dl dt{color:var(--ink3);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;padding-top:1px;white-space:nowrap;}\n.r80-dl dd{margin:0;color:var(--ink2);}\n.r80-alles{margin:4px 0 10px;font-size:13px;color:var(--ink2);font-weight:650;}\n.r80-note{margin:-4px 0 10px;}\n.svr-gh{margin:10px 0 0;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);}\n.svr-gh:first-child{margin-top:0;}\n.svr-auf{margin-top:12px;}\n.svr-auf h3{margin:0;font-size:15px;}\n.svr-auf .note{margin:4px 0 10px;}\n.svr-auf-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;}\n.svr-auf-b{font:inherit;text-align:left;display:flex;flex-direction:column;gap:3px;padding:10px 12px;min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);color:inherit;cursor:pointer;}\n.svr-auf-b b{font-size:13.5px;}\n.svr-auf-b span{font-size:13px;color:var(--ink3);}\n.svr-auf-b.on{border-color:var(--brand2);background:rgba(91,155,255,.10);}\n.svr-auf-b.on b::after{content:' ✓';color:var(--ok);}\n.svr-auf-b:disabled{opacity:.55;}\n.svr-vt tr.svr-vg th{padding-top:12px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);text-align:left;}\n/* Schalter „an“ auch im hellen Design grün (die helle Fassung färbte an und aus gleich grau) */\nhtml[data-theme=\"hell\"] .svr-sw.on,.svr-sw.on{background:#16a34a;}\n/* 0.83 · Funktionen je Bereich */\n.svr-fs{margin-top:12px;}\n.svr-fs h3{margin:0 0 6px;font-size:15px;}\n.svr-fl{display:flex;flex-wrap:wrap;gap:6px;}\n.svr-fchip{display:inline-flex;gap:6px;align-items:baseline;padding:5px 10px;border-radius:999px;background:rgba(91,155,255,.12);font-size:13px;}\n.svr-kopf{align-items:flex-start;}\n.svr-stand{font-size:13px!important;color:var(--ink3)!important;}\n.svr-stand.an{color:var(--ink2)!important;font-weight:600;}\n.svr-fk{flex:none;min-height:44px;max-width:46%;font:inherit;font-size:14px;font-weight:650;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg2,transparent);color:inherit;}\n.svr-row.abw .svr-fk{border-color:var(--brand2);}\n.svr-kopf .svr-rt b::after{content:none!important;}\n.svr-ab{font-style:normal;font-size:11px;font-weight:700;color:var(--ink3);margin-left:4px;}\ndetails.svr-auf{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;}\ndetails.svr-auf summary{cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;}\ndetails.svr-auf summary::-webkit-details-marker{display:none;}\ndetails.svr-auf summary h3::before{content:'▸ ';color:var(--ink3);}\ndetails.svr-auf[open] summary h3::before{content:'▾ ';}\n.r80-edit{margin-top:auto;align-self:flex-start;min-height:44px;}\n.r80-rl{display:flex;flex-direction:column;gap:8px;margin-top:12px;}\n/* 0.83 · Mannschaft */\n.s81-sort{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;}\n.s81-sort span{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-right:4px;}\n.s81-sort button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.s81-sort button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n.s81-inj{white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle;}\n.k1-leiste{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;}\n.s81-feste .adm-head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;}\n.s81-l{display:flex;flex-direction:column;gap:6px;margin-top:12px;}\n.s81-l.vorbei{opacity:.7;}\n.s81-ev{font:inherit;color:inherit;text-align:left;display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(148,163,196,.04);cursor:pointer;}\n.s81-d{display:flex;flex-direction:column;min-width:78px;font-size:13px;}\n.s81-d small,.s81-t small{color:var(--ink3);font-size:12.5px;}\n.s81-t{display:flex;flex-direction:column;flex:1;min-width:0;}\n.s81-h{margin:16px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);}\n.q50-del{margin-left:auto;}\n.q50-del.sure{color:#b42318;border-color:#b42318;}\n/* 0.83 · Mini-Apps */\n.ma-karte{margin-top:12px;}\n.ma-kopf{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}\n.ma-kopf h3{margin:0;font-size:16px;}\n.ma-tage{display:flex;flex-direction:column;gap:10px;margin-top:10px;}\n.ma-tag{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}\n.ma-tk{display:flex;flex-direction:column;gap:2px;font-size:13.5px;}\n.ma-tk span{color:var(--ink2);}\n.ma-zahlen{display:flex;flex-wrap:wrap;gap:6px;}\n.ma-zahlen span{font-size:13px;font-weight:650;padding:3px 9px;border-radius:999px;}\n.ma-zahlen .offen{background:rgba(234,88,12,.12);color:#c2410c;}\n.ma-zahlen .ok{background:rgba(22,163,74,.12);color:#15803d;}\n.ma-auf{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid var(--line2);font-size:14px;}\n.ma-auf span{color:var(--ink2);font-size:13px;}\n.ma-auf.offen span{color:#c2410c;font-weight:650;}\n.ma-filter{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}\n.ma-filter button{font:inherit;font-size:13px;font-weight:650;min-height:44px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;}\n.ma-filter button.on{background:var(--brand2);border-color:var(--brand2);color:#fff;}\n\n.ma-kl{display:flex;flex-direction:column;}\n.ma-mehr{margin-top:10px;}\n.ma-such{margin-bottom:8px;}\n.ma-k{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line2);}\n.ma-k small{display:block;color:var(--ink3);font-size:12.5px;}\n.ma-kt{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;}\n.ma-p,.ma-g{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;}\n.ma-p{background:rgba(91,155,255,.14);}\n.ma-g{background:rgba(148,163,196,.18);}\n.svr-sw.sure{outline:3px solid #f59e0b;outline-offset:2px;}\n@media (max-width:560px){ .svr-kopf{flex-wrap:wrap;} .svr-kopf .svr-fk{max-width:none;width:100%;order:3;} }\n/* 0.84 · Einladen mit Funktionen */\n.r80-invf{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;}\n.r80-invh{margin:-4px 0 0;font-size:13px;color:var(--ink2);}\n.r80-invl{display:flex;flex-direction:column;gap:10px;}\n.r80-invz{display:grid;grid-template-columns:1fr 44px;gap:8px;align-items:center;}\n.r80-invs{display:grid;grid-template-columns:1fr minmax(140px,200px);gap:8px;}\n.r80-invz select{min-height:44px;width:100%;}\n.r80-invz .iconbtn{width:44px;height:44px;}\n.r80-invadd{align-self:flex-start;min-height:44px;}\n@media (max-width:560px){ .r80-invs{grid-template-columns:1fr;gap:6px;} .r80-invz{padding:8px;border:1px solid var(--line);border-radius:12px;} }\n/* 0.84 · Funktionen in der Team-Liste: eigene Zeile über die ganze Breite */\n.urow .r80-hid{display:none!important;}\n.urow > .r80-uf{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;}\n.urow > .r80-uf span{font-size:12px;font-weight:650;line-height:1.35;padding:3px 9px;border-radius:999px;background:rgba(91,155,255,.14);color:var(--ink);word-break:normal;overflow-wrap:break-word;max-width:100%;}\n.r80-fb{min-height:44px;gap:6px;font-size:13px;}\n.r80-fb svg{width:16px;height:16px;}\n/* 0.85 · Funktionsrollen */\n.r80-invfr{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:12px;background:rgba(91,155,255,.12);color:var(--ink);font-size:13px;}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm71css'; s.textContent="/* Beta 0.76 · Termine für Abteilungen, Mithelfen, Werbebild, Rückmeldungen. Ruhig: flache Flächen, eine Akzentfarbe, Tipp-Ziele 44 */\n.kal-hg{display:inline-block;align-self:flex-start;width:fit-content;margin-top:6px;font-style:normal;font-size:12.5px;font-weight:600;color:var(--brand2);background:var(--brandSoft);border-radius:99px;padding:3px 9px}\n.kal-hg.ich{color:var(--ink2);background:var(--surface2)}\n.kal-f2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}\n.kal-f2>.field,.kal-f2>label{min-width:0}\n.kal-f2 .kal-sicht>div{flex-wrap:wrap}\n.kal-f2 .kal-w{grid-column:1/-1}\n@media (max-width:520px){.kal-f2{grid-template-columns:minmax(0,1fr)}}\n.kal-gast{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}\n.kal-gast:empty{display:none}\n.kal-gp{display:inline-flex;align-items:center;gap:2px;padding:0 2px 0 12px;min-height:36px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);font-size:14px}\n.kal-gp button{all:unset;position:relative;cursor:pointer;width:44px;height:44px;margin:-4px -4px -4px 0;display:grid;place-items:center;color:var(--ink3)}\n.kal-gp button svg{width:14px;height:14px}\n.kal-gl{display:flex;flex-direction:column;gap:4px;margin-top:6px}\n.kal-gz{all:unset;position:relative;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border-radius:10px;background:var(--surface2);font-size:15px}\n.kal-gz svg{width:16px;height:16px;color:var(--brand2)}\n.kal-ag{border:1px solid var(--line);border-radius:12px;margin:8px 0;background:var(--surface2)}\n.kal-ag summary{cursor:pointer;list-style:none;display:flex;flex-direction:column;gap:2px;padding:12px 14px;min-height:44px;justify-content:center}\n.kal-ag summary::-webkit-details-marker{display:none}\n.kal-ag summary small{color:var(--ink2);font-size:13px}\n.kal-am{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px}\n.kal-zeile{display:flex;gap:8px;flex-wrap:wrap;padding:12px 14px}\n.kal-zeile select,.kal-zeile input{flex:1 1 200px;min-height:44px}\n.kal-zeile .btn{min-height:44px}\n.kal-helf{margin:14px 0 4px;border-top:1px solid var(--line);padding-top:12px}\n.kal-hs{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}\n.kal-hs:last-child{border-bottom:0}\n.kal-hs>div{display:flex;flex-direction:column;gap:2px;min-width:0}\n.kal-hs span{font-size:14.5px}\n.kal-hs small{font-size:13px;color:var(--ink2)}\n.kal-hs .btn{min-height:44px;flex:0 0 auto}\n\n/* Werbebild */\n.wb{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:18px;align-items:start}\n@media (max-width:700px){.wb{grid-template-columns:1fr}}\n.wb-vor{background:var(--surface2);border-radius:14px;padding:10px;display:grid;place-items:center}\n.wb-vor canvas{width:100%;height:auto;max-height:38vh;object-fit:contain;border-radius:6px;display:block}\n.wb-ein{display:flex;flex-direction:column;gap:12px;min-width:0}\n.wb-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}\n.wb-seg button{all:unset;position:relative;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:10px;min-height:52px;border-radius:10px;border:1px solid var(--line);background:var(--surface2)}\n.wb-seg button b{font-size:14.5px}\n.wb-seg button small{font-size:12px;color:var(--ink2)}\n.wb-seg button[aria-pressed=\"true\"]{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}\n.wb-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}\n.wb-f{all:unset;position:relative;cursor:pointer;box-sizing:border-box;aspect-ratio:9/16;max-height:110px;border-radius:8px;overflow:hidden;border:2px solid transparent;background:var(--surface2);display:grid;place-items:center;font-size:12.5px;color:var(--ink2);text-align:center}\n.wb-f img{width:100%;height:100%;object-fit:cover;display:block}\n.wb-f.on{border-color:var(--brand)}\n.wb-eig{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}\n.wb-eig svg{width:20px;height:20px}\n.wb-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}\n\n/* Rückmeldungen */\n.rm-seg{margin:12px 0}\n.rm-zahl{font-style:normal;font-size:12px;font-weight:700;background:var(--brand);color:#fff;border-radius:99px;padding:1px 7px;margin-left:4px}\n.rm-art{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}\n.rm-z{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0;background:var(--surface2)}\n.rm-z p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}\n.rm-k{display:flex;align-items:center;gap:8px;flex-wrap:wrap}\n.rm-k small{color:var(--ink2);font-size:13px;margin-left:auto}\n.rm-st{font-style:normal;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--ink2)}\n.rm-st.s-neu{background:var(--brandSoft);color:var(--brand2)}\n.rm-st.s-umgesetzt{background:rgba(34,197,94,.16);color:#16a34a}\n.rm-ant{background:var(--brandSoft);border-radius:8px;padding:8px 10px}\n.rm-meta{display:block;margin-top:6px;color:var(--ink3);font-size:12.5px}\n.rm-bear{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}\n.rm-bear select{min-height:44px;flex:0 0 auto}\n.rm-bear input{min-height:44px;flex:1 1 180px}\n.rm-bear .btn{min-height:44px}\n.rm-badge[hidden]{display:none!important}\n\n/* 0.76 Prüfstraße Bedienung */\nhtml body:not(#_).kal-an main{padding-bottom:calc(170px + env(safe-area-inset-bottom))!important}\n.kal-sicht .kal-chip,.wb-chips .kal-chip,.rm-art .kal-chip{min-height:44px}\n.rm-seg button{min-height:44px}\n.kal-sieht{margin:10px 0 0;font-size:14px;color:var(--ink2)}\n.kal-shin{margin:0 0 8px}\n.kal-zeile input,.kal-zeile select,.rm-bear input,.rm-bear select{box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;padding:0 12px;font:inherit;font-size:16px}\n.kal-ag summary{position:relative;padding-right:40px}\n.kal-ag summary::after{content:'';position:absolute;right:16px;top:50%;width:8px;height:8px;border:solid var(--ink3);border-width:0 2px 2px 0;transform:translateY(-70%) rotate(45deg)}\n.kal-ag[open] summary::after{transform:translateY(-30%) rotate(-135deg)}\n#moreSheet .rm-sheet{background:var(--surface2)!important;border:1px solid var(--line)!important;box-shadow:none!important;background-image:none!important}\n"; document.head.appendChild(s); }catch(e){} })();

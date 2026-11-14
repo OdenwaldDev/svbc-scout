@@ -19,7 +19,7 @@ const istDemoMail=m=>!!(CFG0.demo&&(CFG0.demo.mails||[]).includes(String(m||'').
 const gate=document.getElementById('gate'), card=document.getElementById('gcard'), load=document.getElementById('gload');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(e){}}};
-const ROLE_T={admin:'Admin',vorstand:'Vorstand',planer:'Kaderplaner',trainer:'Trainer',viewer:'Gast',jugend:'Jugendtrainer'};
+const ROLE_T={admin:'Admin',vorstand:'Vorstand',planer:'Kaderplaner',trainer:'Trainer',viewer:'Gast',jugend:'Jugendtrainer',spieler:'Spieler',helfer:'Helfer'};
 const initials=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'?';
 document.body.classList.add('gated');
 
@@ -304,7 +304,7 @@ function viewSetPassword(mode,prof){
   const inv=mode==='invite'||mode==='anfrage';
   card.innerHTML=`<h2>${mode==='anfrage'?'E-Mail bestätigt!':inv?'Willkommen im Team!':'Neues Passwort'}</h2>
     <p class="sub">${mode==='anfrage'?'Leg jetzt dein Passwort fest. Zweimal eintippen, damit kein Tippfehler drin ist.':inv?'Leg jetzt dein persönliches Passwort fest, damit meldest du dich künftig an.':'Vergib ein neues Passwort für deinen Zugang.'}</p>
-    ${prof?`<div class="g-welcome"><div class="uav">${esc(initials(prof.name||prof.email))}</div><div><b>${esc(prof.name||prof.email)}</b><span>${esc(ROLE_T[prof.role]||'')} · ${esc(prof.email)}</span></div></div>`:''}
+    ${prof?`<div class="g-welcome"><div class="uav">${esc(initials(prof.name||prof.email))}</div><div><b>${esc(prof.name||prof.email)}</b><span>${esc((prof.role==='viewer'&&(()=>{ try{ return localStorage.getItem('sv_frolle:'+prof.id); }catch(e){ return ''; } })())||ROLE_T[prof.role]||'')} · ${esc(prof.email)}</span></div></div>`:''}
     <form class="g-form" id="gSet">
       <div class="g-msg" id="gMsg"></div>
       <input type="email" autocomplete="username" value="${esc(prof&&prof.email||'')}" style="display:none">
@@ -386,10 +386,13 @@ async function loadAndStart(){
   const {data:{session}}=await sb.auth.getSession();
   let cached=await IDB.get('dataset'), ver=null, ds=null;
   if(!SV.offline){ try{ const {data,error}=await sb.rpc('dataset_version'); if(error)throw error; ver=data; }catch(e){ if(!isNet(e))throw e; SV.offline=true; } }
+  // 0.99.23: Spieler und Helfer bekommen den Datenbestand (Kader, Scouting, Bewertungen) nicht. Ein früher gespeicherter Stand wird verworfen.
+  const ohneBestand=['spieler','helfer'].includes((SV.profile&&SV.profile.role)||'');
+  if(ohneBestand&&cached){ try{ await IDB.clear(); }catch(e){} cached=null; }
   if(cached&&cached.version&&(SV.offline||cached.version===ver)){ ds=cached; }
   else if(!SV.offline&&session){
     try{ ds=await fetchDataset(session.access_token); await IDB.set('dataset',ds); }
-    catch(e){ if(String(e.message)==='kein-datenbestand'&&SV.profile.role==='jugend'){ ds=SV_LEER(); }   // Jugendtrainer ohne Freigabe für die Erste: App startet mit leerem Datenbestand
+    catch(e){ if(String(e.message)==='kein-datenbestand'&&(SV.profile.role==='jugend'||ohneBestand)){ ds=SV_LEER(); }   // Jugendtrainer ohne Freigabe für die Erste: App startet mit leerem Datenbestand
     else{ if(String(e.message)==='kein-datenbestand'){ card.innerHTML='<h2>Noch keine Daten</h2><p class="sub">Der Spieler-Datenbestand wurde noch nicht hochgeladen.</p>'; showCard(); return; } if(cached){ ds=cached; SV.offline=true; } else throw e; } }
   }
   if(!ds){ viewLogin('Keine Verbindung. Für den ersten Start auf diesem Gerät wird Internet gebraucht.','err'); return; }
