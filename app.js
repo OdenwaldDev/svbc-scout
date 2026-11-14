@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.25', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.26', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18593,6 +18593,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.26',v:'0.99.26',datum:'2026-11-14',titel:'Bandenbeitrag auch für die Leitung im Bereich Partner',kurz:'Wer den Bereich Partner leitet oder vertritt, sieht im Bandenplan jetzt auch, ob für eine Bande ein Beitrag gezahlt wird.',
+   punkte:[
+    {ic:'\u{1F91D}',t:'Abteilungsleiter und Stellvertreter Partner',d:'Beide sehen im Bandenplan den Beitrag je Bande mit Notiz und können ihn ändern, so wie bisher Admin und Vorstand. Helfer im Bereich und das übrige Partner-Team sehen davon weiter nichts.'}
+   ]},
   {id:'0.99.25',v:'0.99.25',datum:'2026-11-14',titel:'Die Banden, wie sie heute hängen',kurz:'Der Bandenplan zeigt die Reihe am Hauptplatz jetzt so, wie sie wirklich hängt: in der richtigen Reihenfolge, mit Lücken, und als Rundgang in 3D mit den Fotos der Banden.',
    punkte:[
     {ic:'\u{1F6B6}',t:'Rundgang in 3D',d:'Unter Partner, Bandencreator, Bandenplan gehst du die Bandenreihe entlang, vom Rasen aus gesehen. Zieh das Bild zur Seite oder nimm die Pfeile. Ein Tipp auf eine Bande zeigt, wem sie gehört.'},
@@ -33164,7 +33168,7 @@ function bpNordPunkt(s){ const G2 = BP.G / 2, R = BP.NORD;
   return { x:s, y:-R, w:0, nx:0, ny:-1 }; }
 const bpMeter = m => String(Math.round(m * 10) / 10).replace('.', ',') + ' m';
 const bpNr = p => (p && p.nummer != null ? p.nummer : (p ? p.nr : ''));
-// Bandenbeitrag (0.99.25): kommt vom Server nur für Admin und Vorstand mit (beitrag_sicht). ja, nein, unklar oder leer (keine Angabe)
+// Bandenbeitrag (0.99.25): kommt vom Server nur für Admin, Vorstand und die Leitung im Bereich Partner mit (beitrag_sicht, seit 0.99.26 auch Leitung und Stellvertretung). ja, nein, unklar oder leer (keine Angabe)
 const BP_BEITRAG = { ja:'Beitrag: ja', nein:'Kein Beitrag', unklar:'Beitrag unklar' };
 const bpBeitrag = p => (BC.d && BC.d.beitrag_sicht && p && p.status !== 'frei' && BP_BEITRAG[p.beitrag]) ? p.beitrag : '';
 // Name für die Anzeige: Zusätze in Klammern gehören nicht auf eine Bande
@@ -33216,13 +33220,13 @@ function bpSvg(){
 }
 function bpKarte(s){ const p = s.p, frei = p.status === 'frei';
   return `<button type="button" role="option" aria-selected="${BP.sel === p.id}" class="bp-k ${p.status}${BP.sel === p.id ? ' an' : ''}" data-bp="${p.id}"><b>${bpNr(p)}</b><span>${frei ? 'Frei' : bpE(bpFirma(p.firma))}</span><small>${bpE(bpMeter(s.l))}${p.status === 'reserviert' ? ' · reserviert' : ''}</small>${bpBeitrag(p) && bpBeitrag(p) !== 'ja' ? `<em class="bp-bt ${bpBeitrag(p)}">${bpBeitrag(p) === 'nein' ? 'kein Beitrag' : 'unklar'}</em>` : ''}</button>`; }
-// Beitrag in der Einzelansicht: nur für Admin und Vorstand, mit Notiz und Knopf zum Ändern
+// Beitrag in der Einzelansicht: nur für die, die ihn sehen dürfen, mit Notiz und Knopf zum Ändern
 function bpBeitragZeile(p){ if(!(BC.d && BC.d.beitrag_sicht) || !p || p.status === 'frei') return ''; const b = BP_BEITRAG[p.beitrag] ? p.beitrag : '';
-  return `<div class="bp-beitrag ${b || 'leer'}"><div><b>${b ? BP_BEITRAG[b] : 'Beitrag: keine Angabe'}</b>${p.beitrag_notiz ? `<span>${bpE(p.beitrag_notiz)}</span>` : ''}<small>Das sehen nur Admin und Vorstand.</small></div><button type="button" class="pz-tc-k leise" data-bpbeitrag="${p.id}">Ändern</button></div>`; }
+  return `<div class="bp-beitrag ${b || 'leer'}"><div><b>${b ? BP_BEITRAG[b] : 'Beitrag: keine Angabe'}</b>${p.beitrag_notiz ? `<span>${bpE(p.beitrag_notiz)}</span>` : ''}<small>Das sehen nur Admin, Vorstand und die Leitung im Bereich Partner.</small></div><button type="button" class="pz-tc-k leise" data-bpbeitrag="${p.id}">Ändern</button></div>`; }
 function bpBeitragDialog(id, I){ const p = bcPlatz(id); if(!p) return; const akt = BP_BEITRAG[p.beitrag] ? p.beitrag : '';
   const M = svModal(`<div class="mhead"><div><h2 style="margin:0">Bandenbeitrag</h2><div class="msub">${bpE('Bande ' + bpNr(p) + (p.firma ? ' · ' + bpFirma(p.firma) : ''))}</div></div></div>
     <div class="bp-bwahl" role="radiogroup" aria-label="Zahlt der Partner für diese Bande?">${[['ja', 'Ja, zahlt'], ['nein', 'Kein Beitrag'], ['unklar', 'Unklar'], ['', 'Keine Angabe']].map(([k, t]) => `<label><input type="radio" name="bpBw" value="${k}"${k === akt ? ' checked' : ''}><span>${t}</span></label>`).join('')}</div>
-    <label class="pz-tc-dlgf"><span>Notiz (nur für Admin und Vorstand)</span><textarea id="bpBwNotiz" maxlength="300" rows="3">${bpE(p.beitrag_notiz || '')}</textarea></label>
+    <label class="pz-tc-dlgf"><span>Notiz (nur intern)</span><textarea id="bpBwNotiz" maxlength="300" rows="3">${bpE(p.beitrag_notiz || '')}</textarea></label>
     <div class="pz-tc-dlgk"><button type="button" class="btn" id="bpBwOk">Speichern</button><button type="button" class="btn ghost" id="bpBwNein">Abbrechen</button></div>`);
   M.querySelector('#bpBwNein').onclick = () => closeOverlay();
   M.querySelector('#bpBwOk').onclick = () => paEinmal(M.querySelector('#bpBwOk'), async () => { const w = M.querySelector('input[name="bpBw"]:checked');
