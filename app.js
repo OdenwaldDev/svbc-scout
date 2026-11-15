@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.42', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.43', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18594,6 +18594,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.43',v:'0.99.43',datum:'2026-11-15',titel:'Welche Förderung lohnt sich?',kurz:'In der Leitersitzung siehst du Aufwand, vorgeschlagene Wichtigkeit, Förderrahmen und Fristen. Vergleiche den Förderweg mit einer direkten oder gebrauchten Anschaffung.',punkte:[{ic:'✓',t:'Prioritäten für eure Entscheidung',d:'Änderbare Bewertungen, Zeithorizonte und belegte Fristen helfen bei der Auswahl. Geschlossene Runden bleiben zurückgestellt.',r:'foerderung'},{ic:'✓',t:'Was bleibt vom Zuschuss?',d:'Zusatzkosten und Ehrenamtszeit gegen eine vergleichbare Alternative rechnen. Eigene Schätzungen bleiben erkennbar und gehen in die Sitzungsvorlage ein.',r:'foerderung'}]},
   {id:'0.99.42',v:'0.99.42',datum:'2026-11-15',titel:'Die App startet deutlich schneller',kurz:'Beim Start hat die App alle Scouting-Listen mehrfach durchgerechnet, auch wenn niemand sie offen hatte. Das passiert jetzt erst, wenn du den Bereich öffnest. Auf älteren Handys startet die App damit um ein Vielfaches schneller.',
    punkte:[
     {ic:'\u26A1',t:'Schneller Start',d:'Spielermarkt, Datenbank, Vergleich, Aufstellung und Geheimtipps werden erst gezeichnet, wenn du sie öffnest. Die Startseite steht dadurch viel früher. An den Inhalten ändert sich nichts.',r:'team'},
@@ -19689,6 +19690,7 @@ function spEntries(){
 // nach dem Laden: zuerst das Update-Fenster, danach die übrigen Pop-ups wie gehabt
 { const _pr=svPopupsRun; svPopupsRun=function(){ try{ spEntries(); spPopup(); }catch(e){ console.warn(e); } return _pr.apply(this,arguments); }; }
 { let t=0; const iv=setInterval(()=>{ if(++t>60)return clearInterval(iv); if(document.querySelector('.snav')||document.getElementById('moreSheet')){ try{ spEntries(); }catch(e){} if(SV_PREFS)clearInterval(iv); } },1000); }
+
 
 /* =====================================================================
    Sportzentrale Beta 0.37 · Neuigkeiten nur einmal, Erinnerung bei alter Version

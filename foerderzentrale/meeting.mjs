@@ -1,4 +1,5 @@
-import { categories, euro, instruments, isOriginal, sourceUrl } from "./domain.mjs?v=beta-0.99.42";
+import { categories, euro, instruments, isOriginal, sourceUrl } from "./domain.mjs?v=beta-0.99.43";
+import { priority, priorityCard, prioritySummary, cleanAssessment, horizonLabels } from './priority.mjs?v=beta-0.99.43';
 
 const decisions = { prepare: "Vorbereiten", clarify: "Zuerst klären", defer: "Zurückstellen" };
 const bundles = [
@@ -44,7 +45,8 @@ export function loadMeeting(scope) {
       bundle: packages.includes(choice.bundle) ? choice.bundle : "",
       task: typeof choice.task === "string" ? choice.task.slice(0, 320) : "",
     }]));
-  return { key, choices, packages,
+  const assessments = Object.fromEntries(Object.entries(saved?.assessments || {}).filter(([id]) => uidPattern.test(id)).slice(0, 500).map(([id,v]) => [id, cleanAssessment(v)]));
+  return { key, choices, packages, assessments,
     draft: typeof saved?.draft === "string" ? saved.draft.slice(0, 50000) : null,
     draftStale: saved?.draftStale === true,
     draftContext: typeof saved?.draftContext === "string" ? saved.draftContext : "" };
@@ -54,7 +56,7 @@ function saveMeeting(plan) {
   try {
     if (!plan.key) return false;
     localStorage.setItem(plan.key, JSON.stringify({ choices: plan.choices, packages: plan.packages,
-      draft: plan.draft, draftStale: plan.draftStale, draftContext: plan.draftContext }));
+      assessments: plan.assessments, draft: plan.draft, draftStale: plan.draftStale, draftContext: plan.draftContext }));
     return true;
   } catch {
     return false;
@@ -113,6 +115,9 @@ export function meetingText(selected, plan, club, day) {
       draft.push("", cleanLine(item.title));
       if (choice.bundle && (groups.get(choice.bundle)?.length || 0) > 1 && decision !== "defer") draft.push("Paket: " + choice.bundle);
       if (item.measure) draft.push("Idee: " + cleanLine(item.measure));
+      const assessment = plan.assessments?.[entry.row.id] || {};
+      draft.push(...prioritySummary(priority(entry, assessment, day)));
+      if (assessment.note) draft.push('Eigene Annahmen: ' + cleanLine(assessment.note));
       if (item.program.title) draft.push("Förderweg: " + cleanLine(fundName(item.program)) + ". " + programmeNote(item.program, source, day) + ".");
       const alternatives = (item.fundingRoutes || []).filter(route => route.status === "clarify").map(route => cleanLine(route.title));
       if (alternatives.length) draft.push("Weitere zu prüfende Wege: " + alternatives.join(", ") + ".");
@@ -152,10 +157,13 @@ function opportunities(entries, plan, day) {
         <p>${escape(alternative.finding)}</p>${sourceLink(original)}</li>`;
     }).join("");
     const checks = (report?.checks || []).filter(check => check.status !== "pass").slice(0, 4);
-    return `<article class="meeting-option" data-meeting-search="${escape(search.toLocaleLowerCase("de-DE"))}" data-meeting-type="${escape(item.type)}">
+    const assessment = plan.assessments?.[row.id] || {};
+    const rating = priority({row,item,report}, assessment, day);
+    return `<article class="meeting-option" data-rating-id="${escape(row.id)}" data-horizon="${rating.horizon}" data-meeting-search="${escape(search.toLocaleLowerCase("de-DE"))}" data-meeting-type="${escape(item.type)}">
       <label class="meeting-choice"><input type="checkbox" aria-label="${escape(item.title)} auswählen" data-meeting-pick="${escape(row.id)}"${checked}>
         <span><strong>${escape(item.title)}</strong><small>${escape([type, item.program.provider].filter(Boolean).join(" · "))}</small></span></label>
       <p class="meeting-idea">${escape(item.measure || item.need)}</p>
+      <div data-priority-slot>${priorityCard({row,item,report}, assessment, day)}</div>
       <details class="detail"><summary>Förderweg und offene Punkte</summary><div class="meeting-details">
         <p><strong>Bedarf</strong><br>${escape(item.need)}</p>
         <p><strong>${escape(fundName(item.program) || "Förderweg offen")}</strong><br>
@@ -183,17 +191,27 @@ export function mountMeeting(host, { entries, cases, plan, club, day, notify, do
     return;
   }
   const available = (entries || []).filter(entry => entry.item);
+  plan.assessments ||= {};
   const byId = new Map(available.map(entry => [entry.row.id, entry]));
   const selected = () => Object.keys(plan.choices).map(id => byId.get(id)).filter(Boolean);
-  const context = () => JSON.stringify({ day, cases: selected().map(entry => [entry.row.id, entry.item.version, entry.report]) });
+  const context = () => JSON.stringify({ day, cases: selected().map(entry => [entry.row.id, entry.item.version, entry.report, plan.assessments[entry.row.id]]) });
   if (plan.draft !== null && plan.draftContext !== context()) plan.draftStale = true;
   const suggestions = bundles.map(bundle => ({ ...bundle, ids: bundle.ids.filter(id => byId.has(id)) })).filter(bundle => bundle.ids.length > 1);
-  const preferred = new Set(suggestions.flatMap(bundle => bundle.ids));
-  const sorted = [...entries].sort((a, b) => Number(preferred.has(b.row.id)) - Number(preferred.has(a.row.id)) ||
-    a.row.title.localeCompare(b.row.title, "de-DE"));
+  const comparePriority = (a,b) => {
+    if (!a.item || !b.item) return Number(!a.item)-Number(!b.item);
+    const x=priority(a,plan.assessments[a.row.id],day), y=priority(b,plan.assessments[b.row.id],day);
+    return x.group.localeCompare(y.group) || y.score-x.score || a.row.title.localeCompare(b.row.title,'de-DE');
+  };
+  const sorted = [...entries].sort(comparePriority);
   const typeOptions = Object.entries(categories).filter(([key]) => entries.some(({row}) => row.type === key));
   const hadErrors = available.length !== entries.length;
   host.innerHTML = `
+    <details class="card priority-method"><summary>So priorisieren wir: Nutzen vor Förderhöhe</summary>
+      <p>A: zuerst prüfen · B: danach vorbereiten · C: nachrangig · D: aktuell zurückstellen oder Alternative prüfen.</p>
+      <p>Arbeitspriorität = 2 × Wichtigkeit + (6 − Aufwand) + Fristpunkte (3 bis 14 Tage, 2 bis 30, 1 bis 90). A ab 12 Punkten, B ab 8, sonst C. Geschlossene oder fachlich ausgeschlossene Förderwege und rechnerisch günstigere direkte Alternativen erhalten D. Das betrifft den Förderweg, nicht die Wichtigkeit des Bedarfs.</p>
+      <p>Aufwand 1: vorhandene Angaben abgleichen; 2: begrenzter Antrag und Belege; 3: mehrere Beteiligte und Nachweise; 4: Konzept und laufende Koordination; 5: technische oder langfristige Umsetzung. Wichtigkeit 1: optional bis 5: unverzichtbar. Alle Anfangswerte sind redaktionelle Vorschläge.</p>
+      <p>Quick-Win-Kandidat heißt: zunächst überschaubarer Aufwand. Offene Bedingungen können ihn ausschließen. Höchstbeträge sind keine zugesagten Mittel und werden nicht je Vorhaben addiert. Fristpunkte nur mit einer innerhalb von 90 Tagen geprüften Originalquelle; diese Frischegrenze ist unsere interne Prüfregel.</p>
+    </details>
     ${suggestions.length ? `<details class="card meeting-suggestions"${matchMedia("(min-width: 691px)").matches ? " open" : ""}>
       <summary><h2>Vorschläge für die Sitzung <small>${suggestions.length}</small></h2></summary>
       <div class="meeting-bundles">${suggestions.map(({ title, idea, ids }, index) =>
@@ -208,7 +226,10 @@ export function mountMeeting(host, { entries, cases, plan, club, day, notify, do
           <label class="field">Vorhaben suchen<input type="search" data-meeting-query placeholder="Projekt oder Förderstelle"></label>
           <label class="field">Themenbereich<select data-meeting-filter><option value="">Alle Themen</option>
             ${typeOptions.map(([value, label]) => `<option value="${escape(value)}">${escape(label)}</option>`).join("")}</select></label>
+          <label class="field">Zeithorizont<select aria-label="Zeithorizont" data-rating-filter><option value="">Alle Zeithorizonte</option>${Object.entries(horizonLabels).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
+          <label class="field">Sortieren nach<select aria-label="Sortieren nach" data-rating-sort><option value="priority">Empfohlene Priorität</option><option value="effort">Geringster Aufwand</option><option value="deadline">Nächste belegte Frist</option><option value="title">Projektname</option></select></label>
         </div>
+        <p data-rating-refresh hidden>Bewertung geändert. Die Karte bleibt während deiner Eingabe an ihrem Platz. <button type="button" data-meeting-action="reorder">Reihenfolge und Filter aktualisieren</button></p>
         ${hadErrors ? '<p class="record">Einige Akten konnten nicht geladen werden. <button type="button" data-meeting-action="retry">Erneut laden</button></p>' : ""}
         <div data-meeting-options>${opportunities(sorted, plan, day)}</div>
         <p hidden data-meeting-empty>Zu dieser Suche gibt es keine Treffer.</p>
@@ -222,6 +243,9 @@ export function mountMeeting(host, { entries, cases, plan, club, day, notify, do
   const list = host.querySelector("[data-meeting-options]");
   const query = host.querySelector("[data-meeting-query]");
   const filter = host.querySelector("[data-meeting-filter]");
+  const horizonFilter = host.querySelector('[data-rating-filter]');
+  const sort = host.querySelector('[data-rating-sort]');
+  const refresh = host.querySelector('[data-rating-refresh]');
 
   function renderDraft() {
     draft.hidden = plan.draft === null;
@@ -293,13 +317,27 @@ export function mountMeeting(host, { entries, cases, plan, club, day, notify, do
     const term = query.value.trim().toLocaleLowerCase("de-DE");
     let visible = 0;
     for (const element of list.querySelectorAll("[data-meeting-search]")) {
-      element.hidden = Boolean((filter.value && element.dataset.meetingType !== filter.value) || !element.dataset.meetingSearch.includes(term));
+      element.hidden = Boolean((filter.value && element.dataset.meetingType !== filter.value) || (horizonFilter.value && element.dataset.horizon !== horizonFilter.value) || !element.dataset.meetingSearch.includes(term));
       if (!element.hidden) visible++;
     }
     host.querySelector("[data-meeting-empty]").hidden = visible > 0;
   }
 
   host.addEventListener("input", event => {
+    if (event.target.matches('[data-rating]')) {
+      const id=event.target.closest('[data-rating-id]').dataset.ratingId;
+      const value=event.target.type==='checkbox'?event.target.checked:event.target.value;
+      plan.assessments[id]=cleanAssessment({...plan.assessments[id],[event.target.dataset.rating]:value});
+      changed();
+      const card=event.target.closest('[data-rating-id]'), entry=byId.get(id), rating=priority(entry,plan.assessments[id],day);
+      const template=document.createElement('template');
+      template.innerHTML=priorityCard(entry,plan.assessments[id],day);
+      card.querySelector('.priority-summary').replaceWith(template.content.querySelector('.priority-summary'));
+      card.querySelector('.priority-result').replaceWith(template.content.querySelector('.priority-result'));
+      card.querySelector('.priority-basis').replaceWith(template.content.querySelector('.priority-basis'));
+      card.dataset.horizon=rating.horizon;
+      refresh.hidden=false;
+    }
     if (event.target === query) filterList();
     if (event.target.matches("[data-meeting-text]")) {
       plan.draft = event.target.value;
@@ -309,6 +347,8 @@ export function mountMeeting(host, { entries, cases, plan, club, day, notify, do
   host.addEventListener("change", event => {
     const target = event.target;
     if (target === filter) filterList();
+    if (target === horizonFilter) filterList();
+    if (target === sort || target === horizonFilter) reorder();
     const picked = target.dataset.meetingPick;
     if (picked && byId.has(picked)) {
       if (target.checked) plan.choices[picked] = { decision: "clarify", mine: false, bundle: "" };
@@ -329,6 +369,19 @@ export function mountMeeting(host, { entries, cases, plan, club, day, notify, do
       changed();
     }
   });
+  function reorder() {
+      const ordered=[...list.querySelectorAll('[data-rating-id]')].sort((a,b)=>{
+        const x=byId.get(a.dataset.ratingId),y=byId.get(b.dataset.ratingId);
+        const px=priority(x,plan.assessments[x.row.id],day),py=priority(y,plan.assessments[y.row.id],day);
+        if(sort.value==='title')return x.item.title.localeCompare(y.item.title,'de-DE');
+        if(sort.value==='effort')return px.effort-py.effort || comparePriority(x,y);
+        if(sort.value==='deadline')return (px.days!=null&&px.days>=0?px.days:Infinity)-(py.days!=null&&py.days>=0?py.days:Infinity) || comparePriority(x,y);
+        return comparePriority(x,y);
+      });
+      ordered.forEach(card=>list.append(card));
+      filterList();
+      refresh.hidden=true;
+  }
   host.addEventListener("submit", event => {
     if (!event.target.matches(".meeting-package")) return;
     event.preventDefault();
@@ -362,6 +415,7 @@ export function mountMeeting(host, { entries, cases, plan, club, day, notify, do
       notify("Vorschlag übernommen. Deine bisherigen Zuordnungen bleiben erhalten.");
     }
     const action = button.dataset.meetingAction;
+    if (action === 'reorder') reorder();
     if (action === "retry") retry();
     if (action === "jump") review.scrollIntoView({ block: "start" });
     if (action === "write" && selected().length) {
