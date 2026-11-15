@@ -793,14 +793,16 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     leiste(); }
   // Aus Geld wird etwas, das man sich vorstellen kann. Die Sachen und ihre Preise stehen in der Vereinsdatei.
   // Formuliert als Vergleich, nicht als Versprechen: euer Beitrag geht in den ganzen Verein, nicht genau in diese Bälle.
-  function wirkung(betrag){ const W=(C.wirkung||[]).filter(x=>x&&x.titel&&+x.preis>0); if(!W.length||!(betrag>0))return null;
+  // Heißt seit 0.99.39 wirkungZahl: Unter dem Namen wirkung gab es schon die Funktion für den Satz je Position (oben). Die zweite hat die erste
+  // überschrieben, deshalb fehlte im Paket nach der Unterschrift bei jeder Position der Satz, was sie bewirkt.
+  function wirkungZahl(betrag){ const W=(C.wirkung||[]).filter(x=>x&&x.titel&&+x.preis>0); if(!W.length||!(betrag>0))return null;
     // Eine Zahl, die man sich vorstellen kann: am liebsten zwischen 3 und 15, sonst die nächstbeste
     const kand=W.map(w=>({w,n:Math.floor(betrag/+w.preis)})).filter(x=>x.n>=1);
     if(!kand.length)return null;
     const note=n=>n>=3&&n<=15?0:n<3?3-n:n-15;
     kand.sort((a,b)=>note(a.n)-note(b.n)||+b.w.preis-+a.w.preis);
     const b=kand[0]; return {n:Math.min(b.n,99), titel:b.n===1?(b.w.eins||b.w.titel):b.w.titel}; }
-  function wirkungHtml(c){ const w=wirkung(c&&c.netto_gesamt); if(!w)return '';
+  function wirkungHtml(c){ const w=wirkungZahl(c&&c.netto_gesamt); if(!w)return '';
     return `<div class="wirk"><b>${w.n}</b><span>So viel wie ${w.n} ${esc(w.titel)}. Euer Beitrag geht in den ganzen Verein, das hier ist nur zum Vorstellen.</span></div>`; }
   function korb(){
     const K=$('#korbIn'); if(!K)return; if(S.auto&&!fertig()){ const f0=fristDatum(rechnung()); if(f0&&f0<iso(new Date()))S.auto=false; } if(!fertig())angebotPruefen(); const c=rechnung(), mn=id=>(M.find(m=>m.id===id)||{}).name||id, V=D.verein||{};

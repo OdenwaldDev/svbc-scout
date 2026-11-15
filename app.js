@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.38', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.39', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18593,6 +18593,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.39',v:'0.99.39',datum:'2026-11-15',titel:'Partner-Präsentation: Wirkung je Position wieder da',kurz:'Im Paket nach der Unterschrift steht bei jeder Position wieder, was sie bewirkt. Beim Trainer steht die Mannschaft auf der Startseite wieder vorn.',
+   punkte:[
+    {ic:'\u{1F4AC}',t:'Was eure Unterstützung bewirkt',d:'In der Präsentation steht nach der Unterschrift bei jeder Position wieder ein Satz, wofür sie gut ist. Der Satz war durch einen Fehler verschwunden.',r:'partner'},
+    {ic:'\u26BD',t:'Trainer: Mannschaft zuerst',d:'Auf der Startseite des Trainers steht die Mannschaft wieder vor dem Spielerkonto.',r:'team'}
+   ]},
   {id:'0.99.38',v:'0.99.38',datum:'2026-11-15',titel:'Treffpunkt, Rückennummern, Partner-Profil intern',kurz:'Der Treffpunkt steht am Spiel, die Rückennummer in „Meine Mannschaft“. Das Partner-Team bekommt ein internes Profil je Firma mit Vorschlag, wen man anspricht. Die Startseite ist kürzer, und auf den Banden steht nur noch der Partner.',
    punkte:[
     {ic:'\u{1F4CD}',t:'Treffpunkt beim Spiel',d:'Das Trainerteam trägt im Termin Uhrzeit und Ort ein. Die Spieler der Mannschaft sehen es in den Terminen, unter „Meine Mannschaft“ und auf der Startseite. Eine Mitteilung geht dabei nicht raus.'},
@@ -34753,7 +34758,7 @@ if(typeof svInsights === 'function'){ const _i = svInsights; svInsights = functi
 
 // „Deine Bereiche“: Das Spielerkonto steht nur bei denen vorn, die selbst spielen oder trainieren. Alle anderen finden es am Ende der Liste.
 if(typeof htZiele === 'function'){ const _z = htZiele; htZiele = function(){ const Z = _z.apply(this, arguments);
-  try{ const k = hzSicht(), i = Z.indexOf('spielerkonto'); if(i >= 0 && !['spieler', 'trainer'].includes(k) && !(typeof MT100 !== 'undefined' && MT100.d && MT100.d.ok)){ Z.splice(i, 1); Z.push('spielerkonto'); } }catch(e){} return Z; }; }
+  try{ const k = hzSicht(), i = Z.indexOf('spielerkonto'); if(i >= 0 && k !== 'spieler' && !(typeof MT100 !== 'undefined' && MT100.d && MT100.d.ok)){ Z.splice(i, 1); Z.push('spielerkonto'); }   /* seit 0.99.39 auch beim Trainer hinten: Für ihn steht die Mannschaft vorn (Rollenkatalog 3.2), außer er spielt selbst */ }catch(e){} return Z; }; }
 
 // Karte „Neue Meldungen“: Sie zählte bisher alles Ungelesene, auch Radar, Scouting und Trainings-Scores. Die Leitung bekommt dort nur noch,
 // was sie betrifft (Organisation, Zugänge, Partner, System), das Trainerteam alles außer Scouting. Die Meldungen selbst bleiben, wo sie sind (Glocke).
