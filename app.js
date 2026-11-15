@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.36', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.37', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18593,6 +18593,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.37',v:'0.99.37',datum:'2026-11-15',titel:'Förderakten übernehmen',kurz:'Bestehende Förderakten können aus einer Exportdatei in den Vereinsbestand übernommen werden.',
+   punkte:[{ic:'📁',t:'Vereinsdossier speichern',d:'Beim Import und beim Speichern wird gezielt das Vereinsdossier aktualisiert.',r:'foerderung'}]},
   {id:'0.99.36',v:'0.99.36',datum:'2026-11-15',titel:'Förderzentrale für den Verein',kurz:'Im Vereinsbereich gibt es einen Arbeitskorb für Förderfälle und Angebote.',
    punkte:[{ic:'📁',t:'Förderfälle im Arbeitskorb',d:'Vorstand und berechtigte Vereinsrollen sehen Vorhaben, Angebote und Originalquellen.',r:'foerderung'},
            {ic:'✉️',t:'Voranfragen prüfen',d:'Das Anschreiben und die Projektskizze lassen sich nach Prüfung als EML-Datei exportieren.',r:'foerderung'}]},
