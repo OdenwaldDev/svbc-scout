@@ -395,7 +395,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // 3D kostet Daten und Rechenzeit: das Trikot wird erst aufgebaut, wenn jemand es antippt
   function trikotMoeglich(){ return !fertig(); }
   // ---------- 0.80: Station „So sieht deine Bande aus“ ----------
-  // Das Logo aus der Präsentation im Partner-CI (weiße Bande, Logo in Marine, Vereinsabsender), live am Spielfeldrand.
+  // Das Logo aus der Präsentation im Partner-CI (weiße Bande, Logo in Marine, ohne Vereinsabsender), live am Spielfeldrand.
   // Daten nur aus banden_oeffentlich (Zahl freier Plätze je Bereich), keine Namen anderer Partner, keine Kontaktdaten.
   const BD={d:null,an:false,beob:false,laden:null,layout:'mitte',format:'300x80',L:null,res:null};
   function bdSpec(){ const dk=D.deck||{}, nm=dk.kurzname||dk.firma||''; return {format:BD.format,stil:'ci',layout:BD.layout,firma:nm,name:nm,branche:dk.branche||'',web:dk.web||'',kontakt:true,nameAn:!dk.logo,logo:dk.logo||null}; }

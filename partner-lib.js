@@ -2589,8 +2589,8 @@ const LOGO = (() => {
    Beta 0.80 · Bandencreator: Gestaltung, Druckdaten und Platzszene
    Gemeinsam für die App (svm79.js) und die Partner-Präsentation (partner.js), braucht LOGO (logolib.js).
    - Feste Regeln, damit alle Banden zusammenpassen: Sicherheitsabstand, Logo-Zone, Name und Slogan, Kontaktleiste unten,
-     im Partner-CI-Stil rechts der Vereinsabsender (Doppel-Logo, „SV/BSC MÖRLENBACH“, Handschrift „Mörlenbach steht zusammen!“
-     mit dem einen orangen Unterstrich). Schriften und Farben aus dem Corporate Design Manual.
+     Partner-CI heißt: weiße Bande, Marine, Logo einfarbig. Seit 0.99.38 steht KEIN Vereinsabsender mehr auf der Bande (kein Wappen,
+     kein „SV/BSC“, keine Handschrift): Auf die Bande gehört nur der Partner. Schriften und Farben aus dem Corporate Design Manual.
    - Alles in Millimetern. layout() liefert eine Liste von Bausteinen (Fläche, Linie, Bild, Text, Strich) mit ihren Kästen,
      daraus malen (Canvas), svg (Vektor mit eingebetteten Schriften), pdf (Originalgröße mit 2 cm Beschnitt und Schnittmarken).
    - Text passt immer: Schrift wird kleiner (auch zweizeilig), nie abgeschnitten. Lesbar heißt: Versalhöhe ≥ Abstand / 250.
@@ -2608,7 +2608,6 @@ const BANDE = (() => {
   const BESCHNITT = 20;           // mm je Seite
   const LAYOUTS = [['links', 'Logo links'], ['mitte', 'Logo groß'], ['claim', 'Mit Slogan']];
   const FAM = { c:"'BandeC','Barlow Condensed','PZC','BarlowC','Arial Narrow',sans-serif", t:"'BandeT','Barlow','InterV',Arial,sans-serif", h:"'BandeH','Caveat','PZHand',cursive" };
-  const ABSENDER = 'SV/BSC MÖRLENBACH', HAND = 'Mörlenbach steht zusammen!';
   const SCHRIFTEN = [['BandeC', 'barlowc-900.woff2', '900'], ['BandeT', 'barlow-500.woff2', '500'], ['BandeT', 'barlow-600.woff2', '600'], ['BandeT', 'barlow-700.woff2', '700'], ['BandeH', 'caveat-700.woff2', '700']];
 
   /* ---------- Farben ---------- */
@@ -2693,30 +2692,8 @@ const BANDE = (() => {
     ops.push({ t:'rect', x:-BESCHNITT, y:H - bandH, w:W + 2 * BESCHNITT, h:bandH + BESCHNITT, fill:band, rolle:'leiste' });
     const yTop = m, yBot = H - bandH - Math.round(m * .8), Hu = yBot - yTop;
     let x0 = m, x1 = W - m, wap = null;
-    // Vereinsabsender (nur Partner-CI): Doppel-Logo, Kurzabsender, Handschrift mit orangem Unterstrich
-    if(ci){
-      const aw = Math.round(Math.min(720, Math.max(460, W * .2))), ax = W - m - aw, gD = Math.round(H * .06), cx = ax + aw / 2;
-      ops.push({ t:'linie', x1:ax - gD, y1:yTop + Hu * .05, x2:ax - gD, y2:yBot - Hu * .05, w:4, stroke:C.marine, rolle:'trenner' });
-      x1 = ax - 2 * gD;
-      const wr = res.wappen && res.wappen.h ? res.wappen.w / res.wappen.h : 1.759;
-      const svF = { fam:'c', w:900, ls:.03 }, hF = { fam:'h', w:700 };
-      let ah = Math.min(Hu * .42, aw / wr), k = 1, sv, hd, g1, g2, us, tot;
-      for(let i = 0; i < 4; i++){
-        sv = einpassen(ABSENDER, svF, aw, Hu * .14 * k, H * .085 * k, 1);
-        hd = einpassen(HAND, hF, aw * .98, Hu * .2 * k, H * .1 * k, 1, .95);
-        if(hd.fs < H * .07 * k) hd = einpassen(HAND, hF, aw * .98, Hu * .36 * k, H * .1 * k, 2, .95);
-        g1 = ah * .16; g2 = H * .035 * k; us = H * .04 * k; tot = ah + g1 + sv.h + g2 + hd.h + us;
-        if(tot <= Hu + .5) break; const s = Hu / tot; ah *= s; k *= s;
-      }
-      let y = yTop + (Hu - tot) / 2;
-      wap = { t:'img', key:'wappen', x:cx - ah * wr / 2, y, w:ah * wr, h:ah, rolle:'wappen' }; ops.push(wap); y += ah + g1;
-      ops.push(textOp(sv, cx, y, 'c', C.marine, 'absender')); y += sv.h + g2;
-      const hop = textOp(hd, cx, y, 'c', C.marine, 'hand', { rot:-2.5 }); ops.push(hop);
-      const lw = mess(hd.L[hd.L.length - 1], hF).w / 100 * hd.fs, uy = y + hd.h + us * .35;
-      ops.push({ t:'strich', pts:[[cx - lw * .46, uy + us * .1], [cx, uy - us * .12], [cx + lw * .48, uy - us * .02]], w:H * .011, stroke:C.orange, rolle:'unterstrich',
-        box:{ x:cx - lw * .46, y:uy - us * .25, w:lw * .94, h:us * .5 } });
-      info.wappenHoehe = Math.round(ah);
-    }
+    // Kein Vereinsabsender mehr (Albert, 15.11.2026: „SV/BSC von den Banden runter, sollen nur die Partner drauf“). Bis 0.99.35 standen im
+    // Partner-CI rechts Doppel-Logo, „SV/BSC MÖRLENBACH“ und die Handschrift. Die Fläche gehört jetzt ganz der Firma. Nicht wieder einbauen.
     const aw = x1 - x0, quer = aw / Hu >= 2.1, cxA = x0 + aw / 2;
     const NAME = name.toUpperCase(), lay = spec.layout === 'mitte' || spec.layout === 'claim' ? spec.layout : 'links';
     const nF = { fam:'c', w:900 }, cF = { fam:'t', w:600 }, lF = { fam:'t', w:700, ls:.08 };
@@ -2837,8 +2814,6 @@ const BANDE = (() => {
       try{ const a = await LOGO.aufbereiten(spec.logo); const art = ci ? 'farbe:' + (spec.logoFarbe === 'schwarz' ? C.tinte : C.marine) : 'original';
         const c = await LOGO.variante(spec.logo, art); res.logo = { w:c.width, h:c.height, hell:a.hell, farben:a.farben }; res.logoBild = c; res.analyse = a; }
       catch(e){ res.logoFehler = e.message || 'Logo lässt sich nicht laden'; } }
-    if(ci){ try{ const w = await laden(o.wappen || 'plakat/wappen/svbsc-moerlenbach.webp'); res.wappenBild = w; res.wappen = { w:w.naturalWidth || 1379, h:w.naturalHeight || 784 }; }
-      catch(e){ try{ const w = await laden('partner/svbsc.png'); res.wappenBild = w; res.wappen = { w:w.naturalWidth, h:w.naturalHeight }; }catch(_){} } }
     return res;
   }
 
