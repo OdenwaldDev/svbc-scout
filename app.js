@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.35', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.36', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18593,6 +18593,9 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.36',v:'0.99.36',datum:'2026-11-15',titel:'Förderzentrale für den Verein',kurz:'Im Vereinsbereich gibt es einen Arbeitskorb für Förderfälle und Angebote.',
+   punkte:[{ic:'📁',t:'Förderfälle im Arbeitskorb',d:'Vorstand und berechtigte Vereinsrollen sehen Vorhaben, Angebote und Originalquellen.',r:'foerderung'},
+           {ic:'✉️',t:'Voranfragen prüfen',d:'Das Anschreiben und die Projektskizze lassen sich nach Prüfung als EML-Datei exportieren.',r:'foerderung'}]},
   {id:'0.99.35',v:'0.99.35',datum:'2026-11-15',titel:'Bandenplan: zehn Fotos neu',kurz:'Zehn Banden gegenüber vom Clubhaus haben ein neues Foto: gerade gerichtet, schärfer und ohne Hecke oder Nachbartafel im Bild.',
    punkte:[
     {ic:'\u{1F4D0}',t:'Gerade statt schräg',d:'Die Fotos waren leicht von der Seite und von oben aufgenommen. Jetzt steht jede Tafel gerade und füllt ihre Bande im Rundgang ganz.',r:'partner'},
@@ -30263,7 +30266,7 @@ function bcPlatzWegDialog(id){
 // Gruppen wie in der Navigation (svm77, N77_GRP)
 const R80_GRUPPEN = ['Übersicht', 'Mannschaften', 'Spieltag', 'Kader & Scouting', 'Verein', 'Werkzeuge', 'Verwaltung'];
 const R80_GRUPPE = { planung:'Übersicht', termine:'Übersicht', mannschaft:'Mannschaften', mannschaften:'Mannschaften', spieltag:'Spieltag', plakat:'Spieltag',
-  kader:'Kader & Scouting', scouting:'Kader & Scouting', verein:'Verein', sponsoring:'Verein', orga:'Verein', kasse:'Verein', shop:'Verein',
+  kader:'Kader & Scouting', scouting:'Kader & Scouting', verein:'Verein', sponsoring:'Verein', foerderung:'Verein', orga:'Verein', kasse:'Verein', shop:'Verein',
   studio:'Werkzeuge', wissen:'Werkzeuge', verwaltung:'Verwaltung', finanzen:'Verwaltung' };
 function r80Gruppe(k){ return R80_GRUPPE[k] || 'Weitere'; }
 
@@ -34822,6 +34825,59 @@ if(typeof htOrdnen === 'function'){ const _o = htOrdnen; htOrdnen = function(){ 
 if(typeof htRender === 'function'){ const _r = htRender; htRender = function(){ const r = _r.apply(this, arguments); try{ hzOrdnen(); }catch(e){} return r; }; }
 if(typeof fr100Ich === 'function'){ const _f = fr100Ich; fr100Ich = async function(){ const r = await _f.apply(this, arguments); try{ hzBald(); }catch(e){} return r; }; }
 if(typeof document !== 'undefined') setTimeout(() => { try{ hzOrdnen(); }catch(e){} }, 0);
+
+/* Förderzentrale verwendet Sitzung und Vereinsidentität der Sportzentrale. */
+let svFoerderRueckkehr = new URLSearchParams(location.search).get('outlook');
+let svFoerderDirekteinstieg = location.hash === '#foerderung';
+function svFoerderDarf() {
+  return navigator.onLine && !SVB.offline && !svGast() &&
+    typeof svDarf === 'function' && svDarf('foerderung') === true;
+}
+window.svFoerderKontext = function() {
+  if (!svFoerderDarf()) return null;
+  const v = window.VEREIN || {};
+  const outcome = svFoerderRueckkehr;
+  svFoerderRueckkehr = null;
+  return { sb: SVB.sb, outcome, club: { name:v.texte?.name, short:v.texte?.kurz, place:v.texte?.ort, blue:v.farben?.brand } };
+};
+SV_PAGES.foerderung = ['Förderzentrale','Vereinsbedarf, Förderquellen und Voranfragen'];
+SV_TBL.foerderung = ['wallet','Förderzentrale'];
+N77_GRP.Verein.splice(N77_GRP.Verein.indexOf('sponsoring')+1,0,'foerderung');
+{
+  const erlaubt = svTabAllowed;
+  svTabAllowed = function(tab) { return tab === 'foerderung' ? svFoerderDarf() : erlaubt.apply(this, arguments); };
+  const weiter = goTab;
+  goTab = function(tab) {
+    const result = weiter.apply(this, arguments);
+    const panel = document.querySelector('#panel-foerderung');
+    if (panel && !svFoerderDarf()) panel.replaceChildren();
+    if (panel?.classList.contains('active') && svFoerderDarf() && !panel.firstElementChild) {
+      const frame = document.createElement('iframe');
+      frame.title = 'SV/BSC Förderzentrale';
+      frame.src = 'foerderzentrale/index.html';
+      frame.width = '100%';
+      frame.height = '800';
+      frame.style.border = '0';
+      frame.setAttribute('referrerpolicy','same-origin');
+      panel.append(frame);
+    }
+    return result;
+  };
+}
+{
+  const init = svInit;
+  svInit = function() {
+    const angefragt = svFoerderDirekteinstieg || location.hash === '#foerderung';
+    svFoerderDirekteinstieg = false;
+    const result = init.apply(this,arguments);
+    if (angefragt && svCurTab() !== 'foerderung') {
+      Promise.resolve(svrLoad(true)).then(() => {
+        if (svFoerderDarf() && svCurTab() === 'home') goTab('foerderung');
+      });
+    }
+    return result;
+  };
+}
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm107css'; s.textContent="/* 0.99.33: Startseite nach dringend und wichtig (svm107.js) */\n#panel-home > [data-hz-weg]{display:none!important;}\n.hz-k{margin:20px 2px 8px;font-size:12.5px;line-height:1.3;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);}\n.hz-k.ruhig{text-transform:none;letter-spacing:0;font-weight:500;font-size:14.5px;margin:8px 2px 14px;}\n#svHello + .hz-k{margin-top:10px;}\n.hz-anp{display:block;width:100%;min-height:46px;margin:14px 0 18px;padding:10px 14px;border-radius:var(--r-lg,14px);border:1px dashed var(--line);background:none;color:var(--ink2);font:inherit;font-size:14px;text-align:center;cursor:pointer;}\n.hz-anp:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}\n/* Der Wisch-Tipp schiebt die Karte „Neue Meldungen“ kurz zur Seite: Das darf die Seite nicht breiter machen */\n#panel-home > #sc2Home{overflow-x:clip;overflow-clip-margin:14px;}\n/* Die Leitung braucht das Lagebild aus Kader, Training und Radar nicht auf der Startseite */\n#panel-home[data-hz=\"leitung\"] #svBriefBtn{display:none!important;}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm92css'; s.textContent="/* Beta 0.99.4 · Fragen mit Ja und Nein */\n.fr-karte{border:1px solid rgba(91,155,255,.45)!important;margin-bottom:14px}\n.fr-h{margin:0 0 10px;font-size:17px}\n.fr-liste{display:flex;flex-direction:column;gap:10px}\n.fr-z{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08));transition:box-shadow .3s,background .3s}\n.fr-z.fr-hin{box-shadow:0 0 0 2px var(--brand,#2f6bff)}\n.fr-tx{display:flex;flex-direction:column;gap:2px;min-width:0}\n.fr-tx span,.fr-tx small{color:var(--ink3);font-size:13.5px;overflow-wrap:anywhere}\n.fr-akt{display:flex;gap:8px;flex:none}\n.fr-akt .btn{min-height:44px;white-space:nowrap}\n.fr-akt .btn[disabled]{opacity:.5}\n@media (max-width:640px){.fr-z{grid-template-columns:1fr}.fr-akt .btn{flex:1}}\n"; document.head.appendChild(s); }catch(e){} })();
