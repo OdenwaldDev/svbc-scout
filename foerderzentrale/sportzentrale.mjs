@@ -15,6 +15,17 @@ async function pdfHash(pdf) {
 export function createSportApi(context) {
   const { sb, club } = context;
   let outlook = { configured:false, address:null };
+  let crest;
+  const makePdf = async (item,facts,day) => {
+    crest ??= fetch(new URL("../logo.png",import.meta.url)).then(async response => {
+      if (!response.ok) throw new Error("Das Vereinswappen konnte für die Projektskizze nicht geladen werden.");
+      return new Uint8Array(await response.arrayBuffer());
+    }).catch(error => {
+      crest = null;
+      throw error;
+    });
+    return new Uint8Array(projectPdf(window.jspdf.jsPDF,item,facts,club,day,await crest));
+  };
   const mail = async (action, payload={}) => {
     const result=await sb.functions.invoke("foerder-outlook",{body:{action,...payload}});
     if (result.error) {
@@ -31,9 +42,11 @@ export function createSportApi(context) {
   return async (path, method = "GET", data) => {
     const day = today();
     if (path === "state") {
-      const [stand,connection]=await Promise.all([rpc("stand"),mail("status").catch(()=>({configured:false,address:null}))]);
+      const [stand,connection,session]=await Promise.all([
+        rpc("stand"),mail("status").catch(()=>({configured:false,address:null})),sb.auth.getSession(),
+      ]);
       outlook=connection;
-      return { ...stand, club, day, mode:"Sportzentrale", outlook, ai:false };
+      return { ...stand, club, day, mode:"Sportzentrale", outlook, ai:false, meetingAccount:session.data?.session?.user?.id };
     }
     if (path === "outlook/connect") return mail("connect");
     if (path === "outlook/disconnect") return outlook=await mail("disconnect");
@@ -51,12 +64,16 @@ export function createSportApi(context) {
     const validApproval = approval?.review === review ? approval : null;
     const problems = draftProblems(item,facts,day);
     if (!action) {
-      const currentHash = validApproval && !problems.length
-        ? await pdfHash(new Uint8Array(projectPdf(window.jspdf.jsPDF,item,facts,club,day))) : null;
+      let currentHash = null;
+      let documentWarning = "";
+      if (validApproval && !problems.length) {
+        try { currentHash = await pdfHash(await makePdf(item,facts,day)); }
+        catch { documentWarning = "Der PDF-Anhang konnte nicht geprüft werden. Du kannst die Akte bearbeiten. Lade sie erneut, bevor du den Entwurf freigibst oder exportierst."; }
+      }
       return { item, report:evaluate(item,facts,day), review,
-        approval:currentHash && currentHash === validApproval?.pdfHash ? validApproval : null, events, problems, outlookUnresolved };
+        approval:currentHash && currentHash === validApproval?.pdfHash ? validApproval : null, events, problems, outlookUnresolved, documentWarning };
     }
-    const pdf = new Uint8Array(projectPdf(window.jspdf.jsPDF,item,facts,club,day));
+    const pdf = await makePdf(item,facts,day);
     if (action === "approve") {
       if (problems.length || data.review !== review || data.confirmed !== true) throw new Error("Bitte die aktuelle Fassung prüfen und bestätigen.");
       return rpc("freigeben",id,{review, account, pdfHash:await pdfHash(pdf), confirmed:true});

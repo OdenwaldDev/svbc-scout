@@ -1,6 +1,7 @@
 import { blankCase, caseDecisionText, categories, euro, evaluate, instruments, isOriginal, makeLetter, offerRequestStatuses, requiredChecks,
   results, routeStatuses, sourceRegister, sourceUrl, states } from "./domain.mjs";
 import { embeddedApi, outlookOutcome } from "./sportzentrale.mjs";
+import { loadMeeting, mountMeeting } from "./meeting.mjs";
 
 const root = document.querySelector("#app"), notice = document.querySelector("#notice");
 const steps = ["Projekt", "Angebot und Quellen", "Förderprüfung", "Entscheidung", "Anschreiben"];
@@ -9,6 +10,8 @@ const factLabels = { legal:"Rechtsträger", representation:"Vertretung und Absen
 const factStatuses = { unverified:"Unbestätigt", verified:"Bestätigt", conflicting:"Widersprüchlich", expired:"Abgelaufen" };
 let state, item, detail, page = "cases", step = 0, dirty = false, busy = false, noticeTimer;
 let queue = null;
+let meeting;
+let meetingScope;
 
 function escape(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[char]);
@@ -50,7 +53,15 @@ function downloadLink(action, label) {
   return embeddedApi ? button(label, "download-" + action)
     : `<a class="button" href="/api/cases/${item.id}/${action}">${x(label)}</a>`;
 }
-async function refresh() { state = await api("state"); queue = null; }
+async function refresh() {
+  state = await api("state");
+  queue = null;
+  const scope = embeddedApi ? state.meetingAccount || "" : "einzelplatz";
+  if (!meeting || scope !== meetingScope) {
+    meetingScope = scope;
+    meeting = loadMeeting(scope);
+  }
+}
 async function refreshDetail() { detail = item.id ? await api("cases/" + item.id) : null; }
 async function openCase(id, selectedStep = 0) {
   detail = await api("cases/" + id);
@@ -62,10 +73,10 @@ async function openCase(id, selectedStep = 0) {
   page = "case";
 }
 async function openCaseAddress() {
-  if (location.hash === "#arbeitskorb") {
+  if (location.hash === "#arbeitskorb" || location.hash === "#leitersitzung") {
     if (dirty && !window.confirm("Ungespeicherte Eingaben verwerfen?")) return;
     dirty = false;
-    page = "queue";
+    page = location.hash === "#leitersitzung" ? "meeting" : "queue";
     return;
   }
   const address = /^#vorgang\/([a-f0-9-]{36})\/([a-z]+)$/.exec(location.hash);
@@ -84,7 +95,7 @@ function fileDownload(content, type, filename) {
 function top() {
   const tab = (id, title) => button(title, "page-" + id, "", (page === id || page === "case" && id === "cases") ? 'aria-current="page"' : "");
   return `<header class="top"><div class="top-inner"><button type="button" class="brand" data-action="page-cases"><span class="brand-mark">${x(state.club.short)}</span><span><strong>Förderzentrale</strong><small>${x(state.club.name)}</small></span></button>
-  <nav aria-label="Hauptnavigation">${tab("cases","Vorgänge")}${tab("queue","Arbeitskorb")}${tab("sources","Förderradar")}${tab("facts","Vereinsdossier")}${tab("settings","Outlook")}</nav></div></header>`;
+  <nav aria-label="Hauptnavigation">${tab("cases","Vorgänge")}${tab("meeting","Leitersitzung")}${tab("queue","Arbeitskorb")}${tab("sources","Förderradar")}${tab("facts","Vereinsdossier")}${tab("settings","Outlook")}</nav></div></header>`;
 }
 function caseList() {
   const rows = state.cases.map(row => {
@@ -93,7 +104,8 @@ function caseList() {
   }).join("");
   return lead("Fördervorgänge", "Vom konkreten Vereinsbedarf zur geprüften Voranfrage.", button("Projekt anlegen","new","primary")) +
     `<div class="layout">${card("Projekte", rows || '<div class="empty"><h3>Welchen Bedarf wollt ihr zuerst angehen?</h3><p class="muted">Lege ein Projekt an. Angebote und Förderquellen kannst du anschließend hinzufügen.</p></div>')}
-    <aside class="stack">${card("Bewerbungsassistent",`<p class="muted">Prüfe nächste Schritte, Förderbedingungen und vorbereitete Anschreiben je Vorgang.</p><div class="actions">${button("Zum Arbeitskorb","page-queue","primary")}</div>`, "accent")}
+    <aside class="stack">${card("Leitersitzung vorbereiten",`<p class="muted">Wähle Vorhaben und erstelle eine Vorlage für die Leitung.</p><div class="actions">${button("Zur Leitersitzung","page-meeting","primary")}</div>`, "accent")}
+    ${card("Bewerbungsassistent",`<p class="muted">Prüfe nächste Schritte und vorbereitete Anschreiben.</p><div class="actions">${button("Zum Arbeitskorb","page-queue")}</div>`)}
     ${card("Originalquellen",`<div class="source-list">${sourceRegister.map(s => link(s)).join("")}</div><div class="actions">${button("Förderradar öffnen","page-sources")}</div>`)}</aside></div>`;
 }
 const queueGroups = {
@@ -123,7 +135,7 @@ async function loadQueue() {
     entries.push(...batch.map((result, i) => ({ row:rows[i], ...result.value })));
   }
   queue = entries;
-  if (page === "queue") render();
+  if (page === "queue" || page === "meeting") render();
 }
 function workQueue() {
   const rows = queue ? Object.entries(queueGroups).map(([group, label]) => {
@@ -329,7 +341,7 @@ function letterPage() {
   ${field("contact.salutation","Persönliche Anrede")}${select("contact.source","Originalquelle der Adresse",sourceChoices())}
   ${field("contact.sender","Absendername im Verein")}${field("contact.role","Vereinsfunktion")}
   ${block("contact.relevance","Warum passt das Vorhaben zu diesem Empfänger?","Nutze einen konkreten Bezug, den du belegen kannst.")}
-  ${block("contact.request","Konkrete Bitte (optional)")}
+  ${block("contact.request","Welche Entscheidung oder Auskunft brauchst du?","Frag nach den konkreten Kostenpositionen, fehlenden Unterlagen oder dem nächsten Schritt.")}
   ${item.program.instrument === "partner" ? block("contact.offer","Welche Gegenleistung ist möglich?") : ""}
   </div><div class="actions">${button(item.draft ? "Anschreiben neu formulieren" : "Anschreiben erstellen","generate")}</div>`)}
   ${item.draft ? card("Voranfrage",`<div class="grid">${field("draft.subject","Betreff",{css:"wide"})}${block("draft.body","Anschreiben")}</div>
@@ -351,6 +363,7 @@ function casePage() {
   const pages = [projectPage,sourcesPage,rulesPage,decision,letterPage];
   return lead(item.title || "Neues Projekt", item.id ? "Fördervorgang · " + categories[item.type] : "Beginne mit einem tatsächlichen Vereinsbedarf.", button("Alle Vorgänge","page-cases")) +
     `<nav class="steps" aria-label="Arbeitsschritte">${steps.map((name,i)=>button(name,"step","",`data-i="${i}" ${i===step ? 'aria-current="step"' : ""}`)).join("")}</nav>
+    ${detail?.documentWarning ? `<p class="record" role="status">${x(detail.documentWarning)}</p>` : ""}
     <div class="layout"><div class="stack">${pages[step]()}</div><aside class="stack sticky">
     ${step === 3 ? "" : card("Fallstand",`<p>${tag(report.status,states[report.status])}</p>${item.followUp || next ? `<p class="muted">${x(item.followUp || next.reason)}</p>` : ""}`, "accent")}
     ${item.sources.length ? card("Belege",`<div class="source-list">${item.sources.map(s=>`<div>${link(s)}${s.file ? button("Datei öffnen","offer-download","",`data-id="${x(s.id)}"`) : ""}<small>${x(s.section)}</small></div>`).join("")}</div>`) : ""}
@@ -358,12 +371,22 @@ function casePage() {
     </aside></div>`;
 }
 function render() {
-  const hash = page === "queue" ? "#arbeitskorb" : page === "case" && item.id ? "#vorgang/" + item.id + "/" + stepAddresses[step] : "";
+  const hash = page === "meeting" ? "#leitersitzung" : page === "queue" ? "#arbeitskorb"
+    : page === "case" && item.id ? "#vorgang/" + item.id + "/" + stepAddresses[step] : "";
   const current = location.hash;
-  if (hash || current.startsWith("#vorgang/") || current === "#arbeitskorb") history.replaceState(history.state, "", location.pathname + location.search + hash);
+  if (hash || current.startsWith("#vorgang/") || current === "#arbeitskorb" || current === "#leitersitzung") {
+    history.replaceState(history.state, "", location.pathname + location.search + hash);
+  }
+  const meetingPage = () => lead("Leitersitzung", "Vorhaben auswählen, Aufgaben übernehmen und einen Beschlussvorschlag mit in die Sitzung nehmen.") +
+    `<p class="muted">Auswahl und Sitzungstext bleiben in diesem Browser gespeichert.${embeddedApi ? " Beim Abmelden werden sie auf diesem Gerät entfernt. Lade deinen fertigen Text vorher herunter." : ""}</p>` +
+    '<div id="meeting-desk" class="stack"></div>';
   root.innerHTML = top() + '<main class="shell" id="content">' +
-    ({ cases:caseList,queue:workQueue,case:casePage,sources:radar,facts:factsPage,settings })[page]() + '</main>';
-  if (page === "queue") void loadQueue();
+    ({ cases:caseList,meeting:meetingPage,queue:workQueue,case:casePage,sources:radar,facts:factsPage,settings })[page]() + '</main>';
+  if (page === "meeting") mountMeeting(root.querySelector("#meeting-desk"), {
+    entries: queue, cases: state.cases, plan: meeting, club: state.club, day: state.day,
+    notify: showNotice, download: fileDownload, retry: () => { queue = null; render(); },
+  });
+  if (page === "queue" || page === "meeting") void loadQueue();
 }
 function changed() {
   dirty = true;
@@ -478,7 +501,7 @@ root.addEventListener("click", async e => {
     if (action === "generate") {
       if (item.draft && !window.confirm("Vorhandenen Text durch einen neu formulierten Entwurf ersetzen?")) return;
       if (!item.title || !item.need || !item.measure) throw new Error("Erfasse zuerst Projekttitel, Bedarf und geplante Umsetzung.");
-      item.draft=makeLetter(item,state.club); changed(); render();
+      item.draft=makeLetter(item,state.club,state.day); changed(); render();
     }
     if (action === "ai") {
       if (dirty) throw new Error("Zuerst die Fassung speichern.");
@@ -533,7 +556,7 @@ try {
   else await openCaseAddress();
   render();
   window.addEventListener("hashchange", async () => {
-    if (!(location.hash.startsWith("#vorgang/") || location.hash === "#arbeitskorb") || busy) return;
+    if (!(location.hash.startsWith("#vorgang/") || ["#arbeitskorb", "#leitersitzung"].includes(location.hash)) || busy) return;
     try { await openCaseAddress(); render(); }
     catch (error) { showNotice(error.message, true); }
   });

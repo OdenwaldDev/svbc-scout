@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.39', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.40', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18593,6 +18593,9 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.40',v:'0.99.40',datum:'2026-11-15',titel:'Fördermöglichkeiten gemeinsam vorbereiten',kurz:'Wähle Vorhaben für die Leitersitzung, bündele die Vorbereitung und erstelle eine Sitzungsvorlage mit deinen Aufgaben.',
+   punkte:[{ic:'✓',t:'Auswahl für die Leitersitzung',d:'Förderakten vergleichen, Vorhaben anhaken und nächste Schritte festlegen. Deine Auswahl bleibt bis zum Abmelden in diesem Browser gespeichert.',r:'foerderung'},
+           {ic:'✓',t:'Unterlagen mit Vereinsbriefkopf',d:'Projektskizzen enthalten das Vereinswappen und nachvollziehbare Kosten. Voranfragen gehen auf den Bedarf und die konkrete Förderstelle ein.',r:'foerderung'}]},
   {id:'0.99.39',v:'0.99.39',datum:'2026-11-15',titel:'Partner-Präsentation: Wirkung je Position wieder da',kurz:'Im Paket nach der Unterschrift steht bei jeder Position wieder, was sie bewirkt. Beim Trainer steht die Mannschaft auf der Startseite wieder vorn.',
    punkte:[
     {ic:'\u{1F4AC}',t:'Was eure Unterstützung bewirkt',d:'In der Präsentation steht nach der Unterschrift bei jeder Position wieder ein Satz, wofür sie gut ist. Der Satz war durch einen Fehler verschwunden.',r:'partner'},
@@ -34828,6 +34831,22 @@ if(typeof document !== 'undefined') setTimeout(() => { try{ hzOrdnen(); }catch(e
 /* Förderzentrale verwendet Sitzung und Vereinsidentität der Sportzentrale. */
 let svFoerderRueckkehr = new URLSearchParams(location.search).get('outlook');
 let svFoerderDirekteinstieg = location.hash === '#foerderung';
+function svFoerderSitzungsdatenLeeren() {
+  try {
+    Object.keys(localStorage).filter(key => key.startsWith('svbsc-foerder-sitzungswahl-v1:'))
+      .forEach(key => localStorage.removeItem(key));
+  } catch { /* Ein gesperrter Browserspeicher enthält hier keine nutzbare Auswahl. */ }
+}
+{
+  const abmelden = SVB.signOut;
+  SVB.signOut = function() {
+    svFoerderSitzungsdatenLeeren();
+    return abmelden.apply(this, arguments);
+  };
+  SVB.sb.auth.onAuthStateChange(event => {
+    if (event === 'SIGNED_OUT') svFoerderSitzungsdatenLeeren();
+  });
+}
 function svFoerderDarf() {
   return navigator.onLine && !SVB.offline && !svGast() &&
     typeof svDarf === 'function' && svDarf('foerderung') === true;
@@ -34837,7 +34856,7 @@ window.svFoerderKontext = function() {
   const v = window.VEREIN || {};
   const outcome = svFoerderRueckkehr;
   svFoerderRueckkehr = null;
-  return { sb: SVB.sb, outcome, club: { name:v.texte?.name, short:v.texte?.kurz, place:v.texte?.ort, blue:v.farben?.brand } };
+  return { sb: SVB.sb, outcome, club: { name:v.texte?.name, short:v.texte?.kurz, place:v.texte?.ort, website:v.texte?.website, blue:v.farben?.brand } };
 };
 SV_PAGES.foerderung = ['Förderzentrale','Vereinsbedarf, Förderquellen und Voranfragen'];
 SV_TBL.foerderung = ['wallet','Förderzentrale'];

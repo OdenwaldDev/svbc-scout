@@ -278,20 +278,52 @@ export function evaluate(item, facts, day = today()) {
   return { checks, status, rows, total, eligible, funding, own, available, gap };
 }
 
-export function makeLetter(item, club) {
+const grantQuestions = {
+  goal: "Welche Nachweise braucht Ihre Stelle für die vorgesehenen Tore? Können die notwendige Kippsicherung und die Lieferung berücksichtigt werden?",
+  equipment: "Welche Anforderungen gelten für die Förderung der vorgesehenen Trainingsgeräte, etwa an den Stückpreis und den Nachweis der Nutzung?",
+  balls: "Kommt das Ausstattungspaket als einmalige Anschaffung infrage? Welche Positionen sollen wir im Angebot einzeln ausweisen?",
+  hardware: "Welche der beschriebenen Gerätekosten können berücksichtigt werden? Wie sollen wir Gerätekauf und Lizenzen in den Unterlagen ausweisen?",
+  subscription: "Welche Lizenzlaufzeit und welche Einrichtungskosten sind förderfähig? Wie soll ein mehrjähriges Angebot aufgeschlüsselt sein?",
+  storage: "Welche Anforderungen gelten für Standort, Nutzungsrecht und Genehmigungen? Welche Skizze und Kostennachweise brauchen Sie?",
+  health: "Welche Qualifikation der Leitung und welche Angaben zu Ablauf, Zielgruppe und Teilnahme brauchen Sie für die Prüfung?",
+  participation: "Welche Angaben zu Zielgruppe, Beteiligung und Durchführung brauchen Sie, um das Vorhaben Ihrem Programm zuzuordnen?",
+  other: "Welche der beschriebenen Kosten kommen für eine Förderung infrage und welche Unterlagen brauchen Sie?",
+};
+const fundingQuestions = {
+  partner: "Kommt diese Form der Zusammenarbeit für Sie infrage? Wer ist bei Ihnen für die Prüfung zuständig?",
+  donations: "Kommt das Vorhaben für Ihre zweckgebundene Projektförderung infrage? Welche Angaben brauchen Sie zur Entscheidung?",
+  prize: "Welche Unterlagen benötigen Sie für die Prüfung der Teilnahmevoraussetzungen?",
+  lottery: "Ist für das Projekt in der passenden Kategorie noch ein Platz frei?",
+  goods: "Können Sie das Vorhaben mit der beschriebenen Ausstattung unterstützen? Welche Angaben brauchen Sie dazu?",
+  advisory: "Welche Unterstützung kommt für das Vorhaben infrage und welche Vorbereitung erwarten Sie von uns?",
+};
+
+export function makeLetter(item, club, day = today()) {
   const p = item.program, c = item.contact;
-  const subject = p.instrument === "partner" ? `Partnerschaft für ${item.title} in ${item.place}`
-    : `${p.title ? p.title + ": " : ""}Voranfrage zu ${item.title}`;
+  const partner = p.instrument === "partner";
+  const place = item.place || club.place;
+  const subject = [partner ? "Partnerschaft" : "Voranfrage", item.title, place].filter(Boolean).join(" · ").replace(/\s+/g," ");
+  const distinct = values => [...new Set(values.map(value => value?.trim()).filter(Boolean))];
+  const scope = distinct([item.need, item.measure, c.relevance]);
+  const { total } = evaluate(item, {}, day);
+  const facts = [
+    !partner && p.title && "Programm: " + p.title,
+    item.audience && "Zielgruppe: " + item.audience,
+    item.start && isDay(item.start) && "Geplanter Beginn: " + item.start.split("-").reverse().join("."),
+    total != null && "Bisherige Kalkulation: " + euro(total) + (item.vat === "yes" ? " netto" : " brutto"),
+  ].filter(Boolean);
+  const ask = c.request?.trim() || (p.instrument === "grant" ? [
+    grantQuestions[item.type] || grantQuestions.other,
+    p.startRule === "before" && "Welchen schriftlichen Bescheid brauchen wir vor einer Beauftragung oder Bestellung?",
+  ].filter(Boolean).join(" ") : fundingQuestions[p.instrument]);
   const body = [
-    c.salutation || "Guten Tag,",
-    `für ${club.name} möchte ich Ihnen unser Vorhaben „${item.title}“ vorstellen.`,
-    item.need, item.measure, item.audience && `Das Vorhaben richtet sich an ${item.audience}.`,
-    item.outcome && `Damit möchten wir Folgendes erreichen: ${item.outcome}`,
-    c.relevance,
-    p.instrument === "partner" && c.offer ? `Im Rahmen einer Partnerschaft können wir ${c.offer}` : "",
-    c.request || (p.instrument === "partner" ? "Hätten Sie Zeit für ein kurzes Gespräch über eine mögliche Zusammenarbeit?"
-      : "Können Sie uns eine kurze fachliche Einschätzung geben, ob das Vorhaben grundsätzlich zu Ihrem Programm passt und welcher nächste Schritt sinnvoll ist?"),
-    ["Freundliche Grüße", c.sender, c.role, club.name].filter(Boolean).join("\n")
+    c.salutation?.trim() || "Guten Tag,",
+    ...scope,
+    item.outcome?.trim() && !scope.includes(item.outcome.trim()) && item.outcome.trim(),
+    facts.join("\n"),
+    partner && c.offer?.trim() && c.offer.trim(),
+    ask,
+    ["Freundliche Grüße", ...distinct([c.sender, c.role, club.name])].join("\n"),
   ].filter(Boolean).join("\n\n");
   return { subject, body };
 }
