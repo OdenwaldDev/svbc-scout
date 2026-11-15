@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.34', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.35', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18593,6 +18593,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.35',v:'0.99.35',datum:'2026-11-15',titel:'Bandenplan: zehn Fotos neu',kurz:'Zehn Banden gegenüber vom Clubhaus haben ein neues Foto: gerade gerichtet, schärfer und ohne Hecke oder Nachbartafel im Bild.',
+   punkte:[
+    {ic:'\u{1F4D0}',t:'Gerade statt schräg',d:'Die Fotos waren leicht von der Seite und von oben aufgenommen. Jetzt steht jede Tafel gerade und füllt ihre Bande im Rundgang ganz.',r:'partner'},
+    {ic:'\u{1F50D}',t:'Schärfer',d:'Die Bilder sind größer als bisher. Das siehst du vor allem im großen Foto, wenn du eine Bande antippst.',r:'partner'},
+    {ic:'\u{1F4F7}',t:'Noch offen',d:'Für die Banden 1, 5, 7, 8, 11 und 17 bis 24 fehlen weiter gute Fotos.',r:'partner'}
+   ]},
   {id:'0.99.34',v:'0.99.34',datum:'2026-11-14',titel:'Bandenplan: Fotos ohne Verzerrung',kurz:'Im Rundgang um den Platz sind die Fotos der Banden nicht mehr verzogen. Sie sind auf die Tafel zugeschnitten, feiner gerechnet und näher im Bild.',
    punkte:[
     {ic:'\u{1F5BC}\uFE0F',t:'Nichts mehr verzogen',d:'Jedes Foto behält sein Seitenverhältnis. Passt es nicht ganz auf die Tafel, steht es in der Mitte, und daneben läuft die Farbe der Bande weiter.',r:'partner'},
