@@ -1,4 +1,4 @@
-import { categories, euro, instruments, isOriginal, sourceUrl } from "./domain.mjs";
+import { categories, euro, instruments, isOriginal, sourceUrl } from "./domain.mjs?v=beta-0.99.41";
 
 const decisions = { prepare: "Vorbereiten", clarify: "Zuerst klären", defer: "Zurückstellen" };
 const bundles = [

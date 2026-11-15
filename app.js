@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.40', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.41', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18593,6 +18593,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.41',v:'0.99.41',datum:'2026-11-15',titel:'Förderzentrale zuverlässig aktualisieren',kurz:'Die neue Auswahl für die Leitersitzung lädt jetzt auch mit bereits gespeicherten App-Dateien zuverlässig.',punkte:[{ic:'✓',t:'Aktuelle Förderübersicht',d:'Alle Teile der Förderzentrale werden beim Update in derselben Version geladen.',r:'foerderung'}]},
   {id:'0.99.40',v:'0.99.40',datum:'2026-11-15',titel:'Fördermöglichkeiten gemeinsam vorbereiten',kurz:'Wähle Vorhaben für die Leitersitzung, bündele die Vorbereitung und erstelle eine Sitzungsvorlage mit deinen Aufgaben.',
    punkte:[{ic:'✓',t:'Auswahl für die Leitersitzung',d:'Förderakten vergleichen, Vorhaben anhaken und nächste Schritte festlegen. Deine Auswahl bleibt bis zum Abmelden in diesem Browser gespeichert.',r:'foerderung'},
            {ic:'✓',t:'Unterlagen mit Vereinsbriefkopf',d:'Projektskizzen enthalten das Vereinswappen und nachvollziehbare Kosten. Voranfragen gehen auf den Bedarf und die konkrete Förderstelle ein.',r:'foerderung'}]},
@@ -34872,7 +34873,7 @@ N77_GRP.Verein.splice(N77_GRP.Verein.indexOf('sponsoring')+1,0,'foerderung');
     if (panel?.classList.contains('active') && svFoerderDarf() && !panel.firstElementChild) {
       const frame = document.createElement('iframe');
       frame.title = 'SV/BSC Förderzentrale';
-      frame.src = 'foerderzentrale/index.html';
+      frame.src = 'foerderzentrale/index.html?v=' + encodeURIComponent(APP_BUILD);
       frame.width = '100%';
       frame.height = '800';
       frame.style.border = '0';
