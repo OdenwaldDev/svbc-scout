@@ -3056,34 +3056,55 @@ const BANDE = (() => {
      Blick vom Rasen über die Laufbahn auf die Bandenreihe. Jede Tafel in ihrer wirklichen Länge und mit ihrem Foto, Lücken bleiben
      Lücken, freie Plätze sind gestrichelt. o: { tafeln:[{ id, x0, l, h, img, frei, nr, name, farbe, an, ring }], kamX, abstand, blick }.
      x in Metern entlang der Reihe. Rückgabe: { boxen:[{ id, x, y, w, h }], pxm } in CSS-Pixeln. */
-  const REIHE_TEX = new Map();
+  const REIHE_TEX = new Map(), REIHE_H = 192, REIHE_RAND = new Map();
+  // Farbe am Rand eines Fotos (links, rechts, oben, unten): der Mittelwert eines schmalen Streifens knapp innerhalb der Kante
+  function reiheRand(img, seite){ const k = img.src + '|' + seite; if(REIHE_RAND.has(k)) return REIHE_RAND.get(k);
+    let f = '#f7f5ef'; try{ const iw = img.naturalWidth, ih = img.naturalHeight, d = Math.max(1, Math.round(Math.min(iw, ih) * .04)), c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently:true });
+      const quer = seite === 'o' || seite === 'u'; c.width = quer ? 24 : 1; c.height = quer ? 1 : 24;
+      if(seite === 'l') x.drawImage(img, d, 0, d, ih, 0, 0, 1, 24); else if(seite === 'r') x.drawImage(img, iw - 2 * d, 0, d, ih, 0, 0, 1, 24);
+      else if(seite === 'o') x.drawImage(img, 0, d, iw, d, 0, 0, 24, 1); else x.drawImage(img, 0, ih - 2 * d, iw, d, 0, 0, 24, 1);
+      const p = x.getImageData(0, 0, c.width, c.height).data, n = p.length / 4, K = [[], [], []]; for(let i = 0; i < n; i++){ K[0].push(p[i * 4]); K[1].push(p[i * 4 + 1]); K[2].push(p[i * 4 + 2]); }
+      const med = a => { a.sort((u, v) => u - v); return a[Math.floor(a.length / 2)]; };   // Median: ein Buchstabe oder ein Grashalm am Rand färbt die Fläche nicht um
+      f = '#' + K.map(a => med(a).toString(16).padStart(2, '0')).join(''); }catch(e){}
+    REIHE_RAND.set(k, f); return f; }
+  // Eine Tafel der Reihe als Bild. Das Foto wird NIE verzogen (Albert, 14.11.2026: „teilweise zu schlecht, verzogen“): Es behält sein Seitenverhältnis.
+  // Passt es fast (bis 7 %), füllt es die Tafel; sonst steht es ganz in der Mitte, und daneben läuft die Farbe seines Randes weiter (eine ruhige Fläche,
+  // kein gestreckter Bildrand). Hat der Platz eine Grundfarbe (bandenplaetze.farbe), gilt ein sauberes Schild mit dem Namen statt eines Fotos:
+  // so für Tafeln ohne Foto und für Fotos, die nur einen Ausschnitt zeigen.
   function reiheTex(t){
     const k = [t.id, t.img ? t.img.src : '', t.name, t.frei ? 1 : 0, t.l, t.farbe || '', t.nr].join('|'); if(REIHE_TEX.has(k)) return REIHE_TEX.get(k);
-    const H = 96, W = Math.max(40, Math.round(t.l / (t.h || .8) * H)), c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+    const H = REIHE_H, W = Math.max(80, Math.round(t.l / (t.h || .8) * H)), c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
     const hell = f => { const m = /^#(..)(..)(..)$/.exec(f || ''); return !m || (parseInt(m[1], 16) * .299 + parseInt(m[2], 16) * .587 + parseInt(m[3], 16) * .114) > 150; };
-    const text = (s, farbe, gr) => { let fs = H * (gr || .46); x.font = `800 ${fs}px BandeT,Barlow,sans-serif`; const w = x.measureText(s).width; if(w > W * .88){ fs *= W * .88 / w; x.font = `800 ${fs}px BandeT,Barlow,sans-serif`; }
-      x.fillStyle = farbe; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, W / 2, H / 2 + fs * .04); };
-    if(t.frei){ x.fillStyle = 'rgba(246,243,236,.82)'; x.fillRect(0, 0, W, H); x.strokeStyle = 'rgba(29,39,96,.7)'; x.lineWidth = 4; x.setLineDash([14, 9]); x.strokeRect(5, 5, W - 10, H - 10); x.setLineDash([]); text('frei', 'rgba(29,39,96,.85)', .42); }
-    else if(t.img && t.img.naturalWidth){ const bg = t.farbe || '#f7f5ef'; x.fillStyle = bg; x.fillRect(0, 0, W, H);
-      const ai = t.img.naturalWidth / t.img.naturalHeight, ab = W / H;
-      if(Math.abs(ai / ab - 1) <= .4) x.drawImage(t.img, 0, 0, W, H);
-      else { const iw = t.img.naturalWidth, ih = t.img.naturalHeight, f = Math.min(W / iw, H / ih), w = iw * f, h = ih * f, l = (W - w) / 2;
-        // Das Foto zeigt nur einen Ausschnitt der Tafel: links und rechts läuft der Rand des Fotos weiter, statt weißer Flächen
-        if(l > 1 && iw > 6){ try{ x.drawImage(t.img, 1, 0, 2, ih, 0, (H - h) / 2, l + 1, h); x.drawImage(t.img, iw - 3, 0, 2, ih, l + w - 1, (H - h) / 2, l + 1, h); }catch(e){} }
-        x.drawImage(t.img, l, (H - h) / 2, w, h); } }
-    else { const bg = t.farbe || '#ffffff'; x.fillStyle = bg; x.fillRect(0, 0, W, H); text(String(t.name || '').toUpperCase(), hell(bg) ? C.marine : '#ffffff'); }
-    if(t.img && !t.img.naturalWidth) return c;   // Foto lädt noch: nicht merken
+    // Schrift auf dem Schild: so groß wie möglich. Ein langer Name bricht an der Leerstelle nahe der Mitte in zwei Zeilen, wenn er dadurch größer wird.
+    const text = (s, farbe, gr) => { const schrift = fs => `800 ${fs}px BandeT,Barlow,sans-serif`, pass = (Z, max) => { x.font = schrift(max); const w = Math.max(...Z.map(z => x.measureText(z).width)); return w > W * .88 ? max * W * .88 / w : max; };
+      const T = String(s).replace(/([a-zäöüß])([A-ZÄÖÜ])/g, '$1 $2').split(/\s+/).filter(Boolean), gross = z => z.toUpperCase();   // Teile: Wörter, dazu die Naht in Namen wie „SparkassenVersicherung“
+      s = gross(String(s)); let Z = [s], fs = pass(Z, H * (gr || .46));
+      if(fs < H * .32 && T.length > 1){ let best = null; for(let i = 1; i < T.length; i++){ const a = gross(T.slice(0, i).join(' ')), b = gross(T.slice(i).join(' ')), d = Math.abs(a.length - b.length); if(!best || d < best.d) best = { d, Z:[a, b] }; }
+        const f2 = pass(best.Z, H * .36); if(f2 > fs * 1.15){ Z = best.Z; fs = f2; } }
+      x.font = schrift(fs); x.fillStyle = farbe; x.textAlign = 'center'; x.textBaseline = 'middle'; Z.forEach((z, i) => x.fillText(z, W / 2, H / 2 + (i - (Z.length - 1) / 2) * fs * 1.12 + fs * .04)); };
+    const foto = !t.frei && !t.farbe && t.img && t.img.naturalWidth > 0;
+    if(t.frei){ const e = H / 96; x.fillStyle = 'rgba(246,243,236,.82)'; x.fillRect(0, 0, W, H); x.strokeStyle = 'rgba(29,39,96,.7)'; x.lineWidth = 4 * e; x.setLineDash([14 * e, 9 * e]); x.strokeRect(5 * e, 5 * e, W - 10 * e, H - 10 * e); x.setLineDash([]); text('frei', 'rgba(29,39,96,.85)', .42); }
+    else if(foto){ const iw = t.img.naturalWidth, ih = t.img.naturalHeight, ai = iw / ih, ab = W / H;
+      if(Math.abs(ai / ab - 1) <= .07) x.drawImage(t.img, 0, 0, W, H);
+      else { const f = Math.min(W / iw, H / ih), w = Math.round(iw * f), h = Math.round(ih * f), l = Math.round((W - w) / 2), o = Math.round((H - h) / 2);
+        if(l > 0){ x.fillStyle = reiheRand(t.img, 'l'); x.fillRect(0, 0, l + 1, H); x.fillStyle = reiheRand(t.img, 'r'); x.fillRect(l + w - 1, 0, W - l - w + 1, H); }
+        if(o > 0){ x.fillStyle = reiheRand(t.img, 'o'); x.fillRect(0, 0, W, o + 1); x.fillStyle = reiheRand(t.img, 'u'); x.fillRect(0, o + h - 1, W, H - o - h + 1); }
+        x.drawImage(t.img, l, o, w, h); } }
+    else { const bg = t.farbe || '#ffffff'; x.fillStyle = bg; x.fillRect(0, 0, W, H); text(String(t.name || ''), hell(bg) ? C.marine : '#ffffff'); }
+    if(!t.frei && !t.farbe && t.img && !t.img.naturalWidth) return c;   // Foto lädt noch: nicht merken
     REIHE_TEX.set(k, c); return c;
   }
   function reihe(cv, o){
     const dpr = Math.min(2, window.devicePixelRatio || 1), r = cv.getBoundingClientRect();
     const Wc = Math.max(10, Math.round(r.width * dpr)), Hc = Math.max(10, Math.round(r.height * dpr)); if(cv.width !== Wc) cv.width = Wc; if(cv.height !== Hc) cv.height = Hc;
-    const x = cv.getContext('2d'), T = o.tafeln || [], kx = +o.kamX || 0, d = o.abstand || 15, yaw = o.blick != null ? o.blick : .3, LIFT = .22, RAIL = 1.1, NAH = .3;
+    const x = cv.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    const T = o.tafeln || [], kx = +o.kamX || 0, d = o.abstand || 15, yaw = o.blick != null ? o.blick : .3, LIFT = .22, RAIL = 1.1, NAH = .3;
     const P = [kx - Math.sin(yaw) * d, 1.65, -Math.cos(yaw) * d], Z = [kx + .4, .6, 0];
     const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], norm = a => { const l = Math.hypot(...a); return a.map(v => v / l); };
     const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
     const f = norm(sub(Z, P)), ri = norm(cross([0, 1, 0], f)), up = cross(f, ri), cam = Q => { const v = sub(Q, P); return [dot(v, ri), dot(v, up), dot(v, f)]; };
-    const schmal = Wc / Hc < 1.9, breit = schmal ? 9.5 : 15, cx = Wc * .5, cy = Hc * (schmal ? .5 : .5);
+    const schmal = r.width < 560, breit = schmal ? 6.8 : 12.5,   /* seit 0.99.34 näher dran: am Handy füllt eine Bande von 5 m gut zwei Drittel der Breite */ cx = Wc * .5, cy = Hc * (schmal ? .5 : .5);
     let foc; { const a = cam([kx - breit / 2, LIFT, 0]), b = cam([kx + breit / 2, LIFT, 0]); foc = Wc * .96 / Math.abs(b[0] / b[2] - a[0] / a[2]); }
     const pr = Q => { const c = cam(Q); return [cx + foc * c[0] / c[2], cy - foc * c[1] / c[2], c[2]]; };
     const poly = (pts, fill) => { const Cc = pts.map(cam), out = [];
@@ -3141,5 +3162,5 @@ const BANDE = (() => {
     return { boxen, pxm:Math.abs(m1[0] - m0[0]) / dpr };
   }
 
-  return { C, FORMATE, LAYOUTS, BESCHNITT, schriften, vorbereiten, layout, malen, bild, flach, szene, reihe, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, laden };
+  return { C, FORMATE, LAYOUTS, BESCHNITT, schriften, vorbereiten, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, laden };
 })();
