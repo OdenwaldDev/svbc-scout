@@ -235,7 +235,7 @@ function rowHtml(p,i,extra=''){
 }
 
 /* ================= RENDER ================= */
-function renderHome(){
+function renderHome(){ if(typeof lzHomeZu==='function'&&lzHomeZu())return;
   const sen=players.filter(p=>!p.isJugend);
   $('#homeTiles').innerHTML=`
     <div class="tile"><div class="v">${sen.length}</div><div class="l">Senioren · 6 Ligen</div></div>
@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.41', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.42', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -7258,7 +7258,7 @@ const SV4_INFO=new Map(); let _sv4i=0;
 function sv4I(t,o){ const k='i'+(++_sv4i); SV4_INFO.set(k,Object.assign({t},o||{})); if(SV4_INFO.size>600){ const f=SV4_INFO.keys().next().value; SV4_INFO.delete(f); } return `<button type="button" class="i4" data-i4="${k}" aria-label="Info: ${sv4Esc(t)}">i</button>`; }
 function sv4InfoShow(btn){
   const o=SV4_INFO.get(btn.dataset.i4); if(!o)return; document.querySelectorAll('.i4pop').forEach(x=>x.remove());
-  const pop=document.createElement('div'); pop.className='i4pop'; pop.setAttribute('role','dialog');
+  const pop=document.createElement('div'); pop.className='i4pop'; pop.setAttribute('role','dialog'); window._i4t=performance.now();
   const row=(l,v)=>v==null||v===''?'':`<div><span>${sv4Esc(l)}</span><b>${v}</b></div>`;
   pop.innerHTML=`<div class="i4h"><b>${sv4Esc(o.t)}</b><button type="button" aria-label="Schließen">✕</button></div>
     ${o.txt?`<p>${o.txt}</p>`:''}
@@ -7274,7 +7274,8 @@ function sv4InfoShow(btn){
 }
 document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('[data-i4]'); if(b){ e.preventDefault(); e.stopPropagation(); sv4InfoShow(b); return; }
   if(!(e.target.closest&&e.target.closest('.i4pop')))document.querySelectorAll('.i4pop').forEach(x=>x.remove()); },true);
-window.addEventListener('scroll',()=>document.querySelectorAll('.i4pop').forEach(x=>x.remove()),{passive:true,capture:true});
+// Rollen schließt das Info-Fenster. Nicht in den ersten 400 ms: Rückt der Tipp selbst die Seite zurecht oder läuft das Profil noch ein, wäre das Fenster sonst sofort wieder weg (0.99.42).
+window.addEventListener('scroll',()=>{ if(performance.now()-(window._i4t||0)<400)return; document.querySelectorAll('.i4pop').forEach(x=>x.remove()); },{passive:true,capture:true});
 
 /* ---------- Laden ---------- */
 async function sv4Load(force){
@@ -18593,6 +18594,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.42',v:'0.99.42',datum:'2026-11-15',titel:'Die App startet deutlich schneller',kurz:'Beim Start hat die App alle Scouting-Listen mehrfach durchgerechnet, auch wenn niemand sie offen hatte. Das passiert jetzt erst, wenn du den Bereich öffnest. Auf älteren Handys startet die App damit um ein Vielfaches schneller.',
+   punkte:[
+    {ic:'\u26A1',t:'Schneller Start',d:'Spielermarkt, Datenbank, Vergleich, Aufstellung und Geheimtipps werden erst gezeichnet, wenn du sie öffnest. Die Startseite steht dadurch viel früher. An den Inhalten ändert sich nichts.',r:'team'},
+    {ic:'\u{1F4F6}',t:'Weniger Warten auf den Server',d:'Die Spielerwerte für das Scouting kommen jetzt in einem Bruchteil der Zeit an.',r:'scout'},
+    {ic:'\u{1F4C2}',t:'Förderzentrale im Menü',d:'Am Handy fehlte die Förderzentrale im Menü „Mehr“. Sie steht jetzt in der Gruppe Verein.',r:'foerderung'},
+    {ic:'\u{1F5A5}',t:'Leiste am Rechner',d:'Die Unterseiten in der breiten Leiste stehen nach dem Laden zuverlässig an ihrem Bereich.',r:'team'}
+   ]},
   {id:'0.99.41',v:'0.99.41',datum:'2026-11-15',titel:'Förderzentrale zuverlässig aktualisieren',kurz:'Die neue Auswahl für die Leitersitzung lädt jetzt auch mit bereits gespeicherten App-Dateien zuverlässig.',punkte:[{ic:'✓',t:'Aktuelle Förderübersicht',d:'Alle Teile der Förderzentrale werden beim Update in derselben Version geladen.',r:'foerderung'}]},
   {id:'0.99.40',v:'0.99.40',datum:'2026-11-15',titel:'Fördermöglichkeiten gemeinsam vorbereiten',kurz:'Wähle Vorhaben für die Leitersitzung, bündele die Vorbereitung und erstelle eine Sitzungsvorlage mit deinen Aufgaben.',
    punkte:[{ic:'✓',t:'Auswahl für die Leitersitzung',d:'Förderakten vergleichen, Vorhaben anhaken und nächste Schritte festlegen. Deine Auswahl bleibt bis zum Abmelden in diesem Browser gespeichert.',r:'foerderung'},
@@ -28765,6 +28773,7 @@ function n77Seite(){
 function n77Menue(){
   const sh = document.getElementById('moreSheet'); if(!sh) return;
   const B = {}; sh.querySelectorAll('.sgrid [data-sheet]').forEach(b => { B[b.dataset.sheet] = b; });
+  (N77.uebrig || []).forEach(b => { if(!B[b.dataset.sheet]) B[b.dataset.sheet] = b; }); N77.uebrig = null;
   if(!B.planung) B.planung = n77Knopf('menue', 'planung');
   const me = sh.querySelector('.meline'), app = [...sh.querySelectorAll(':scope > .sp-sheet')];
   sh.querySelectorAll(':scope > h4, :scope > .sgrid').forEach(x => x.remove());
@@ -28774,7 +28783,10 @@ function n77Menue(){
     N77_GRP[g].forEach(t => { const b = B[t]; if(!b) return; if(N77_MENUE_NAME[t]) n77Beschriften(b, N77_MENUE_NAME[t]); n77Icon(b, t); d.appendChild(b); delete B[t]; });
     sh.insertBefore(h, me); sh.insertBefore(d, me);
   });
-  const rest = Object.values(B); if(rest.length){ const d = sh.querySelector('.sgrid:last-of-type'); rest.forEach(b => d.appendChild(b)); }
+  // Knöpfe, die (noch) in keiner Gruppe stehen: in die letzte Gruppe, die alle sehen. Vorher lief das hier auf einen Fehler,
+  // und der Knopf war danach ganz aus dem Menü verschwunden (so die Förderzentrale am Handy, 0.99.36 bis 0.99.41). Beim
+  // nächsten Ordnen kommt er in seine Gruppe, sobald er in N77_GRP steht.
+  const rest = Object.values(B); if(rest.length){ const d = [...sh.querySelectorAll(':scope > .sgrid:not(.adm-only)')].pop(); if(d) rest.forEach(b => d.appendChild(b)); else N77.uebrig = rest; }
   // „Was ist neu“ und „Idee oder Fehler melden“ unter die Bereiche
   app.forEach(x => sh.insertBefore(x, me));
   sh.dataset.n77 = '1';
@@ -28803,6 +28815,7 @@ function n77Koepfe(){
 }
 function n77Ordnen(){ try{ n77Seite(); n77Menue(); }catch(e){ console.warn('Navigation 0.79', e); } }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', n77Ordnen); else n77Ordnen();
+setTimeout(() => n77Ordnen(), 0);   // noch einmal, wenn das ganze Bündel geladen ist: spätere Module tragen ihre Bereiche in N77_GRP nach
 { const _nv = sv4NavVis; sv4NavVis = function(){ const r = _nv.apply(this, arguments); n77Koepfe(); return r; }; }
 { const _os = svOrderSide; svOrderSide = function(){ const r = _os.apply(this, arguments); try{ n77Seite(); }catch(e){} return r; }; }
 { const _bt = svBuildTabbar; svBuildTabbar = function(){ const r = _bt.apply(this, arguments); n77Koepfe(); return r; }; }
@@ -31706,6 +31719,8 @@ function n88Zeichnen(){
 }
 // Nach jedem Seitenwechsel und jedem Neuaufbau der Leiste neu zeichnen
 { const _gt88 = goTab; goTab = function(){ const r = _gt88.apply(this, arguments); if(N88.flyFuer) n88FlyZu(); setTimeout(n88Zeichnen, 0); return r; }; }
+// n77Seite sortiert die Knöpfe der Leiste um; Pfeile und Unterseiten blieben dann oben in der Leiste hängen, bis zum nächsten Wechsel (0.99.42)
+if(typeof n77Seite === 'function'){ const _ns88 = n77Seite; n77Seite = function(){ const r = _ns88.apply(this, arguments); setTimeout(n88Zeichnen, 0); return r; }; }
 if(typeof sv4NavVis === 'function'){ const _nv88 = sv4NavVis; sv4NavVis = function(){ const r = _nv88.apply(this, arguments); setTimeout(n88Zeichnen, 0); return r; }; }
 if(typeof sv4HubBar === 'function'){ const _hb88 = sv4HubBar; sv4HubBar = function(){ const r = _hb88.apply(this, arguments); setTimeout(n88Zeichnen, 0); return r; }; }
 if(typeof spoReiterAn === 'function'){ const _sr88 = spoReiterAn; spoReiterAn = function(){ const r = _sr88.apply(this, arguments); setTimeout(n88Zeichnen, 0); return r; }; }
@@ -35113,6 +35128,66 @@ async function ppRender(B){ B.innerHTML = '<div class="card"><div class="empty">
   ppDraht(B); }
 if(typeof SPO_REITER !== 'undefined' && !SPO_REITER.some(r => r[0] === 'ansprechen')){ const i = SPO_REITER.findIndex(r => r[0] === 'sponsoren'); SPO_REITER.splice(i < 0 ? SPO_REITER.length : i + 1, 0, ['ansprechen', 'Wen ansprechen']); }
 if(typeof spoBody === 'function'){ const _b = spoBody; spoBody = function(){ if(SPO.view === 'ansprechen'){ const B = document.getElementById('spoB'); if(B) ppRender(B); return; } return _b.apply(this, arguments); }; }
+
+/* svm111.js · Schneller Start (Beta 0.99.42)
+   Rückmeldung aus dem Verein, 15.11.2026: „Die App lädt sehr, sehr langsam.“
+   Gemessen: Beim Start wurde alles dreimal bis fünfmal komplett neu gezeichnet (renderAll: beim Laden, nach den
+   Daten vom Server, nach den 4.0-Daten, nach den FuPa-Werten, nach den Fotos), und jedes Mal mit allen Listen:
+   Scouting-Liste, Geheimtipps, Datenbank, Vergleich, Aufstellung mit Kaderbedarf. Die stehen in Bereichen, die beim
+   Start gar nicht offen sind. Auf einem vier Jahre alten Handy kostete das zusammen rund 20 Sekunden.
+
+   Jetzt gilt: Eine Liste wird nur gezeichnet, wenn ihr Bereich offen ist. Sonst merkt sich die App nur, dass sie
+   neu gezeichnet werden muss, und holt das nach, sobald der Bereich geöffnet wird (im selben Schritt, also ohne
+   leere Seite). Die Daten selbst sind sofort da, es geht nur ums Zeichnen.
+
+   Wer eine weitere teure Liste hat, die in einem eigenen Bereich (.panel) steht: in LZ_TEILE eintragen
+   (Funktion: Kennung eines Elements, in das sie zeichnet). Die Reihenfolge ist die von renderAll. */
+const LZ = { an: true, offen: {}, zahl: { gezeichnet: 0, gemerkt: 0, nachgeholt: 0, home: 0 } };
+const LZ_TEILE = { renderList: 'list', renderGems: 'gemlist', renderDB: 'dbhead', fillCompareSelects: 'cmp1', updateCompare: 'cmpBar', renderLineup: 'pitch' };
+function lzPanel(n){ const e = document.getElementById(LZ_TEILE[n]); return e ? e.closest('.panel') : null; }
+/* offen heißt: kein Bereich drumherum (dann wie früher immer zeichnen) oder der Bereich ist der aktive */
+function lzSichtbar(n){ const e = document.getElementById(LZ_TEILE[n]); if (!e) return true; const p = e.closest('.panel'); return !p || p.classList.contains('active'); }
+/* Was eine Funktion außer dem Zeichnen tut, läuft weiter sofort. renderLineup stößt am Ende das Speichern und das
+   erste Laden der Daten vom Server an (lineupSync, lineupRemoteLoad): Ohne das käme nach dem Start nichts vom Server. */
+const LZ_IMMER = { renderLineup(){ lineupSync(); lineupRemoteLoad(); } };
+Object.keys(LZ_TEILE).forEach(n => { const alt = window[n]; if (typeof alt !== 'function') return;
+  window[n] = function(){
+    if (LZ.an && !lzSichtbar(n)) { LZ.offen[n] = true; LZ.zahl.gemerkt++; if (LZ_IMMER[n]) { try { LZ_IMMER[n](); } catch (e) { console.warn('Schneller Start', n, e); } } return; }
+    delete LZ.offen[n]; LZ.zahl.gezeichnet++; return alt.apply(this, arguments); };
+  window[n]._lzAlt = alt; });
+/* Die alten Scouting-Abschnitte der Startseite (Kennzahlen, Top-Spieler, Wechsel-Index, Geheimtipps, Scouting-Zentrale,
+   Presse) rechnen für jeden Spieler im Bestand Stärke, Wechsel-Index und Geheimtipp aus. Für die meisten sind sie zu:
+   bei der Leitung ausgeblendet (svm107), sonst hinter „Mehr anzeigen“ eingeklappt (svm58). Sind alle sechs nicht zu
+   sehen, überspringt die Basis von renderHome das Rechnen (Einhängung in build_v3.py: lzHomeZu). Alles andere auf
+   der Startseite läuft wie immer. Werden sie aufgeklappt oder eingeblendet, zeichnet die Startseite einmal neu. */
+const LZ_HOME = ['homeTiles', 'homeFocus', 'homeGems', 'homeWechsel', 'homeCrm', 'homePress'];
+/* Solange die Anmeldeseite davor liegt, sieht niemand die Startseite: Das erste Zeichnen beim Laden entfällt dann auch. */
+function lzVorAnmeldung(){ const g = document.getElementById('gate'); return !!g && !g.classList.contains('done'); }
+function lzHomeSichtbar(){ return !lzVorAnmeldung() && LZ_HOME.some(i => { const e = document.getElementById(i); return e && e.offsetParent !== null; }); }
+function lzHomeZu(){
+  try { if (!LZ.an || lzHomeSichtbar()) { delete LZ.offen.home; LZ.zahl.home++; return false; }
+    LZ.offen.home = true; LZ.zahl.gemerkt++; return true; } catch (e) { return false; }   // vor dem Laden dieses Moduls: wie früher zeichnen
+}
+/* Nachholen: alles Vorgemerkte, dessen Bereich jetzt offen ist. Gezeichnet wird erst nach dem Umschalten, also im
+   sichtbaren Bereich (Maße stimmen dann, anders als beim Zeichnen im Verborgenen) und bevor der Browser neu zeichnet.
+   Bewusst nicht nach dem Namen des Reiters: 'scout', 'elf' und 'cmp' führen heute in die neueren Übersichten
+   (Entdecken, Top-Elf), die alten Bereiche dazu öffnen sich nur noch über andere Wege. */
+function lzNachholen(){
+  let vergleich = false;
+  Object.keys(LZ_TEILE).forEach(n => { if (!LZ.offen[n] || !lzSichtbar(n)) return;
+    delete LZ.offen[n]; LZ.zahl.nachgeholt++; if (n === 'fillCompareSelects') vergleich = true;
+    try { window[n]._lzAlt.call(window); } catch (e) { console.warn('Nachholen', n, e); } });
+  /* Der Vergleich liest die Auswahl: wurde sie eben erst gefüllt, zeichnet er danach noch einmal */
+  if (vergleich) { delete LZ.offen.updateCompare; try { window.updateCompare._lzAlt.call(window); } catch (e) {} }
+  /* Startseite: die ganze Kette neu, damit auch die Module, die an den Abschnitten nacharbeiten, mitlaufen */
+  if (LZ.offen.home && !LZ.lauf && lzHomeSichtbar()) { LZ.lauf = true; LZ.zahl.nachgeholt++; try { renderHome(); } catch (e) { console.warn('Nachholen Startseite', e); } finally { LZ.lauf = false; } }
+}
+{ const _gt111 = goTab; goTab = function(){ const r = _gt111.apply(this, arguments); try { lzNachholen(); } catch (e) {} return r; }; }
+/* Sicherheitsnetz: Wird ein Bereich auf anderem Weg geöffnet, holt der Beobachter nach, bevor der Browser zeichnet. */
+try { const lzB = new MutationObserver(() => { if (Object.keys(LZ.offen).length) lzNachholen(); });
+  document.querySelectorAll('.panel').forEach(p => lzB.observe(p, { attributes: true, attributeFilter: ['class'] }));
+  LZ_HOME.forEach(i => { const e = document.getElementById(i); if (e) lzB.observe(e, { attributes: true, attributeFilter: ['data-hz-weg', 'style', 'class'] }); });
+  const lzG = document.getElementById('gate'); if (lzG) lzB.observe(lzG, { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm107css'; s.textContent="/* 0.99.33: Startseite nach dringend und wichtig (svm107.js) */\n#panel-home > [data-hz-weg]{display:none!important;}\n.hz-k{margin:20px 2px 8px;font-size:12.5px;line-height:1.3;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);}\n.hz-k.ruhig{text-transform:none;letter-spacing:0;font-weight:500;font-size:14.5px;margin:8px 2px 14px;}\n#svHello + .hz-k{margin-top:10px;}\n.hz-anp{display:block;width:100%;min-height:46px;margin:14px 0 18px;padding:10px 14px;border-radius:var(--r-lg,14px);border:1px dashed var(--line);background:none;color:var(--ink2);font:inherit;font-size:14px;text-align:center;cursor:pointer;}\n.hz-anp:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}\n/* Der Wisch-Tipp schiebt die Karte „Neue Meldungen“ kurz zur Seite: Das darf die Seite nicht breiter machen */\n#panel-home > #sc2Home{overflow-x:clip;overflow-clip-margin:14px;}\n/* Die Leitung braucht das Lagebild aus Kader, Training und Radar nicht auf der Startseite */\n#panel-home[data-hz=\"leitung\"] #svBriefBtn{display:none!important;}\n\n/* Beta 0.99.38: Startseite kürzer. Ablage in der To-do-Karte als eine Zeile zum Wischen, erledigte erste Schritte eingeklappt. */\n#panel-home #prioHeute .abl{flex-direction:row;align-items:center;gap:10px;min-width:0;}\n#panel-home #prioHeute .abl-k{margin:0;flex:none;}\n#panel-home #prioHeute .abl-l{display:flex;gap:8px;overflow-x:auto;min-width:0;flex:1;scrollbar-width:none;padding:2px;}\n#panel-home #prioHeute .abl-l::-webkit-scrollbar{display:none;}\n#panel-home #prioHeute .abl-o{flex:none;min-height:44px;max-width:230px;padding:6px 14px;border-radius:999px;}\n#panel-home #prioHeute .abl-o small,#panel-home #prioHeute .abl-o .abl-ic{display:none;}\n#panel-home #prioHeute .abl-o b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;}\n.o1-liste.o1-kurz li.ok{display:none;}\n.o1-sum{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin:10px 0 0;padding:0 12px;border-radius:12px;border:0;background:transparent;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer;text-align:left;}\n.o1-sum span{font-weight:700;color:var(--ink);}.o1-sum small{margin-left:auto;text-decoration:underline;text-underline-offset:3px;}\n.o1-sum svg{width:18px;height:18px;color:var(--green,#1a8f55);flex:none;}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm92css'; s.textContent="/* Beta 0.99.4 · Fragen mit Ja und Nein */\n.fr-karte{border:1px solid rgba(91,155,255,.45)!important;margin-bottom:14px}\n.fr-h{margin:0 0 10px;font-size:17px}\n.fr-liste{display:flex;flex-direction:column;gap:10px}\n.fr-z{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08));transition:box-shadow .3s,background .3s}\n.fr-z.fr-hin{box-shadow:0 0 0 2px var(--brand,#2f6bff)}\n.fr-tx{display:flex;flex-direction:column;gap:2px;min-width:0}\n.fr-tx span,.fr-tx small{color:var(--ink3);font-size:13.5px;overflow-wrap:anywhere}\n.fr-akt{display:flex;gap:8px;flex:none}\n.fr-akt .btn{min-height:44px;white-space:nowrap}\n.fr-akt .btn[disabled]{opacity:.5}\n@media (max-width:640px){.fr-z{grid-template-columns:1fr}.fr-akt .btn{flex:1}}\n"; document.head.appendChild(s); }catch(e){} })();
