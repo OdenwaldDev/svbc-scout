@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.50',v:'0.99.50',datum:'2026-11-16',titel:'Neuer Partner im Ablauf: BB Berns&Baltz',kurz:'BB Berns&Baltz aus der Pfadwiesenstraße steht jetzt im Partner-Ablauf, das Gespräch mit Jan Berns ist diese Woche.',
+   punkte:[
+    {ic:'\u{1F91D}',t:'BB Berns&Baltz im Ablauf',d:'Eingetragen mit Status Gespräch, Ansprechpartner Jan Berns und Notiz: großes Engagement für Mörlenbach, Malort für Kinder, dazu Mörlens Restobar und Mörlens Patisserie.',r:'admin'}
+   ]},
   {id:'0.99.49',v:'0.99.49',datum:'2026-11-16',titel:'FuPa geht vor: Spielzeit und Vorlagen stimmen',kurz:'Bei den eigenen Spielern zählt jetzt zuerst FuPa. Dort stehen Ein- und Auswechslungen, deshalb stimmt die Spielzeit, und die Vorlagen sind dabei.',
    punkte:[
     {ic:'\u23F1\uFE0F',t:'Spielzeit aus FuPa',d:'fussball.de kennt nur die Einwechslungen, die Spielzeit der Ausgewechselten war darum zu lang. Einsätze, Startelf, Minuten und Tore kommen jetzt von FuPa; nur wenn FuPa nichts hat, gilt fussball.de.'},
@@ -1528,5 +1532,3 @@ const SV_PATCHES=[
     {ic:'🎯',t:'Fakt, Zusage, Planung, Annahme',d:'Neben jedem Spieler steht, wie sicher die Planung für die nächste Saison ist. Wer noch nicht gesprochen wurde, ist nur angenommen. Antippen und festlegen.',r:'scout',go:'kader'},
     {ic:'📐',t:'Abdeckung statt Zählen',d:'Je Position gilt: 2 × Startplätze der Formation. Wer die Position nur nebenbei spielt, zählt halb, inaktive Spieler gar nicht. Oben stehen die freien Kaderplätze.',r:'scout',go:'kader'},
     {ic:'🧩',t:'Backup-Ansicht',d:'Wer springt ein, wenn einer aus der Startelf fehlt? Mit einem Tipp von der Liste auf „Backup“ wechseln.',r:'scout',go:'kader'},
-    {ic:'🦶',t:'Was fehlt an Qualität',d:'Linksfuß in der Abwehr, Kopfballstärke, Tempo, Führung, Standards und Altersstruktur. Fehlt etwas, legst du mit einem Tipp den Bedarf fürs Scouting an.',r:'scout',go:'kader'},
-    {ic:'🌱',t:'Übergang aus der A-Jugend',d:'Wer zu alt für die A-Jugend wird, steht in der Planung der nächsten Saison: Erste, Zweite oder hört auf.',r:'scout',go:'kader'},

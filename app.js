@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.49', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.50', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18597,6 +18597,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.50',v:'0.99.50',datum:'2026-11-16',titel:'Neuer Partner im Ablauf: BB Berns&Baltz',kurz:'BB Berns&Baltz aus der Pfadwiesenstraße steht jetzt im Partner-Ablauf, das Gespräch mit Jan Berns ist diese Woche.',
+   punkte:[
+    {ic:'\u{1F91D}',t:'BB Berns&Baltz im Ablauf',d:'Eingetragen mit Status Gespräch, Ansprechpartner Jan Berns und Notiz: großes Engagement für Mörlenbach, Malort für Kinder, dazu Mörlens Restobar und Mörlens Patisserie.',r:'admin'}
+   ]},
   {id:'0.99.49',v:'0.99.49',datum:'2026-11-16',titel:'FuPa geht vor: Spielzeit und Vorlagen stimmen',kurz:'Bei den eigenen Spielern zählt jetzt zuerst FuPa. Dort stehen Ein- und Auswechslungen, deshalb stimmt die Spielzeit, und die Vorlagen sind dabei.',
    punkte:[
     {ic:'\u23F1\uFE0F',t:'Spielzeit aus FuPa',d:'fussball.de kennt nur die Einwechslungen, die Spielzeit der Ausgewechselten war darum zu lang. Einsätze, Startelf, Minuten und Tore kommen jetzt von FuPa; nur wenn FuPa nichts hat, gilt fussball.de.'},

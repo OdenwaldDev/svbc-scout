@@ -1,3 +1,5 @@
+    {ic:'🦶',t:'Was fehlt an Qualität',d:'Linksfuß in der Abwehr, Kopfballstärke, Tempo, Führung, Standards und Altersstruktur. Fehlt etwas, legst du mit einem Tipp den Bedarf fürs Scouting an.',r:'scout',go:'kader'},
+    {ic:'🌱',t:'Übergang aus der A-Jugend',d:'Wer zu alt für die A-Jugend wird, steht in der Planung der nächsten Saison: Erste, Zweite oder hört auf.',r:'scout',go:'kader'},
     {ic:'🧭',t:'Plausibilität und Wechselfenster',d:'Die App findet Widersprüche, etwa „bleibt“ trotz Absage im Gespräch, und zeigt, wann das nächste Wechselfenster offen ist. Die Standards stellst du unter „Standards“ selbst ein.',r:'scout',go:'kader'},
     {ic:'🤝',t:'Neuzugang erst nach Gespräch',d:'Externe Spieler kommen erst als Neuzugang in den Kaderplan, wenn ein Gespräch festgehalten ist. Vorher sind es Wunschspieler in der Traumelf.',r:'scout',go:'kader'},
     {ic:'👁️',t:'Eye-Test mit regionaler Skala',d:'50 heißt solider Stammspieler der Kreisliga A, 70 stark bis Gruppenliga, 90 Top der Region. Im neuen Reiter Eye-Test siehst du den Schnitt aller Planer, wo ihr euch uneinig seid und wo deine Bewertung fehlt.',r:'scout',go:'eye'},
