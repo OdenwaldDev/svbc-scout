@@ -14,6 +14,7 @@
   const C=window.PD_CFG||{}, app=document.getElementById('app');
   const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const eur=(n,d)=>PLIB.eur(n,d);
+  const CA_KEYS=['aermel_erste','aermel_zweite','trikot_jugend'], ca=l=>l&&CA_KEYS.indexOf(l.key)>=0?'ca. ':'';   // 0.99.52: Richtwert, die Spanne steht im Text der Leistung
   const hp=new URLSearchParams(location.hash.slice(1)), code=(hp.get('d')||'').toLowerCase();
   const $=s=>document.querySelector(s);
   const WAPPEN='partner/wappen.png';
@@ -267,7 +268,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     <h1 id="heroH">${heroTitel()}</h1>
     <p id="heroP">${heroText()}</p>
     <div class="runter-z"><button class="runter" type="button" data-zu="pakete">Pakete ansehen</button><button class="textknopf" type="button" data-zu="verein" id="heroVerein">Erst den Verein kennenlernen</button></div></div>
-    <div class="hp" id="heroPk"${dabeiArt()?' hidden':''}><p class="hero-s" id="heroS">${worumText()}</p>${st.length?`<ul>${st.map(l=>`<li><button type="button" data-pk="${l.key}"><b>${esc(l.titel)}</b><span>${eur(l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}</span></button></li>`).join('')}</ul>`:''}</div></div></section>
+    <div class="hp" id="heroPk"${dabeiArt()?' hidden':''}><p class="hero-s" id="heroS">${worumText()}</p>${st.length?`<ul>${st.map(l=>`<li><button type="button" data-pk="${l.key}"><b>${esc(l.titel)}</b><span>${ca(l)}${eur(l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}</span></button></li>`).join('')}</ul>`:''}</div></div></section>
 <section class="sec grau" id="auftritt"><div class="ww">
   <div class="sk"><h2 class="g">Euer Auftritt</h2><p class="lead" id="aufLead">So sieht ${esc(kurz)} bei uns aus.</p></div>
   <div class="tk-seg auf-seg" id="aufSeg" role="group" aria-label="Ansicht"><button type="button" data-auf="bande" class="on" aria-pressed="true">Bande am Platz</button><button type="button" data-auf="trikot" aria-pressed="false">Logo auf dem Trikot</button></div></div>
@@ -364,7 +365,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     // Passt zu: Ärmel der Ersten und Zweiten als Fläche, in der Jugend die Trikotpatenschaft
     const P=$('#tkPasst'), herren=TK.team==='h1'||TK.team==='h2', key=!TK.platz?null:herren?(/^aermel/.test(TK.platz)?(TK.team==='h1'?'aermel_erste':'aermel_zweite'):TK.platz==='brust'?(TK.team==='h1'?'brust_erste':'brust_zweite'):null):(TK.art==='anzug'?null:'trikot_jugend'), l=key&&lk(key);
     if(l&&!fertig()){ const drin=imKorb(key,l.je_mannschaft?TK.team:null);
-      P.innerHTML=`<p><b>${esc(l.titel)}</b>${l.je_mannschaft?' für die '+esc(mn):''}${l.preis!=null?' · '+eur(l.preis)+' '+esc(PLIB.EINHEIT[l.einheit]||''):''}${s&&!s.vorhanden?'. Diesen Satz gibt es noch nicht, mit eurer Patenschaft wird er möglich.':'.'}</p>
+      P.innerHTML=`<p><b>${esc(l.titel)}</b>${l.je_mannschaft?' für die '+esc(mn):''}${l.preis!=null?' · '+ca(l)+eur(l.preis)+' '+esc(PLIB.EINHEIT[l.einheit]||''):''}${s&&!s.vorhanden?'. Diesen Satz gibt es noch nicht, mit eurer Patenschaft wird er möglich.':'.'}</p>
         <button type="button" class="knopf-w tk-dazu" data-tkdazu="${key}"${drin?' disabled':''}>${drin?'Ist in eurer Auswahl':'In die Auswahl'}</button>`;
       const b=P.querySelector('[data-tkdazu]'); if(b&&!drin)b.onclick=()=>{ if(l.je_mannschaft)S.team=TK.team; klickLeistung(key,l.je_mannschaft?TK.team:null); toast(l.titel+' ist in eurer Auswahl.'); tkZeigen(); }; }
     else P.innerHTML='';
@@ -416,7 +417,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const l=lk('bande_erste'), P=$('#bdPasst'); if(!P)return;
     const pk=S.korb.find(e=>/^(club|premium|p1896)$/.test(e.key)); if(pk&&lk(pk.key)){ P.innerHTML=`<p><b>${esc(lk(pk.key).titel)}</b>: ${pk.key==='p1896'?'Die Doppelbande (5 m)':'Die Einzelbande (2,50 m)'} ist in eurem Paket enthalten.</p>`; return; }
     if(l&&!fertig()){ const drin=imKorb('bande_erste',null);
-      P.innerHTML=`<p><b>${esc(l.titel)}</b>${l.preis!=null?' · '+eur(l.preis)+' '+esc(PLIB.EINHEIT[l.einheit]||''):''}. Ab dem Club Partner ist eine Bande im Paket.</p>
+      P.innerHTML=`<p><b>${esc(l.titel)}</b>${l.preis!=null?' · '+ca(l)+eur(l.preis)+' '+esc(PLIB.EINHEIT[l.einheit]||''):''}. Ab dem Club Partner ist eine Bande im Paket.</p>
         <button type="button" class="knopf-w tk-dazu" data-bddazu${drin?' disabled':''}>${drin?'Ist in eurer Auswahl':'In die Auswahl'}</button>`;
       const b=P.querySelector('[data-bddazu]'); if(b&&!drin)b.onclick=()=>{ klickLeistung('bande_erste',null); toast(l.titel+' ist in eurer Auswahl.'); bdText(); }; }
     else P.innerHTML=''; }
@@ -724,8 +725,8 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const zusatz=st?`<span class="lk-f ${st[0]}">${esc(st[1])}${!st[0].includes('aus')&&l.je_mannschaft&&tm?' für '+esc(tm.kurz):''}</span>`:l.je_mannschaft&&tm?`<span class="lk-f">Frei für die ${nbsp(esc(tm.name))}</span>`:'';
     return `<article class="bs${drin?' drin':''}${f===0?' voll':''}${S.neu===l.key+'|'+(team||'')?' neu':''}" data-bs="${l.key}">
       <div class="bs-z"><button type="button" class="bs-kopf" data-mehr="${l.key}" aria-expanded="${offen}" aria-controls="bsx-${l.key}">${tag?`<span class="lk-tag">${tag}</span>`:''}<span class="bs-n">${esc(l.titel)}</span><span class="bs-k">${esc(l.kurz||'')}</span>${zusatz}<span class="bs-m">${offen?'Weniger':'Mehr dazu'}</span></button>
-        <div class="bs-r"><div class="bs-p"><b>${eur(l.preis)}</b><small>${esc(PLIB.EINHEIT[l.einheit]||'')}</small></div>${knopfHtml(l,team,'bs-b',['Dazu','✓ Dabei','dazunehmen'])}</div></div>
-      <div class="bs-x" id="bsx-${l.key}"${offen?'':' hidden'}><p>${esc(l.text||'')}</p><p class="bs-net">${eur(l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto${l.je_mannschaft&&tm?', '+esc(tm.name):''}</p></div></article>`; }
+        <div class="bs-r"><div class="bs-p"><b>${ca(l)}${eur(l.preis)}</b><small>${esc(PLIB.EINHEIT[l.einheit]||'')}</small></div>${knopfHtml(l,team,'bs-b',['Dazu','✓ Dabei','dazunehmen'])}</div></div>
+      <div class="bs-x" id="bsx-${l.key}"${offen?'':' hidden'}><p>${esc(l.text||'')}</p><p class="bs-net">${ca(l)}${eur(l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto${l.je_mannschaft&&tm?', '+esc(tm.name):''}</p></div></article>`; }
   const BER_K={jugend:'Jugend',erste:'Erste',zweite:'Zweite',events:'Zeltlager und Turniere',verein:'Verein'};
   const BER_T={jugend:'Jugend',erste:'Erste Mannschaft',zweite:'Zweite Mannschaft',events:'Zeltlager und Turniere',verein:'Für den ganzen Verein'};
   function bausteine(){ const S0=$('#bausteine'), B=$('#bsIn'), Fi=$('#bsFilter'); if(!S0||!B)return;

@@ -579,6 +579,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.52',v:'0.99.52',datum:'2026-11-16',titel:'Die echte App für alle',kurz:'Wer die Sportzentrale am Handy im Browser nutzt, bekommt jetzt den Weg zur echten App: iPhone über TestFlight, Android über Google Play. Dein Zugang bleibt derselbe.',
+   punkte:[
+    {ic:'\u{1F4F2}',t:'Hol dir die echte App',d:'Am Handy erscheint auf der Startseite eine Karte mit dem Weg zur App. Mit „Später“ ist sie 14 Tage weg. Du meldest dich in der App mit derselben E-Mail an wie im Browser, der Browser geht weiter wie bisher.'},
+    {ic:'\u{1F44B}',t:'Im Willkommen',d:'Beim ersten Start am Handy bietet das Willkommen die echte App statt des Startbildschirm-Symbols an, sobald der Weg offen ist.'},
+    {ic:'\u{1F455}',t:'Ärmel und Jugend: einmalig, etwa 500 bis 700 Euro',d:'Ärmelpartner Erste und Zweite und die Trikotpatenschaft Jugend stehen jetzt als einmalige Kosten mit „ca. 600 €“. Im Text steht die Spanne von etwa 500 bis 700 Euro, je nach Mannschaftsgröße.',r:'partner'},
+    {ic:'\u{1F4B6}',t:'Siegprämien endgültig',d:'Die Beträge der Siegprämien sind jetzt fest und stehen im Spielerkonto ohne den Hinweis „vorläufig“.'}
+   ]},
   {id:'0.99.51',v:'0.99.51',datum:'2026-11-16',titel:'Präsentation für jede Firma, Bande und Trikot nur wenn sie passen',kurz:'Jede Firma hat jetzt eine Präsentation für den Termin vor Ort. Bande und Trikot zeigt sie erst, wenn Paket oder Baustein dazu passen. Einzelbande 2,50 m, Doppelbande 5 m.',
    punkte:[
     {ic:'\u{1F4C4}',t:'Alle Firmen in den Präsentationen',d:'Bisher hatten nur 16 von 104 Firmen eine Präsentation. Jetzt hat jede Firma unter Firmen eine, neue Firmen bekommen sie von selbst. Ansprechpartner, Branche und Anschrift kommen aus der Akte.',r:'partner'},
@@ -1528,7 +1535,3 @@ const SV_PATCHES=[
     {ic:'🗣️',t:'Anforderungen des Trainers',d:'„Insgesamt mehr Tempo“ oder „ein Sechser, der eröffnet“: solche Wünsche stehen im Bedarf und werden mit einem Tipp zum Suchauftrag.',r:'scout',go:'kader'},
     {ic:'🛟',t:'Backup mit Zweiter und Jugend',d:'In der Backup-Ansicht stehen unter jeder Position ausgegraut auch Spieler aus der Zweiten, der Jugend und mit anderer Hauptmannschaft.',r:'scout',go:'kader'},
     {ic:'✨',t:'Traumelf je Zeitraum',d:'Rückrunde, nächste und übernächste Saison, mit jedem Spieler, auch ohne Zusage. Daneben der Vergleich mit dem Kaderplan und ein Knopf, um mit einem Wunschspieler ein Gespräch festzuhalten.',r:'scout',go:'sxi'},
-    {ic:'👁️',t:'Eye-Test je Kategorie',d:'Alle Spieler in einer Kategorie untereinander, mit Höchstem, Niedrigstem und Schnitt. Deine Einschätzung trägst du direkt mit dem Regler ein. Dazu der Filter „Review fällig“ und im Profil erst der Schnitt, die Einzelwerte eingeklappt.',r:'scout',go:'eye'},
-    {ic:'📊',t:'MScore erklärt',d:'Jeder Baustein sagt, was er misst und warum er eigenständig ist. Einsatz & Liga rechnet frühere höhere Ligen mit an, Vorlagen zählen halb als Zusatz, und die Form von Abwehr und Torwart kommt aus den Gegentoren.',r:'scout',go:'model'},
-    {ic:'❤️',t:'Vereinstreue in fünf Stufen',d:'Von „Am Anfang“ bis „Vereinsikone“, im Profil, in der Spielerliste und ab Stufe drei als Abzeichen auf der Karte.',r:'team',go:'training'},
-    {ic:'📋',t:'Spielerliste: Ansicht Scouting',d:'Neue Ansicht mit Mannschaft, MScore, Eye-Test und Datenbasis. Die Spalte Mannschaft zeigt auch, wo einer zusätzlich spielt.',r:'team',go:'training'},

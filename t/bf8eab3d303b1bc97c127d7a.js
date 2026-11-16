@@ -1,3 +1,7 @@
+    {ic:'👁️',t:'Eye-Test je Kategorie',d:'Alle Spieler in einer Kategorie untereinander, mit Höchstem, Niedrigstem und Schnitt. Deine Einschätzung trägst du direkt mit dem Regler ein. Dazu der Filter „Review fällig“ und im Profil erst der Schnitt, die Einzelwerte eingeklappt.',r:'scout',go:'eye'},
+    {ic:'📊',t:'MScore erklärt',d:'Jeder Baustein sagt, was er misst und warum er eigenständig ist. Einsatz & Liga rechnet frühere höhere Ligen mit an, Vorlagen zählen halb als Zusatz, und die Form von Abwehr und Torwart kommt aus den Gegentoren.',r:'scout',go:'model'},
+    {ic:'❤️',t:'Vereinstreue in fünf Stufen',d:'Von „Am Anfang“ bis „Vereinsikone“, im Profil, in der Spielerliste und ab Stufe drei als Abzeichen auf der Karte.',r:'team',go:'training'},
+    {ic:'📋',t:'Spielerliste: Ansicht Scouting',d:'Neue Ansicht mit Mannschaft, MScore, Eye-Test und Datenbasis. Die Spalte Mannschaft zeigt auch, wo einer zusätzlich spielt.',r:'team',go:'training'},
     {ic:'🔁',t:'FuPa nochmal abgleichen',d:'Spiele, die noch vorläufig sind, stehen mit Hinweis oben. FuPa wird oft erst Tage später vollständig, dann die Datei einfach noch einmal hochladen. Im Spiel-Detail stehen jetzt auch die Noten.',r:'team',go:'training'}]},
   {id:'0.6',v:'0.6',datum:'2026-09-25',titel:'Kaderplanung, Eye-Test und Gespräche',kurz:'Der Kaderplan zeigt, wie sicher jede Planung ist, wo Plätze frei sind und was an Qualität fehlt. Dazu ein neuer Eye-Test mit regionaler Skala, ein fairerer MScore und Gespräche per Co-Trainer.',
    punkte:[

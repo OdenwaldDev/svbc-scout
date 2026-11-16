@@ -197,7 +197,7 @@ footer{align-items:center}
     <button class="prim" id="f-los" type="submit">Eintragen und weiter</button>
     <p class="hinweis">Du nutzt die App schon im Browser? Trag dieselbe E-Mail ein. Dein Zugang bleibt, wie er ist.</p>
   </form>
-  <div class="zeile"><button class="leise" id="a-zurueck">← Zurück</button></div>
+  <div class="zeile"><button class="leise" id="a-zurueck">← Zurück</button><button class="leise" id="a-direkt">Ich habe schon einen Zugang</button></div>
 </section>
 
 <section id="weg" class="weg" hidden aria-live="polite">
@@ -245,9 +245,9 @@ function nimm(m){geraet=m.g;schritt=m.s;kennung=m.k;pers=!!m.p;off=m.o?1:0;vorna
 function gemerkt(){try{var m=JSON.parse(localStorage.getItem(KEY)||'null');if(m&&m.k&&(m.g==='android'||m.g==='ios')&&Date.now()-m.t<60*864e5)return m}catch(e){}return null}
 function ruf(fn,body){if(!CFG||!CFG.url)return Promise.resolve(null);
   return fetch(CFG.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:CFG.anon,'content-type':'application/json'},body:JSON.stringify(body||{})}).then(function(r){return r.ok?r.json():null}).catch(function(){return null})}
-function melde(){if(kennung)ruf('app_tester_schritt',{p_token:kennung,p_schritt:Math.min(9,schritt+off)})}
+function melde(){if(kennung&&!/^direkt-/.test(kennung))ruf('app_tester_schritt',{p_token:kennung,p_schritt:Math.min(9,schritt+off)})}
 
-var ANMELDEN=['Öffne die App und melde dich mit deiner E-Mail und deinem Passwort an.','Erlaube Mitteilungen. Dann kommen Training, Spiel und Termine direkt aufs Handy.'];
+var ANMELDEN=['Öffne die App und melde dich mit deiner E-Mail und deinem Passwort an. Hast du die Sportzentrale schon im Browser genutzt, gilt derselbe Zugang.','Erlaube Mitteilungen. Dann kommen Training, Spiel und Termine direkt aufs Handy.'];
 var POST={t:'Schau in dein <em>Postfach.</em>',x:'Wir haben dir gerade eine Mail geschickt. Damit legst du deinen Zugang zur App an.',
   tun:['Öffne die Mail von der SV/BSC Sportzentrale.','Tippe auf den Knopf und lege dein Passwort fest.','Die Abteilung schaltet dich frei, meist noch am selben Tag. Mach hier ruhig schon weiter.'],
   link:null,ok:'Erledigt',hilfe:'Keine Mail da? Schau im Spam-Ordner nach. Nach fünf Minuten kannst du dich einfach noch einmal eintragen. Wenn du schon einen Zugang hast, steht in der Mail ein Knopf zum Anmelden.'};
@@ -276,7 +276,7 @@ function wege(){
   var I=[POST];
   if(S.ios==='offen'&&S.testflight){
     I.push({t:'Erst <em>TestFlight</em> holen.',x:'Das ist Apples kostenlose App für Testversionen.',tun:['Öffne den App Store über den Knopf.','Lade TestFlight und komm hierher zurück.'],
-      link:['TestFlight im App Store',TF],ok:'TestFlight ist installiert',hilfe:'TestFlight ist von Apple und kostenlos. Du brauchst dafür nur deine Apple-ID.'});
+      link:['TestFlight im App Store',TF],ok:'TestFlight ist installiert',hilfe:'TestFlight ist von Apple und kostenlos. Du brauchst dafür nur deine Apple-ID. Hast du TestFlight schon, tippe einfach auf „TestFlight ist installiert“.'});
     I.push({t:'Einladung <em>annehmen.</em>',x:'Mit einem Tipp öffnet sich die Testversion in TestFlight.',tun:['Tippe auf den Knopf.','In TestFlight auf „Annehmen“ und dann auf „Installieren“ tippen.'],
       link:['Testversion öffnen',S.testflight],ok:'Ist installiert',hilfe:'Öffnet sich nur der App Store, fehlt TestFlight noch. Geh einen Schritt zurück.'});
     I.push({t:'Anmelden und <em>loslegen.</em>',x:'Fast fertig. Jetzt noch rein in die App.',tun:ANMELDEN,link:null,ok:'Fertig, ich bin dabei',hilfe:'Anmeldung klappt nicht oder die Freigabe dauert? Schreib uns an fussball@sv-moerlenbach.de.'});
@@ -334,6 +334,7 @@ $('#w-ok').onclick=function(){schritt++;zeig()};
 $('#w-zurueck').onclick=function(){if(schritt>0){schritt--;zeig()}};
 $('#w-start').onclick=function(){zeigStart(true)};
 $('#a-zurueck').onclick=function(){zeigStart(true)};
+$('#a-direkt').onclick=function(){geraet=$('#formular').elements.geraet.value||'android';off=1;pers=false;vorname='';schritt=0;kennung='direkt-'+Date.now();zeig()};
 var F=$('#formular');
 F.elements.geraet.forEach(function(r){r.onchange=anmText});
 F.addEventListener('input',function(){$('#f-fehler').textContent=''});
@@ -369,7 +370,9 @@ stand();zeigStart(false);
 var q=new URLSearchParams(location.search).get('geraet');
 var P0=new URLSearchParams(location.search);
 // Link aus der Mail „Es geht los“: wer schon eingetragen ist, landet direkt beim nächsten Schritt, auch auf einem anderen Gerät
-if(q==='android'||q==='ios'){var m0=gemerkt();if(m0&&m0.g===q){nimm(m0);schritt=Math.max(m0.s,P0.get('weiter')&&!off?1:0);zeig()}else if(P0.get('weiter')){geraet=q;schritt=1;kennung='mail-'+Date.now();zeig()}else zeigAnm(q)}
+// Aus der App (0.99.52): wer schon einen Zugang hat, geht ohne Formular direkt zur Installation
+if((q==='android'||q==='ios')&&P0.get('direkt')){geraet=q;off=1;pers=false;vorname='';schritt=0;kennung='direkt-'+Date.now();zeig()}
+else if(q==='android'||q==='ios'){var m0=gemerkt();if(m0&&m0.g===q){nimm(m0);schritt=Math.max(m0.s,P0.get('weiter')&&!off?1:0);zeig()}else if(P0.get('weiter')){geraet=q;schritt=1;kennung='mail-'+Date.now();zeig()}else zeigAnm(q)}
 // Persönlicher Link aus der Karte „App-Test“: test.html?k=<Kennung>
 var kq=P0.get('k');
 if(kq&&/^[0-9a-f]{20,80}$/.test(kq)){

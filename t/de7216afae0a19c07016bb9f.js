@@ -405,6 +405,7 @@ window.addEventListener('appinstalled',()=>{ I1.ev=null; i1Fertig('app'); i1Zu()
 async function i1Art(){
   if(!i1App()){
     if(!(i1Handy()||I1.ev))return null;           // am Computer nur, wenn der Browser wirklich installieren kann
+    try{ if(typeof s114Offen==='function'&&await s114Offen())return null; }catch(e){}   // seit 0.99.52: Ist die echte App offen, wirbt die Karte auf der Startseite dafür, nicht das Startbildschirm-Blatt
     return i1Faellig('app')?'app':null;
   }
   // läuft als App: Mitteilungen anbieten, wenn möglich und noch aus

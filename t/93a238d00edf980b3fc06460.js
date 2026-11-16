@@ -1478,7 +1478,8 @@ function w94Schritte(){
   S.push({ id:'push', bild:'\u{1F514}', t:'Mitteilungen erlauben', x:'Darüber kommen Trainingsabfragen, Erinnerungen und deine Aufgaben. Ohne Mitteilungen verpasst du das Wichtigste. Wir schicken nur, was dich betrifft.',
     hinweis: (typeof i1IOS === 'function' && i1IOS() && !w94Nativ() && typeof i1App === 'function' && !i1App()) ? 'Auf dem iPhone gehen Mitteilungen im Browser erst, wenn die App auf dem Startbildschirm liegt. Das kommt im nächsten Schritt.' : 'Gleich fragt dein Handy nach. Bitte „Erlauben“ antippen.',
     los:'Mitteilungen erlauben', aktion:'push', spaeter:'Später' });
-  if(!w94Nativ() && typeof i1App === 'function' && !i1App()) S.push({ id:'app', bild:'\u{1F4F2}', t:'Auf den Startbildschirm', x:'So startet die Sportzentrale wie eine richtige App und bleibt angemeldet.', los:'Zeig mir, wie', aktion:'app', spaeter:'Später' });
+  if(W94.store) S.push({ id:'store', bild:'\u{1F4F2}', t:'Hol dir die echte App', x:(W94.store === 'ios' ? 'Über TestFlight kommt sie aufs iPhone.' : 'Über Google Play kommt sie aufs Handy.') + ' Mitteilungen kommen dort zuverlässig an, und die App startet sofort. Dein Zugang bleibt derselbe.', los:'App holen', aktion:'store', spaeter:'Später' });
+  else if(!w94Nativ() && typeof i1App === 'function' && !i1App()) S.push({ id:'app', bild:'\u{1F4F2}', t:'Auf den Startbildschirm', x:'So startet die Sportzentrale wie eine richtige App und bleibt angemeldet.', los:'Zeig mir, wie', aktion:'app', spaeter:'Später' });
   S.push({ id:'fertig', bild:'✅', t:'Fertig. Du bist startklar.', x:'Oben auf der Startseite steht, was für dich ansteht. Unter „Deine ersten Schritte“ findest du einen kurzen Rundgang.', los:'Zur Startseite' });
   return S;
 }
@@ -1500,6 +1501,7 @@ function w94Zeig(){
       if(an){ const o = el.querySelector('#w94ok'); o.hidden = false; o.textContent = '✓ Mitteilungen sind an.'; b.disabled = false; b.textContent = 'Weiter'; s.aktion = null; return; }
       b.disabled = false; b.textContent = 'Weiter'; s.aktion = null; const o = el.querySelector('#w94ok'); o.hidden = false; o.style.color = 'inherit';
       o.textContent = 'Noch nicht eingeschaltet. Du kannst es jederzeit unter Mein Konto nachholen.'; return; }
+    if(s.aktion === 'store'){ s.aktion = null; try{ window.open(s114Link(W94.store), '_blank', 'noopener'); }catch(e){} b.textContent = 'Weiter'; return; }
     if(s.aktion === 'app'){ s.aktion = null; try{ if(typeof I1 !== 'undefined') I1.gezeigt = false; el.style.display = 'none'; await i1Zeigen('app'); }catch(e){} el.style.display = ''; b.textContent = 'Weiter'; return; }
     weiter(); };
   const sp = el.querySelector('#w94sp'); if(sp) sp.onclick = weiter;
@@ -1517,6 +1519,7 @@ async function w94Start(force){
   const L = (typeof o1L === 'function' && o1L()) || {};
   if(!force && L['w:fertig']) return;
   if(!force && (document.querySelector('#overlay.open') || document.getElementById('svnSperre'))) { setTimeout(() => w94Start(), 4000); return; }
+  try{ W94.store = (typeof s114Offen === 'function') ? await s114Offen() : ''; }catch(e){ W94.store = ''; }
   w94Css(); W94.S = w94Schritte(); W94.i = 0; W94.offen = true; document.body.classList.add('w94-offen'); w94Zeig();
 }
 if(typeof svCockpit === 'function'){ const _ck94 = svCockpit; let einmal = false; svCockpit = function(){ const r = _ck94.apply(this, arguments); if(!einmal){ einmal = true; setTimeout(() => { try{ w94Start(); }catch(e){} }, 1800); } return r; }; }
