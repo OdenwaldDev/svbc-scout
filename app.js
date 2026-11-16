@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.47', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.48', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18595,6 +18595,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.48',v:'0.99.48',datum:'2026-11-16',titel:'Logos auf den Ärmeln sitzen richtig',kurz:'Im Trikot-Creator stehen die Ärmel-Logos jetzt größer und passend zur Ärmelrichtung, nicht mehr klein und schief.',
+   punkte:[
+    {ic:'\u{1F455}',t:'Ärmel-Logos realistisch',d:'Die Logos auf den Ärmeln sind größer, liegen mittig auf dem Ärmelfeld über dem Streifen und folgen der Neigung des Ärmels. Das gilt für Heim, Auswärts und den Anzug, in 3D und in der Foto-Ansicht.'}
+   ]},
   {id:'0.99.47',v:'0.99.47',datum:'2026-11-16',titel:'Neues Logo auf den Trikots und Anzügen',kurz:'Auf dem linken Ärmel steht jetzt „Sport ist cool!“ statt des Platzhalters: weiß auf den Trikots, schwarz auf den Anzügen.',
    punkte:[
     {ic:'\u{1F455}',t:'„Sport ist cool!“ auf dem Ärmel',d:'Das Logo von Allianz Albert Klee ist jetzt die echte Schreibschrift, auf Heim- und Auswärtstrikot in Weiß, auf dem Anzug in Schwarz. Der Platzhalter ist weg.'}

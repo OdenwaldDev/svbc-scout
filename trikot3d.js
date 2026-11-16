@@ -31,14 +31,14 @@ window.TRIKOT3D = (function(){
     },
     anzug: {
       jacke_brust:{ n:'Jacke Brust', k:'Brust', teil:'torso', vorn:true, x:-.105, y:.53, w:.125, h:.07, haupt:true, fokus:'oben' },
-      aermel_l:{ n:'Ärmel links', k:'Ärmel L', teil:'aermel', seite:1, l:.3, w:.075, h:.055, fokus:'oben' },
-      aermel_r:{ n:'Ärmel rechts', k:'Ärmel R', teil:'aermel', seite:-1, l:.3, w:.075, h:.055, fokus:'oben' }
+      aermel_l:{ n:'Ärmel links', k:'Ärmel L', teil:'aermel', seite:1, l:.25, w:.095, h:.07, fokus:'oben' },
+      aermel_r:{ n:'Ärmel rechts', k:'Ärmel R', teil:'aermel', seite:-1, l:.25, w:.095, h:.07, fokus:'oben' }
     }
   };
   const FOTO = {   // Plätze auf den Produktfotos (Pixel im Foto, Drehung in Grad), nur Trikot; gemeinde: Gemeindewappen oben in der Mitte [x, y, b, h]
-    heim:{ vorn:{ bild:'foto-heim-vorn.webp', w:397, h:505, brust:[204,226,148,74,0], aermel_l:[344,163,32,21,24], aermel_r:[60,162,32,21,-22], wappen:[268,150,44], gemeinde:[204,146,35,36] },
+    heim:{ vorn:{ bild:'foto-heim-vorn.webp', w:397, h:505, brust:[204,226,148,74,0], aermel_l:[338,159,36,28,-13], aermel_r:[57,158,36,28,13], wappen:[268,150,44], gemeinde:[204,146,35,36] },
            hinten:{ bild:'foto-heim-hinten.webp', w:437, h:539, jungs:[222,102,74], name:[222,128,128], nummer:[222,204,124] } },
-    auswaerts:{ vorn:{ bild:'foto-ausw-vorn.webp', w:447, h:555, brust:[222,232,150,76,0], aermel_l:[375,162,35,23,24], aermel_r:[63,162,35,23,-22], wappen:[288,153,44], gemeinde:[222,149,36,37] },
+    auswaerts:{ vorn:{ bild:'foto-ausw-vorn.webp', w:447, h:555, brust:[222,232,150,76,0], aermel_l:[368,158,39,30,-13], aermel_r:[60,158,39,30,13], wappen:[288,153,44], gemeinde:[222,149,36,37] },
            hinten:{ bild:'foto-ausw-hinten.webp', w:453, h:525, jungs:[224,78,76], name:[226,105,130], nummer:[228,180,124] } }
   };
   // 3D aus den Produktfotos: Atlas (links vorn, rechts hinten, 1024 × 1216 je Seite, aus den hochgerechneten Fotos in tools/trikot_hd),
@@ -47,10 +47,10 @@ window.TRIKOT3D = (function(){
   const FOTO3D = {
     A:[1024, 1216], N:[160, 192], hoehe:.76, dmax:.14, saum:-.03,
     heim:{ atlas:'foto3d-heim.webp', tiefe:'foto3d-heim-tiefe.png', maske:'foto3d-heim-maske.png', breite:0.5935,
-      brust:[523,515,425,213,0], aermel_l:[924,348,92,56,24], aermel_r:[108,344,92,56,-22], wappen:[707,313,126], gemeinde:[523,302,101,103],
+      brust:[523,515,425,213,0], aermel_l:[924,342,104,82,-13], aermel_r:[112,336,104,82,13], wappen:[707,313,126], gemeinde:[523,302,101,103],
       jungs:[1528,122,188], name:[1529,182,328], nummer:[1529,356,308] },
     auswaerts:{ atlas:'foto3d-auswaerts.webp', tiefe:'foto3d-auswaerts-tiefe.png', maske:'foto3d-auswaerts-maske.png', breite:0.6048,
-      brust:[521,493,392,199,0], aermel_l:[922,319,92,56,24], aermel_r:[106,320,92,56,-22], wappen:[693,298,115], gemeinde:[521,288,94,97],
+      brust:[521,493,392,199,0], aermel_l:[922,314,104,82,-13], aermel_r:[108,312,104,82,13], wappen:[693,298,115], gemeinde:[521,288,94,97],
       jungs:[1511,127,218], name:[1514,190,393], nummer:[1513,364,344] }
   };
   function platzListe(art){ return Object.keys(PLAETZE[art === 'anzug' ? 'anzug' : 'trikot']); }
@@ -61,7 +61,7 @@ window.TRIKOT3D = (function(){
   function rundDruck(a, b, w, h, aussen){
     const iw = b.width || b.naturalWidth, ih = b.height || b.naturalHeight; if(!iw || !ih) return;
     if(!aussen){ a.drawImage(b, -w / 2, -h / 2, w, h); return; }
-    const N = 48, t0 = .1, t1 = 1.0, s0 = Math.sin(t0), sp = Math.sin(t1) - s0, g = u => (Math.sin(t0 + u * (t1 - t0)) - s0) / sp;
+    const N = 48, t0 = .1, t1 = .85, s0 = Math.sin(t0), sp = Math.sin(t1) - s0, g = u => (Math.sin(t0 + u * (t1 - t0)) - s0) / sp;
     const xBei = u => aussen > 0 ? (g(u) - .5) * w : (.5 - g(1 - u)) * w;   // u: Anteil im Logo von links
     for(let i = 0; i < N; i++){ const x0 = xBei(i / N), x1 = xBei((i + 1) / N); a.drawImage(b, i / N * iw, 0, iw / N, ih, x0, -h / 2, x1 - x0 + .6, h); }
   }
@@ -541,7 +541,7 @@ window.TRIKOT3D = (function(){
         if(p.teil === 'torso') Z.anker[k] = Object.assign(torsoAnker(p.x, p.y, p.vorn), { teil:'torso' });
         else if(p.teil === 'aermel'){ const t = teile[p.seite > 0 ? 'aermel_l' : 'aermel_r'], v = 1 - p.l;
           const ach = add(t.form.PUV(.25, Math.min(1, v + .02)), t.form.PUV(.25, Math.max(0, v - .02)), -1);   // Richtung zur Schulter (v wächst zur Schulter)
-          const u = besteU(t.form, v, art === 'anzug' ? [p.seite * .5, .3, .8] : [p.seite * .4, .5, .8]);
+          const u = besteU(t.form, v, art === 'anzug' ? [p.seite * .12, .3, .95] : [p.seite * .4, .5, .8]);
           Z.anker[k] = Object.assign(ankerFuer(t.form, t.cv, u, v, { oben:norm(ach), mx:t.form.PUV(u, v)[0] - p.seite * .1, my:t.form.PUV(u, v)[1] - .05 }), { teil:p.seite > 0 ? 'aermel_l' : 'aermel_r' }); }
         else { const t = teile[p.seite > 0 ? 'bein_l' : 'bein_r'], v = 1 - p.l, u = besteU(t.form, v, [p.seite * .35, 0, p.vorn ? 1 : -1]);
           const P0 = t.form.PUV(u, v); Z.anker[k] = Object.assign(ankerFuer(t.form, t.cv, u, v, { mx:P0[0] - p.seite * .1, my:P0[1] }), { teil:p.seite > 0 ? 'bein_l' : 'bein_r' }); }
