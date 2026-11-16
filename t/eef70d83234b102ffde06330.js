@@ -311,7 +311,11 @@ window.svFoerderKontext = function() {
   const v = window.VEREIN || {};
   const outcome = svFoerderRueckkehr;
   svFoerderRueckkehr = null;
-  return { sb: SVB.sb, outcome, club: { name:v.texte?.name, short:v.texte?.kurz, place:v.texte?.ort, website:v.texte?.website, blue:v.farben?.brand } };
+  return { sb: SVB.sb, outcome, openPeople:typeof isAdmin==='function' && isAdmin() ? function() {
+    if(!svFoerderDarf() || !isAdmin()) throw new Error('Einladungen verwaltet der Admin.');
+    svFoerderEinladung=true;
+    goTab('admin');
+  } : null, club: { name:v.texte?.name, short:v.texte?.kurz, place:v.texte?.ort, website:v.texte?.website, blue:v.farben?.brand } };
 };
 SV_PAGES.foerderung = ['Förderzentrale','Vereinsbedarf, Förderquellen und Voranfragen'];
 SV_TBL.foerderung = ['wallet','Förderzentrale'];
@@ -347,6 +351,24 @@ N77_GRP.Verein.splice(N77_GRP.Verein.indexOf('sponsoring')+1,0,'foerderung');
       Promise.resolve(svrLoad(true)).then(() => {
         if (svFoerderDarf() && svCurTab() === 'home') goTab('foerderung');
       });
+    }
+    return result;
+  };
+}
+
+// Hinweis bleibt beim vorhandenen Einladungsformular; keine automatische Rechtevergabe.
+let svFoerderEinladung=false;
+{
+  const renderPeople=svAdminRender;
+  svAdminRender=async function() {
+    const result=await renderPeople.apply(this,arguments);
+    if(svFoerderEinladung && isAdmin()) {
+      const form=document.querySelector('#svInv');
+      if(form && !document.querySelector('#foerder-invite-help')) {
+        const note=document.createElement('p');note.id='foerder-invite-help';
+        note.textContent='Für Fördermitarbeit: Jugendtrainer mit Mannschaft, Trainer oder Kaderplaner wählen und unter Funktionen die Förderzentrale ergänzen. Die Rolle kann weitere Vereinsbereiche erlauben. Gast, Spieler, Helfer sowie reine Bereichsleitungen erhalten aktuell keinen Förderzugang. Förderberechtigte sehen alle Förderakten. Nach Einladen erhältst Du den persönlichen Link zum Weitergeben; es wird keine Mail automatisch verschickt. Bestehende Personen bitte unten über Bereiche & Funktionen bearbeiten und bei Bedarf einen neuen Anmelde-Link erstellen.';
+        form.before(note);
+      }
     }
     return result;
   };

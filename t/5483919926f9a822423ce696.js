@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.55',v:'0.99.55',datum:'2026-11-16',titel:'Förderchancen einfach entscheiden',kurz:'Konkrete Vorschläge mit Förderrahmen und Aufwand. Nach Abteilung Fußball, Jugendfußball und Gesamtverein filtern und mit GO, Interessant oder Nein entscheiden.',
+   punkte:[{ic:'check',t:'Vorschlag statt Formular',d:'23 bestehende Vorhaben mit passender Maßnahme, kurzer Empfehlung, offenen Punkten und Originalquellen. GO speichert die Auswahl und erstellt eine interne Vorbereitungsskizze.'},{ic:'users',t:'Zuständigkeit klar',d:'Jugendthemen betreut die Jugendabteilung. Der Admin erreicht persönliche Einladungslinks über Person einladen. Versand und verbindliche Anträge benötigen weiter eine gesonderte Freigabe.'}]},
   {id:'0.99.54',v:'0.99.54',datum:'2026-11-16',gross:true,titel:'Schlanker: Bereiche statt Menü-Flut',kurz:'Das Menü „Mehr“ ist jetzt in Bereiche gegliedert, die sich auf Tipp öffnen. Bildwechsel zeigt kurz das Wappen. Die Leitung bekommt nur noch wichtige Meldungen.',
    punkte:[
     {ic:'\u{1F4C1}',t:'Bereiche statt langer Liste',d:'Senioren, Jugend, Spieltag, Veranstaltungen, Partner, Verein, Kommunikation und Verwaltung sind aufgeklappte Ordner. Es ist immer nur einer offen, der Rest bleibt übersichtlich.'},
@@ -1534,6 +1536,3 @@ const SV_PATCHES=[
     {ic:'📐',t:'Rahmen je Liga',d:'Gruppenliga 52 bis 82, Kreisoberliga 43 bis 73, Kreisliga A 31 bis 61, B 22 bis 52, C 14 bis 44, D 7 bis 37. Ein typischer Stammspieler liegt in der Kreisoberliga bei 63, in der A-Liga bei 51, passend zur Skala des Eye-Tests.',r:'scout',go:'model'},
     {ic:'⚖️',t:'Fair je Position',d:'Mittelfeldspieler werden nicht mehr an Stürmertoren gemessen, sondern an Mittelfeldspielern derselben Liga. Abwehr und Torwart zählen über die Gegentore der Mannschaft.'},
     {ic:'🚀',t:'Ausnahmeleistung zählt',d:'Wer mehr als ein Tor je Spiel schießt, bekommt bis zu 30 Punkte obendrauf. Ein Stürmer der Kreisliga D mit drei Toren je Spiel landet so um 60.',r:'scout',go:'model'},
-    {ic:'👁️',t:'Eye-Test zählt mehr',d:'Eure Bewertung zieht den Wert in ihre Richtung: bei einer Bewertung zu 25 %, bei zwei zu 35 %, ab drei zu 45 %.',r:'scout',go:'eye'},
-    {ic:'🏠',t:'Startseite klarer',d:'Die große Zahl ist die Stärke, daneben steht die Wechselchance. Die Mischzahl „Transfer-Chance“ fällt weg.',r:'scout',go:'home'}]},
-  {id:'0.7',v:'0.7',datum:'2026-09-25',titel:'Lukas\u2019 Liste komplett, Urlaub und Materialdienst',kurz:'Alle 27 Punkte aus Lukas\u2019 Vorschlägen sind jetzt drin, dazu Urlaub in der Kabine und der Materialdienst: Verfügbarkeit je Zeitraum, freie Plätze direkt in der Liste, eine echte Traumelf, Eye-Test je Kategorie, ein erklärter MScore und ein Änderungsverlauf.',

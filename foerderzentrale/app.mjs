@@ -1,17 +1,19 @@
 import { blankCase, caseDecisionText, categories, euro, evaluate, instruments, isOriginal, makeLetter, offerRequestStatuses, requiredChecks,
-  results, routeStatuses, sourceRegister, sourceUrl, states } from "./domain.mjs?v=beta-0.99.54";
-import { embeddedApi, outlookOutcome } from "./sportzentrale.mjs?v=beta-0.99.54";
-import { loadMeeting, mountMeeting } from "./meeting.mjs?v=beta-0.99.54";
+  results, routeStatuses, sourceRegister, sourceUrl, states } from "./domain.mjs?v=beta-0.99.55";
+import { embeddedApi, outlookOutcome } from "./sportzentrale.mjs?v=beta-0.99.55";
+import { loadMeeting, mountMeeting } from "./meeting.mjs?v=beta-0.99.55";
+import { mountOpportunities, departments, departmentOf } from "./opportunities.mjs?v=beta-0.99.55";
 
 const root = document.querySelector("#app"), notice = document.querySelector("#notice");
 const steps = ["Projekt", "Angebot und Quellen", "Förderprüfung", "Entscheidung", "Anschreiben"];
 const stepAddresses = ["projekt", "angebote", "pruefung", "entscheidung", "anschreiben"];
 const factLabels = { legal:"Rechtsträger", representation:"Vertretung und Absenderrolle", nonprofit:"Gemeinnützigkeit", youth:"Jugend- und Mitgliederzahlen (aggregiert)" };
 const factStatuses = { unverified:"Unbestätigt", verified:"Bestätigt", conflicting:"Widersprüchlich", expired:"Abgelaufen" };
-let state, item, detail, page = "cases", step = 0, dirty = false, busy = false, noticeTimer;
+let state, item, detail, page = "overview", step = 0, dirty = false, busy = false, noticeTimer;
 let queue = null;
 let meeting;
 let meetingScope;
+const overviewPreferences={department:'all',selection:'all'};
 
 function escape(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[char]);
@@ -66,6 +68,7 @@ async function refreshDetail() { detail = item.id ? await api("cases/" + item.id
 async function openCase(id, selectedStep = 0) {
   detail = await api("cases/" + id);
   item = detail.item;
+  item.department ??= departmentOf(item);
   item.fundingRoutes ??= [];
   item.offerRequests ??= [];
   dirty = false;
@@ -73,10 +76,10 @@ async function openCase(id, selectedStep = 0) {
   page = "case";
 }
 async function openCaseAddress() {
-  if (location.hash === "#arbeitskorb" || location.hash === "#leitersitzung") {
+  if (["#arbeitskorb","#leitersitzung","#chancen"].includes(location.hash)) {
     if (dirty && !window.confirm("Ungespeicherte Eingaben verwerfen?")) return;
     dirty = false;
-    page = location.hash === "#leitersitzung" ? "meeting" : "queue";
+    page = location.hash === "#chancen" ? "overview" : location.hash === "#leitersitzung" ? "meeting" : "queue";
     return;
   }
   const address = /^#vorgang\/([a-f0-9-]{36})\/([a-z]+)$/.exec(location.hash);
@@ -94,8 +97,8 @@ function fileDownload(content, type, filename) {
 }
 function top() {
   const tab = (id, title) => button(title, "page-" + id, "", (page === id || page === "case" && id === "cases") ? 'aria-current="page"' : "");
-  return `<header class="top"><div class="top-inner"><button type="button" class="brand" data-action="page-cases"><span class="brand-mark">${x(state.club.short)}</span><span><strong>Förderzentrale</strong><small>${x(state.club.name)}</small></span></button>
-  <nav aria-label="Hauptnavigation">${tab("cases","Vorgänge")}${tab("meeting","Leitersitzung")}${tab("queue","Arbeitskorb")}${tab("sources","Förderradar")}${tab("facts","Vereinsdossier")}${tab("settings","Outlook")}</nav></div></header>`;
+  return `<header class="top"><div class="top-inner"><button type="button" class="brand" data-action="page-overview"><span class="brand-mark">${x(state.club.short)}</span><span><strong>Förderzentrale</strong><small>${x(state.club.name)}</small></span></button>
+  <nav aria-label="Hauptnavigation">${tab("overview","Förderchancen")}<details class="easy-admin"><summary>Verwaltung</summary><div>${tab("cases","Vorgänge")}${tab("meeting","Leitersitzung")}${tab("queue","Arbeitskorb")}${tab("sources","Förderradar")}${tab("facts","Vereinsdossier")}${tab("settings","Outlook")}</div></details></nav></div></header>`;
 }
 function caseList() {
   const rows = state.cases.map(row => {
@@ -135,7 +138,7 @@ async function loadQueue() {
     entries.push(...batch.map((result, i) => ({ row:rows[i], ...result.value })));
   }
   queue = entries;
-  if (page === "queue" || page === "meeting") render();
+  if (["queue","meeting","overview"].includes(page)) render();
 }
 function workQueue() {
   const rows = queue ? Object.entries(queueGroups).map(([group, label]) => {
@@ -202,7 +205,7 @@ function settings() {
 function projectPage() {
   return card("Bedarf und Umsetzung",`<div class="grid">
     ${item.intake ? select("intake","Bedarf im Verein", {suggested:"Recherchevorschlag · intern zu bestätigen",confirmed:"Konkreter Bedarf bestätigt"}) : ""}
-    ${field("title","Projekttitel", {css:"wide"})}${select("type","Projektkategorie",categories)}
+    ${field("title","Projekttitel", {css:"wide"})}${select("department","Zuständiger Bereich",departments)}${select("type","Projektkategorie",categories)}
     ${field("place","Projektort")}${block("need","Was braucht der Verein konkret?")}
     ${field("audience","Zielgruppe",{hint:"Beschreibe die Gruppen ohne personenbezogene Daten."})}
     ${field("owner","Intern verantwortlich")}${block("measure","Geplante Umsetzung")}${block("outcome","Angestrebtes Ergebnis")}
@@ -371,22 +374,28 @@ function casePage() {
     </aside></div>`;
 }
 function render() {
-  const hash = page === "meeting" ? "#leitersitzung" : page === "queue" ? "#arbeitskorb"
+  const hash = page === "overview" ? "#chancen" : page === "meeting" ? "#leitersitzung" : page === "queue" ? "#arbeitskorb"
     : page === "case" && item.id ? "#vorgang/" + item.id + "/" + stepAddresses[step] : "";
   const current = location.hash;
-  if (hash || current.startsWith("#vorgang/") || current === "#arbeitskorb" || current === "#leitersitzung") {
+  if (hash || current.startsWith("#vorgang/") || ["#arbeitskorb","#leitersitzung","#chancen"].includes(current)) {
     history.replaceState(history.state, "", location.pathname + location.search + hash);
   }
   const meetingPage = () => lead("Leitersitzung", "Vorhaben auswählen, Aufgaben übernehmen und einen Beschlussvorschlag mit in die Sitzung nehmen.") +
     `<p class="muted">Auswahl und Sitzungstext bleiben in diesem Browser gespeichert.${embeddedApi ? " Beim Abmelden werden sie auf diesem Gerät entfernt. Lade deinen fertigen Text vorher herunter." : ""}</p>` +
     '<div id="meeting-desk" class="stack"></div>';
+  const overviewPage = () => lead("Was lohnt sich für uns?", "Meine Vorschläge, nach Nutzen und Aufwand sortiert. Du entscheidest.") +
+    `<div class="easy-invite">${state.peopleAvailable?'<button type="button" data-action="people">Person einladen</button>':''}<button type="button" data-action="new">Eigenes Projekt anlegen</button></div><p class="easy-intro">GO erstellt eine Vorbereitungsskizze. Versand erst nach gesonderter Freigabe. Beträge sind mögliche Obergrenzen.</p><div id="opportunity-desk"></div>`;
   root.innerHTML = top() + '<main class="shell" id="content">' +
-    ({ cases:caseList,meeting:meetingPage,queue:workQueue,case:casePage,sources:radar,facts:factsPage,settings })[page]() + '</main>';
+    ({ overview:overviewPage,cases:caseList,meeting:meetingPage,queue:workQueue,case:casePage,sources:radar,facts:factsPage,settings })[page]() + '</main>';
+  if (page === "overview") mountOpportunities(root.querySelector('#opportunity-desk'),{
+    entries:queue,cases:state.cases,day:state.day,notify:showNotice,download:fileDownload,preferences:overviewPreferences,
+    save:async data=>{const saved=await api('cases/'+data.id,'PUT',data);const row=state.cases.find(c=>c.id===data.id);if(row)row.version=saved.version;return saved;},retry:()=>{queue=null;render();},
+  });
   if (page === "meeting") mountMeeting(root.querySelector("#meeting-desk"), {
     entries: queue, cases: state.cases, plan: meeting, club: state.club, day: state.day,
     notify: showNotice, download: fileDownload, retry: () => { queue = null; render(); },
   });
-  if (page === "queue" || page === "meeting") void loadQueue();
+  if (["queue","meeting","overview"].includes(page)) void loadQueue();
 }
 function changed() {
   dirty = true;
@@ -444,7 +453,8 @@ root.addEventListener("click", async e => {
   busy = true;
   if (target.tagName === "BUTTON") target.disabled = true;
   try {
-    if (action === "new") { item = blankCase(); item.place = state.club.place; detail=null; dirty=false; page="case"; step=0; render(); }
+    if (action === "people") await api("people","POST");
+    if (action === "new") { item = blankCase(); item.department=overviewPreferences.department==='all'?'football':overviewPreferences.department; item.place = state.club.place; detail=null; dirty=false; page="case"; step=0; render(); }
     if (action === "open") { await openCase(target.dataset.id); render(); window.scrollTo(0,0); }
     if (action === "step") { step=i; render(); window.scrollTo(0,0); }
     if (action === "save") await persist();
@@ -556,7 +566,7 @@ try {
   else await openCaseAddress();
   render();
   window.addEventListener("hashchange", async () => {
-    if (!(location.hash.startsWith("#vorgang/") || ["#arbeitskorb", "#leitersitzung"].includes(location.hash)) || busy) return;
+    if (!(location.hash.startsWith("#vorgang/") || ["#chancen", "#arbeitskorb", "#leitersitzung"].includes(location.hash)) || busy) return;
     try { await openCaseAddress(); render(); }
     catch (error) { showNotice(error.message, true); }
   });

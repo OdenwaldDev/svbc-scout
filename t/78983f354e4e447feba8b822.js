@@ -1,3 +1,6 @@
+    {ic:'👁️',t:'Eye-Test zählt mehr',d:'Eure Bewertung zieht den Wert in ihre Richtung: bei einer Bewertung zu 25 %, bei zwei zu 35 %, ab drei zu 45 %.',r:'scout',go:'eye'},
+    {ic:'🏠',t:'Startseite klarer',d:'Die große Zahl ist die Stärke, daneben steht die Wechselchance. Die Mischzahl „Transfer-Chance“ fällt weg.',r:'scout',go:'home'}]},
+  {id:'0.7',v:'0.7',datum:'2026-09-25',titel:'Lukas\u2019 Liste komplett, Urlaub und Materialdienst',kurz:'Alle 27 Punkte aus Lukas\u2019 Vorschlägen sind jetzt drin, dazu Urlaub in der Kabine und der Materialdienst: Verfügbarkeit je Zeitraum, freie Plätze direkt in der Liste, eine echte Traumelf, Eye-Test je Kategorie, ein erklärter MScore und ein Änderungsverlauf.',
    punkte:[
     {ic:'🌴',t:'Urlaub in der Kabine',d:'Spieler tragen Urlaub frühzeitig über ihren Kabinen-Link ein. Für jedes Training im Zeitraum sind sie automatisch abgemeldet, bekommen keine Einladung und keine Erinnerung und stehen im Training mit Grund drin. Das Trainerteam kann Urlaub auch selbst eintragen.',r:'team',go:'abst'},
     {ic:'🧺',t:'Materialdienst',d:'Unter Mannschaft → Abstimmungen ein Team für vier Wochen einteilen, Zeitraum frei änderbar, oder die nächsten Teams vorschlagen lassen. Die Eingeteilten sehen es in der Kabine und bekommen zum Start und an Trainingstagen eine WhatsApp-Nachricht.',r:'team',go:'abst'},

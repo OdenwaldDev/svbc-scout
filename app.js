@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.54', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.55', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18597,6 +18597,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.55',v:'0.99.55',datum:'2026-11-16',titel:'Förderchancen einfach entscheiden',kurz:'Konkrete Vorschläge mit Förderrahmen und Aufwand. Nach Abteilung Fußball, Jugendfußball und Gesamtverein filtern und mit GO, Interessant oder Nein entscheiden.',
+   punkte:[{ic:'check',t:'Vorschlag statt Formular',d:'23 bestehende Vorhaben mit passender Maßnahme, kurzer Empfehlung, offenen Punkten und Originalquellen. GO speichert die Auswahl und erstellt eine interne Vorbereitungsskizze.'},{ic:'users',t:'Zuständigkeit klar',d:'Jugendthemen betreut die Jugendabteilung. Der Admin erreicht persönliche Einladungslinks über Person einladen. Versand und verbindliche Anträge benötigen weiter eine gesonderte Freigabe.'}]},
   {id:'0.99.54',v:'0.99.54',datum:'2026-11-16',gross:true,titel:'Schlanker: Bereiche statt Menü-Flut',kurz:'Das Menü „Mehr“ ist jetzt in Bereiche gegliedert, die sich auf Tipp öffnen. Bildwechsel zeigt kurz das Wappen. Die Leitung bekommt nur noch wichtige Meldungen.',
    punkte:[
     {ic:'\u{1F4C1}',t:'Bereiche statt langer Liste',d:'Senioren, Jugend, Spieltag, Veranstaltungen, Partner, Verein, Kommunikation und Verwaltung sind aufgeklappte Ordner. Es ist immer nur einer offen, der Rest bleibt übersichtlich.'},
@@ -34955,7 +34957,11 @@ window.svFoerderKontext = function() {
   const v = window.VEREIN || {};
   const outcome = svFoerderRueckkehr;
   svFoerderRueckkehr = null;
-  return { sb: SVB.sb, outcome, club: { name:v.texte?.name, short:v.texte?.kurz, place:v.texte?.ort, website:v.texte?.website, blue:v.farben?.brand } };
+  return { sb: SVB.sb, outcome, openPeople:typeof isAdmin==='function' && isAdmin() ? function() {
+    if(!svFoerderDarf() || !isAdmin()) throw new Error('Einladungen verwaltet der Admin.');
+    svFoerderEinladung=true;
+    goTab('admin');
+  } : null, club: { name:v.texte?.name, short:v.texte?.kurz, place:v.texte?.ort, website:v.texte?.website, blue:v.farben?.brand } };
 };
 SV_PAGES.foerderung = ['Förderzentrale','Vereinsbedarf, Förderquellen und Voranfragen'];
 SV_TBL.foerderung = ['wallet','Förderzentrale'];
@@ -34991,6 +34997,24 @@ N77_GRP.Verein.splice(N77_GRP.Verein.indexOf('sponsoring')+1,0,'foerderung');
       Promise.resolve(svrLoad(true)).then(() => {
         if (svFoerderDarf() && svCurTab() === 'home') goTab('foerderung');
       });
+    }
+    return result;
+  };
+}
+
+// Hinweis bleibt beim vorhandenen Einladungsformular; keine automatische Rechtevergabe.
+let svFoerderEinladung=false;
+{
+  const renderPeople=svAdminRender;
+  svAdminRender=async function() {
+    const result=await renderPeople.apply(this,arguments);
+    if(svFoerderEinladung && isAdmin()) {
+      const form=document.querySelector('#svInv');
+      if(form && !document.querySelector('#foerder-invite-help')) {
+        const note=document.createElement('p');note.id='foerder-invite-help';
+        note.textContent='Für Fördermitarbeit: Jugendtrainer mit Mannschaft, Trainer oder Kaderplaner wählen und unter Funktionen die Förderzentrale ergänzen. Die Rolle kann weitere Vereinsbereiche erlauben. Gast, Spieler, Helfer sowie reine Bereichsleitungen erhalten aktuell keinen Förderzugang. Förderberechtigte sehen alle Förderakten. Nach Einladen erhältst Du den persönlichen Link zum Weitergeben; es wird keine Mail automatisch verschickt. Bestehende Personen bitte unten über Bereiche & Funktionen bearbeiten und bei Bedarf einen neuen Anmelde-Link erstellen.';
+        form.before(note);
+      }
     }
     return result;
   };

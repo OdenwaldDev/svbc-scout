@@ -1,6 +1,6 @@
-import { draftProblems, evaluate, today, validateCase } from "./domain.mjs?v=beta-0.99.54";
-import { projectPdf } from "./documents.mjs?v=beta-0.99.54";
-import { eml, encodeBytes } from "./eml.mjs?v=beta-0.99.54";
+import { draftProblems, evaluate, today, validateCase } from "./domain.mjs?v=beta-0.99.55";
+import { projectPdf } from "./documents.mjs?v=beta-0.99.55";
+import { eml, encodeBytes } from "./eml.mjs?v=beta-0.99.55";
 
 function download(content, type, filename) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -46,8 +46,9 @@ export function createSportApi(context) {
         rpc("stand"),mail("status").catch(()=>({configured:false,address:null})),sb.auth.getSession(),
       ]);
       outlook=connection;
-      return { ...stand, club, day, mode:"Sportzentrale", outlook, ai:false, meetingAccount:session.data?.session?.user?.id };
+      return { ...stand, club, day, mode:"Sportzentrale", outlook, ai:false, peopleAvailable:typeof context.openPeople==="function", meetingAccount:session.data?.session?.user?.id };
     }
+    if (path === "people") { if(typeof context.openPeople!=="function")throw new Error("Einladungen verwaltet der Admin der Sportzentrale.");return context.openPeople(); }
     if (path === "outlook/connect") return mail("connect");
     if (path === "outlook/disconnect") return outlook=await mail("disconnect");
     if (path === "facts") return (await rpc("dossier",null,data)).facts;

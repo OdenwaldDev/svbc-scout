@@ -355,6 +355,11 @@ export function draftProblems(item, facts, day = today()) {
 }
 export function validateCase(item) {
   if (!item || typeof item !== "object" || !hasText(item.title) || !hasText(item.need) || !Object.hasOwn(categories, item.type)) throw new Error("Projekttitel, echter Vereinsbedarf und Kategorie sind erforderlich.");
+  if(item.department!==undefined && !["football","youth","club"].includes(item.department))throw new Error("Bitte einen gültigen zuständigen Bereich auswählen.");
+  if (item.selection && (!['go','interested','no','open'].includes(item.selection.status) ||
+      !isDay(item.selection.date) || typeof item.selection.brief!=='string' || item.selection.brief.length>12000)) {
+    throw new Error('Ungültige Auswahl zur Vorbereitung.');
+  }
   if (!Array.isArray(item.costs) || item.costs.length > 100 || !Array.isArray(item.sources) || item.sources.length > 40 ||
       !item.program || !Object.hasOwn(instruments, item.program.instrument) || !item.checks || !item.contact) throw new Error("Ungültiger oder zu großer Fall.");
   if (item.intake && !["suggested","confirmed"].includes(item.intake)) throw new Error("Unbekannter Status des Vereinsbedarfs.");
