@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.60',v:'0.99.60',datum:'2026-11-16',titel:'Partner: Pakete wie im Flyer, Filter Alte Struktur und Neues Konzept',kurz:'Die vier Pakete in der Präsentation zeigen wieder alles, was auf dem Flyer steht. In der Firmenliste sieht man, wer noch aus der alten Struktur kommt und wer im neuen Konzept ist.',
+   punkte:[
+    {ic:'\u{1F4CB}',t:'Pakete wie im Flyer',d:'Supporter, Club, Premium und 1896 Partner nennen in der Präsentation wieder alle Leistungen des Flyers, zum Beispiel Saison-Badge, Partnerabend, Business-Treffs, Porträt und Prioritätsrechte. Preise und Plätze bleiben.',r:'team'},
+    {ic:'\u{1F500}',t:'Alte Struktur und Neues Konzept',d:'Neben „Partner“ gibt es zwei Auswahlen mit Zähler. Neues Konzept heißt: ein unterschriebener oder laufender Vertrag im neuen Vertragssystem. Alle anderen Partner zählen zur alten Struktur. Die Zeile zeigt eine grüne Marke, die Excel-Datei eine Spalte Konzept.',r:'team'},
+    {ic:'\u{1F527}',t:'Stichtag nur bei Ohne Gespräch',d:'Die Zeile „Seit …“ erscheint nur noch, wenn „Ohne Gespräch“ gewählt ist.',r:'team'}
+   ]},
   {id:'0.99.59',v:'0.99.59',datum:'2026-11-16',titel:'Partner: Filter „Ohne Gespräch“, Liste als Excel-Datei, Daten richtiggestellt',kurz:'In der Firmenliste zeigt „Ohne Gespräch“, bei welchen Partnern seit der Neuausrichtung kein Anruf und kein Treffen eingetragen ist. Die Auswahl lässt sich als Excel-Datei laden.',
    punkte:[
     {ic:'\u{1F50E}',t:'Ohne Gespräch',d:'Zeigt die Partner, bei denen seit dem Stichtag (Vorgabe 1. Juli 2026, änderbar) weder ein Anruf noch ein Treffen eingetragen ist. Der Zähler steht gleich am Knopf.',r:'team'},
@@ -1535,9 +1541,3 @@ const SV_PATCHES=[
     {ic:'🏆',t:'Bestenliste mit echten Einsätzen',d:'Einsätze und Minuten in der Bestenliste kommen aus FuPa, solange für eure Mannschaft keine eigenen Spiele erfasst sind.',r:'scout',go:'best'},
     {ic:'📅',t:'Spieltag trägt sich selbst ein',d:'Gespielte Ligaspiele der Ersten landen mit Ergebnis und Aufstellung in Training → Spiele. Was ihr von Hand erfasst habt, wird nie überschrieben.',r:'team'},
     {ic:'🔭',t:'Gegner-Vorschau und Radar',d:'Vor dem nächsten Spiel zeigt die Vorschau Tabelle, Form und die torgefährlichsten Spieler des Gegners. Im Radar steht, wer diese Woche laut FuPa aufgefallen ist, und beobachtete Spieler melden sich bei neuen Einsätzen.',r:'scout'},
-    {ic:'🛡️',t:'Datenwächter',d:'Unter Importstatus steht, wenn etwas hakt. Die Hinweise verschwinden von selbst, sobald die Ursache weg ist.',r:'admin'},
-   ]},
-  {id:'0.10',v:'0.10',datum:'2026-09-26',titel:'Bestenliste je Position',kurz:'Unter Scouting gibt es jetzt die Bestenliste: die besten Torhüter, Abwehrspieler, Mittelfeldspieler und Stürmer, jeweils mit den Zahlen, die für die Position zählen, und einem Satz, warum einer oben steht.',
-   punkte:[
-    {ic:'🏆',t:'Wer ist ein super Torwart?',d:'Torhüter und Abwehr werden an den Gegentoren ihrer Mannschaft im Vergleich zur Liga gemessen, mit ihrer Einsatzquote daneben. Wer weniger als die Hälfte spielt, ist als Ersatz markiert.',r:'scout',go:'best'},
-    {ic:'⚽',t:'Tore, Tore je Spiel, Anteil',d:'Vorne zählen Tore, Tore je Spiel und der Anteil an den Teamtoren. Tore je Spiel lassen sich ligabereinigt vergleichen, im Maßstab der Kreisliga A.'},

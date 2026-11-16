@@ -1,3 +1,9 @@
+    {ic:'🛡️',t:'Datenwächter',d:'Unter Importstatus steht, wenn etwas hakt. Die Hinweise verschwinden von selbst, sobald die Ursache weg ist.',r:'admin'},
+   ]},
+  {id:'0.10',v:'0.10',datum:'2026-09-26',titel:'Bestenliste je Position',kurz:'Unter Scouting gibt es jetzt die Bestenliste: die besten Torhüter, Abwehrspieler, Mittelfeldspieler und Stürmer, jeweils mit den Zahlen, die für die Position zählen, und einem Satz, warum einer oben steht.',
+   punkte:[
+    {ic:'🏆',t:'Wer ist ein super Torwart?',d:'Torhüter und Abwehr werden an den Gegentoren ihrer Mannschaft im Vergleich zur Liga gemessen, mit ihrer Einsatzquote daneben. Wer weniger als die Hälfte spielt, ist als Ersatz markiert.',r:'scout',go:'best'},
+    {ic:'⚽',t:'Tore, Tore je Spiel, Anteil',d:'Vorne zählen Tore, Tore je Spiel und der Anteil an den Teamtoren. Tore je Spiel lassen sich ligabereinigt vergleichen, im Maßstab der Kreisliga A.'},
     {ic:'🔎',t:'Filter für die Kaderplanung',d:'Laufende Saison oder 25/26 komplett, Liga, Alter und eigene Spieler ein oder aus. Sortieren nach Stärke, Toren, Einsatz, Eye-Test oder Trainernote.',r:'scout',go:'best'},
     {ic:'📥',t:'Vorlagen und Noten',d:'Vorlagen und Trainernoten erscheinen, sobald sie in der App stehen, zum Beispiel aus euren übernommenen Spielen.',r:'team',go:'training'}]},
   {id:'0.9',v:'0.9',datum:'2026-09-25',titel:'Spielstärke wie bei FIFA',kurz:'Der MScore beschreibt jetzt, wie gut ein Spieler ist, nicht in welcher Liga er gerade spielt. Jede Saison ist ein Beleg, dazu Alter, Erfahrung, Eye-Test und FuPa-MVP. Wer aus einer höheren Liga kommt und unten vorne mitspielt, verliert nicht automatisch.',
