@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.48', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.49', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -7384,11 +7384,13 @@ function sv4Einsatz(p){
   if(c&&c.spiele>0){
     const s={y:sv4SL(sv4S()),teamSp:c.spiele,liga:c.sub||c.liga,club:c.club||p.club,tore:c.tore};
     const fbT=tm==='2'?'D2':'A'; if(p.own&&typeof fbStats==='function'&&typeof FB!=='undefined'&&FB.loaded&&FB.m.some(g=>g.team===fbT&&g.bericht&&g.datum>=fbSeasonStart())){ const f=fbStats(p.id,fbSeasonStart(),fbT); if(f){ s.sp=f.sp; s.start=f.start; s.min=f.min; s.tore=f.tore; s.src='Spielberichte FUSSBALL.DE'; } }
+    // 0.99.49: FuPa ist am genauesten (Ein- UND Auswechslungen, Minuten, Vorlagen) und geht vor. fussball.de kennt nur die Einwechslungen, darum stimmte dort die Spielzeit nicht.
+    const kf=p.own?p.klaC:null; if(kf&&kf.einsaetze!=null){ s.sp=kf.einsaetze; s.start=kf.startelf!=null?kf.startelf:undefined; s.min=kf.minuten!=null?kf.minuten:undefined; if(kf.tore!=null)s.tore=kf.tore; s.vor=kf.vorlagen!=null?kf.vorlagen:undefined; s.src='FuPa'; }
     out.seasons.push(s);
   }
   if(!p.isJugend){
     const s={y:'25/26',teamSp:p.teamSp,liga:p.sub||p.liga,club:p.club,tore:p.tore,belegt:!!p.toreBelegt};
-    if(p.einsaetze){ s.sp=p.einsaetze; s.src='FuPa-Kaderdaten'; } if(p.min)s.min=p.min;
+    if(p.einsaetze){ s.sp=p.einsaetze; s.src='FuPa-Kaderdaten'; } if(p.min)s.min=p.min; if(p.assists!=null)s.vor=p.assists;
     if(!s.sp&&p.kaderDoc&&p.kaderStarts!=null){ s.docS=p.kaderStarts; s.doc=p.kaderDoc; s.src='Vereinsheft (dokumentierte Spiele)'; }
     if(!s.src)s.src='Torjägerliste FUSSBALL.DE';
     out.seasons.push(s);
@@ -7401,7 +7403,7 @@ function sv4Einsatz(p){
 function sv4EinsatzTxt(s){
   if(!s)return '–';
   const a=[]; if(s.sp!=null)a.push(`<b>${s.sp}</b> von ${s.teamSp} Sp.`); else if(s.doc)a.push(`<b>${s.docS}</b> Startelf in ${s.doc} dok. Sp.`); else a.push(`Einsätze unbekannt (Team: ${s.teamSp||'–'} Sp.)`);
-  if(s.start!=null&&s.sp)a.push(`${s.start}× Startelf`); if(s.min)a.push(`${s.min.toLocaleString('de-DE')} Min.`);
+  if(s.start!=null&&s.sp)a.push(`${s.start}× Startelf`); if(s.min)a.push(`${s.min.toLocaleString('de-DE')} Min.`); if(s.vor!=null)a.push(`${s.vor} Vorl.`);
   return a.join(' · ');
 }
 
@@ -18595,6 +18597,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.49',v:'0.99.49',datum:'2026-11-16',titel:'FuPa geht vor: Spielzeit und Vorlagen stimmen',kurz:'Bei den eigenen Spielern zählt jetzt zuerst FuPa. Dort stehen Ein- und Auswechslungen, deshalb stimmt die Spielzeit, und die Vorlagen sind dabei.',
+   punkte:[
+    {ic:'\u23F1\uFE0F',t:'Spielzeit aus FuPa',d:'fussball.de kennt nur die Einwechslungen, die Spielzeit der Ausgewechselten war darum zu lang. Einsätze, Startelf, Minuten und Tore kommen jetzt von FuPa; nur wenn FuPa nichts hat, gilt fussball.de.'},
+    {ic:'\u{1F3AF}',t:'Vorlagen im Spielerprofil',d:'Beim Einsatz einer Saison stehen jetzt auch die Vorlagen (zum Beispiel „4 Vorl.“).'},
+    {ic:'\u2696\uFE0F',t:'Spielvergleich',d:'Widersprechen sich FuPa und fussball.de in einem Spiel, schlägt die App jetzt FuPa vor, nicht mehr fussball.de.',r:'admin'}
+   ]},
   {id:'0.99.48',v:'0.99.48',datum:'2026-11-16',titel:'Logos auf den Ärmeln sitzen richtig',kurz:'Im Trikot-Creator stehen die Ärmel-Logos jetzt größer und passend zur Ärmelrichtung, nicht mehr klein und schief.',
    punkte:[
     {ic:'\u{1F455}',t:'Ärmel-Logos realistisch',d:'Die Logos auf den Ärmeln sind größer, liegen mittig auf dem Ärmelfeld über dem Streifen und folgen der Neigung des Ärmels. Das gilt für Heim, Auswärts und den Anzug, in 3D und in der Foto-Ansicht.'}
@@ -20866,13 +20874,13 @@ function dpSpiel(g){
     if(g.app&&!aP&&(fP||bP))fl.push('fehlt in der App');
     if(aP&&!fP&&!bP&&(fuL||fbL)&&trainer(a.src))fl.push('nur in der App');
     if(aP&&trainer(a.src)&&(fP||bP)){ const off=fP?f:b; if(off.st!==a.st)fl.push('App weicht ab'); }
-    // Annahme: zwei amtliche Quellen einig > Trainereintrag > eine Quelle > Startelf-Zahl > fussball.de (amtlicher Spielbericht)
+    // Annahme: zwei amtliche Quellen einig > Trainereintrag > eine Quelle > Startelf-Zahl > FuPa (am genauesten; fussball.de kennt keine Auswechslungen)
     let st=null, t=null, warum='';
     if(fP&&bP&&f.st===b.st){ st=f.st; warum='FuPa und fussball.de einig'; }
     else if(aP&&trainer(a.src)){ st=a.st; warum='Eintrag des Trainerteams'; }
     else if(fP&&!bP){ st=f.st; warum=fbL?'nur FuPa kennt ihn':'nur FuPa'; }
     else if(bP&&!fP){ st=b.st; warum=fuL?'nur fussball.de kennt ihn':'nur fussball.de'; }
-    else if(fP&&bP){ if(S.fu===11&&S.fb!==11){ st=f.st; warum='FuPa hat eine vollständige Startelf'; } else if(S.fb===11&&S.fu!==11){ st=b.st; warum='fussball.de hat eine vollständige Startelf'; } else { st=b.st; warum='amtlicher Spielbericht'; } }
+    else if(fP&&bP){ if(S.fu===11&&S.fb!==11){ st=f.st; warum='FuPa hat eine vollständige Startelf'; } else if(S.fb===11&&S.fu!==11){ st=b.st; warum='fussball.de hat eine vollständige Startelf'; } else { st=f.st; warum='FuPa (am genauesten)'; } }
     else if(aP){ st=a.st; warum='nur in der App'; }
     const tF=fP?(f.t||0):null, tB=bP?(b.t||0):null;
     if(tF!=null&&tB!=null&&tF!==tB){ const fbPasst=g.tw!=null&&T.fb===g.tw&&T.fu!==g.tw; t=fbPasst?tB:tF; warum+=fbPasst?', Tore laut fussball.de (passt zum Ergebnis)':', Tore laut FuPa'; }

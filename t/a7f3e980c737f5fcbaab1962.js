@@ -608,11 +608,13 @@ function sv4Einsatz(p){
   if(c&&c.spiele>0){
     const s={y:sv4SL(sv4S()),teamSp:c.spiele,liga:c.sub||c.liga,club:c.club||p.club,tore:c.tore};
     const fbT=tm==='2'?'D2':'A'; if(p.own&&typeof fbStats==='function'&&typeof FB!=='undefined'&&FB.loaded&&FB.m.some(g=>g.team===fbT&&g.bericht&&g.datum>=fbSeasonStart())){ const f=fbStats(p.id,fbSeasonStart(),fbT); if(f){ s.sp=f.sp; s.start=f.start; s.min=f.min; s.tore=f.tore; s.src='Spielberichte FUSSBALL.DE'; } }
+    // 0.99.49: FuPa ist am genauesten (Ein- UND Auswechslungen, Minuten, Vorlagen) und geht vor. fussball.de kennt nur die Einwechslungen, darum stimmte dort die Spielzeit nicht.
+    const kf=p.own?p.klaC:null; if(kf&&kf.einsaetze!=null){ s.sp=kf.einsaetze; s.start=kf.startelf!=null?kf.startelf:undefined; s.min=kf.minuten!=null?kf.minuten:undefined; if(kf.tore!=null)s.tore=kf.tore; s.vor=kf.vorlagen!=null?kf.vorlagen:undefined; s.src='FuPa'; }
     out.seasons.push(s);
   }
   if(!p.isJugend){
     const s={y:'25/26',teamSp:p.teamSp,liga:p.sub||p.liga,club:p.club,tore:p.tore,belegt:!!p.toreBelegt};
-    if(p.einsaetze){ s.sp=p.einsaetze; s.src='FuPa-Kaderdaten'; } if(p.min)s.min=p.min;
+    if(p.einsaetze){ s.sp=p.einsaetze; s.src='FuPa-Kaderdaten'; } if(p.min)s.min=p.min; if(p.assists!=null)s.vor=p.assists;
     if(!s.sp&&p.kaderDoc&&p.kaderStarts!=null){ s.docS=p.kaderStarts; s.doc=p.kaderDoc; s.src='Vereinsheft (dokumentierte Spiele)'; }
     if(!s.src)s.src='Torjägerliste FUSSBALL.DE';
     out.seasons.push(s);
@@ -625,7 +627,7 @@ function sv4Einsatz(p){
 function sv4EinsatzTxt(s){
   if(!s)return '–';
   const a=[]; if(s.sp!=null)a.push(`<b>${s.sp}</b> von ${s.teamSp} Sp.`); else if(s.doc)a.push(`<b>${s.docS}</b> Startelf in ${s.doc} dok. Sp.`); else a.push(`Einsätze unbekannt (Team: ${s.teamSp||'–'} Sp.)`);
-  if(s.start!=null&&s.sp)a.push(`${s.start}× Startelf`); if(s.min)a.push(`${s.min.toLocaleString('de-DE')} Min.`);
+  if(s.start!=null&&s.sp)a.push(`${s.start}× Startelf`); if(s.min)a.push(`${s.min.toLocaleString('de-DE')} Min.`); if(s.vor!=null)a.push(`${s.vor} Vorl.`);
   return a.join(' · ');
 }
 

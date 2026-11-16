@@ -561,13 +561,13 @@ function dpSpiel(g){
     if(g.app&&!aP&&(fP||bP))fl.push('fehlt in der App');
     if(aP&&!fP&&!bP&&(fuL||fbL)&&trainer(a.src))fl.push('nur in der App');
     if(aP&&trainer(a.src)&&(fP||bP)){ const off=fP?f:b; if(off.st!==a.st)fl.push('App weicht ab'); }
-    // Annahme: zwei amtliche Quellen einig > Trainereintrag > eine Quelle > Startelf-Zahl > fussball.de (amtlicher Spielbericht)
+    // Annahme: zwei amtliche Quellen einig > Trainereintrag > eine Quelle > Startelf-Zahl > FuPa (am genauesten; fussball.de kennt keine Auswechslungen)
     let st=null, t=null, warum='';
     if(fP&&bP&&f.st===b.st){ st=f.st; warum='FuPa und fussball.de einig'; }
     else if(aP&&trainer(a.src)){ st=a.st; warum='Eintrag des Trainerteams'; }
     else if(fP&&!bP){ st=f.st; warum=fbL?'nur FuPa kennt ihn':'nur FuPa'; }
     else if(bP&&!fP){ st=b.st; warum=fuL?'nur fussball.de kennt ihn':'nur fussball.de'; }
-    else if(fP&&bP){ if(S.fu===11&&S.fb!==11){ st=f.st; warum='FuPa hat eine vollständige Startelf'; } else if(S.fb===11&&S.fu!==11){ st=b.st; warum='fussball.de hat eine vollständige Startelf'; } else { st=b.st; warum='amtlicher Spielbericht'; } }
+    else if(fP&&bP){ if(S.fu===11&&S.fb!==11){ st=f.st; warum='FuPa hat eine vollständige Startelf'; } else if(S.fb===11&&S.fu!==11){ st=b.st; warum='fussball.de hat eine vollständige Startelf'; } else { st=f.st; warum='FuPa (am genauesten)'; } }
     else if(aP){ st=a.st; warum='nur in der App'; }
     const tF=fP?(f.t||0):null, tB=bP?(b.t||0):null;
     if(tF!=null&&tB!=null&&tF!==tB){ const fbPasst=g.tw!=null&&T.fb===g.tw&&T.fu!==g.tw; t=fbPasst?tB:tF; warum+=fbPasst?', Tore laut fussball.de (passt zum Ergebnis)':', Tore laut FuPa'; }

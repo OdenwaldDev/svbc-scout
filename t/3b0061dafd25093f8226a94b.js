@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.49',v:'0.99.49',datum:'2026-11-16',titel:'FuPa geht vor: Spielzeit und Vorlagen stimmen',kurz:'Bei den eigenen Spielern zählt jetzt zuerst FuPa. Dort stehen Ein- und Auswechslungen, deshalb stimmt die Spielzeit, und die Vorlagen sind dabei.',
+   punkte:[
+    {ic:'\u23F1\uFE0F',t:'Spielzeit aus FuPa',d:'fussball.de kennt nur die Einwechslungen, die Spielzeit der Ausgewechselten war darum zu lang. Einsätze, Startelf, Minuten und Tore kommen jetzt von FuPa; nur wenn FuPa nichts hat, gilt fussball.de.'},
+    {ic:'\u{1F3AF}',t:'Vorlagen im Spielerprofil',d:'Beim Einsatz einer Saison stehen jetzt auch die Vorlagen (zum Beispiel „4 Vorl.“).'},
+    {ic:'\u2696\uFE0F',t:'Spielvergleich',d:'Widersprechen sich FuPa und fussball.de in einem Spiel, schlägt die App jetzt FuPa vor, nicht mehr fussball.de.',r:'admin'}
+   ]},
   {id:'0.99.48',v:'0.99.48',datum:'2026-11-16',titel:'Logos auf den Ärmeln sitzen richtig',kurz:'Im Trikot-Creator stehen die Ärmel-Logos jetzt größer und passend zur Ärmelrichtung, nicht mehr klein und schief.',
    punkte:[
     {ic:'\u{1F455}',t:'Ärmel-Logos realistisch',d:'Die Logos auf den Ärmeln sind größer, liegen mittig auf dem Ärmelfeld über dem Streifen und folgen der Neigung des Ärmels. Das gilt für Heim, Auswärts und den Anzug, in 3D und in der Foto-Ansicht.'}
@@ -1524,7 +1530,3 @@ const SV_PATCHES=[
     {ic:'🧩',t:'Backup-Ansicht',d:'Wer springt ein, wenn einer aus der Startelf fehlt? Mit einem Tipp von der Liste auf „Backup“ wechseln.',r:'scout',go:'kader'},
     {ic:'🦶',t:'Was fehlt an Qualität',d:'Linksfuß in der Abwehr, Kopfballstärke, Tempo, Führung, Standards und Altersstruktur. Fehlt etwas, legst du mit einem Tipp den Bedarf fürs Scouting an.',r:'scout',go:'kader'},
     {ic:'🌱',t:'Übergang aus der A-Jugend',d:'Wer zu alt für die A-Jugend wird, steht in der Planung der nächsten Saison: Erste, Zweite oder hört auf.',r:'scout',go:'kader'},
-    {ic:'🧭',t:'Plausibilität und Wechselfenster',d:'Die App findet Widersprüche, etwa „bleibt“ trotz Absage im Gespräch, und zeigt, wann das nächste Wechselfenster offen ist. Die Standards stellst du unter „Standards“ selbst ein.',r:'scout',go:'kader'},
-    {ic:'🤝',t:'Neuzugang erst nach Gespräch',d:'Externe Spieler kommen erst als Neuzugang in den Kaderplan, wenn ein Gespräch festgehalten ist. Vorher sind es Wunschspieler in der Traumelf.',r:'scout',go:'kader'},
-    {ic:'👁️',t:'Eye-Test mit regionaler Skala',d:'50 heißt solider Stammspieler der Kreisliga A, 70 stark bis Gruppenliga, 90 Top der Region. Im neuen Reiter Eye-Test siehst du den Schnitt aller Planer, wo ihr euch uneinig seid und wo deine Bewertung fehlt.',r:'scout',go:'eye'},
-    {ic:'📊',t:'MScore neu gewichtet',d:'Einsatz und Liga zählen am meisten, Presse nur noch rund 5 Prozent. Bei eigenen Spielern fließen eure Trainings- und Spielnoten ein. Jeder MScore zeigt, auf wie viel echten Daten er beruht. Die Vereinstreue steht als eigenes Abzeichen daneben.',r:'scout',go:'scout'},
