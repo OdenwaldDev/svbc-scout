@@ -14,6 +14,8 @@
   const C=window.PD_CFG||{}, app=document.getElementById('app');
   const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const eur=(n,d)=>PLIB.eur(n,d);
+  // 0.99.53: kurzer Ablauf (Albert, 16.11.2026: zu unübersichtlich, zu langweilig). Ohne Station „Bis 2030“, ohne die Beispielliste „Was es bewirkt", ohne die Zweite.
+  const KURZ=true;
   const CA_KEYS=['aermel_erste','aermel_zweite','trikot_jugend'], ca=l=>l&&CA_KEYS.indexOf(l.key)>=0?'ca. ':'';   // 0.99.52: Richtwert, die Spanne steht im Text der Leistung
   const hp=new URLSearchParams(location.hash.slice(1)), code=(hp.get('d')||'').toLowerCase();
   const $=s=>document.querySelector(s);
@@ -97,7 +99,7 @@
   const lk=k=>L.find(x=>x.key===k);
   // Bei Glücksspiel, Alkohol und Ähnlichem: keine Werbung auf Jugendkleidung (im Deck „ohne Jugend-Trikot“)
   const JUGEND_KLEIDUNG=['trikot_jugend','aufwaerm_jugend'];
-  function filtern(ls){ const ohne=((D&&D.deck&&D.deck.passung)||{}).ohne||[]; return ohne.includes('trikot')?ls.filter(l=>!JUGEND_KLEIDUNG.includes(l.key)):ls; }
+  function filtern(ls){ const ohne=((D&&D.deck&&D.deck.passung)||{}).ohne||[]; ls=KURZ?ls.filter(l=>l.bereich!=='zweite'):ls; return ohne.includes('trikot')?ls.filter(l=>!JUGEND_KLEIDUNG.includes(l.key)):ls; }
   let uid=0;
 
   // ---------- Stand merken (Neuladen, Wechsel in die Banking-App, Link später nochmal öffnen) ----------
@@ -250,7 +252,7 @@
     return `<ul class="bewegt">${ls.map(l=>`<li><em>${eur(l.preis)}</em><div><b>${esc(l.titel)}</b><small>${esc((String(l.text||'').match(/[^.]+\.?/g)||[]).slice(0,2).join('').trim())}</small></div></li>`).join('')}</ul>
       <p class="bewegt-f">Was ihr für die Jugend gebt, bleibt bei der Jugend.</p>`; }
   // Stationen oben: wenige Ziele, frei anspringbar, zeigen den Stand
-  const STN=[['auftritt','Auftritt','Euer Auftritt'],['verein','Verein','Verein'],['ziele','2030','Bis 2030'],['wirkung','Wirkung','Was es bewirkt'],['pakete','Pakete','Pakete'],['bausteine','Bausteine','Bausteine'],['baukasten','Abschluss','Abschluss']];
+  const STN=[['auftritt','Auftritt','Euer Auftritt'],['verein','Verein','Verein'],['ziele','2030','Bis 2030'],['wirkung','Für euch','Warum wir an euch gedacht haben'],['pakete','Pakete','Pakete'],['bausteine','Bausteine','Bausteine'],['baukasten','Abschluss','Abschluss']];
   function geruest(){
     const dk=D.deck, P=dk.passung||{}, kurz=dk.kurzname||dk.firma, nJ=M.length, hatPassung=P.titel||P.text||(P.punkte||[]).length, V=D.verein||{};
     const st=STUFEN();
@@ -292,10 +294,11 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
 </div></div>
 </section>
 <section class="sec" id="verein"><div class="ww">
-  <div class="v-kopf rv"><div><h2 class="g">Unser Verein</h2>
-    <p class="lead">Fußball in Mörlenbach seit 1896. Der größte Teil von uns ist jung: Die Kinder spielen meist samstags, die Herren sonntags, und am Rand stehen die Familien. Ohne Ehrenamt ginge das nicht, und ohne die Betriebe, die uns unterstützen, auch nicht.</p></div>
+  <div class="v-kopf rv"><div><h2 class="g">Ein Verein für Mörlenbach</h2>
+    <p class="lead vis">SV und BSC, zwei Namen, ein Verein. Wir bringen den Fußball in Mörlenbach unter einem Wappen zusammen: Kinder, Herren, Familien und die Betriebe aus dem Ort.</p>
+    <p class="lead">Fußball in Mörlenbach seit 1896. Der größte Teil von uns ist jung, die Kinder spielen meist samstags, die Herren sonntags, und am Rand stehen die Familien. Wer Partner wird, gehört zu diesem einen Verein dazu.</p></div>
     <div class="vz">${V.jugend?`<div class="zahl"><b>${esc(V.jugend)}</b><span>Kinder und Jugendliche,<br>jede Woche auf dem Platz</span></div>`:''}${V.heimspiele?`<div class="zahl zahl2"><b>${esc(V.heimspiele)}</b><span>Heimspiele der Ersten<br>in der ${esc(V.liga||'Kreisliga A')}${V.zuschauer?`, im Schnitt rund ${esc(V.zuschauer)} Zuschauer`:''}</span></div>`:''}
-    <p class="zahl-n">${nJ?nJ+' ':''}Jugendmannschaften von den Minikickern bis zur A-Jugend · eine Erste und eine Zweite${V.zuschauer?' · Die Zuschauerzahl ist unsere Schätzung.':''}</p></div></div>
+    <p class="zahl-n">${nJ?nJ+' ':''}Jugendmannschaften von den Minikickern bis zur A-Jugend · eine Erste${V.zuschauer?' · Die Zuschauerzahl ist unsere Schätzung.':''}</p></div></div>
   <div class="bc-kopf"><h3>Wo ihr dabei sein könnt</h3><div class="pf" aria-hidden="true"><button type="button" data-pf="-1" tabindex="-1">‹</button><button type="button" data-pf="1" tabindex="-1">›</button></div></div>
   <div class="karus" id="bereiche" role="list" aria-label="Bereiche des Vereins"></div><div class="punkte" id="bcDots" aria-hidden="true"></div>
   <div class="apa rv" id="apartner" hidden><h3>Aktuelle Partner</h3><p class="apa-l">Diese Betriebe sind gerade beim SV/BSC Mörlenbach dabei und haben uns erlaubt, sie zu nennen.</p>
@@ -306,8 +309,8 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   <div class="jg rv" id="zlJg" hidden></div>
   <div class="zl rv" id="zlL"></div>
   <p class="zl-f" id="zlF" hidden></p></div></section>
-<section class="sec grau" id="wirkung"><div class="ww w-raster">
-  <div class="rv"><h2 class="g">Was es bewirkt</h2><p class="lead">Ein paar Beispiele aus der Jugend, so wie man sie bei uns buchen kann. Die Preise sind netto.</p><div id="bewegtW">${bewegtHtml()}</div></div>
+<section class="sec grau" id="wirkung"><div class="ww w-raster${KURZ?' kurz':''}">
+  ${KURZ?'':`<div class="rv"><h2 class="g">Was es bewirkt</h2><p class="lead">Ein paar Beispiele aus der Jugend, so wie man sie bei uns buchen kann. Die Preise sind netto.</p><div id="bewegtW">${bewegtHtml()}</div></div>`}
   ${hatPassung?`<div id="passung" class="pa rv"><div class="pa-kopf">${dk.logo?logoImg('pl'):`<b>${esc(kurz)}</b>`}<i>und</i><img class="sv" src="${WAPPEN}" width="320" height="182" alt="SV/BSC Mörlenbach"></div>
     <div class="pa-in">${P.titel?`<h2 class="g">${esc(P.titel)}</h2>`:''}
     ${P.text?`<p class="pa-text">${esc(P.text)}</p>`:''}
@@ -342,7 +345,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   const TK_REIHE=['aermel_l','aermel_r','brust','jacke_brust'];   // 0.81: nur Brust und die beiden Ärmel
   const TK_ART={heim:'Heim',auswaerts:'Auswärts',anzug:'Anzug'};
   function tkOhneJugend(){ return ((((D||{}).deck||{}).passung||{}).ohne||[]).includes('trikot'); }
-  function tkTeams(){ const L=((TK.d&&TK.d.mannschaften)||[]).filter(m=>!tkOhneJugend()||m.art==='herren'); return L; }
+  function tkTeams(){ const L=((TK.d&&TK.d.mannschaften)||[]).filter(m=>(!tkOhneJugend()||m.art==='herren')&&!(KURZ&&m.id==='h2')); return L; }
   function tkSatz(team,art){ return ((TK.d&&TK.d.saetze)||[]).find(x=>x.mannschaft===(team||TK.team)&&x.art===(art||TK.art))||null; }
   function tkPlaetze(team,art){ const s=tkSatz(team,art); return s?TK.d.plaetze.filter(p=>p.satz===s.id):[]; }
   function tkFrei(team,art){ return tkPlaetze(team,art).filter(p=>p.status==='frei').sort((a,b)=>TK_REIHE.indexOf(a.platz)-TK_REIHE.indexOf(b.platz)); }
@@ -350,7 +353,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function tkName(k){ return TK_NAME[k]||k; }
   // Passende Mannschaft: die im Baukasten gewählte Jugend (S.team), sonst die Erste, sonst die erste mit freiem Ärmel
   function tkWahl(){ const T=tkTeams(), hatAermel=id=>tkFrei(id,'heim').some(p=>/^aermel/.test(p.platz));
-    const kand=[S.team,'h1','h2'].concat(T.map(t=>t.id)).filter((id,i,a)=>id&&a.indexOf(id)===i&&T.some(t=>t.id===id));
+    const kand=[S.team,'h1'].concat(T.map(t=>t.id)).filter((id,i,a)=>id&&a.indexOf(id)===i&&T.some(t=>t.id===id));
     TK.team=kand.find(hatAermel)||kand.find(id=>tkFrei(id,'heim').length)||(T[0]||{}).id||null; TK.art='heim'; TK.platz=(tkFrei()[0]||{}).platz||null; }
   function tkBelegung(){ const B={}, lg=id=>((TK.d.logos||[]).find(l=>l.id===id)||{}).bild||null, dk=D.deck||{};
     tkPlaetze().forEach(p=>{ if(p.status!=='frei')B[p.platz]={status:'belegt',firma:p.firma,bild:p.logo?lg(p.logo):null,variante:p.variante||'weiss',groesse:+p.groesse||1};
@@ -498,6 +501,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       <p>${V.jugend?`Bei uns lernen ${esc(V.jugend)} Kinder und Jugendliche Fußball.`:'Bei uns lernen Kinder und Jugendliche aus dem Ort Fußball.'} Sie sind nicht das Beiprogramm neben der Ersten, sie sind der Plan.${kz?` Bis 2030 sollen ${kz[0]} von ${kz[1]} Kaderplätzen je Mannschaft mit Spielern besetzt sein, die bei uns Fußball gelernt haben.`:''} Jeder Euro, der in die Jugend geht, zahlt darauf ein.</p></div>
       <ul class="jg-z">${k.map(([b,t])=>`<li><b>${b}</b><span>${t}</span></li>`).join('')}</ul>`; }
   async function zieleStation(){ const sec=$('#ziele'); if(!sec)return;
+    if(KURZ){ sec.hidden=true; stationenNeu(); return; }
     let z=null; try{ z=await rpc('partner_ziele',{},10000); }catch(e){ sec.hidden=true; stationenNeu(); return; }
     const Z=(z&&Array.isArray(z.ziele)?z.ziele:[]).filter(x=>x&&x.titel), n=Math.max(0,+((z||{}).partner_jetzt)||0);
     if(!Z.length){ sec.hidden=true; stationenNeu(); return; }
@@ -668,7 +672,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   const imKorb=(key,m)=>S.korb.some(e=>e.key===key&&(e.mannschaft||null)===(m||null));
 
   // ---------- Bereiche: wischbare Karten im Verein ----------
-  const FOTO={jugend:{bild:'partner/jugend.jpg',pos:'center 78%',alt:'Jugendspieler des SV/BSC Mörlenbach'},erste:{bild:'partner/hero.jpg',pos:'center 40%',alt:'Die Erste des SV/BSC Mörlenbach'}};
+  const FOTO={events:{bild:'partner/zeltlager.jpg',pos:'center 62%',alt:'Lagerfeuer beim Zeltlager der Jugend des SV/BSC Mörlenbach'},jugend:{bild:'partner/jugend.jpg',pos:'center 78%',alt:'Jugendspieler des SV/BSC Mörlenbach'},erste:{bild:'partner/hero.jpg',pos:'center 40%',alt:'Die Erste des SV/BSC Mörlenbach'}};
   function weltReihenfolge(){ const alle=Object.keys(WELT).filter(w=>L.some(l=>l.bereich===w&&!['spende','sonstiges'].includes(l.art)));
     const punkte=w=>(S.herz.has(w)?100:0)+L.filter(l=>l.bereich===w).reduce((a,l)=>a+(l.ziele||[]).filter(z=>S.ziele.has(z)).length*3+((D.deck||{}).empfehlung===l.key?5:0),0)+(w==='jugend'?0.5:0);
     return alle.sort((a,b)=>punkte(b)-punkte(a)); }
@@ -721,9 +725,12 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       N.innerHTML=fertig()?'':pk?`<p class="pk-ok"><b>✓ ${esc(pk.titel)}</b> ist gewählt. Wollt ihr noch etwas dazunehmen?</p><div class="pk-w"><button type="button" class="knopf-w" data-zu="bausteine">Bausteine ansehen</button><button type="button" class="textknopf" data-zu="baukasten">Gleich zum Abschluss</button></div>`
         :`<p class="pk-ok leise">Ihr könnt auch ohne Paket einzelne Bausteine nehmen. <button type="button" class="textknopf" data-zu="bausteine">Zu den Bausteinen</button></p>`; } }
     stationenNeu(); }
+  // 0.99.53: Fotos zu Zeltlager und Ferienspielen
+  const BS_FOTO={zeltlager:{bild:'partner/zeltlager',pos:'center 64%',alt:'Lagerfeuer beim Zeltlager der Jugend des SV/BSC Mörlenbach'},ferienspiele:{bild:'partner/ferienspiele',pos:'center 62%',alt:'Kinder bei den Ferienspielen des SV/BSC Mörlenbach'}};
   function bsZeile(l,empB){ const team=l.je_mannschaft?S.team:null, tm=M.find(m=>m.id===S.team), f=frei(l,team), drin=imKorb(l.key,team), st=standText(l,f,tm), offen=S.offen.has(l.key), tag=empB[l.key];
     const zusatz=st?`<span class="lk-f ${st[0]}">${esc(st[1])}${!st[0].includes('aus')&&l.je_mannschaft&&tm?' für '+esc(tm.kurz):''}</span>`:l.je_mannschaft&&tm?`<span class="lk-f">Frei für die ${nbsp(esc(tm.name))}</span>`:'';
     return `<article class="bs${drin?' drin':''}${f===0?' voll':''}${S.neu===l.key+'|'+(team||'')?' neu':''}" data-bs="${l.key}">
+      ${BS_FOTO[l.key]?`<figure class="bs-fo"><picture><source srcset="${BS_FOTO[l.key].bild}.webp" type="image/webp"><img src="${BS_FOTO[l.key].bild}.jpg" alt="${esc(BS_FOTO[l.key].alt)}" loading="lazy" decoding="async" width="1200" height="${l.key==='zeltlager'?900:800}" style="object-position:${BS_FOTO[l.key].pos}"></picture></figure>`:''}
       <div class="bs-z"><button type="button" class="bs-kopf" data-mehr="${l.key}" aria-expanded="${offen}" aria-controls="bsx-${l.key}">${tag?`<span class="lk-tag">${tag}</span>`:''}<span class="bs-n">${esc(l.titel)}</span><span class="bs-k">${esc(l.kurz||'')}</span>${zusatz}<span class="bs-m">${offen?'Weniger':'Mehr dazu'}</span></button>
         <div class="bs-r"><div class="bs-p"><b>${ca(l)}${eur(l.preis)}</b><small>${esc(PLIB.EINHEIT[l.einheit]||'')}</small></div>${knopfHtml(l,team,'bs-b',['Dazu','✓ Dabei','dazunehmen'])}</div></div>
       <div class="bs-x" id="bsx-${l.key}"${offen?'':' hidden'}><p>${esc(l.text||'')}</p><p class="bs-net">${ca(l)}${eur(l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto${l.je_mannschaft&&tm?', '+esc(tm.name):''}</p></div></article>`; }
@@ -847,7 +854,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
           :`${zl('Vertrag',esc(R.nr||''))}${nj>0&&(R.ende||ende(rechnungVertrag()))?zl('Laufzeit',datum(R.beginn||beginn())+' bis '+datum(R.ende||ende(rechnungVertrag()))):''}
           <small>${rg?(rg.status==='bezahlt'?'Die Rechnung ist bezahlt. Danke.':'Rechnung und Bankdaten stehen gleich darunter.'):fest(R)?'Die erste Rechnung kommt in den nächsten Tagen per Mail.':'Die Bankdaten stehen auf der Rechnung, die mit dem gegengezeichneten Vertrag kommt.'}</small>`;
         // Das Foto passt zur Buchung: Stufe, Bande oder Erste zeigt die Erste, sonst die Jugend
-        const jugB=vP.some(p=>p.mannschaft||/^(trikot_jugend|aufwaerm_jugend|baelle_jugend|trainer_jugend|team_jugend|zeltlager|ferienspiele|turnier)/.test(p.key)), ersteB=!jugB&&vP.some(p=>/^(supporter|club|premium|p1896|bande_|brust_|aermel_|matchball|sotd|tor_monat)/.test(p.key)), alt0=Z.parentNode.querySelector('.bk-foto');
+        const jugB=vP.some(p=>p.mannschaft||/^(trikot_jugend|aufwaerm_jugend|baelle_jugend|trainer_jugend|team_jugend|zeltlager|ferienspiele|turnier)/.test(p.key)), ersteB=!jugB&&vP.some(p=>/^(supporter|club|premium|p1896|bande_|brust_|aermel_|matchball|sotd|tor_monat|highlights_|stream_)/.test(p.key)), alt0=Z.parentNode.querySelector('.bk-foto');
         const pol=ersteB?'<figure class="bk-foto"><img src="partner/hero.jpg" alt="Die Erste des SV/BSC Mörlenbach" loading="lazy" decoding="async" style="object-position:center 40%"><figcaption>Die Erste des SV/BSC Mörlenbach</figcaption></figure>'
           :'<figure class="bk-foto"><img src="partner/jugend.jpg" alt="Jugendspieler des SV/BSC Mörlenbach" loading="lazy" decoding="async" style="object-position:center 80%"><figcaption>Jugend des SV/BSC Mörlenbach</figcaption></figure>';
         if(!alt0)Z.insertAdjacentHTML('afterend',pol); else if(alt0.querySelector('img').getAttribute('src')!==(ersteB?'partner/hero.jpg':'partner/jugend.jpg'))alt0.outerHTML=pol; }
@@ -880,7 +887,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       <div class="unter"${spOffen?'':' hidden'}><h3>Spende</h3><div class="sp"><div style="font-size:16px;line-height:1.5">Für eine Spende gibt es keine Gegenleistung. Du bestimmst, wofür wir das Geld einsetzen.</div>
         <div class="sp-b">${[50,100,250,500].map(b=>`<button type="button" data-sp="${b}" class="${sp&&+sp.preis===b?'on':''}" aria-pressed="${!!(sp&&+sp.preis===b)}">${b}\u00a0€</button>`).join('')}</div>
         <div class="sp-z"><input id="spBetrag" type="text" inputmode="decimal" enterkeyhint="done" placeholder="Eigener Betrag" value="${sp&&![50,100,250,500].includes(+sp.preis)?esc(String(sp.preis).replace('.',',')):''}" aria-label="Eigener Betrag in Euro">
-          <select id="spZweck" aria-label="Zweck">${['Jugend','Zeltlager','Ferienspiele','Erste Mannschaft','Zweite Mannschaft','Verein'].map(z=>`<option${(sp?sp.zweck:S.spende.zweck)===z?' selected':''}>${z}</option>`).join('')}</select>
+          <select id="spZweck" aria-label="Zweck">${['Jugend','Zeltlager','Ferienspiele','Erste Mannschaft','Verein'].map(z=>`<option${(sp?sp.zweck:S.spende.zweck)===z?' selected':''}>${z}</option>`).join('')}</select>
           ${sp?'<button type="button" class="kp-x" id="spWeg" style="margin-left:0">Spende entfernen</button>':''}</div></div></div>
       <details class="gut"><summary>Gut zu wissen: Steuern</summary><p>Eine Partnerschaft mit Gegenleistung ist für euren Betrieb in der Regel eine Betriebsausgabe. Die Umsatzsteuer auf unserer Rechnung könnt ihr in der Regel als Vorsteuer abziehen.${V.gemeinnuetzig?' Für eine Spende stellen wir eine Zuwendungsbestätigung aus.':''} Was im Einzelfall gilt, sagt euch euer Steuerberater.</p></details>`;
     const W=$('#korbWeiter'); if(W&&!W.firstChild&&S.korb.length){ W.innerHTML=`<button type="button" class="knopf-o" id="weiterBtn" style="margin-top:18px" data-zu="abschluss">Weiter zum Abschluss</button>`; }
@@ -1245,7 +1252,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     premium:'eure Bande bekommt einen bevorzugten Platz',p1896:'ihr seid in der höchsten Stufe dabei, als einziger Betrieb eurer Branche',bande_erste:'den Platz für eure Bande suchen wir gemeinsam mit euch aus',brust_erste:'die Erste läuft mit eurem Namen auf der Brust auf',
     brust_zweite:'die Zweite läuft mit eurem Namen auf der Brust auf',aermel_erste:'euer Logo kommt auf den Ärmel der Ersten',aermel_zweite:'euer Logo kommt auf den Ärmel der Zweiten',zeltlager:'beim Zeltlager seid ihr als Partner dabei',
     ferienspiele:'bei den Ferienspielen seid ihr als Partner dabei',turnier:'bei einem unserer Turniere seid ihr Partner',matchball:'ein Heimspiel wird mit eurem Matchball angepfiffen',sotd:'ein Heimspiel gehört euch als Partner des Tages',
-    tor_monat:'das Tor des Monats trägt euren Namen',jobpost:'wir veröffentlichen eure Stellenanzeige',business_treff:'ein Partnertreffen findet bei euch statt'};
+    tor_monat:'das Tor des Monats trägt euren Namen',highlights_social:'eure Spielhighlights laufen mit eurem Namen auf Social Media',stream_einblendung:'euer Logo läuft live im Stream der Heimspiele mit',jobpost:'wir veröffentlichen eure Stellenanzeige',business_treff:'ein Partnertreffen findet bei euch statt'};
   const undListe=a=>a.length>1?a.slice(0,-1).join(', ')+' und '+a[a.length-1]:(a[0]||'');
   function dankSaetze(ps){ const mn=id=>nbsp((M.find(m=>m.id===id)||{}).name||id), s=[];
     ps.forEach(p=>{ let t=DANK[p.key]; if(!t){ t='zu eurem Paket gehört '+p.titel; }

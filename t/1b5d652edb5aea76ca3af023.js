@@ -579,6 +579,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.53',v:'0.99.53',datum:'2026-11-16',titel:'Partner-Ablauf kurz und mit Bildern',kurz:'Die Präsentation für Partner ist deutlich kürzer, zeigt Zeltlager und Ferienspiele mit echten Fotos, kommt ohne die Zweite aus und hat zwei neue Bausteine.',r:'team',
+   punkte:[
+    {ic:'\u2702\uFE0F',t:'Kürzer und klarer',d:'Die Station „Bis 2030“ und die lange Beispielliste sind raus. Übrig bleiben Verein, Pakete, Bausteine und Abschluss. Bei Firmen mit persönlichem Text steht „Warum wir an euch gedacht haben“ gleich vorn.'},
+    {ic:'\u{1F3D5}\uFE0F',t:'Zeltlager und Ferienspiele mit Foto',d:'Beide Bausteine zeigen jetzt ein echtes Bild, das Zeltlager auch auf der Karte „Zeltlager und Turniere“.'},
+    {ic:'\u{1F3AC}',t:'Zwei neue Bausteine bei der Ersten',d:'Spielhighlights auf Social Media (50 Euro je Spieltag) und die Live-Einblendung im Heimspiel-Stream (120 Euro je Saison, höchstens 10).'},
+    {ic:'\u{1F3DF}\uFE0F',t:'Ein Verein für Mörlenbach',d:'Der Vereinsteil sagt gleich zu Beginn: SV und BSC sind ein Verein unter einem Wappen, und wer Partner wird, gehört dazu. Der Text ist neu und kann von der Leitung noch geschärft werden.'},
+    {ic:'\u{1F9E9}',t:'Die Zweite ist aus dem Angebot',d:'Trikot und Ärmel der Zweiten werden nicht mehr angeboten. Was schon gebucht ist, bleibt bestehen.'}]},
   {id:'0.99.52',v:'0.99.52',datum:'2026-11-16',titel:'Die echte App für alle',kurz:'Wer die Sportzentrale am Handy im Browser nutzt, bekommt jetzt den Weg zur echten App: iPhone über TestFlight, Android über Google Play. Dein Zugang bleibt derselbe.',
    punkte:[
     {ic:'\u{1F4F2}',t:'Hol dir die echte App',d:'Am Handy erscheint auf der Startseite eine Karte mit dem Weg zur App. Mit „Später“ ist sie 14 Tage weg. Du meldest dich in der App mit derselben E-Mail an wie im Browser, der Browser geht weiter wie bisher.'},
@@ -1529,9 +1536,3 @@ const SV_PATCHES=[
     {ic:'🧺',t:'Materialdienst',d:'Unter Mannschaft → Abstimmungen ein Team für vier Wochen einteilen, Zeitraum frei änderbar, oder die nächsten Teams vorschlagen lassen. Die Eingeteilten sehen es in der Kabine und bekommen zum Start und an Trainingstagen eine WhatsApp-Nachricht.',r:'team',go:'abst'},
     {ic:'🕘',t:'Änderungsverlauf',d:'Bei jedem Spiel und jedem Spieler im Kaderplan steht, wer wann was geändert hat, mit altem und neuem Wert. So bleibt nachvollziehbar, woher eine Zahl kommt.',r:'team',go:'training'},
     {ic:'🗓️',t:'Verfügbarkeit je Zeitraum',d:'Voll, eingeschränkt oder nicht verfügbar, mit Grund. Eingeschränkt zählt in der Abdeckung halb, nicht verfügbar gar nicht. Geplant wird in Wechselperioden: Rückrunde über das Winterfenster, die nächsten Saisons über das Sommerfenster.',r:'scout',go:'kader'},
-    {ic:'➕',t:'Freie Plätze in der Liste',d:'Fehlt auf einer Position jemand, steht dort eine Zeile „Freier Platz“ mit Bedarf. Über „+ Spieler“ legst du auch einen offenen Platz an, ohne schon einen Namen zu haben.',r:'scout',go:'kader'},
-    {ic:'🌓',t:'Primär und Sekundär',d:'Wer auch in der anderen Mannschaft spielen kann, steht dort ausgegraut und zählt nur einmal. Inaktive und nicht verfügbare Spieler rutschen in die Reserve.',r:'scout',go:'kader'},
-    {ic:'🧾',t:'Stand der Planung',d:'Im Menü jedes Spielers auf einen Blick: Systemannahme, Planung, letztes Gespräch und Zusage.',r:'scout',go:'kader'},
-    {ic:'🗣️',t:'Anforderungen des Trainers',d:'„Insgesamt mehr Tempo“ oder „ein Sechser, der eröffnet“: solche Wünsche stehen im Bedarf und werden mit einem Tipp zum Suchauftrag.',r:'scout',go:'kader'},
-    {ic:'🛟',t:'Backup mit Zweiter und Jugend',d:'In der Backup-Ansicht stehen unter jeder Position ausgegraut auch Spieler aus der Zweiten, der Jugend und mit anderer Hauptmannschaft.',r:'scout',go:'kader'},
-    {ic:'✨',t:'Traumelf je Zeitraum',d:'Rückrunde, nächste und übernächste Saison, mit jedem Spieler, auch ohne Zusage. Daneben der Vergleich mit dem Kaderplan und ein Knopf, um mit einem Wunschspieler ein Gespräch festzuhalten.',r:'scout',go:'sxi'},

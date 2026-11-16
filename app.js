@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.52', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.53', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18597,6 +18597,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.53',v:'0.99.53',datum:'2026-11-16',titel:'Partner-Ablauf kurz und mit Bildern',kurz:'Die Präsentation für Partner ist deutlich kürzer, zeigt Zeltlager und Ferienspiele mit echten Fotos, kommt ohne die Zweite aus und hat zwei neue Bausteine.',r:'team',
+   punkte:[
+    {ic:'\u2702\uFE0F',t:'Kürzer und klarer',d:'Die Station „Bis 2030“ und die lange Beispielliste sind raus. Übrig bleiben Verein, Pakete, Bausteine und Abschluss. Bei Firmen mit persönlichem Text steht „Warum wir an euch gedacht haben“ gleich vorn.'},
+    {ic:'\u{1F3D5}\uFE0F',t:'Zeltlager und Ferienspiele mit Foto',d:'Beide Bausteine zeigen jetzt ein echtes Bild, das Zeltlager auch auf der Karte „Zeltlager und Turniere“.'},
+    {ic:'\u{1F3AC}',t:'Zwei neue Bausteine bei der Ersten',d:'Spielhighlights auf Social Media (50 Euro je Spieltag) und die Live-Einblendung im Heimspiel-Stream (120 Euro je Saison, höchstens 10).'},
+    {ic:'\u{1F3DF}\uFE0F',t:'Ein Verein für Mörlenbach',d:'Der Vereinsteil sagt gleich zu Beginn: SV und BSC sind ein Verein unter einem Wappen, und wer Partner wird, gehört dazu. Der Text ist neu und kann von der Leitung noch geschärft werden.'},
+    {ic:'\u{1F9E9}',t:'Die Zweite ist aus dem Angebot',d:'Trikot und Ärmel der Zweiten werden nicht mehr angeboten. Was schon gebucht ist, bleibt bestehen.'}]},
   {id:'0.99.52',v:'0.99.52',datum:'2026-11-16',titel:'Die echte App für alle',kurz:'Wer die Sportzentrale am Handy im Browser nutzt, bekommt jetzt den Weg zur echten App: iPhone über TestFlight, Android über Google Play. Dein Zugang bleibt derselbe.',
    punkte:[
     {ic:'\u{1F4F2}',t:'Hol dir die echte App',d:'Am Handy erscheint auf der Startseite eine Karte mit dem Weg zur App. Mit „Später“ ist sie 14 Tage weg. Du meldest dich in der App mit derselben E-Mail an wie im Browser, der Browser geht weiter wie bisher.'},
