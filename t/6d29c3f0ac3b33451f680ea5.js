@@ -1,3 +1,5 @@
+    {ic:'🔁',t:'FuPa-Abgleich',d:'Lädst du die FuPa-Datei erneut hoch, zeigt die App nur, was sich geändert hat. Unveränderte und von Hand korrigierte Spiele bleiben unangetastet.',r:'team',go:'training'},
+    {ic:'💬',t:'Gespräche und Verletzungen erzählen',d:'„Mit Tim gesprochen, er will bleiben, möchte mehr Spielzeit“: der Co-Trainer hält das Gespräch fest und trägt die Zukunft in den Kaderplan ein. Verletzungen genauso.',r:'scout',go:'gespr'}]},
   {id:'5.0',v:'0.5',datum:'2026-09-25',titel:'Mannschaft, Kader, Scouting',kurz:'Die App folgt jetzt deinem Ablauf: erst die Mannschaft von heute, dann der Kader von morgen, dann die Suche. Training erfasst du mit Noten von 1 bis 6, Spiele kommen aus deiner FuPa-Datei.',
    punkte:[
     {ic:'🧭',t:'Neue Reihenfolge',d:'Mannschaft, Kader und Scouting stehen oben, Gegnercheck und Kasse weiter unten. Jede Ansicht erklärt sich in einem kleinen Kasten, den du einklappen kannst.',r:'team',go:'training'},

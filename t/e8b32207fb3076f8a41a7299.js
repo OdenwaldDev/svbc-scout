@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.47',v:'0.99.47',datum:'2026-11-16',titel:'Neues Logo auf den Trikots und Anzügen',kurz:'Auf dem linken Ärmel steht jetzt „Sport ist cool!“ statt des Platzhalters: weiß auf den Trikots, schwarz auf den Anzügen.',
+   punkte:[
+    {ic:'\u{1F455}',t:'„Sport ist cool!“ auf dem Ärmel',d:'Das Logo von Allianz Albert Klee ist jetzt die echte Schreibschrift, auf Heim- und Auswärtstrikot in Weiß, auf dem Anzug in Schwarz. Der Platzhalter ist weg.'}
+   ]},
   {id:'0.99.46',v:'0.99.46',datum:'2026-11-16',titel:'Mehr Schutz im Hintergrund',kurz:'Unsichtbar, aber wichtig: Die App bremst jetzt Missbrauch an den offenen Türen (Helfer-Link, Shop, Partneranfrage) und hat einen Sicherheitscheck hinter sich. Für dich ändert sich nichts.',
    punkte:[
     {ic:'\u{1F6E1}\uFE0F',t:'Bremse gegen Massenanfragen',d:'Wer ohne Anmeldung hundertfach dieselbe Funktion aufruft, wird kurz gebremst. Normale Nutzung merkt davon nichts. Zunächst zählt die Bremse nur mit, scharf gestellt wird sie nach einer Prüfung.',r:'admin'},
@@ -1522,5 +1526,3 @@ const SV_PATCHES=[
     {ic:'📊',t:'MScore neu gewichtet',d:'Einsatz und Liga zählen am meisten, Presse nur noch rund 5 Prozent. Bei eigenen Spielern fließen eure Trainings- und Spielnoten ein. Jeder MScore zeigt, auf wie viel echten Daten er beruht. Die Vereinstreue steht als eigenes Abzeichen daneben.',r:'scout',go:'scout'},
     {ic:'🔎',t:'Mehr Filter',d:'Im Spielermarkt nach starkem Fuß, Stammspielern, MScore und guter Datenbasis filtern. Der KI-Auftrag übernimmt Alter, Fuß, Liga und Entfernung.',r:'scout',go:'scout'},
     {ic:'🧱',t:'Elf der Woche mit Abwehr',d:'Vorne die Torschützen, hinten Abwehr und Torwart der Mannschaften mit den wenigsten Gegentoren.',r:'scout',go:'totw'},
-    {ic:'🔁',t:'FuPa-Abgleich',d:'Lädst du die FuPa-Datei erneut hoch, zeigt die App nur, was sich geändert hat. Unveränderte und von Hand korrigierte Spiele bleiben unangetastet.',r:'team',go:'training'},
-    {ic:'💬',t:'Gespräche und Verletzungen erzählen',d:'„Mit Tim gesprochen, er will bleiben, möchte mehr Spielzeit“: der Co-Trainer hält das Gespräch fest und trägt die Zukunft in den Kaderplan ein. Verletzungen genauso.',r:'scout',go:'gespr'}]},

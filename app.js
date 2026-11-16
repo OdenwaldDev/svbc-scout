@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.46', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.47', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18595,6 +18595,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.47',v:'0.99.47',datum:'2026-11-16',titel:'Neues Logo auf den Trikots und Anzügen',kurz:'Auf dem linken Ärmel steht jetzt „Sport ist cool!“ statt des Platzhalters: weiß auf den Trikots, schwarz auf den Anzügen.',
+   punkte:[
+    {ic:'\u{1F455}',t:'„Sport ist cool!“ auf dem Ärmel',d:'Das Logo von Allianz Albert Klee ist jetzt die echte Schreibschrift, auf Heim- und Auswärtstrikot in Weiß, auf dem Anzug in Schwarz. Der Platzhalter ist weg.'}
+   ]},
   {id:'0.99.46',v:'0.99.46',datum:'2026-11-16',titel:'Mehr Schutz im Hintergrund',kurz:'Unsichtbar, aber wichtig: Die App bremst jetzt Missbrauch an den offenen Türen (Helfer-Link, Shop, Partneranfrage) und hat einen Sicherheitscheck hinter sich. Für dich ändert sich nichts.',
    punkte:[
     {ic:'\u{1F6E1}\uFE0F',t:'Bremse gegen Massenanfragen',d:'Wer ohne Anmeldung hundertfach dieselbe Funktion aufruft, wird kurz gebremst. Normale Nutzung merkt davon nichts. Zunächst zählt die Bremse nur mit, scharf gestellt wird sie nach einer Prüfung.',r:'admin'},
