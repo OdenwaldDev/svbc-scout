@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.55', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.56', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -6603,6 +6603,8 @@ async function sc2Load(force){
     SC2.loaded=true;
   }catch(e){ console.warn('Scouting',e); SC2.loaded=true; }
   SC2.loading=false; sc2After();
+  // 0.99.55: Briefing nach dem ersten vollständigen Laden anbieten, nicht nur wenn der Zufall der Ladezeiten es erlaubt (einmal je Seitenaufruf)
+  if(!window.__sc2PopTry){ window.__sc2PopTry=1; setTimeout(()=>{ try{ svScoutPopup(); }catch(e){} },1200); }
 }
 function sc2After(){
   try{ if(document.querySelector('#panel-scout.active'))sc2ScoutBox(); }catch(e){ console.warn(e); }
@@ -6864,11 +6866,14 @@ function sc2AddPick(pos,s){
 svScoutPopup=function(){
   if(typeof svPopOk!=='function'||!svPopOk('scouting')||!svAufgaben().includes('scouting')||!canScout()||!VR.radarLoaded||!SC2.loaded)return;
   if(SV_PREFS.skip){ let t=''; try{ t=localStorage.getItem('sv_spop_test')||''; }catch(e){} if(!t)return; }
+  // 0.99.55 (Albert, 16.11.2026: „Admins brauchen keinen Scoutingbericht beim Start. Ich krieg das nach jedem Refresh angezeigt, stop it!“):
+  // Die Abteilungsleitung bekommt das Briefing nicht, außer sie schaltet Scouting auf der Startseite selbst ein
+  try{ if(typeof hzSicht==='function'&&hzSicht()==='leitung'&&!(typeof hzScoutAn==='function'&&hzScoutAn()))return; }catch(e){}
   if(document.querySelector('#overlay.open')||document.getElementById('onb')||document.getElementById('onbTourL'))return;
   const seen=rdSeen(), N=VR.radar.filter(r=>r.created_at>seen&&r.lvl!=='info'), U=SC2.meld.filter(m=>!m.gelesen_at&&m.art==='scout_update');
   const top=sc2Relevant(N,3); if(!top.length&&!U.length)return;
   const last=[...N.map(r=>r.created_at),...U.map(m=>m.created_at)].sort().pop(); let shown=''; try{ shown=localStorage.getItem('sv_spop')||''; }catch(e){}
-  if(shown>=last||window.__svSPop===last)return; window.__svSPop=last;
+  if(shown>=last||window.__svSPop===last)return; window.__svSPop=last; try{ localStorage.setItem('sv_spop',last); }catch(e){}   // gilt als gesehen, sobald es einmal erschienen ist, egal wie es zugeht (wie seit 0.42, ging mit dem Briefing verloren)
   const rest=sc2Relevant(N,99).length-top.length;
   svModal(`<div class="kbpop sc2brief"><div class="kbpop-ic scout">${SVI('radar')}</div><span class="trpill">Scouting-Briefing</span><h2>${top.length?`Die ${top.length} wichtigsten Tipps`:'Neues von deinen Spielern'}</h2>
     <p class="note">${top.length?`Nach eurem Positions-Bedarf sortiert${rest>0?` · ${rest} weitere stehen im Radar`:''}. Direkt entscheiden: ⭐ merken · 🔔 beobachten · 🚫 kein Interesse.`:''}</p>
@@ -18597,6 +18602,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.56',v:'0.99.56',datum:'2026-11-16',titel:'Partner-Präsentation als Trichter, Ruhe beim Scouting',kurz:'Die Präsentation führt Firmen jetzt Schritt für Schritt zum Paket, statt es oben schon anzubieten. Das Scouting-Briefing kommt nicht mehr nach jedem Neuladen.',r:'team',
+   punkte:[
+    {ic:'\u{1F3AF}',t:'Erst Auftritt, dann Paket',d:'Oben steht kein Paket und kein Preis mehr. Firmen sehen zuerst ihren Auftritt und warum wir an sie gedacht haben, dann den Verein, dann erst die Pakete. Die Empfehlung steht vorn.'},
+    {ic:'\u2795',t:'Passende Zusätze zum Antippen',d:'Nach der Paketwahl bietet die Präsentation drei Bausteine an, die zum Paket passen.'},
+    {ic:'\u{1F9E5}',t:'Ärmelpartner der Jugend',d:'Neuer Baustein für die Ärmel der Jugendmannschaften. Immolino ist für G- und F-Jugend eingetragen, der Preis folgt.'},
+    {ic:'\u{1F515}',t:'Weniger Pop-ups',d:'Das Scouting-Briefing erscheint nur noch für Scouts, und nur einmal je neuer Meldung. Admins und Vorstand bekommen es nicht mehr.'}]},
   {id:'0.99.55',v:'0.99.55',datum:'2026-11-16',titel:'Förderchancen einfach entscheiden',kurz:'Konkrete Vorschläge mit Förderrahmen und Aufwand. Nach Abteilung Fußball, Jugendfußball und Gesamtverein filtern und mit GO, Interessant oder Nein entscheiden.',
    punkte:[{ic:'check',t:'Vorschlag statt Formular',d:'23 bestehende Vorhaben mit passender Maßnahme, kurzer Empfehlung, offenen Punkten und Originalquellen. GO speichert die Auswahl und erstellt eine interne Vorbereitungsskizze.'},{ic:'users',t:'Zuständigkeit klar',d:'Jugendthemen betreut die Jugendabteilung. Der Admin erreicht persönliche Einladungslinks über Person einladen. Versand und verbindliche Anträge benötigen weiter eine gesonderte Freigabe.'}]},
   {id:'0.99.54',v:'0.99.54',datum:'2026-11-16',gross:true,titel:'Schlanker: Bereiche statt Menü-Flut',kurz:'Das Menü „Mehr“ ist jetzt in Bereiche gegliedert, die sich auf Tipp öffnen. Bildwechsel zeigt kurz das Wappen. Die Leitung bekommt nur noch wichtige Meldungen.',

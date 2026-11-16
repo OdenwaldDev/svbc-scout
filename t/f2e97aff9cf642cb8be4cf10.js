@@ -611,6 +611,8 @@ async function sc2Load(force){
     SC2.loaded=true;
   }catch(e){ console.warn('Scouting',e); SC2.loaded=true; }
   SC2.loading=false; sc2After();
+  // 0.99.55: Briefing nach dem ersten vollständigen Laden anbieten, nicht nur wenn der Zufall der Ladezeiten es erlaubt (einmal je Seitenaufruf)
+  if(!window.__sc2PopTry){ window.__sc2PopTry=1; setTimeout(()=>{ try{ svScoutPopup(); }catch(e){} },1200); }
 }
 function sc2After(){
   try{ if(document.querySelector('#panel-scout.active'))sc2ScoutBox(); }catch(e){ console.warn(e); }

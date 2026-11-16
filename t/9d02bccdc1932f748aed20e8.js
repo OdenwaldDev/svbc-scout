@@ -1,3 +1,8 @@
+   punkte:[
+    {ic:'🧮',t:'Jeder Wert erklärt',d:'Im Spielerprofil steht Schritt für Schritt: Rahmen der Liga, Einsatz, Leistung, Mannschaft und dann jeder Zu- und Abschlag mit Grund, etwa Trainernoten, frühere höhere Liga oder Alter.',r:'team',go:'training'},
+    {ic:'📐',t:'Rahmen je Liga',d:'Gruppenliga 52 bis 82, Kreisoberliga 43 bis 73, Kreisliga A 31 bis 61, B 22 bis 52, C 14 bis 44, D 7 bis 37. Ein typischer Stammspieler liegt in der Kreisoberliga bei 63, in der A-Liga bei 51, passend zur Skala des Eye-Tests.',r:'scout',go:'model'},
+    {ic:'⚖️',t:'Fair je Position',d:'Mittelfeldspieler werden nicht mehr an Stürmertoren gemessen, sondern an Mittelfeldspielern derselben Liga. Abwehr und Torwart zählen über die Gegentore der Mannschaft.'},
+    {ic:'🚀',t:'Ausnahmeleistung zählt',d:'Wer mehr als ein Tor je Spiel schießt, bekommt bis zu 30 Punkte obendrauf. Ein Stürmer der Kreisliga D mit drei Toren je Spiel landet so um 60.',r:'scout',go:'model'},
     {ic:'👁️',t:'Eye-Test zählt mehr',d:'Eure Bewertung zieht den Wert in ihre Richtung: bei einer Bewertung zu 25 %, bei zwei zu 35 %, ab drei zu 45 %.',r:'scout',go:'eye'},
     {ic:'🏠',t:'Startseite klarer',d:'Die große Zahl ist die Stärke, daneben steht die Wechselchance. Die Mischzahl „Transfer-Chance“ fällt weg.',r:'scout',go:'home'}]},
   {id:'0.7',v:'0.7',datum:'2026-09-25',titel:'Lukas\u2019 Liste komplett, Urlaub und Materialdienst',kurz:'Alle 27 Punkte aus Lukas\u2019 Vorschlägen sind jetzt drin, dazu Urlaub in der Kabine und der Materialdienst: Verfügbarkeit je Zeitraum, freie Plätze direkt in der Liste, eine echte Traumelf, Eye-Test je Kategorie, ein erklärter MScore und ein Änderungsverlauf.',

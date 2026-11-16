@@ -88,11 +88,14 @@ function sc2AddPick(pos,s){
 svScoutPopup=function(){
   if(typeof svPopOk!=='function'||!svPopOk('scouting')||!svAufgaben().includes('scouting')||!canScout()||!VR.radarLoaded||!SC2.loaded)return;
   if(SV_PREFS.skip){ let t=''; try{ t=localStorage.getItem('sv_spop_test')||''; }catch(e){} if(!t)return; }
+  // 0.99.55 (Albert, 16.11.2026: „Admins brauchen keinen Scoutingbericht beim Start. Ich krieg das nach jedem Refresh angezeigt, stop it!“):
+  // Die Abteilungsleitung bekommt das Briefing nicht, außer sie schaltet Scouting auf der Startseite selbst ein
+  try{ if(typeof hzSicht==='function'&&hzSicht()==='leitung'&&!(typeof hzScoutAn==='function'&&hzScoutAn()))return; }catch(e){}
   if(document.querySelector('#overlay.open')||document.getElementById('onb')||document.getElementById('onbTourL'))return;
   const seen=rdSeen(), N=VR.radar.filter(r=>r.created_at>seen&&r.lvl!=='info'), U=SC2.meld.filter(m=>!m.gelesen_at&&m.art==='scout_update');
   const top=sc2Relevant(N,3); if(!top.length&&!U.length)return;
   const last=[...N.map(r=>r.created_at),...U.map(m=>m.created_at)].sort().pop(); let shown=''; try{ shown=localStorage.getItem('sv_spop')||''; }catch(e){}
-  if(shown>=last||window.__svSPop===last)return; window.__svSPop=last;
+  if(shown>=last||window.__svSPop===last)return; window.__svSPop=last; try{ localStorage.setItem('sv_spop',last); }catch(e){}   // gilt als gesehen, sobald es einmal erschienen ist, egal wie es zugeht (wie seit 0.42, ging mit dem Briefing verloren)
   const rest=sc2Relevant(N,99).length-top.length;
   svModal(`<div class="kbpop sc2brief"><div class="kbpop-ic scout">${SVI('radar')}</div><span class="trpill">Scouting-Briefing</span><h2>${top.length?`Die ${top.length} wichtigsten Tipps`:'Neues von deinen Spielern'}</h2>
     <p class="note">${top.length?`Nach eurem Positions-Bedarf sortiert${rest>0?` · ${rest} weitere stehen im Radar`:''}. Direkt entscheiden: ⭐ merken · 🔔 beobachten · 🚫 kein Interesse.`:''}</p>
