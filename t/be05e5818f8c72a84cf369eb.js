@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.46',v:'0.99.46',datum:'2026-11-16',titel:'Mehr Schutz im Hintergrund',kurz:'Unsichtbar, aber wichtig: Die App bremst jetzt Missbrauch an den offenen Türen (Helfer-Link, Shop, Partneranfrage) und hat einen Sicherheitscheck hinter sich. Für dich ändert sich nichts.',
+   punkte:[
+    {ic:'\u{1F6E1}\uFE0F',t:'Bremse gegen Massenanfragen',d:'Wer ohne Anmeldung hundertfach dieselbe Funktion aufruft, wird kurz gebremst. Normale Nutzung merkt davon nichts. Zunächst zählt die Bremse nur mit, scharf gestellt wird sie nach einer Prüfung.',r:'admin'},
+    {ic:'\u{1F50D}',t:'Rechte aller Funktionen geprüft',d:'Eine Lücke gefunden und geschlossen: Die Einstellungen für den Berichte-Versand sehen jetzt nur noch Trainer-Ebene, Admin und Vorstand.',r:'admin'}
+   ]},
   {id:'0.99.45',v:'0.99.45',datum:'2026-11-16',titel:'Willkommen mit Handschrift, Neuer Nutzer als Pop-up',kurz:'Der Start ist schöner geworden: „Willkommen“ schreibt sich von Hand, dann Name, dann Kontakt, und die Anfrage ist raus. Wer die Anfragen freigibt, sieht „Neuer Nutzer“ als Pop-up und öffnet damit genau diese Anfrage.',
    punkte:[
     {ic:'\u270D\uFE0F',t:'Willkommen in drei Schritten',d:'Vorname und Nachname, dann E-Mail und Handynummer, dann ein Dankeschön. Rolle und Rechte fragt die App nicht, das ordnet der Verein im Hintergrund zu.'},
@@ -1519,7 +1524,3 @@ const SV_PATCHES=[
     {ic:'🧱',t:'Elf der Woche mit Abwehr',d:'Vorne die Torschützen, hinten Abwehr und Torwart der Mannschaften mit den wenigsten Gegentoren.',r:'scout',go:'totw'},
     {ic:'🔁',t:'FuPa-Abgleich',d:'Lädst du die FuPa-Datei erneut hoch, zeigt die App nur, was sich geändert hat. Unveränderte und von Hand korrigierte Spiele bleiben unangetastet.',r:'team',go:'training'},
     {ic:'💬',t:'Gespräche und Verletzungen erzählen',d:'„Mit Tim gesprochen, er will bleiben, möchte mehr Spielzeit“: der Co-Trainer hält das Gespräch fest und trägt die Zukunft in den Kaderplan ein. Verletzungen genauso.',r:'scout',go:'gespr'}]},
-  {id:'5.0',v:'0.5',datum:'2026-09-25',titel:'Mannschaft, Kader, Scouting',kurz:'Die App folgt jetzt deinem Ablauf: erst die Mannschaft von heute, dann der Kader von morgen, dann die Suche. Training erfasst du mit Noten von 1 bis 6, Spiele kommen aus deiner FuPa-Datei.',
-   punkte:[
-    {ic:'🧭',t:'Neue Reihenfolge',d:'Mannschaft, Kader und Scouting stehen oben, Gegnercheck und Kasse weiter unten. Jede Ansicht erklärt sich in einem kleinen Kasten, den du einklappen kannst.',r:'team',go:'training'},
-    {ic:'📋',t:'Eine Spielerliste für alles',d:'Erste und Zweite getrennt, mit Beteiligung, Durchschnittsnote, Einsätzen und Minuten. Ansichten für Trainer, Kaderplanung, Kontakte und Torhüter. Fehlende Angaben sind markiert.',r:'team',go:'training'},

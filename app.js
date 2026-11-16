@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.45', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.46', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18595,6 +18595,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.46',v:'0.99.46',datum:'2026-11-16',titel:'Mehr Schutz im Hintergrund',kurz:'Unsichtbar, aber wichtig: Die App bremst jetzt Missbrauch an den offenen Türen (Helfer-Link, Shop, Partneranfrage) und hat einen Sicherheitscheck hinter sich. Für dich ändert sich nichts.',
+   punkte:[
+    {ic:'\u{1F6E1}\uFE0F',t:'Bremse gegen Massenanfragen',d:'Wer ohne Anmeldung hundertfach dieselbe Funktion aufruft, wird kurz gebremst. Normale Nutzung merkt davon nichts. Zunächst zählt die Bremse nur mit, scharf gestellt wird sie nach einer Prüfung.',r:'admin'},
+    {ic:'\u{1F50D}',t:'Rechte aller Funktionen geprüft',d:'Eine Lücke gefunden und geschlossen: Die Einstellungen für den Berichte-Versand sehen jetzt nur noch Trainer-Ebene, Admin und Vorstand.',r:'admin'}
+   ]},
   {id:'0.99.45',v:'0.99.45',datum:'2026-11-16',titel:'Willkommen mit Handschrift, Neuer Nutzer als Pop-up',kurz:'Der Start ist schöner geworden: „Willkommen“ schreibt sich von Hand, dann Name, dann Kontakt, und die Anfrage ist raus. Wer die Anfragen freigibt, sieht „Neuer Nutzer“ als Pop-up und öffnet damit genau diese Anfrage.',
    punkte:[
     {ic:'\u270D\uFE0F',t:'Willkommen in drei Schritten',d:'Vorname und Nachname, dann E-Mail und Handynummer, dann ein Dankeschön. Rolle und Rechte fragt die App nicht, das ordnet der Verein im Hintergrund zu.'},

@@ -1,3 +1,7 @@
+  {id:'5.0',v:'0.5',datum:'2026-09-25',titel:'Mannschaft, Kader, Scouting',kurz:'Die App folgt jetzt deinem Ablauf: erst die Mannschaft von heute, dann der Kader von morgen, dann die Suche. Training erfasst du mit Noten von 1 bis 6, Spiele kommen aus deiner FuPa-Datei.',
+   punkte:[
+    {ic:'🧭',t:'Neue Reihenfolge',d:'Mannschaft, Kader und Scouting stehen oben, Gegnercheck und Kasse weiter unten. Jede Ansicht erklärt sich in einem kleinen Kasten, den du einklappen kannst.',r:'team',go:'training'},
+    {ic:'📋',t:'Eine Spielerliste für alles',d:'Erste und Zweite getrennt, mit Beteiligung, Durchschnittsnote, Einsätzen und Minuten. Ansichten für Trainer, Kaderplanung, Kontakte und Torhüter. Fehlende Angaben sind markiert.',r:'team',go:'training'},
     {ic:'🎓',t:'Training mit Noten 1 bis 6',d:'Die Anwesenheit kommt aus der Abstimmung, wer nichts sagt, bekommt eine 3 als Annahme. Neben jeder Angabe steht, woher sie kommt: Abstimmung, Co-Trainer, Annahme oder von dir bestätigt.',r:'team',go:'training'},
     {ic:'🎙️',t:'Einfach erzählen',d:'Sag dem Co-Trainer nach dem Training, wie es war. Er schlägt Noten und Fehlgründe vor, du prüfst sie auf Wunsch im Formular.',r:'team',go:'cotrainer'},
     {ic:'⚽',t:'Spiele aus FuPa',d:'Unter Mannschaft → Spiele die Datei deines FuPa-Auswerters hochladen. Die App ordnet Datum und Namen zu, rechnet Minuten aus und gleicht mit fussball.de ab. Du siehst alles vorher.',r:'team',go:'training'},
