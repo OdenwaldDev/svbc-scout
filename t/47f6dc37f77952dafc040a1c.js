@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.62',v:'0.99.62',datum:'2026-11-16',titel:'Partner: Partner des Tages wie im Flyer',kurz:'Der Preis für „Partner des Tages“ richtet sich nach dem Paket: Supporter 189 €, Club 169 €, Premium 149 €.',
+   punkte:[
+    {ic:'\u{1F4B6}',t:'Partner des Tages nach Paket',d:'Mit dem Supporter kostet ein Heimspiel 189 €, mit dem Club Partner 169 €, mit dem Premium Partner 149 €. Beim 1896 Partner ist ein Heimspiel inklusive, jedes weitere kostet 149 €. Die Präsentation und der Vertrag rechnen so.',r:'team'}
+   ]},
   {id:'0.99.61',v:'0.99.61',datum:'2026-11-16',titel:'Partner: Mit Gespräch und VIP-Stern',kurz:'In der Firmenliste gibt es „Mit Gespräch“ neben „Ohne Gespräch“, und Wunschfirmen lassen sich mit einem Stern als VIP kennzeichnen und danach filtern.',
    punkte:[
     {ic:'\u{2705}',t:'Mit Gespräch',d:'Zeigt die Partner mit Anruf oder Treffen seit dem Stichtag. Mit und Ohne Gespräch zusammen ergeben alle Partner.',r:'team'},
@@ -1538,6 +1542,3 @@ const SV_PATCHES=[
     {ic:'👉',t:'Nach rechts: ignorieren',d:'Ist es ein anderer Spieler, nach rechts wischen. Das Paar kommt nie wieder. Findet die App gar nichts, suchst du den Spieler selbst oder blendest ihn für FuPa aus. Alles lässt sich zurücknehmen.',r:'scout'},
     {ic:'📍',t:'Aktuelle Liga statt Vorjahr',d:'Startseite, Profil und Wechselchance zeigen jetzt die Liga der laufenden Saison. Wo es noch keine aktuellen Daten gibt, steht „Stand 25/26“ dran, bei Platz 1 oder 2 mit „vermutlich aufgestiegen“.',r:'scout'},
     {ic:'🗓️',t:'Neue Saison stellt sich selbst um',d:'Nach der Sommerpause erkennt die App die neue Saison am Spielplan, sobald das erste Spiel höchstens 14 Tage entfernt ist. Radar, Beobachtungen und Spieltag zählen dann automatisch die neue Saison.',r:'scout'},
-    {ic:'🔑',t:'Gegenprobe mit dem Leseschlüssel',d:'Jeder Abgleich prüft über die KLA-API, ob Schlüssel, Datenbasis und Stand passen, und zeigt, ob die Quelle gerade noch nachlädt.',r:'admin'},
-   ]},
-  {id:'0.14',v:'0.14',datum:'2026-09-26',titel:'Zahlen von FuPa, automatisch',kurz:'Einsätze, Minuten, Tore, Vorlagen und der MVP von FuPa kommen jetzt von selbst in die App. Nichts muss eingetippt oder bestätigt werden.',

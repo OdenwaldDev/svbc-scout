@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.61', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.62', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18631,6 +18631,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.62',v:'0.99.62',datum:'2026-11-16',titel:'Partner: Partner des Tages wie im Flyer',kurz:'Der Preis für „Partner des Tages“ richtet sich nach dem Paket: Supporter 189 €, Club 169 €, Premium 149 €.',
+   punkte:[
+    {ic:'\u{1F4B6}',t:'Partner des Tages nach Paket',d:'Mit dem Supporter kostet ein Heimspiel 189 €, mit dem Club Partner 169 €, mit dem Premium Partner 149 €. Beim 1896 Partner ist ein Heimspiel inklusive, jedes weitere kostet 149 €. Die Präsentation und der Vertrag rechnen so.',r:'team'}
+   ]},
   {id:'0.99.61',v:'0.99.61',datum:'2026-11-16',titel:'Partner: Mit Gespräch und VIP-Stern',kurz:'In der Firmenliste gibt es „Mit Gespräch“ neben „Ohne Gespräch“, und Wunschfirmen lassen sich mit einem Stern als VIP kennzeichnen und danach filtern.',
    punkte:[
     {ic:'\u{2705}',t:'Mit Gespräch',d:'Zeigt die Partner mit Anruf oder Treffen seit dem Stichtag. Mit und Ohne Gespräch zusammen ergeben alle Partner.',r:'team'},
@@ -38803,10 +38807,13 @@ PLIB.EINHEIT={saison:'je Saison',einmalig:'einmalig',spieltag:'je Spieltag',stue
 PLIB.eur=(n,dez)=>{ const r=Math.round((+n||0)*100)/100; return r.toLocaleString('de-DE',{minimumFractionDigits:dez||!Number.isInteger(r)?2:0,maximumFractionDigits:2})+'\u00a0€'; };
 
 // ---------- Preis rechnen (gleiche Regeln wie der Server) ----------
+// Partner des Tages richtet sich nach dem Paket in der Auswahl (höchstes gilt): Club 20 €, Premium und 1896 Partner 40 € unter dem Grundpreis (189 / 169 / 149 €).
+PLIB.sotdPreis=function(l,pos){ const k=(pos||[]).map(e=>e&&e.key), pk=['p1896','premium','club','supporter'].find(x=>k.includes(x)), b=+l.preis;
+  return pk==='club'?Math.max(0,b-20):pk==='premium'||pk==='p1896'?Math.max(0,b-40):b; };
 PLIB.rechnen=function(pos,leistungen,saisons){
   const s=Math.max(1,Math.min(5,+saisons||1)), rab=s>=3?.10:s===2?.05:0; let jahr=0,einmal=0,spende=0; const aus=[];
   (pos||[]).forEach(e=>{ const l=leistungen.find(x=>x.key===e.key); if(!l)return; const menge=Math.max(1,Math.min(99,+e.menge||1));
-    const einzel=(l.art==='spende'||l.art==='sonstiges'||l.preis==null||e.preis!=null&&e.preis!=='')?(+e.preis||0):+l.preis;
+    const einzel=(l.art==='spende'||l.art==='sonstiges'||l.preis==null||e.preis!=null&&e.preis!=='')?(+e.preis||0):(l.key==='sotd'?PLIB.sotdPreis(l,pos):+l.preis);
     let summe;
     if(l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art)){ summe=Math.round(einzel*menge*(1-rab)*100)/100; jahr+=summe; }
     else if(l.art==='spende'){ summe=einzel*menge; spende+=summe; }

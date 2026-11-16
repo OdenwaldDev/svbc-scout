@@ -2337,10 +2337,13 @@ PLIB.EINHEIT={saison:'je Saison',einmalig:'einmalig',spieltag:'je Spieltag',stue
 PLIB.eur=(n,dez)=>{ const r=Math.round((+n||0)*100)/100; return r.toLocaleString('de-DE',{minimumFractionDigits:dez||!Number.isInteger(r)?2:0,maximumFractionDigits:2})+'\u00a0€'; };
 
 // ---------- Preis rechnen (gleiche Regeln wie der Server) ----------
+// Partner des Tages richtet sich nach dem Paket in der Auswahl (höchstes gilt): Club 20 €, Premium und 1896 Partner 40 € unter dem Grundpreis (189 / 169 / 149 €).
+PLIB.sotdPreis=function(l,pos){ const k=(pos||[]).map(e=>e&&e.key), pk=['p1896','premium','club','supporter'].find(x=>k.includes(x)), b=+l.preis;
+  return pk==='club'?Math.max(0,b-20):pk==='premium'||pk==='p1896'?Math.max(0,b-40):b; };
 PLIB.rechnen=function(pos,leistungen,saisons){
   const s=Math.max(1,Math.min(5,+saisons||1)), rab=s>=3?.10:s===2?.05:0; let jahr=0,einmal=0,spende=0; const aus=[];
   (pos||[]).forEach(e=>{ const l=leistungen.find(x=>x.key===e.key); if(!l)return; const menge=Math.max(1,Math.min(99,+e.menge||1));
-    const einzel=(l.art==='spende'||l.art==='sonstiges'||l.preis==null||e.preis!=null&&e.preis!=='')?(+e.preis||0):+l.preis;
+    const einzel=(l.art==='spende'||l.art==='sonstiges'||l.preis==null||e.preis!=null&&e.preis!=='')?(+e.preis||0):(l.key==='sotd'?PLIB.sotdPreis(l,pos):+l.preis);
     let summe;
     if(l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art)){ summe=Math.round(einzel*menge*(1-rab)*100)/100; jahr+=summe; }
     else if(l.art==='spende'){ summe=einzel*menge; spende+=summe; }

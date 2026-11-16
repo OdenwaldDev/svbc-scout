@@ -1,3 +1,6 @@
+    {ic:'🔑',t:'Gegenprobe mit dem Leseschlüssel',d:'Jeder Abgleich prüft über die KLA-API, ob Schlüssel, Datenbasis und Stand passen, und zeigt, ob die Quelle gerade noch nachlädt.',r:'admin'},
+   ]},
+  {id:'0.14',v:'0.14',datum:'2026-09-26',titel:'Zahlen von FuPa, automatisch',kurz:'Einsätze, Minuten, Tore, Vorlagen und der MVP von FuPa kommen jetzt von selbst in die App. Nichts muss eingetippt oder bestätigt werden.',
    punkte:[
     {ic:'📊',t:'Zahlen im Spielerprofil',d:'Im Profil steht jetzt „Zahlen von FuPa“ je Saison. Der MVP von FuPa fließt automatisch in den MScore, ein von Hand eingetragener Wert hat weiter Vorrang.',r:'scout'},
     {ic:'🏆',t:'Bestenliste mit echten Einsätzen',d:'Einsätze und Minuten in der Bestenliste kommen aus FuPa, solange für eure Mannschaft keine eigenen Spiele erfasst sind.',r:'scout',go:'best'},

@@ -736,7 +736,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function upsellHtml(pk){ const basis=['highlights_social','stream_einblendung','matchball','sotd','zeltlager','ferienspiele','tor_monat'];
     const ls=basis.map(lk).filter(l=>l&&l.preis!=null&&!l.je_mannschaft&&frei(l,null)!==0&&!imKorb(l.key,null)&&!(pk.key==='p1896'&&l.key==='sotd')).map((l,i)=>({l,w:score(l)*10-i})).sort((a,b)=>b.w-a.w).slice(0,3).map(x=>x.l);
     if(!ls.length)return '';
-    return `<ul class="pk-up" aria-label="Passt dazu">${ls.map(l=>`<li><div><b>${esc(l.titel)}</b>${l.kurz?`<small>${esc(l.kurz)}</small>`:''}<em>${eur(l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto</em></div><button type="button" class="knopf-w" data-up="${l.key}">Dazunehmen</button></li>`).join('')}</ul>`; }
+    return `<ul class="pk-up" aria-label="Passt dazu">${ls.map(l=>`<li><div><b>${esc(l.titel)}</b>${l.kurz?`<small>${esc(l.kurz)}</small>`:''}<em>${eur(l.key==='sotd'?PLIB.sotdPreis(l,[pk]):l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto</em></div><button type="button" class="knopf-w" data-up="${l.key}">Dazunehmen</button></li>`).join('')}</ul>`; }
   // 0.99.53: Fotos zu Zeltlager und Ferienspielen
   const BS_FOTO={zeltlager:{bild:'partner/zeltlager',pos:'center 64%',alt:'Lagerfeuer beim Zeltlager der Jugend des SV/BSC Mörlenbach'},ferienspiele:{bild:'partner/ferienspiele',pos:'center 62%',alt:'Kinder bei den Ferienspielen des SV/BSC Mörlenbach'}};
   function bsZeile(l,empB){ const team=l.je_mannschaft?S.team:null, tm=M.find(m=>m.id===S.team), f=frei(l,team), drin=imKorb(l.key,team), st=standText(l,f,tm), offen=S.offen.has(l.key), tag=empB[l.key];
@@ -744,8 +744,8 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     return `<article class="bs${drin?' drin':''}${f===0?' voll':''}${S.neu===l.key+'|'+(team||'')?' neu':''}" data-bs="${l.key}">
       ${BS_FOTO[l.key]?`<figure class="bs-fo"><picture><source srcset="${BS_FOTO[l.key].bild}.webp" type="image/webp"><img src="${BS_FOTO[l.key].bild}.jpg" alt="${esc(BS_FOTO[l.key].alt)}" loading="lazy" decoding="async" width="1200" height="${l.key==='zeltlager'?900:800}" style="object-position:${BS_FOTO[l.key].pos}"></picture></figure>`:''}
       <div class="bs-z"><button type="button" class="bs-kopf" data-mehr="${l.key}" aria-expanded="${offen}" aria-controls="bsx-${l.key}">${tag?`<span class="lk-tag">${tag}</span>`:''}<span class="bs-n">${esc(l.titel)}</span><span class="bs-k">${esc(l.kurz||'')}</span>${zusatz}<span class="bs-m">${offen?'Weniger':'Mehr dazu'}</span></button>
-        <div class="bs-r"><div class="bs-p"><b>${ca(l)}${eur(l.preis)}</b><small>${esc(PLIB.EINHEIT[l.einheit]||'')}</small></div>${knopfHtml(l,team,'bs-b',['Dazu','✓ Dabei','dazunehmen'])}</div></div>
-      <div class="bs-x" id="bsx-${l.key}"${offen?'':' hidden'}><p>${esc(l.text||'')}</p><p class="bs-net">${ca(l)}${eur(l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto${l.je_mannschaft&&tm?', '+esc(tm.name):''}</p></div></article>`; }
+        <div class="bs-r"><div class="bs-p"><b>${ca(l)}${eur(l.key==='sotd'?PLIB.sotdPreis(l,S.korb):l.preis)}</b><small>${esc(PLIB.EINHEIT[l.einheit]||'')}</small></div>${knopfHtml(l,team,'bs-b',['Dazu','✓ Dabei','dazunehmen'])}</div></div>
+      <div class="bs-x" id="bsx-${l.key}"${offen?'':' hidden'}><p>${esc(l.text||'')}</p><p class="bs-net">${ca(l)}${eur(l.key==='sotd'?PLIB.sotdPreis(l,S.korb):l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto${l.je_mannschaft&&tm?', '+esc(tm.name):''}</p></div></article>`; }
   const BER_K={jugend:'Jugend',erste:'Erste',zweite:'Zweite',events:'Zeltlager und Turniere',verein:'Verein'};
   const BER_T={jugend:'Jugend',erste:'Erste Mannschaft',zweite:'Zweite Mannschaft',events:'Zeltlager und Turniere',verein:'Für den ganzen Verein'};
   function bausteine(){ const S0=$('#bausteine'), B=$('#bsIn'), Fi=$('#bsFilter'); if(!S0||!B)return;
@@ -879,7 +879,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
         <div class="kp-z">${l.je_mannschaft?`<select data-f="mannschaft" aria-label="Mannschaft">${M.map(m=>{ const f=l.frei_je?l.frei_je[m.id]:null, doppelt=m.id!==e.mannschaft&&imKorb(e.key,m.id), aus=m.id!==e.mannschaft&&(f===0||doppelt);
             return `<option value="${esc(m.id)}"${m.id===e.mannschaft?' selected':''}${aus?' disabled':''}>${esc(m.name)}${f===0&&m.id!==e.mannschaft?', vergeben':doppelt?', schon im Paket':''}</option>`; }).join('')}</select>`:''}
           ${menge?`<div class="menge"><button type="button" data-d="-1" aria-label="weniger">−</button><b aria-live="polite">${e.menge}</b><button type="button" data-d="1" aria-label="mehr">+</button></div>`:''}
-          ${TV()&&l.preis!=null?`<label>Sonderpreis <input type="text" inputmode="decimal" data-f="preis" value="${e.preis==null?'':esc(String(e.preis).replace('.',','))}" placeholder="${esc(l.preis)}" enterkeyhint="done"></label>`:''}
+          ${TV()&&l.preis!=null?`<label>Sonderpreis <input type="text" inputmode="decimal" data-f="preis" value="${e.preis==null?'':esc(String(e.preis).replace('.',','))}" placeholder="${esc(l.key==='sotd'?PLIB.sotdPreis(l,S.korb):l.preis)}" enterkeyhint="done"></label>`:''}
           <button type="button" class="kp-x" data-weg="1" aria-label="${esc(l.titel)} entfernen">Entfernen</button></div></div>`; };
     const sp=S.korb.find(e=>e.key==='spende'), naechsteDrin=S.korb.some(e=>e.naechste);
     const leer=!S.korb.filter(e=>e.key!=='spende').length;
