@@ -2600,11 +2600,19 @@ const LOGO = (() => {
 const BANDE = (() => {
   const C = { marine:'#1d2760', orange:'#e8741f', tinte:'#1c1c22', grau:'#3a3a44', himmel:'#8fc9ec', weiss:'#ffffff' };
   const FORMATE = {
+    '250x80':  { w:2500, h:800,  t:'2,50 × 0,80 m', k:'2,5 m', lang:'2,5 m lang, 80 cm hoch', paket:'Einzelbande', hinweis:'Einzelbande: eine Platte, 2,50 × 0,80 m (Pakete Club und Premium)' },
     '300x80':  { w:3000, h:800,  t:'3,00 × 0,80 m', k:'3 m', lang:'3 m lang, 80 cm hoch', std:true },
     '400x80':  { w:4000, h:800,  t:'4,00 × 0,80 m', k:'4 m', lang:'4 m lang, 80 cm hoch' },
-    '500x80':  { w:5000, h:800,  t:'5,00 × 0,80 m', k:'5 m', lang:'5 m lang, 80 cm hoch', hinweis:'Maß der heutigen Banden: zwei Platten zu je 2,50 m' },
+    '500x80':  { w:5000, h:800,  t:'5,00 × 0,80 m', k:'5 m', lang:'5 m lang, 80 cm hoch', paket:'Doppelbande', hinweis:'Doppelbande: zwei Platten zu je 2,50 m, zusammen 5,00 × 0,80 m (Paket 1896 Partner, Maß der heutigen Banden)' },
     '600x80':  { w:6000, h:800,  t:'6,00 × 0,80 m', k:'6 m', lang:'6 m lang, 80 cm hoch' },
     '200x100': { w:2000, h:1000, t:'2,00 × 1,00 m', k:'Partnerwand', lang:'Feld der Partnerwand, 2 m breit, 1 m hoch', wand:true } };
+  // Welche Bande zu welchem Paket gehört (Albert, 16.11.2026): Einzelbande 2500 × 800 mm für Club und Premium, Doppelbande 5000 × 800 mm
+  // nur für 1896 Partner, Supporter hat keine Bande. Die Reihenfolge ist die der Pakete.
+  const PAKETE = [
+    { key:'supporter', t:'Supporter', format:null },
+    { key:'club', t:'Club', format:'250x80' },
+    { key:'premium', t:'Premium', format:'250x80' },
+    { key:'p1896', t:'1896 Partner', format:'500x80' } ];
   const BESCHNITT = 20;           // mm je Seite
   const LAYOUTS = [['links', 'Logo links'], ['mitte', 'Logo groß'], ['claim', 'Mit Slogan']];
   const FAM = { c:"'BandeC','Barlow Condensed','PZC','BarlowC','Arial Narrow',sans-serif", t:"'BandeT','Barlow','InterV',Arial,sans-serif", h:"'BandeH','Caveat','PZHand',cursive" };
@@ -3137,5 +3145,5 @@ const BANDE = (() => {
     return { boxen, pxm:Math.abs(m1[0] - m0[0]) / dpr };
   }
 
-  return { C, FORMATE, LAYOUTS, BESCHNITT, schriften, vorbereiten, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, laden };
+  return { C, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, laden };
 })();

@@ -269,14 +269,14 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     <div class="runter-z"><button class="runter" type="button" data-zu="pakete">Pakete ansehen</button><button class="textknopf" type="button" data-zu="verein" id="heroVerein">Erst den Verein kennenlernen</button></div></div>
     <div class="hp" id="heroPk"${dabeiArt()?' hidden':''}><p class="hero-s" id="heroS">${worumText()}</p>${st.length?`<ul>${st.map(l=>`<li><button type="button" data-pk="${l.key}"><b>${esc(l.titel)}</b><span>${eur(l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}</span></button></li>`).join('')}</ul>`:''}</div></div></section>
 <section class="sec grau" id="auftritt"><div class="ww">
-  <div class="sk"><h2 class="g">Euer Auftritt</h2><p class="lead">So sieht ${esc(kurz)} bei uns aus. Die Bande steht am Platz, euer Logo kann auch auf die Trikots.</p></div>
+  <div class="sk"><h2 class="g">Euer Auftritt</h2><p class="lead" id="aufLead">So sieht ${esc(kurz)} bei uns aus.</p></div>
   <div class="tk-seg auf-seg" id="aufSeg" role="group" aria-label="Ansicht"><button type="button" data-auf="bande" class="on" aria-pressed="true">Bande am Platz</button><button type="button" data-auf="trikot" aria-pressed="false">Logo auf dem Trikot</button></div></div>
 <div class="sec bd" id="bande" role="region" aria-labelledby="bdH" hidden><div class="ww bd-raster">
   <div class="bd-kopf"><h3 class="nur-sr" id="bdH">So sieht deine Bande aus</h3>
     <p class="lead">${esc(kurz)} am Rand unseres Platzes, im selben ruhigen Look wie alle Banden bei uns. So sieht euch jeder bei jedem Heimspiel.</p></div>
   <div class="bd-bw"><div class="bd-buehne" id="bdB"><canvas id="bdCv" role="img" aria-label="Eure Bande am Spielfeldrand"></canvas><div class="bd-laden" id="bdLaden">Eure Bande wird gestaltet …</div></div></div>
   <div class="bd-text"><div class="tk-seg" id="bdLay" role="group" aria-label="Gestaltung"><button type="button" data-bdl="mitte">Logo groß</button><button type="button" data-bdl="claim">${esc((D.deck||{}).branche?'Logo und Branche':'Logo und Name')}</button></div>
-    <div class="tk-seg" id="bdFmt" role="group" aria-label="Format"><button type="button" data-bdf="300x80">Bande</button><button type="button" data-bdf="200x100">Partnerwand</button></div>
+    <div class="tk-seg" id="bdFmt" role="group" aria-label="Format"><button type="button" data-bdf="250x80">Einzelbande</button><button type="button" data-bdf="500x80">Doppelbande</button></div>
     <p class="bd-mass" id="bdMass"></p><p class="bd-frei" id="bdFrei"></p><div class="tk-passt" id="bdPasst" aria-live="polite"></div></div>
 </div></div>
 <div class="sec tk" id="trikots" role="region" aria-labelledby="tkH"><div class="ww tk-raster">
@@ -393,11 +393,11 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       
     }catch(e){ const L=$('#tkLaden'); if(L)L.textContent='Das Trikot lässt sich auf diesem Gerät nicht zeigen.'; } }
   // 3D kostet Daten und Rechenzeit: das Trikot wird erst aufgebaut, wenn jemand es antippt
-  function trikotMoeglich(){ return !fertig(); }
+  function trikotMoeglich(){ return !fertig()&&!AUF.tkAus&&aufBedarf().tk; }
   // ---------- 0.80: Station „So sieht deine Bande aus“ ----------
   // Das Logo aus der Präsentation im Partner-CI (weiße Bande, Logo in Marine, ohne Vereinsabsender), live am Spielfeldrand.
   // Daten nur aus banden_oeffentlich (Zahl freier Plätze je Bereich), keine Namen anderer Partner, keine Kontaktdaten.
-  const BD={d:null,an:false,beob:false,laden:null,layout:'mitte',format:'300x80',L:null,res:null};
+  const BD={d:null,an:false,beob:false,laden:null,layout:'mitte',format:'250x80',L:null,res:null};
   function bdSpec(){ const dk=D.deck||{}, nm=dk.kurzname||dk.firma||''; return {format:BD.format,stil:'ci',layout:BD.layout,firma:nm,name:nm,branche:dk.branche||'',web:dk.web||'',kontakt:true,nameAn:!dk.logo,logo:dk.logo||null}; }
   async function bdZeichnen(){ const cv=$('#bdCv'); if(!cv||typeof BANDE==='undefined')return; const sp=bdSpec();
     try{ BD.res=await BANDE.vorbereiten(sp,{basis:'partner/',wappen:'partner/svbsc.png'}); BD.L=BANDE.layout(sp,BD.res); BANDE.szene(cv,{haupt:{L:BD.L,res:BD.res}}); const L0=$('#bdLaden'); if(L0)L0.remove();
@@ -411,9 +411,10 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     el.innerHTML=n?`<b>${n===1?'1 Platz':n+' Plätze'} frei:</b> ${fr.map(b=>`${esc(b.titel)} ${b.frei}`).join(', ')}.`:'Gerade sind alle Plätze vergeben. Wir setzen euch gern auf die Liste.'; }
   // Maße und Paket-Hinweis stehen sofort, damit die Station nicht nachwächst, während jemand weiterscrollt
   function bdMass(){ const F=typeof BANDE!=='undefined'&&BANDE.FORMATE[BD.format], el=$('#bdMass'); if(!el)return;
-    el.textContent=F?F.lang+'. Druck auf Aluminiumverbund, Herstellung und Montage übernimmt der Verein, wenn sie im Paket stecken.':''; }
+    el.textContent=F?(F.paket?F.paket+', ':'')+F.lang+'. Druck auf Aluminiumverbund, Herstellung und Montage übernimmt der Verein, wenn sie im Paket stecken.':''; }
   function bdText(){ bdFrei(); bdMass();
     const l=lk('bande_erste'), P=$('#bdPasst'); if(!P)return;
+    const pk=S.korb.find(e=>/^(club|premium|p1896)$/.test(e.key)); if(pk&&lk(pk.key)){ P.innerHTML=`<p><b>${esc(lk(pk.key).titel)}</b>: ${pk.key==='p1896'?'Die Doppelbande (5 m)':'Die Einzelbande (2,50 m)'} ist in eurem Paket enthalten.</p>`; return; }
     if(l&&!fertig()){ const drin=imKorb('bande_erste',null);
       P.innerHTML=`<p><b>${esc(l.titel)}</b>${l.preis!=null?' · '+eur(l.preis)+' '+esc(PLIB.EINHEIT[l.einheit]||''):''}. Ab dem Club Partner ist eine Bande im Paket.</p>
         <button type="button" class="knopf-w tk-dazu" data-bddazu${drin?' disabled':''}>${drin?'Ist in eurer Auswahl':'In die Auswahl'}</button>`;
@@ -428,25 +429,43 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     document.querySelectorAll('[data-bdl]').forEach(b=>b.onclick=()=>{ if(BD.layout===b.dataset.bdl)return; BD.layout=b.dataset.bdl; tipp(); bdZeichnen(); });
     document.querySelectorAll('[data-bdf]').forEach(b=>b.onclick=()=>{ if(BD.format===b.dataset.bdf)return; BD.format=b.dataset.bdf; tipp(); bdZeichnen(); });
     if(window.ResizeObserver){ let w0=0, t=0; new ResizeObserver(es=>{ const w=Math.round(es[0].contentRect.width); if(Math.abs(w-w0)>4){ w0=w; clearTimeout(t); t=setTimeout(()=>{ if(BD.L)BANDE.szene($('#bdCv'),{haupt:{L:BD.L,res:BD.res}}); },150); } }).observe($('#bdB')); } }
-  function bandeMoeglich(){ const dk=D.deck||{}; return !fertig()&&!!(dk.kurzname||dk.firma)&&typeof BANDE!=='undefined'; }
+  function bandeMoeglich(){ const dk=D.deck||{}; return !fertig()&&!!(dk.kurzname||dk.firma)&&typeof BANDE!=='undefined'&&aufBedarf().bd; }
   function bandeStart(){ const sec=$('#bande'); if(!sec||sec.hidden)return; bdText(); if(BD.beob)return; BD.beob=true;
     if('IntersectionObserver' in window){ let t=0; const io=new IntersectionObserver(es=>{ const da=es.some(e=>e.isIntersecting); clearTimeout(t); if(da)t=setTimeout(()=>{ io.disconnect(); bandeAufbauen(); },300); },{rootMargin:'200px 0px',threshold:.05}); io.observe(sec); }
     else bandeAufbauen(); }
   // ---------- 0.96: Station „Euer Auftritt“ ----------
   // Bande und Trikot liegen zusammen in einer Station, noch vor den Preisen. Die Bande steht gleich da,
   // das Trikot baut sich erst auf, wenn jemand darauf tippt.
-  const AUF={an:'bande',tk:false};
+  const AUF={an:'bande',tk:false,key:''};
+  // 0.99.51 (Albert, 16.11.2026): Die Präsentation zeigt dem Kunden nur, was zu seiner Auswahl gehört. Bande erst, wenn ein Paket mit Bande oder eine
+  // Bande als Baustein gewählt ist, Trikot erst mit einem Trikot- oder Ärmel-Baustein. Club und Premium haben die Einzelbande (2,50 m), nur 1896 Partner
+  // die Doppelbande (5 m). Supporter hat keine Bande. Ohne passende Auswahl bleibt die ganze Station zu.
+  const AUF_BANDE=/^(club|premium|p1896|bande_)/, AUF_TRIKOT=/^(brust_|aermel_|trikot_)/;
+  function aufBedarf(){ const k=(S.korb||[]).map(e=>e.key); return {bd:k.some(x=>AUF_BANDE.test(x)), tk:k.some(x=>AUF_TRIKOT.test(x)), doppel:k.includes('p1896'), einzel:k.some(x=>/^(club|premium|bande_)/.test(x))}; }
+  function bdFormate(){ const b=aufBedarf(), F=[]; if(b.einzel||!b.doppel)F.push('250x80'); if(b.doppel)F.push('500x80');
+    document.querySelectorAll('[data-bdf]').forEach(x=>{ x.hidden=!F.includes(x.dataset.bdf); }); const seg=$('#bdFmt'); if(seg)seg.hidden=F.length<2;
+    if(!F.includes(BD.format)){ BD.format=F[0]; if(BD.an&&BD.L)bdZeichnen(); } document.querySelectorAll('[data-bdf]').forEach(x=>{ const an=x.dataset.bdf===BD.format; x.classList.toggle('on',an); x.setAttribute('aria-pressed',String(an)); }); }
+  function aufText(){ const el=$('#aufLead'); if(!el)return; const kurz=(D.deck||{}).kurzname||(D.deck||{}).firma||'ihr';
+    el.textContent=AUF.bd&&AUF.tkDa?`So sieht ${kurz} bei uns aus: die Bande am Platz und das Logo auf dem Trikot.`:AUF.tkDa?`So sieht das Logo von ${kurz} auf unseren Trikots aus.`:`So sieht ${kurz} am Rand unseres Platzes aus.`; }
+  function aufPruefen(){ const b=aufBedarf(), k=(b.bd?'b':'')+(b.doppel?'d':'')+(b.einzel?'e':'')+(b.tk?'t':''); if(k===AUF.key)return; const war=!!AUF.key; AUF.key=k;
+    // Die Station liegt über den Paketen: Erscheint oder verschwindet sie über dem sichtbaren Ausschnitt, hält die Seite ihre Stelle (kein Springen)
+    const sec=$('#auftritt'), ref=$('#pakete')||document.body, vor=sec&&!sec.hidden?sec.getBoundingClientRect().top:null, t0=ref.getBoundingClientRect().top;
+    auftrittStart();
+    const nach=sec&&!sec.hidden?sec.getBoundingClientRect().top:null, d=ref.getBoundingClientRect().top-t0;
+    if(((vor!==null&&vor<0)||(nach!==null&&nach<0))&&Math.abs(d)>1)window.scrollTo({top:window.scrollY+d,behavior:'instant'});
+    if(k&&!war){ const sec=$('#auftritt'); if(sec&&!sec.hidden)toast('Eure Vorschau steht oben unter „Euer Auftritt“.'); } }
   function aufZeigen(w,tippen){ const bd=$('#bande'), tk=$('#trikots'); if(!bd&&!tk)return;
     AUF.an=w;
     if(bd)bd.hidden=w!=='bande'||!AUF.bd;
     if(tk)tk.hidden=w!=='trikot'||!AUF.tkDa;
     document.querySelectorAll('[data-auf]').forEach(b=>{ const an=b.dataset.auf===w; b.classList.toggle('on',an); b.setAttribute('aria-pressed',String(an)); });
-    if(w==='trikot'&&!AUF.tk){ AUF.tk=true; tkAufbauen().then(()=>{ if(tk&&tk.hidden&&AUF.an==='trikot'){ AUF.tkDa=false; const b=document.querySelector('[data-auf="trikot"]'); if(b)b.hidden=true; aufSeg(); aufZeigen('bande'); stationenNeu(); } }); }
+    if(w==='trikot'&&!AUF.tk){ AUF.tk=true; tkAufbauen().then(()=>{ if(tk&&tk.hidden&&AUF.an==='trikot'){ AUF.tkDa=false; AUF.tkAus=true; const b=document.querySelector('[data-auf="trikot"]'); if(b)b.hidden=true; aufSeg(); aufZeigen('bande'); stationenNeu(); } }); }
     if(w==='bande')bandeStart();
     if(tippen)tipp(); }
   function aufSeg(){ const seg=$('#aufSeg'); if(!seg)return; seg.hidden=!(AUF.bd&&AUF.tkDa); }
   function auftrittStart(){ const sec=$('#auftritt'); if(!sec)return;
-    AUF.bd=bandeMoeglich(); AUF.tkDa=trikotMoeglich();
+    AUF.key=(function(){ const b=aufBedarf(); return (b.bd?'b':'')+(b.doppel?'d':'')+(b.einzel?'e':'')+(b.tk?'t':''); })();
+    AUF.bd=bandeMoeglich(); AUF.tkDa=trikotMoeglich(); bdFormate(); aufText();
     sec.hidden=!AUF.bd&&!AUF.tkDa; if(sec.hidden){ const bd=$('#bande'), tk=$('#trikots'); if(bd)bd.hidden=true; if(tk)tk.hidden=true; return; }
     const bT=document.querySelector('[data-auf="bande"]'), tT=document.querySelector('[data-auf="trikot"]');
     if(bT)bT.hidden=!AUF.bd; if(tT)tT.hidden=!AUF.tkDa; aufSeg();
@@ -578,7 +597,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     p.dataset.w='1'; p.style.transform=`translateX(${a.offsetLeft+10}px) scaleX(${Math.max(1,a.offsetWidth-20)})`;
     const nav=a.closest('.stn'); if(nav&&nav.scrollWidth>nav.clientWidth+2){ const l=a.offsetLeft-(nav.clientWidth-a.offsetWidth)/2; nav.scrollTo({left:Math.max(0,l),behavior:sanft()}); } }
   // Stand an den Stationen: Paket gewählt, Bausteine dabei, Zahl im Abschluss; nach der Unterschrift nur noch, was zählt
-  function stationenNeu(){ const aufS=$('#auftritt');
+  function stationenNeu(){ if(typeof aufPruefen==='function'&&$('#auftritt'))aufPruefen(); const aufS=$('#auftritt');
     if(aufS&&!aufS.hidden&&fertig()){ aufS.hidden=true; const bd0=$('#bande'), tk0=$('#trikots'); if(bd0)bd0.hidden=true; if(tk0)tk0.hidden=true; }
     const sicht={auftritt:!($('#auftritt')||{}).hidden,verein:true,ziele:!($('#ziele')||{}).hidden,wirkung:!($('#wirkung')||{}).hidden,pakete:!($('#pakete')||{}).hidden,bausteine:!($('#bausteine')||{}).hidden,baukasten:true};
     STN.forEach(([id])=>{ const li=document.querySelector(`.stn li[data-stn="${id}"]`); if(li)li.hidden=!sicht[id]; }); const nv=$('.stn'); if(nv)nv.classList.toggle('wenig',Object.values(sicht).filter(Boolean).length<4);

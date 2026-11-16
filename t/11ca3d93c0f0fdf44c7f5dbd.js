@@ -1,3 +1,9 @@
+    {ic:'🔁',t:'FuPa nochmal abgleichen',d:'Spiele, die noch vorläufig sind, stehen mit Hinweis oben. FuPa wird oft erst Tage später vollständig, dann die Datei einfach noch einmal hochladen. Im Spiel-Detail stehen jetzt auch die Noten.',r:'team',go:'training'}]},
+  {id:'0.6',v:'0.6',datum:'2026-09-25',titel:'Kaderplanung, Eye-Test und Gespräche',kurz:'Der Kaderplan zeigt, wie sicher jede Planung ist, wo Plätze frei sind und was an Qualität fehlt. Dazu ein neuer Eye-Test mit regionaler Skala, ein fairerer MScore und Gespräche per Co-Trainer.',
+   punkte:[
+    {ic:'🎯',t:'Fakt, Zusage, Planung, Annahme',d:'Neben jedem Spieler steht, wie sicher die Planung für die nächste Saison ist. Wer noch nicht gesprochen wurde, ist nur angenommen. Antippen und festlegen.',r:'scout',go:'kader'},
+    {ic:'📐',t:'Abdeckung statt Zählen',d:'Je Position gilt: 2 × Startplätze der Formation. Wer die Position nur nebenbei spielt, zählt halb, inaktive Spieler gar nicht. Oben stehen die freien Kaderplätze.',r:'scout',go:'kader'},
+    {ic:'🧩',t:'Backup-Ansicht',d:'Wer springt ein, wenn einer aus der Startelf fehlt? Mit einem Tipp von der Liste auf „Backup“ wechseln.',r:'scout',go:'kader'},
     {ic:'🦶',t:'Was fehlt an Qualität',d:'Linksfuß in der Abwehr, Kopfballstärke, Tempo, Führung, Standards und Altersstruktur. Fehlt etwas, legst du mit einem Tipp den Bedarf fürs Scouting an.',r:'scout',go:'kader'},
     {ic:'🌱',t:'Übergang aus der A-Jugend',d:'Wer zu alt für die A-Jugend wird, steht in der Planung der nächsten Saison: Erste, Zweite oder hört auf.',r:'scout',go:'kader'},
     {ic:'🧭',t:'Plausibilität und Wechselfenster',d:'Die App findet Widersprüche, etwa „bleibt“ trotz Absage im Gespräch, und zeigt, wann das nächste Wechselfenster offen ist. Die Standards stellst du unter „Standards“ selbst ein.',r:'scout',go:'kader'},

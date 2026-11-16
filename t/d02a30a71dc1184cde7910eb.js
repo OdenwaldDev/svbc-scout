@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.51',v:'0.99.51',datum:'2026-11-16',titel:'Präsentation für jede Firma, Bande und Trikot nur wenn sie passen',kurz:'Jede Firma hat jetzt eine Präsentation für den Termin vor Ort. Bande und Trikot zeigt sie erst, wenn Paket oder Baustein dazu passen. Einzelbande 2,50 m, Doppelbande 5 m.',
+   punkte:[
+    {ic:'\u{1F4C4}',t:'Alle Firmen in den Präsentationen',d:'Bisher hatten nur 16 von 104 Firmen eine Präsentation. Jetzt hat jede Firma unter Firmen eine, neue Firmen bekommen sie von selbst. Ansprechpartner, Branche und Anschrift kommen aus der Akte.',r:'partner'},
+    {ic:'\u{1F3AF}',t:'Nur zeigen, was zur Auswahl passt',d:'Die Bande erscheint erst, wenn ein Paket mit Bande oder die Werbebande gewählt ist, das Trikot erst mit einem Trikot- oder Ärmel-Baustein. Ohne passende Auswahl bleibt die Station zu. Der Kunde sieht nur seine Präsentation.',r:'partner'},
+    {ic:'\u{1F4CF}',t:'Einzelbande und Doppelbande',d:'Club und Premium haben die Einzelbande (2,50 × 0,80 m), nur 1896 Partner die Doppelbande (5,00 × 0,80 m), Supporter hat keine Bande. Die Vorschau zeigt das passende Maß. Im Bandencreator gibt es 2,50 m als neues Format.',r:'partner'}
+   ]},
   {id:'0.99.50',v:'0.99.50',datum:'2026-11-16',titel:'Neuer Partner im Ablauf: BB Berns&Baltz',kurz:'BB Berns&Baltz aus der Pfadwiesenstraße steht jetzt im Partner-Ablauf, das Gespräch mit Jan Berns ist diese Woche.',
    punkte:[
     {ic:'\u{1F91D}',t:'BB Berns&Baltz im Ablauf',d:'Eingetragen mit Status Gespräch, Ansprechpartner Jan Berns und Notiz: großes Engagement für Mörlenbach, Malort für Kinder, dazu Mörlens Restobar und Mörlens Patisserie.',r:'admin'}
@@ -1526,9 +1532,3 @@ const SV_PATCHES=[
     {ic:'📊',t:'MScore erklärt',d:'Jeder Baustein sagt, was er misst und warum er eigenständig ist. Einsatz & Liga rechnet frühere höhere Ligen mit an, Vorlagen zählen halb als Zusatz, und die Form von Abwehr und Torwart kommt aus den Gegentoren.',r:'scout',go:'model'},
     {ic:'❤️',t:'Vereinstreue in fünf Stufen',d:'Von „Am Anfang“ bis „Vereinsikone“, im Profil, in der Spielerliste und ab Stufe drei als Abzeichen auf der Karte.',r:'team',go:'training'},
     {ic:'📋',t:'Spielerliste: Ansicht Scouting',d:'Neue Ansicht mit Mannschaft, MScore, Eye-Test und Datenbasis. Die Spalte Mannschaft zeigt auch, wo einer zusätzlich spielt.',r:'team',go:'training'},
-    {ic:'🔁',t:'FuPa nochmal abgleichen',d:'Spiele, die noch vorläufig sind, stehen mit Hinweis oben. FuPa wird oft erst Tage später vollständig, dann die Datei einfach noch einmal hochladen. Im Spiel-Detail stehen jetzt auch die Noten.',r:'team',go:'training'}]},
-  {id:'0.6',v:'0.6',datum:'2026-09-25',titel:'Kaderplanung, Eye-Test und Gespräche',kurz:'Der Kaderplan zeigt, wie sicher jede Planung ist, wo Plätze frei sind und was an Qualität fehlt. Dazu ein neuer Eye-Test mit regionaler Skala, ein fairerer MScore und Gespräche per Co-Trainer.',
-   punkte:[
-    {ic:'🎯',t:'Fakt, Zusage, Planung, Annahme',d:'Neben jedem Spieler steht, wie sicher die Planung für die nächste Saison ist. Wer noch nicht gesprochen wurde, ist nur angenommen. Antippen und festlegen.',r:'scout',go:'kader'},
-    {ic:'📐',t:'Abdeckung statt Zählen',d:'Je Position gilt: 2 × Startplätze der Formation. Wer die Position nur nebenbei spielt, zählt halb, inaktive Spieler gar nicht. Oben stehen die freien Kaderplätze.',r:'scout',go:'kader'},
-    {ic:'🧩',t:'Backup-Ansicht',d:'Wer springt ein, wenn einer aus der Startelf fehlt? Mit einem Tipp von der Liste auf „Backup“ wechseln.',r:'scout',go:'kader'},
