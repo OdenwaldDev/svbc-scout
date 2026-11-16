@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon-64.png">
-<meta name="app-build" content="beta-0.99.44">
+<meta name="app-build" content="beta-0.99.45">
 <title>SV/BSC Sportzentrale</title>
 <script src="vendor/chart.umd.min.js?v=81ffafe13c37" async></script>
 <style>
@@ -3833,6 +3833,57 @@ body.gated{overflow:hidden;}
 .g-klein{font-size:12.5px;line-height:1.45;color:#8b95aa;margin:2px 0 0;text-align:center;}
 .g-klein a{color:#7fb0ff;}
 
+/* =====================================================================
+   0.99.45 · Willkommen mit Handschrift (Albert, 16.11.2026) und ruhigerer Startbildschirm
+   ===================================================================== */
+#gate.gw-an .g-art,#gate.gw-an .g-side{visibility:hidden;}
+#gw{position:fixed;inset:0;z-index:5;overflow:auto;display:flex;background:#04060b;
+  background-image:radial-gradient(120% 60% at 50% -8%,rgba(47,107,255,.34),transparent 62%),radial-gradient(90% 50% at 85% 108%,rgba(120,92,255,.22),transparent 60%);}
+.gw-glow{position:absolute;left:50%;top:28%;width:min(90vw,640px);height:min(90vw,640px);transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(91,155,255,.2),transparent 70%);animation:gwatem 6s ease-in-out infinite;}
+@keyframes gwatem{0%,100%{opacity:.7;transform:translate(-50%,-50%) scale(1);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.08);}}
+.gw-in{position:relative;width:100%;max-width:440px;margin:auto;padding:calc(34px + env(safe-area-inset-top,0px)) 26px calc(34px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:stretch;gap:16px;animation:gwrein .7s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes gwrein{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+.gw-in h2{font-size:30px;line-height:1.1;font-weight:800;letter-spacing:-.035em;margin:0;text-wrap:balance;}
+.gw-t{margin:0;color:#a2acbf;font-size:15.5px;line-height:1.55;}
+.gw-gross{margin:0;font-size:22px;font-weight:750;letter-spacing:-.02em;line-height:1.25;text-wrap:balance;}
+.gw-sub{margin:0;color:#a2acbf;font-size:16.5px;line-height:1.55;text-align:center;}
+.gw-hallo{align-items:center;text-align:center;gap:20px;}
+.gw-logo{height:96px;width:auto;object-fit:contain;filter:drop-shadow(0 18px 44px rgba(47,107,255,.55));animation:gwlogo 1.1s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes gwlogo{from{opacity:0;transform:scale(.8) translateY(8px);filter:blur(8px) drop-shadow(0 18px 44px rgba(47,107,255,0));}to{opacity:1;transform:none;}}
+.gw-hand{display:block;width:100%;max-width:420px;height:auto;overflow:visible;filter:drop-shadow(0 0 22px rgba(91,155,255,.42));cursor:pointer;}
+.gw-danke .gw-hand{max-width:240px;align-self:center;cursor:default;}
+.gw-hand path{fill:var(--gw-ink,#f4f7fc);fill-opacity:0;stroke:var(--gw-ink,#f4f7fc);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;
+  animation:gwzug var(--t,1.1s) cubic-bezier(.45,.05,.3,1) var(--d,0s) forwards,gwfuell .75s ease calc(var(--d,0s) + var(--t,1.1s) - .3s) forwards;}
+@keyframes gwzug{to{stroke-dashoffset:0;}}
+@keyframes gwfuell{to{fill-opacity:1;stroke-width:1.5;}}
+.gw-hallo .gw-sub,.gw-hallo .gw-akt{opacity:0;animation:gwrein .8s cubic-bezier(.2,.8,.2,1) 3.5s forwards;}
+.gw-hallo .gw-akt{animation-delay:3.9s;display:flex;flex-direction:column;gap:6px;width:100%;max-width:340px;margin-top:6px;}
+.gw-in.fertig *{animation-duration:.01s!important;animation-delay:0s!important;}
+.gw-dots{display:flex;gap:6px;}
+.gw-dots i{flex:1;height:4px;border-radius:4px;background:rgba(148,163,196,.22);transition:background .4s;}
+.gw-dots i.an{background:#5b9bff;}
+.gw-seite .g-form{margin-top:6px;}
+.gw-haken{width:64px;height:64px;align-self:center;fill:none;stroke:#3ecf8e;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+.gw-haken circle{stroke-dasharray:145;stroke-dashoffset:145;animation:gwzug2 .9s ease .1s forwards;}
+.gw-haken path{stroke-dasharray:40;stroke-dashoffset:40;animation:gwzug2 .5s ease .8s forwards;}
+@keyframes gwzug2{to{stroke-dashoffset:0;}}
+.gw-danke .g-msg{margin-top:2px;}
+@media (prefers-reduced-motion:reduce){
+  .gw-in,.gw-logo,.gw-glow{animation:none!important;}
+  .gw-hand path{animation:none!important;stroke-dashoffset:0;fill-opacity:1;stroke-width:1.5;}
+  .gw-hallo .gw-sub,.gw-hallo .gw-akt{animation:none!important;opacity:1;}
+  .gw-haken circle,.gw-haken path{animation:none!important;stroke-dashoffset:0;}
+}
+
+/* Startbildschirm: Wappen mit Ring und weichem Schein statt eines Logos mit Balken allein */
+.g-load{background:radial-gradient(70% 45% at 50% 40%,rgba(47,107,255,.26),transparent 70%),#04060b;}
+.g-load .gl-logo{position:relative;display:grid;place-items:center;width:150px;height:150px;}
+.g-load .gl-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(91,155,255,.12);border-top-color:#7fb0ff;border-right-color:rgba(127,176,255,.4);animation:gspin 1.6s cubic-bezier(.5,.2,.5,.8) infinite;}
+.g-load .gl-ring.b{inset:12px;border-top-color:transparent;border-bottom-color:rgba(169,156,255,.55);border-left-color:rgba(169,156,255,.2);animation-duration:2.4s;animation-direction:reverse;}
+.g-load .gl-name{font:700 12px 'InterV',sans-serif;letter-spacing:.32em;text-transform:uppercase;color:#6f7b94;margin-top:-6px;}
+@media (prefers-reduced-motion:reduce){ .g-load .gl-ring{animation:none;} }
+
 </style>
 <script>(function(){try{var w=localStorage.getItem('svbc_theme'),t=w==='hell'?'hell':w==='dunkel'?'dunkel':(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches?'hell':'dunkel');document.documentElement.setAttribute('data-theme',t);if(t==='hell'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#f3eee4');}}catch(e){}})();</script>
 </head>
@@ -3872,7 +3923,7 @@ body.gated{overflow:hidden;}
     <div class="g-fuss"><a href="hilfe.html">Hilfe</a><a href="datenschutz.html">Datenschutz</a></div>
   </div>
   <div class="g-side"><div class="g-card" id="gcard" style="display:none"></div></div>
-  <div class="g-load" id="gload"><img src="logo.png" alt=""><div class="bar ind"><i></i></div><p>Einen Moment …</p></div>
+  <div class="g-load" id="gload"><div class="gl-logo"><i class="gl-ring"></i><i class="gl-ring b"></i><img src="logo.png" alt=""></div><div class="gl-name">SV/BSC Mörlenbach</div><div class="bar ind"><i></i></div><p>Einen Moment …</p></div>
 </div>
 
 <div class="shell" id="shell">
@@ -4359,9 +4410,9 @@ a.kbtn{text-decoration:none;display:inline-block}
 
 
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
-<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.44", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
+<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.45", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
 <script src="vendor/supabase.js?v=dff1e545f4f3"></script>
 <script src="icons.js?v=2b264497e7cf"></script>
-<script src="boot.js?v=c4748f18a473"></script>
+<script src="boot.js?v=c26645004ca7"></script>
 </body>
 </html>

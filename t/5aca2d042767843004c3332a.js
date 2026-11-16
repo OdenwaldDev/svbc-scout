@@ -1195,7 +1195,7 @@ async function zgKorb(id, rolleWahl){
     <p class="zk-auge">${K.frei ? 'Schon freigegeben als ' + svEsc(zgName(K.rolle_jetzt)) : 'Neue Anfrage'} · ${svEsc(typeof svAgo === 'function' ? svAgo(P.am) : '')}</p>
     <h2>${svEsc(P.name || P.email)}</h2>
     <p class="zk-sub">hat eingetragen:</p>
-    <dl class="zk-wer">${zeile('Vorname', P.vorname)}${zeile('Name', P.nachname)}${zeile('E-Mail', P.email)}${zeile('Handynummer', P.tel)}${zeile('Ich bin', [ZG_ART_T[P.art], P.team].filter(Boolean).join(' · '))}</dl>
+    <dl class="zk-wer">${zeile('Vorname', P.vorname)}${zeile('Name', P.nachname)}${zeile('E-Mail', P.email)}${zeile('Handynummer', P.tel)}${P.art && P.art !== 'sonstiges' || P.team ? zeile('Ich bin', [ZG_ART_T[P.art], P.team].filter(Boolean).join(' · ')) : ''}</dl>
     ${P.bestaetigt ? '' : '<p class="zk-hinweis">Die E-Mail-Adresse ist noch nicht bestätigt.</p>'}
     ${K.doppelt ? `<p class="zk-hinweis">Es gibt schon ein Konto mit diesem Namen (${svEsc(zgName(K.doppelt.rolle))}, Adresse bei ${svEsc(K.doppelt.wo)}). Bitte prüfen, ob das alte Konto noch gebraucht wird.</p>` : ''}
     <h3>Im Korb</h3>
@@ -1228,7 +1228,7 @@ async function zgKorb(id, rolleWahl){
   malen();
   M.querySelector('#zkAb').onclick = () => closeOverlay();
   const nein = M.querySelector('#zkNein'); if(nein) nein.onclick = async () => { nein.disabled = true;
-    try{ await SVB.admin('ablehnen', { user_id:id }); kToast('Anfrage abgelehnt'); closeOverlay(); try{ if(typeof frLaden === 'function') frLaden(true).then(frKarte); }catch(e){} await svAdminRender(true); }catch(e){ nein.disabled = false; kToast('⚠️ ' + e.message); } };
+    try{ await SVB.admin('ablehnen', { user_id:id }); kToast('Anfrage abgelehnt'); closeOverlay(); try{ if(typeof frLaden === 'function') frLaden(true).then(frKarte); }catch(e){} try{ if(typeof zhKarte === 'function') zhKarte(true); }catch(e){} await svAdminRender(true); }catch(e){ nein.disabled = false; kToast('⚠️ ' + e.message); } };
   M.querySelector('#zkOk').onclick = async ev => { const b = ev.currentTarget; const fehl = [];
     const fs = Z.rolle.startsWith('f:') ? Z.rolle.slice(2) : null, rolle = eff();
     if(fs && !(K.bereiche || []).some(x => an(x.key) && !std(x.key))){ kToast(zgName(Z.rolle) + ': bitte unten mindestens einen Bereich antippen.'); return; }
@@ -1246,9 +1246,12 @@ async function zgKorb(id, rolleWahl){
       if(Z.spieler && K.spieler){ const { error } = await SVB.sb.rpc('konto_spieler_setzen', { p_user:id, p_spieler:K.spieler.id }); if(error) fehl.push('Spieler'); }
       if(Z.helfer && K.helfer){ const { error } = await SVB.sb.rpc('einsatz_person_setzen', { p_key:'h:' + K.helfer.id, p_user:id }); if(error) fehl.push('Helfer'); }
       if(K.frei){ try{ await SVB.sb.rpc('zugang_korb_fertig', { p_id:id }); }catch(e){} }
-      closeOverlay(); kToast(fehl.length ? `⚠️ ${P.name || P.email} ist freigeschaltet, aber nicht gesetzt: ${fehl.join(', ')}` : `✓ ${P.name || P.email} ist freigeschaltet als ${zgName(Z.rolle)}${mail}`);
+      closeOverlay();
+      if(typeof zgFertigZeigen !== 'function') kToast(fehl.length ? `⚠️ ${P.name || P.email} ist freigeschaltet, aber nicht gesetzt: ${fehl.join(', ')}` : `✓ ${P.name || P.email} ist freigeschaltet als ${zgName(Z.rolle)}${mail}`);
       try{ if(typeof frLaden === 'function') frLaden(true).then(frKarte); }catch(e){}
       await svAdminRender(true);
+      // 0.99.45: „Spieler bestätigt“ mit den übrigen Wartenden (svm113.js)
+      if(typeof zgFertigZeigen === 'function') zgFertigZeigen(P, zgName(Z.rolle), fehl, mail, id);
     }catch(e){ b.disabled = false; kToast('⚠️ ' + String(e.message || e)); }
   };
 }
@@ -1457,6 +1460,7 @@ function w94Css(){ if(document.getElementById('svm94css')) return; const s = doc
   background-image:radial-gradient(120% 55% at 50% -10%,rgba(47,107,255,.28),transparent 60%)}
 #w94 .w-in{max-width:480px;width:100%;margin:auto;display:grid;gap:18px}
 #w94 .w-sch{display:flex;gap:6px}#w94 .w-sch i{flex:1;height:4px;border-radius:4px;background:rgba(148,163,196,.25)}#w94 .w-sch i.an{background:var(--brand,#2f6bff)}
+#w94 .w-bild.hand{width:100%;height:auto;max-width:300px;background:none;border-radius:0;display:block;font-size:inherit;margin:0 auto}#w94 .w-bild.hand .gw-hand{--gw-ink:currentColor;max-width:300px;margin:0 auto;filter:none;cursor:pointer}
 #w94 .w-bild{width:76px;height:76px;border-radius:22px;background:rgba(47,107,255,.16);display:grid;place-items:center;font-size:38px}
 #w94 h2{font-size:30px;line-height:1.1;margin:0;text-wrap:balance}#w94 p{margin:0;color:var(--ink2,#a9b3c7);font-size:16.5px;line-height:1.55}
 #w94 ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}#w94 li{display:flex;gap:10px;color:var(--ink2,#a9b3c7)}#w94 li b{color:var(--ink,#eef2fb)}
@@ -1469,7 +1473,7 @@ function w94Css(){ if(document.getElementById('svm94css')) return; const s = doc
 function w94Nativ(){ try{ return !!(typeof SVN !== 'undefined' && SVN.nativ); }catch(e){ return false; } }
 function w94Schritte(){
   const me = (typeof SVU !== 'undefined' && SVU) || {}, vn = String(me.name || '').split(' ')[0];
-  const S = [{ id:'hallo', bild:'\u{1F44B}', t:`Willkommen${vn ? ', ' + vn : ''}!`, x:'Schön, dass du dabei bist. Das ist die App des SV/BSC. In einer Minute ist alles eingerichtet.',
+  const S = [{ id:'hallo', bild:'\u{1F44B}', t:`Schön, dass du dabei bist${vn ? ', ' + vn : ''}!`, x:'Das ist die App des SV/BSC. In einer Minute ist alles eingerichtet.', hand:true,
     punkte:[['Zusagen mit einem Tipp', 'Training und Spiel beantwortest du direkt in der Mitteilung.'], ['Deine Aufgaben', 'Was für dich ansteht, steht oben auf der Startseite.'], ['Alles an einem Ort', 'Termine, Helferplan und Neuigkeiten aus dem Verein.']], los:'Los geht es' }];
   S.push({ id:'push', bild:'\u{1F514}', t:'Mitteilungen erlauben', x:'Darüber kommen Trainingsabfragen, Erinnerungen und deine Aufgaben. Ohne Mitteilungen verpasst du das Wichtigste. Wir schicken nur, was dich betrifft.',
     hinweis: (typeof i1IOS === 'function' && i1IOS() && !w94Nativ() && typeof i1App === 'function' && !i1App()) ? 'Auf dem iPhone gehen Mitteilungen im Browser erst, wenn die App auf dem Startbildschirm liegt. Das kommt im nächsten Schritt.' : 'Gleich fragt dein Handy nach. Bitte „Erlauben“ antippen.',
@@ -1483,7 +1487,7 @@ function w94Zeig(){
   if(!s){ if(el) el.remove(); W94.offen = false; document.body.classList.remove('w94-offen'); return; }
   if(!el){ el = document.createElement('div'); el.id = 'w94'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Willkommen'); document.body.appendChild(el); }
   el.innerHTML = `<div class="w-in" data-w="${svEsc(s.id)}"><div class="w-sch">${W94.S.map((_, i) => `<i class="${i <= W94.i ? 'an' : ''}"></i>`).join('')}</div>
-    <div class="w-bild" aria-hidden="true">${s.bild}</div><h2 tabindex="-1">${svEsc(s.t)}</h2><p>${svEsc(s.x)}</p>
+    ${s.hand && window.SVBC && SVBC.hand ? `<div class="w-bild hand">${SVBC.hand('willkommen', { delay:.2, label:'Willkommen' })}</div>` : `<div class="w-bild" aria-hidden="true">${s.bild}</div>`}<h2 tabindex="-1">${svEsc(s.t)}</h2><p>${svEsc(s.x)}</p>
     ${s.punkte ? `<ul>${s.punkte.map(p => `<li><span><b>${svEsc(p[0])}.</b> ${svEsc(p[1])}</span></li>`).join('')}</ul>` : ''}
     ${s.hinweis ? `<p style="font-size:14.5px">${svEsc(s.hinweis)}</p>` : ''}<p class="w-ok" id="w94ok" hidden></p>
     <div class="w-akt"><button type="button" class="btn" id="w94los">${svEsc(s.los)}</button>${s.spaeter ? `<button type="button" class="w-leise" id="w94sp">${svEsc(s.spaeter)}</button>` : ''}</div></div>`;

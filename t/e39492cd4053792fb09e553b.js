@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.45',v:'0.99.45',datum:'2026-11-16',titel:'Willkommen mit Handschrift, Neuer Nutzer als Pop-up',kurz:'Der Start ist schöner geworden: „Willkommen“ schreibt sich von Hand, dann Name, dann Kontakt, und die Anfrage ist raus. Wer die Anfragen freigibt, sieht „Neuer Nutzer“ als Pop-up und öffnet damit genau diese Anfrage.',
+   punkte:[
+    {ic:'\u270D\uFE0F',t:'Willkommen in drei Schritten',d:'Vorname und Nachname, dann E-Mail und Handynummer, dann ein Dankeschön. Rolle und Rechte fragt die App nicht, das ordnet der Verein im Hintergrund zu.'},
+    {ic:'\u{1F514}',t:'Neuer Nutzer als Pop-up',d:'Wer freigibt, bekommt „Neuer Nutzer“ mit Name, Mail und Nummer. Freigeben geht dort nicht, ein Tipp öffnet die Anfrage mit allem, was die App über die Person weiß.',r:'admin'},
+    {ic:'\u2705',t:'Bestätigt und die übrigen Wartenden',d:'Nach dem Freigeben steht „bestätigt“ da, dazu, wer noch wartet, und ein Knopf zur Übersicht. Auf der Startseite steht die Karte „Neue Nutzer“.',r:'admin'}
+   ]},
   {id:'0.99.44',v:'0.99.44',datum:'2026-11-16',titel:'Sitzungen mit Agenda, Notizen und Protokoll',kurz:'Zu jeder Sitzung gibt es jetzt eine Agenda. Jeder aus der Runde reicht vorher seine Themen ein, in der Sitzung schreibt ihr Ergebnisse und Aufgaben dazu, und am Ende steht das Protokoll von selbst.',
    punkte:[
     {ic:'\u{1F4CB}',t:'Themen einreichen',d:'Tippen, diktieren oder eine ganze Liste einfügen: Die App macht einzelne Punkte daraus und ordnet sie dem Bereich zu. Du siehst die Vorschau, bevor etwas gespeichert wird. Reichen mehrere dasselbe ein, steht es einmal auf der Agenda, mit allen Namen und weiter oben.',r:'kalender'},
@@ -1517,8 +1523,3 @@ const SV_PATCHES=[
    punkte:[
     {ic:'🧭',t:'Neue Reihenfolge',d:'Mannschaft, Kader und Scouting stehen oben, Gegnercheck und Kasse weiter unten. Jede Ansicht erklärt sich in einem kleinen Kasten, den du einklappen kannst.',r:'team',go:'training'},
     {ic:'📋',t:'Eine Spielerliste für alles',d:'Erste und Zweite getrennt, mit Beteiligung, Durchschnittsnote, Einsätzen und Minuten. Ansichten für Trainer, Kaderplanung, Kontakte und Torhüter. Fehlende Angaben sind markiert.',r:'team',go:'training'},
-    {ic:'🎓',t:'Training mit Noten 1 bis 6',d:'Die Anwesenheit kommt aus der Abstimmung, wer nichts sagt, bekommt eine 3 als Annahme. Neben jeder Angabe steht, woher sie kommt: Abstimmung, Co-Trainer, Annahme oder von dir bestätigt.',r:'team',go:'training'},
-    {ic:'🎙️',t:'Einfach erzählen',d:'Sag dem Co-Trainer nach dem Training, wie es war. Er schlägt Noten und Fehlgründe vor, du prüfst sie auf Wunsch im Formular.',r:'team',go:'cotrainer'},
-    {ic:'⚽',t:'Spiele aus FuPa',d:'Unter Mannschaft → Spiele die Datei deines FuPa-Auswerters hochladen. Die App ordnet Datum und Namen zu, rechnet Minuten aus und gleicht mit fussball.de ab. Du siehst alles vorher.',r:'team',go:'training'},
-    {ic:'🏆',t:'Beteiligung bei Rankings & Verein',d:'Die Beteiligung über mehrere Saisons steht jetzt unter Rankings & Verein. Abstimmungen und Automatik sind auf einer Seite.',r:'team',go:'verein'}]},
-  {id:'4.5',v:'0.4.5',datum:'2026-09-25',titel:'Einfach wegwischen',kurz:'Spieler und Meldungen wischst du jetzt wie auf dem Sperrbildschirm weg. Die anderen rücken nach, und aussortierte Spieler holst du genauso leicht zurück.',

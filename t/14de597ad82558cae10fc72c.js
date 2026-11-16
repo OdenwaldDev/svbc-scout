@@ -1,3 +1,8 @@
+    {ic:'🎓',t:'Training mit Noten 1 bis 6',d:'Die Anwesenheit kommt aus der Abstimmung, wer nichts sagt, bekommt eine 3 als Annahme. Neben jeder Angabe steht, woher sie kommt: Abstimmung, Co-Trainer, Annahme oder von dir bestätigt.',r:'team',go:'training'},
+    {ic:'🎙️',t:'Einfach erzählen',d:'Sag dem Co-Trainer nach dem Training, wie es war. Er schlägt Noten und Fehlgründe vor, du prüfst sie auf Wunsch im Formular.',r:'team',go:'cotrainer'},
+    {ic:'⚽',t:'Spiele aus FuPa',d:'Unter Mannschaft → Spiele die Datei deines FuPa-Auswerters hochladen. Die App ordnet Datum und Namen zu, rechnet Minuten aus und gleicht mit fussball.de ab. Du siehst alles vorher.',r:'team',go:'training'},
+    {ic:'🏆',t:'Beteiligung bei Rankings & Verein',d:'Die Beteiligung über mehrere Saisons steht jetzt unter Rankings & Verein. Abstimmungen und Automatik sind auf einer Seite.',r:'team',go:'verein'}]},
+  {id:'4.5',v:'0.4.5',datum:'2026-09-25',titel:'Einfach wegwischen',kurz:'Spieler und Meldungen wischst du jetzt wie auf dem Sperrbildschirm weg. Die anderen rücken nach, und aussortierte Spieler holst du genauso leicht zurück.',
    punkte:[
     {ic:'👉',t:'Nach rechts: weg damit',d:'Spieler in Scouting, Radar und Bedarf nach rechts wischen heißt Kein Interesse. Meldungen und Hinweise nach rechts heißt erledigt. Kurz danach kannst du es rückgängig machen.',go:'radar'},
     {ic:'👈',t:'Nach links: Merkliste',d:'Einen Spieler nach links wischen setzt ihn auf die Merkliste (grün) oder nimmt ihn wieder runter.',go:'scout'},
