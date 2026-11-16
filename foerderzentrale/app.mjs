@@ -1,7 +1,7 @@
 import { blankCase, caseDecisionText, categories, euro, evaluate, instruments, isOriginal, makeLetter, offerRequestStatuses, requiredChecks,
-  results, routeStatuses, sourceRegister, sourceUrl, states } from "./domain.mjs?v=beta-0.99.53";
-import { embeddedApi, outlookOutcome } from "./sportzentrale.mjs?v=beta-0.99.53";
-import { loadMeeting, mountMeeting } from "./meeting.mjs?v=beta-0.99.53";
+  results, routeStatuses, sourceRegister, sourceUrl, states } from "./domain.mjs?v=beta-0.99.54";
+import { embeddedApi, outlookOutcome } from "./sportzentrale.mjs?v=beta-0.99.54";
+import { loadMeeting, mountMeeting } from "./meeting.mjs?v=beta-0.99.54";
 
 const root = document.querySelector("#app"), notice = document.querySelector("#notice");
 const steps = ["Projekt", "Angebot und Quellen", "Förderprüfung", "Entscheidung", "Anschreiben"];

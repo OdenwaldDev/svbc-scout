@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.54',v:'0.99.54',datum:'2026-11-16',gross:true,titel:'Schlanker: Bereiche statt Menü-Flut',kurz:'Das Menü „Mehr“ ist jetzt in Bereiche gegliedert, die sich auf Tipp öffnen. Bildwechsel zeigt kurz das Wappen. Die Leitung bekommt nur noch wichtige Meldungen.',
+   punkte:[
+    {ic:'\u{1F4C1}',t:'Bereiche statt langer Liste',d:'Senioren, Jugend, Spieltag, Veranstaltungen, Partner, Verein, Kommunikation und Verwaltung sind aufgeklappte Ordner. Es ist immer nur einer offen, der Rest bleibt übersichtlich.'},
+    {ic:'\u2728',t:'Wappen beim Seitenwechsel',d:'Beim Wechsel zwischen den Bereichen läuft kurz das Wappen mit Ring über den Bildschirm. Wer „Bewegung reduzieren“ eingestellt hat, sieht es nicht.'},
+    {ic:'\u{1F514}',t:'Nur noch das Wichtige für die Leitung',d:'Keine Scouting-Berichte, Radar-Tipps und Einzelhinweise mehr für Admins und Vorstand, dafür sind die Bereichsleiter da. Update-Fenster kommen nur noch bei echten neuen Funktionen.'}
+   ]},
   {id:'0.99.53',v:'0.99.53',datum:'2026-11-16',titel:'Partner-Ablauf kurz und mit Bildern',kurz:'Die Präsentation für Partner ist deutlich kürzer, zeigt Zeltlager und Ferienspiele mit echten Fotos, kommt ohne die Zweite aus und hat zwei neue Bausteine.',r:'team',
    punkte:[
     {ic:'\u2702\uFE0F',t:'Kürzer und klarer',d:'Die Station „Bis 2030“ und die lange Beispielliste sind raus. Übrig bleiben Verein, Pakete, Bausteine und Abschluss. Bei Firmen mit persönlichem Text steht „Warum wir an euch gedacht haben“ gleich vorn.'},
@@ -1531,8 +1537,3 @@ const SV_PATCHES=[
     {ic:'👁️',t:'Eye-Test zählt mehr',d:'Eure Bewertung zieht den Wert in ihre Richtung: bei einer Bewertung zu 25 %, bei zwei zu 35 %, ab drei zu 45 %.',r:'scout',go:'eye'},
     {ic:'🏠',t:'Startseite klarer',d:'Die große Zahl ist die Stärke, daneben steht die Wechselchance. Die Mischzahl „Transfer-Chance“ fällt weg.',r:'scout',go:'home'}]},
   {id:'0.7',v:'0.7',datum:'2026-09-25',titel:'Lukas\u2019 Liste komplett, Urlaub und Materialdienst',kurz:'Alle 27 Punkte aus Lukas\u2019 Vorschlägen sind jetzt drin, dazu Urlaub in der Kabine und der Materialdienst: Verfügbarkeit je Zeitraum, freie Plätze direkt in der Liste, eine echte Traumelf, Eye-Test je Kategorie, ein erklärter MScore und ein Änderungsverlauf.',
-   punkte:[
-    {ic:'🌴',t:'Urlaub in der Kabine',d:'Spieler tragen Urlaub frühzeitig über ihren Kabinen-Link ein. Für jedes Training im Zeitraum sind sie automatisch abgemeldet, bekommen keine Einladung und keine Erinnerung und stehen im Training mit Grund drin. Das Trainerteam kann Urlaub auch selbst eintragen.',r:'team',go:'abst'},
-    {ic:'🧺',t:'Materialdienst',d:'Unter Mannschaft → Abstimmungen ein Team für vier Wochen einteilen, Zeitraum frei änderbar, oder die nächsten Teams vorschlagen lassen. Die Eingeteilten sehen es in der Kabine und bekommen zum Start und an Trainingstagen eine WhatsApp-Nachricht.',r:'team',go:'abst'},
-    {ic:'🕘',t:'Änderungsverlauf',d:'Bei jedem Spiel und jedem Spieler im Kaderplan steht, wer wann was geändert hat, mit altem und neuem Wert. So bleibt nachvollziehbar, woher eine Zahl kommt.',r:'team',go:'training'},
-    {ic:'🗓️',t:'Verfügbarkeit je Zeitraum',d:'Voll, eingeschränkt oder nicht verfügbar, mit Grund. Eingeschränkt zählt in der Abdeckung halb, nicht verfügbar gar nicht. Geplant wird in Wechselperioden: Rückrunde über das Winterfenster, die nächsten Saisons über das Sommerfenster.',r:'scout',go:'kader'},

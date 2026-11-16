@@ -1,3 +1,8 @@
+   punkte:[
+    {ic:'🌴',t:'Urlaub in der Kabine',d:'Spieler tragen Urlaub frühzeitig über ihren Kabinen-Link ein. Für jedes Training im Zeitraum sind sie automatisch abgemeldet, bekommen keine Einladung und keine Erinnerung und stehen im Training mit Grund drin. Das Trainerteam kann Urlaub auch selbst eintragen.',r:'team',go:'abst'},
+    {ic:'🧺',t:'Materialdienst',d:'Unter Mannschaft → Abstimmungen ein Team für vier Wochen einteilen, Zeitraum frei änderbar, oder die nächsten Teams vorschlagen lassen. Die Eingeteilten sehen es in der Kabine und bekommen zum Start und an Trainingstagen eine WhatsApp-Nachricht.',r:'team',go:'abst'},
+    {ic:'🕘',t:'Änderungsverlauf',d:'Bei jedem Spiel und jedem Spieler im Kaderplan steht, wer wann was geändert hat, mit altem und neuem Wert. So bleibt nachvollziehbar, woher eine Zahl kommt.',r:'team',go:'training'},
+    {ic:'🗓️',t:'Verfügbarkeit je Zeitraum',d:'Voll, eingeschränkt oder nicht verfügbar, mit Grund. Eingeschränkt zählt in der Abdeckung halb, nicht verfügbar gar nicht. Geplant wird in Wechselperioden: Rückrunde über das Winterfenster, die nächsten Saisons über das Sommerfenster.',r:'scout',go:'kader'},
     {ic:'➕',t:'Freie Plätze in der Liste',d:'Fehlt auf einer Position jemand, steht dort eine Zeile „Freier Platz“ mit Bedarf. Über „+ Spieler“ legst du auch einen offenen Platz an, ohne schon einen Namen zu haben.',r:'scout',go:'kader'},
     {ic:'🌓',t:'Primär und Sekundär',d:'Wer auch in der anderen Mannschaft spielen kann, steht dort ausgegraut und zählt nur einmal. Inaktive und nicht verfügbare Spieler rutschen in die Reserve.',r:'scout',go:'kader'},
     {ic:'🧾',t:'Stand der Planung',d:'Im Menü jedes Spielers auf einen Blick: Systemannahme, Planung, letztes Gespräch und Zusage.',r:'scout',go:'kader'},
