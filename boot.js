@@ -346,8 +346,56 @@ function viewBlocked(kind){
   showCard(); document.getElementById('gOut').onclick=()=>SV.signOut();
 }
 
+/* ---------- Immer die neueste Version, noch vor dem Start (Beta 0.99.44) ----------
+   Albert, 15.11.2026: „Das Allererste muss sein: Ist die App noch aktuell? Keiner soll mit der alten App rumrennen.“
+   Bisher prüfte erst die fertig gestartete App (svm35.js) und lud dann neu: Die alte Fassung lief also erst einmal an.
+   Jetzt läuft die Prüfung gleich mit der Anmeldung los, und gewartet wird direkt vor dem Laden der App:
+   1) version.json sagt, welcher Stand der neueste ist. Ist diese Seite älter (sie kam nach 4 s Wartezeit aus dem
+      Speicher), wird einmal neu geladen.
+   2) Der Service Worker der neuen Version setzt app.js aus den geänderten Stücken zusammen (sw.js, tools/teile.py).
+      Darauf wird gewartet, sonst holte die Seite die ganze Datei doch wieder aus dem Netz.
+   Ohne Netz oder wenn das Netz zu langsam ist, startet die App mit dem gespeicherten Stand: Am Sportplatz im Funkloch
+   muss sie laufen. svm35.js prüft danach weiter und lädt neu, sobald es geht. */
+let _svAkt=null;
+function svAktuellStart(){
+  if(_svAkt)return _svAkt;
+  _svAkt=(async()=>{
+    if(!/^https?:$/.test(location.protocol)||navigator.onLine===false)return 'ohne-netz';
+    // In der Store-App holt der Updater der Hülle die neue Fassung (app-ota): keine eigene Abfrage, kein Service Worker
+    try{ const C=window.Capacitor; if(C&&C.isNativePlatform&&C.isNativePlatform())return 'huelle'; }catch(e){}
+    const zeit=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(()=>r(null),ms))]);
+    let reg=null; try{ reg=navigator.serviceWorker?await zeit(navigator.serviceWorker.getRegistration(),1500):null; }catch(e){ reg=null; }
+    const sw=reg?zeit(reg.update().then(()=>1).catch(()=>null),6000):Promise.resolve(null);   // läuft schon, während version.json geholt wird
+    const v=await zeit(fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null),3000);
+    const neu=v&&typeof v.build==='string'&&v.build&&CFG.build&&v.build!==CFG.build?v.build:'';
+    if(neu){
+      let s={}; try{ s=JSON.parse(sessionStorage.getItem('svbcUpd')||'{}')||{}; }catch(e){ s={}; }
+      const n=s.build===neu?(s.n||0)+1:1;
+      if(n<=2){   // höchstens zweimal, dann lieber mit dem alten Stand starten als im Kreis laden
+        try{ sessionStorage.setItem('svbcUpd',JSON.stringify({build:neu,n,von:CFG.build})); sessionStorage.setItem('svbcReloadFor',neu); }catch(e){}
+        loading('Neue Version wird geladen …'); await sw;
+        location.replace(location.pathname+'?v='+encodeURIComponent(neu)+location.hash);
+        return new Promise(()=>{});   // der Start hält hier an, die Seite lädt neu
+      }
+    }
+    await sw;
+    try{
+      const w=reg&&(reg.installing||reg.waiting);
+      if(w&&w.state!=='activated'&&w.state!=='redundant'){
+        loading('Neue Version wird geladen …');
+        await zeit(new Promise(r=>{ w.addEventListener('statechange',()=>{ if(w.state==='activated'||w.state==='redundant')r(1); }); }),25000);
+        if(navigator.serviceWorker.controller&&navigator.serviceWorker.controller!==reg.active)
+          await zeit(new Promise(r=>navigator.serviceWorker.addEventListener('controllerchange',()=>r(1),{once:true})),3000);
+      }
+    }catch(e){}
+    return neu?'alt':'aktuell';
+  })().catch(()=>'fehler');
+  return _svAkt;
+}
+
 /* ---------- Ablauf ---------- */
 async function enter(opts){
+  svAktuellStart();
   loading('Anmelden …');
   let prof=null;
   try{ const {data,error}=await sb.rpc('touch_me'); if(error)throw error; prof=Array.isArray(data)?data[0]:data; SV.offline=false; }
@@ -397,6 +445,7 @@ async function loadAndStart(){
   }
   if(!ds){ viewLogin('Keine Verbindung. Für den ersten Start auf diesem Gerät wird Internet gebraucht.','err'); return; }
   window.__SVBC_DATA=ds.body; window.__SVBC_USER=SV.profile; window.__SVBC_DSVER=ds.version;
+  if(!SV.offline){ try{ await svAktuellStart(); }catch(e){} }
   loading('App wird gestartet …',100);
   document.body.classList.add('role-'+SV.profile.role);
   if(!(SV.profile.role==='admin'||SV.profile.role==='vorstand'||SV.profile.role==='planer'||SV.profile.role==='trainer'))document.body.classList.add('ro');

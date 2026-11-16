@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.43', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.44', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18135,6 +18135,7 @@ appCheckUpdate=async function(auto){
 setTimeout(()=>appCheckUpdate(true),600);
 window.addEventListener('focus',()=>appCheckUpdate(true));
 window.addEventListener('pageshow',e=>{ if(e.persisted)appCheckUpdate(true); });
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')appCheckUpdate(true); });   // 0.99.44: installierte App kommt aus dem Hintergrund, ohne dass „focus“ feuert
 window.addEventListener('online',()=>{ UPD.letzte=0; appCheckUpdate(true); });
 setInterval(()=>{ if(document.visibilityState==='visible')appCheckUpdate(true); },5*60*1000);
 if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',e=>{ if(e.data&&e.data.svbcNeu&&e.data.svbcNeu!==APP_BUILD){ UPD.letzte=0; appCheckUpdate(true); } });
@@ -18594,6 +18595,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.44',v:'0.99.44',datum:'2026-11-16',titel:'Sitzungen mit Agenda, Notizen und Protokoll',kurz:'Zu jeder Sitzung gibt es jetzt eine Agenda. Jeder aus der Runde reicht vorher seine Themen ein, in der Sitzung schreibt ihr Ergebnisse und Aufgaben dazu, und am Ende steht das Protokoll von selbst.',
+   punkte:[
+    {ic:'\u{1F4CB}',t:'Themen einreichen',d:'Tippen, diktieren oder eine ganze Liste einfügen: Die App macht einzelne Punkte daraus und ordnet sie dem Bereich zu. Du siehst die Vorschau, bevor etwas gespeichert wird. Reichen mehrere dasselbe ein, steht es einmal auf der Agenda, mit allen Namen und weiter oben.',r:'kalender'},
+    {ic:'✍️',t:'Ergebnis, eigene Notiz, Aufgaben',d:'Zu jedem Thema gibt es das Ergebnis für alle, deine eigene Notiz (die siehst nur du) und Aufgaben mit Zuständigem und Termin. Die Aufgaben stehen danach bei den To-dos.',r:'kalender'},
+    {ic:'\u{1F4C4}',t:'Protokoll ohne Mehrarbeit',d:'Fünf Stunden nach Beginn fragt die App die Leitung, ob die Sitzung beendet ist. Bei Ja geht das Protokoll an die Runde. Zwei Tage und einen Tag vorher erinnert die App ans Einreichen.',r:'kalender'},
+    {ic:'⚡',t:'Kleine Updates, immer der neueste Stand',d:'Nach einem Update lädt dein Handy nur noch die geänderten Teile, rund ein Zehntel der bisherigen Datenmenge. Und die App prüft schon beim Öffnen, ob sie aktuell ist.'}
+   ]},
   {id:'0.99.43',v:'0.99.43',datum:'2026-11-15',titel:'Welche Förderung lohnt sich?',kurz:'In der Leitersitzung siehst du Aufwand, vorgeschlagene Wichtigkeit, Förderrahmen und Fristen. Vergleiche den Förderweg mit einer direkten oder gebrauchten Anschaffung.',punkte:[{ic:'✓',t:'Prioritäten für eure Entscheidung',d:'Änderbare Bewertungen, Zeithorizonte und belegte Fristen helfen bei der Auswahl. Geschlossene Runden bleiben zurückgestellt.',r:'foerderung'},{ic:'✓',t:'Was bleibt vom Zuschuss?',d:'Zusatzkosten und Ehrenamtszeit gegen eine vergleichbare Alternative rechnen. Eigene Schätzungen bleiben erkennbar und gehen in die Sitzungsvorlage ein.',r:'foerderung'}]},
   {id:'0.99.42',v:'0.99.42',datum:'2026-11-15',titel:'Die App startet deutlich schneller',kurz:'Beim Start hat die App alle Scouting-Listen mehrfach durchgerechnet, auch wenn niemand sie offen hatte. Das passiert jetzt erst, wenn du den Bereich öffnest. Auf älteren Handys startet die App damit um ein Vielfaches schneller.',
    punkte:[
@@ -34739,21 +34747,21 @@ const HZ_LISTEN = ['htFeedBtn', 'vrHome', 'homeTiles', 'homeKand', 'svAct', 'hom
 // Ausgeblendet wird nur, was für die Sicht klar nicht auf die Startseite gehört. Karten, die es nur gibt, wenn sie die Person selbst betreffen
 // (eigene To-dos, eigene Einsätze, das eigene Spielerkonto, eigene Mannschaften), blendet keine Sicht aus.
 const HZ_SICHT = {
-  leitung: { a:['frKarte', 'shHome', 'prioHeute', 'sc2Home', 'svRemind', 'e95Karte'], b:['kalHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['ogHome', 'svCockpit', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
+  leitung: { a:['frKarte', 'shHome', 'prioHeute', 'sc2Home', 'svRemind', 'e95Karte'], b:['szHome', 'kalHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['ogHome', 'svCockpit', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
              weg:['trHome', 'kbHome'], listen:false },   // To-dos gleich unter der Begrüßung (Vorstand, 04.11.2026)
-  bereich: { a:['frKarte', 'shHome', 'prioHeute', 'sc2Home', 'svRemind', 'e95Karte'], b:['kalHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['ogHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
+  bereich: { a:['frKarte', 'shHome', 'prioHeute', 'sc2Home', 'svRemind', 'e95Karte'], b:['szHome', 'kalHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['ogHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
              weg:['svCockpit', 'trHome', 'kbHome'], listen:false },
-  planer:  { a:['frKarte', 'svRemind', 'prioHeute', 'e95Karte', 'shHome'], b:['kalHome', 'kbHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['svCockpit', 'sc2Home', 'ogHome', 'trHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
+  planer:  { a:['frKarte', 'svRemind', 'prioHeute', 'e95Karte', 'shHome'], b:['szHome', 'kalHome', 'kbHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['svCockpit', 'sc2Home', 'ogHome', 'trHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
              weg:[], listen:true },
-  trainer: { a:['frKarte', 'svRemind', 'e95Karte', 'sc2Home', 'prioHeute', 'shHome'], b:['kalHome', 'kbHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['trHome', 'svCockpit', 'ogHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
+  trainer: { a:['frKarte', 'svRemind', 'e95Karte', 'sc2Home', 'prioHeute', 'shHome'], b:['szHome', 'kalHome', 'kbHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['trHome', 'svCockpit', 'ogHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
              weg:[], listen:true },
-  jugend:  { a:['frKarte', 'svRemind', 'e95Karte', 'prioHeute', 'sc2Home', 'shHome'], b:['kalHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['svrMeine', 'ogHome', 'sk96Karte'], e:['o1karte', 'appInstall'],
+  jugend:  { a:['frKarte', 'svRemind', 'e95Karte', 'prioHeute', 'sc2Home', 'shHome'], b:['szHome', 'kalHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['svrMeine', 'ogHome', 'sk96Karte'], e:['o1karte', 'appInstall'],
              weg:['svCockpit', 'trHome', 'kbHome', 'spHome'], listen:false },
-  spieler: { a:['frKarte', 'e95Karte', 'svRemind', 'prioHeute', 'shHome'], b:['kalHome', 'kbHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['sk96Karte', 'ogHome', 'svrMeine'], e:['o1karte', 'appInstall'],
+  spieler: { a:['frKarte', 'e95Karte', 'svRemind', 'prioHeute', 'shHome'], b:['szHome', 'kalHome', 'kbHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['sk96Karte', 'ogHome', 'svrMeine'], e:['o1karte', 'appInstall'],
              weg:['svCockpit', 'trHome', 'sc2Home'], listen:false },
-  helfer:  { a:['frKarte', 'e95Karte', 'svRemind', 'prioHeute', 'shHome'], b:['kalHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['ogHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
+  helfer:  { a:['frKarte', 'e95Karte', 'svRemind', 'prioHeute', 'shHome'], b:['szHome', 'kalHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['ogHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
              weg:['svCockpit', 'trHome', 'sc2Home', 'kbHome', 'spHome'], listen:false },
-  gast:    { a:['frKarte', 'shHome', 'e95Karte', 'svRemind', 'prioHeute'], b:['kalHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['svCockpit', 'sc2Home', 'ogHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
+  gast:    { a:['frKarte', 'shHome', 'e95Karte', 'svRemind', 'prioHeute'], b:['szHome', 'kalHome', 'spHome', 'sptHome'], c:['ablHeute', 'svHeute'], d:['svCockpit', 'sc2Home', 'ogHome', 'sk96Karte', 'svrMeine'], e:['o1karte', 'appInstall'],
              weg:[], listen:true } };
 
 // Wer Scouting oder Kader leitet, vertritt oder dort mithilft (Funktion im Bereich), sieht die Startseite der Kaderplanung
@@ -35190,6 +35198,432 @@ try { const lzB = new MutationObserver(() => { if (Object.keys(LZ.offen).length)
   document.querySelectorAll('.panel').forEach(p => lzB.observe(p, { attributes: true, attributeFilter: ['class'] }));
   LZ_HOME.forEach(i => { const e = document.getElementById(i); if (e) lzB.observe(e, { attributes: true, attributeFilter: ['data-hz-weg', 'style', 'class'] }); });
   const lzG = document.getElementById('gate'); if (lzG) lzB.observe(lzG, { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
+
+/* =====================================================================
+   Beta 0.99.44 · Sitzungen: Agenda, Notizen, Aufgaben, Protokoll (168_sitzung.sql, Edge Function sitzung-ki)
+   Albert, 15.11.2026: „Wenn ich auf Termin gehe, will ich die Agenda öffnen können, und da sind dann alle To-dos von allen.
+   Reichen mehrere dasselbe ein, bekommt es mehr Prio. Man sieht, von wem welches Thema kommt. Jeder macht seine Notizen,
+   und es wird auch ein Protokoll daraus gemacht. Es soll aussehen wie ein Notizbuch.“
+
+   Aufbau: Die Sitzung hängt am Termin. Im Termin steht „Agenda öffnen“, auf der Startseite die nächste eigene Sitzung.
+   Das Blatt (#szVoll) hat drei Reiter: Agenda, Meine Notizen, Protokoll.
+   - Themen einreichen: tippen, diktieren (Mikrofon, wo der Browser es kann) oder Liste und Datei. Die KI (sitzung-ki) zerlegt
+     in Themen, ordnet Bereiche zu und erkennt, was schon auf der Agenda steht. Ohne KI zerlegt die App selbst Zeile für Zeile.
+     Gespeichert wird immer erst nach der Vorschau.
+   - Je Thema: gemeinsames Ergebnis (steht im Protokoll), eigene Notiz (sieht nur die Person selbst), Aufgaben (normale To-dos).
+   - Eigene Notizen und Ergebnisse speichern sich beim Verlassen des Felds und alle paar Sekunden beim Schreiben.
+   Wer eine Sitzung öffnen kann, entscheidet der Server (event_sieht). Die Seite zeigt nur, was sitzung_laden liefert.
+   ===================================================================== */
+const SZ = { id:null, d:null, tab:'agenda', auf:{}, t:{}, heim:null, heimAm:0, rundeAuf:false, takt:null, roh:'', unterwegs:0, zuletzt:0, laedt:false };
+const SZ_START = (() => { try{ return location.hash; }catch(e){ return ''; } })();   // die Adresse vom Aufruf, bevor die App sie umschreibt
+const SZ_B = { leitung:'Leitung', projekte:'Projekte', entwicklung:'Entwicklung', finanzen:'Finanzen', partner:'Partner', spieltag:'Spieltag', veranstaltungen:'Veranstaltungen',
+  kommunikation:'Kommunikation', senioren:'Senioren', jugend:'Jugend', soma:'SOMA', sonstiges:'Sonstiges' };
+const SZ_FARBE = { leitung:'#7c8cff', projekte:'#4fb7c8', entwicklung:'#59b98a', finanzen:'#d9a441', partner:'#e0795b', spieltag:'#5b9be0', veranstaltungen:'#c66bb2',
+  kommunikation:'#8fb04f', senioren:'#e0574f', jugend:'#f0a23c', soma:'#8a94a6', sonstiges:'#9aa3b5' };
+/* Stichworte für die Zuordnung ohne KI. Trifft nichts, bleibt es „Sonstiges“ und die Person wählt in der Vorschau. */
+const SZ_WORT = { finanzen:/kasse|geld|beitrag|beiträge|budget|rechnung|kosten|finanz|spende|euro|€/i, partner:/partner|bande|werbung|stadionheft|anzeige|trikotwerb/i,
+  spieltag:/heimspiel|spieltag|platz|rasen|kabine|verkauf|grill|eintritt|flutlicht|schiedsrichter/i, veranstaltungen:/fest|turnier|feier|weihnacht|kerwe|event|veranstaltung|ausflug/i,
+  kommunikation:/webseite|website|instagram|facebook|presse|zeitung|whatsapp|app\b|newsletter|foto/i, jugend:/jugend|junioren|\bu ?\d\d?\b|bambini|kinder|nachwuchs/i,
+  senioren:/erste|zweite|1\. mannschaft|2\. mannschaft|trainer|kader|training|spieler|neuzug|vorbereitung|winterpause|testspiel/i, soma:/soma|alte herren|\bah\b/i,
+  leitung:/vorstand|satzung|versammlung|wahl|abteilung|leitung|ehrenamt|mitglied/i, projekte:/projekt|umbau|sanierung|bau\b|förder/i, entwicklung:/konzept|strategie|leitbild|entwicklung|zukunft/i };
+const szE = s => (typeof svEsc === 'function' ? svEsc(s == null ? '' : String(s)) : String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])));
+const szI = n => (typeof SVI === 'function' ? SVI(n) : '');
+const szNorm = s => String(s || '').toLowerCase().replace(/[^a-z0-9äöüß ]+/g, ' ').replace(/\s+/g, ' ').trim();
+function szDatum(d, z){ try{ const x = new Date(d + 'T12:00:00'); return x.toLocaleDateString('de-DE', { weekday:'long', day:'numeric', month:'long' }) + (z ? ', ' + z + ' Uhr' : ''); }catch(e){ return d || ''; } }
+function szIstSitzung(i){ return !!i && i.k === 'event' && (['sitzung', 'versammlung'].includes(i.a) || (i.sicht || []).some(x => /^(g|u):/.test(x))); }
+function szVorname(n){ return String(n || '').trim().split(/\s+/)[0] || 'Jemand'; }
+
+(function(){ try{ if(document.getElementById('svm112css')) return; const s = document.createElement('style'); s.id = 'svm112css';
+  s.textContent = `.sz-voll{position:fixed;inset:0;z-index:55;overflow:auto;-webkit-overflow-scrolling:touch;background:var(--bg,#05070c);padding:calc(10px + env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) calc(40px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+html.sz-an,html.sz-an body{overflow:hidden}
+.sz-in{max-width:760px;margin:0 auto}
+.sz-kopf{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.sz-kopf .btn{min-height:44px}
+.sz-titel{margin:8px 0 2px;font-size:24px;line-height:1.2;font-weight:800;color:var(--ink);text-wrap:balance}
+.sz-wann{margin:0 0 14px;color:var(--ink2);font-size:14px}
+.sz-stand{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--line);color:var(--ink2);vertical-align:2px}
+.sz-stand.zu{background:color-mix(in srgb,var(--green,#22c55e) 22%,transparent);color:var(--ink)}
+.sz-reiter{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--card);border:1px solid var(--line);margin-bottom:14px}
+.sz-reiter button{flex:1;min-height:44px;border:0;border-radius:10px;background:transparent;color:var(--ink2);font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.sz-reiter button[aria-selected="true"]{background:var(--brand);color:#fff}
+.sz-reiter button:focus-visible,.sz-th-k:focus-visible,.sz-stat button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.sz-leer{padding:26px 18px;border:1px dashed var(--line);border-radius:16px;text-align:center;color:var(--ink2)}
+.sz-leer b{display:block;color:var(--ink);font-size:17px;margin-bottom:6px}
+.sz-gr{margin:18px 0 8px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.sz-gr i{width:10px;height:10px;border-radius:3px;background:var(--c)}
+.sz-th{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:14px;margin-bottom:8px;overflow:hidden}
+.sz-th-k{display:flex;gap:10px;align-items:flex-start;width:100%;min-height:56px;padding:12px 14px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.sz-th-k>.sz-tx{flex:1;min-width:0}
+.sz-th-k b{display:block;font-size:16px;line-height:1.3;color:var(--ink);overflow-wrap:anywhere}
+.sz-th-k small{display:block;margin-top:3px;color:var(--ink2);font-size:13px}
+.sz-prio{flex:none;align-self:flex-start;white-space:nowrap;min-width:28px;padding:3px 8px;border-radius:999px;background:var(--brand);color:#fff;font-size:12px;font-weight:800;text-align:center}
+.sz-chip{flex:none;align-self:flex-start;white-space:nowrap;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--line);color:var(--ink2)}
+.sz-chip.ok{background:color-mix(in srgb,var(--green,#22c55e) 24%,transparent);color:var(--ink)}
+.sz-chip.spaeter{background:color-mix(in srgb,#d9a441 26%,transparent);color:var(--ink)}
+.sz-th-b{padding:2px 14px 14px}
+.sz-text{margin:0 0 10px;color:var(--ink);font-size:15px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.sz-wort{margin:0 0 10px;padding-left:10px;border-left:2px solid var(--line);color:var(--ink2);font-size:13px;line-height:1.45}
+.sz-l{display:flex;align-items:center;gap:6px;margin:12px 0 5px;font-size:13px;font-weight:700;color:var(--ink)}
+.sz-l small{font-weight:500;color:var(--ink2)}
+.sz-papier{display:block;width:100%;box-sizing:border-box;min-height:92px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;color:var(--ink);font:inherit;font-size:16px;line-height:28px;resize:vertical}
+html textarea.sz-papier.sz-papier{background:repeating-linear-gradient(to bottom,transparent 0 27px,color-mix(in srgb,var(--line) 75%,transparent) 27px 28px) 0 10px local var(--surface2,#121826)!important}
+html[data-theme="hell"] textarea.sz-papier.sz-papier{background:repeating-linear-gradient(to bottom,transparent 0 27px,rgba(37,82,208,.13) 27px 28px) 0 10px local #fffdf7!important}
+.sz-papier:focus{outline:2px solid var(--brand);outline-offset:1px}
+.sz-papier.mein{border-style:dashed}
+.sz-ok{margin-left:auto;font-size:12px;font-weight:600;color:var(--ink2);min-height:16px}
+.sz-auf{list-style:none;margin:0;padding:0}
+.sz-auf li{display:flex;gap:8px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line);font-size:14px;color:var(--ink)}
+.sz-auf li small{color:var(--ink2)}
+.sz-neu input,.sz-vor input[type=text],.sz-ein #szSuch{border:1px solid var(--line);border-radius:12px;background:var(--surface2,#121826);color:var(--ink);font:inherit}
+.sz-rd{margin-top:18px;border:1px dashed var(--line);border-radius:14px;padding:4px 14px 10px}
+.sz-rd summary{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:48px;cursor:pointer;font-weight:700;color:var(--ink);list-style:none}
+.sz-rd summary::-webkit-details-marker{display:none}
+.sz-rd summary span{font-weight:600;font-size:13px;color:var(--ink2)}
+.sz-rd .sz-auf li{align-items:center;flex-wrap:wrap}
+.sz-rd .sz-auf li>span{flex:1 1 200px;min-width:0;overflow-wrap:anywhere}
+.sz-rd .sz-auf .btn{min-height:44px;margin-left:auto}
+.sz-neu{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
+.sz-neu input,.sz-neu select,.sz-ein select,.sz-ein input[type=text]{min-height:44px;font-size:16px;padding:8px 12px;box-sizing:border-box;width:100%}
+@media(min-width:620px){.sz-neu{grid-template-columns:2fr 1.2fr 1fr auto}}
+.sz-stat{display:flex;gap:4px;margin-top:14px;padding:4px;border:1px solid var(--line);border-radius:12px}
+.sz-stat button{flex:1;min-height:44px;border:0;border-radius:8px;background:transparent;color:var(--ink2);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.sz-stat button[aria-pressed="true"]{background:var(--line);color:var(--ink)}
+.sz-zeile{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.sz-zeile .btn{min-height:44px}
+.sz-fab{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:center;margin-top:18px;pointer-events:none}
+.sz-fab .btn{pointer-events:auto;min-height:50px;padding:0 22px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.sz-fab.ruhig{position:static}
+.sz-fab.ruhig .btn{box-shadow:none}
+.sz-ein textarea{min-height:190px}
+.sz-ein .sz-hin{margin:8px 0 0;font-size:13px;color:var(--ink2);line-height:1.45}
+.sz-mik[aria-pressed="true"]{background:#c0392b;border-color:#c0392b;color:#fff}
+.sz-vor{list-style:none;margin:12px 0 0;padding:0}
+.sz-vor li{padding:12px 0;border-top:1px solid var(--line);display:grid;gap:8px}
+.sz-vor label{display:flex;gap:10px;align-items:flex-start;font-size:15px;color:var(--ink)}
+.sz-vor input[type=checkbox]{width:22px;height:22px;flex:none;margin-top:10px}
+.sz-vor .sz-zwei{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sz-vor small{color:var(--ink2);font-size:13px}
+.sz-prot{margin:0;padding:18px 18px 22px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);font:inherit;font-size:15px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.sz-home .sz-h-t{font-size:17px;font-weight:800;color:var(--ink);margin:2px 0}
+.sz-home .sz-h-m{color:var(--ink2);font-size:14px;margin:0 0 10px}
+.sz-arch{list-style:none;margin:10px 0 0;padding:0}
+.sz-arch button{display:block;width:100%;min-height:56px;padding:10px 0;border:0;border-top:1px solid var(--line);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.sz-arch b{display:block;color:var(--ink);font-size:15px}
+.sz-arch small{display:block;color:var(--ink2);font-size:13px;margin-top:2px}
+@media(prefers-reduced-motion:no-preference){.sz-th-b{animation:szAuf .18s ease-out}}
+@keyframes szAuf{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}`; document.head.appendChild(s); }catch(e){} })();
+
+/* ---------- Laden, Öffnen, Schließen ---------- */
+function szBasis(d){ (d.themen || []).forEach(t => { t._basis = t.ergebnis || ''; }); return d; }   // Stand des Ergebnisses beim Laden, siehe szErgebnis
+async function szLaden(){ const ev = SZ.id; const { data, error } = await SVB.sb.rpc('sitzung_laden', { p_event:ev }); if(error) throw new Error(error.message); if(SZ.id !== ev) return null; SZ.roh = JSON.stringify(data); SZ.d = szBasis(data); SZ.zuletzt = Date.now(); return data; }
+async function szOeffnen(id, tab){
+  await szAllesSichern();   // offene Eingaben gehören noch zur vorigen Sitzung
+  SZ.id = id; SZ.d = null; SZ.tab = tab || 'agenda'; SZ.auf = {}; SZ.t = {};
+  clearInterval(SZ.takt); SZ.takt = setInterval(szFrisch, 15000);
+  let v = document.getElementById('szVoll');
+  if(!v){ v = document.createElement('div'); v.id = 'szVoll'; v.className = 'sz-voll'; v.setAttribute('role', 'dialog'); v.setAttribute('aria-label', 'Sitzung'); document.body.appendChild(v); document.documentElement.classList.add('sz-an'); }
+  v.innerHTML = '<div class="sz-in"><div class="sz-kopf"><b>Sitzung</b><button type="button" class="btn ghost" id="szZu">Schließen</button></div><div class="sz-leer">Lade die Agenda …</div></div>';
+  v.querySelector('#szZu').onclick = szZu; v.scrollTop = 0;
+  try{ await szLaden(); }catch(e){ v.querySelector('.sz-leer').innerHTML = '<b>Das hat nicht geklappt</b>' + szE(e.message); return; }
+  szRender();
+}
+function szZu(){ szAllesSichern(); clearInterval(SZ.takt); SZ.takt = null; const v = document.getElementById('szVoll'); if(v) v.remove(); document.documentElement.classList.remove('sz-an'); SZ.id = null; SZ.d = null;
+  try{ if(/^#sitzung=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+  try{ szHeim(true); }catch(e){} }
+async function szNeu(){ try{ await szLaden(); szRender(); }catch(e){ kToast('⚠️ ' + e.message); } }
+// Was die anderen eintragen, erscheint von selbst: alle 15 Sekunden nachsehen, aber nie, während hier jemand schreibt oder ein Dialog offen ist
+async function szFrisch(){
+  const v = document.getElementById('szVoll'); if(!v || !SZ.id || !SZ.d || document.hidden || SZ.laedt) return;
+  const a = document.activeElement; if(a && v.contains(a) && /^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName)) return;
+  if(SZ.unterwegs > 0 || Object.values(SZ.t).some(j => j.offen) || document.querySelector('#overlay.open') || v.querySelector('[data-sicher="1"]')) return;
+  if([...v.querySelectorAll('[data-sz-at]')].some(x => x.value.trim())) return;   // angefangene Aufgabe nicht verlieren
+  const ev = SZ.id, t0 = Date.now(); SZ.laedt = true;
+  try{ const { data, error } = await SVB.sb.rpc('sitzung_laden', { p_event:ev }); if(error || SZ.id !== ev || !data || SZ.unterwegs > 0 || SZ.zuletzt > t0) return;   // inzwischen selbst gespeichert oder neu geladen: Diese Antwort ist älter
+    const roh = JSON.stringify(data); if(roh === SZ.roh) return;
+    const b = document.activeElement; if(b && v.contains(b) && /^(TEXTAREA|INPUT|SELECT)$/.test(b.tagName)) return;   // inzwischen ins Feld getippt
+    SZ.d = szBasis(data); SZ.roh = roh; const y = v.scrollTop; szRender(); v.scrollTop = y; }catch(e){} finally { SZ.laedt = false; }
+}
+
+/* ---------- Zeichnen ---------- */
+function szRender(){
+  const v = document.getElementById('szVoll'), d = SZ.d; if(!v || !d) return;
+  const e = d.event, zu = d.stand === 'beendet', n = d.themen.length;
+  v.innerHTML = `<div class="sz-in">
+    <div class="sz-kopf"><button type="button" class="btn ghost" id="szArch">${szI('search')} Archiv</button><button type="button" class="btn ghost" id="szZu">Schließen</button></div>
+    <h1 class="sz-titel">${szE(e.titel)}<span class="sz-stand${zu ? ' zu' : ''}">${zu ? 'beendet' : 'offen'}</span></h1>
+    <p class="sz-wann">${szE(szDatum(e.datum, e.zeit))}${e.ort ? ' · ' + szE(e.ort) : ''}${d.leitung ? ' · Leitung: ' + szE(d.leitung.name) : ''}</p>
+    <div class="sz-reiter" role="tablist" aria-label="Ansicht">
+      ${[['agenda', 'Agenda' + (n ? ' (' + n + ')' : '')], ['notizen', 'Meine Notizen'], ['protokoll', 'Protokoll']].map(([k, l]) => `<button type="button" role="tab" data-sz-tab="${k}" aria-selected="${SZ.tab === k}">${l}</button>`).join('')}
+    </div>
+    <div id="szB"></div></div>`;
+  v.querySelector('#szZu').onclick = szZu; v.querySelector('#szArch').onclick = szArchiv;
+  v.querySelectorAll('[data-sz-tab]').forEach(b => b.onclick = () => { szAllesSichern(); SZ.tab = b.dataset.szTab; szRender(); });
+  const B = v.querySelector('#szB');
+  if(SZ.tab === 'notizen') szNotizen(B); else if(SZ.tab === 'protokoll') szProtokoll(B); else szAgenda(B);
+}
+
+function szThemaHtml(t){
+  const d = SZ.d, zu = d.stand === 'beendet', auf = !!SZ.auf[t.id], vn = t.von.length;
+  const chip = t.status === 'besprochen' ? '<span class="sz-chip ok">besprochen</span>' : t.status === 'vertagt' ? '<span class="sz-chip spaeter">vertagt</span>' : '';
+  const von = vn ? 'von ' + t.von.map(x => szVorname(x.name)).join(', ') : 'ohne Absender';
+  let b = '';
+  if(auf){
+    const wort = t.von.filter(x => x.wort && szNorm(x.wort) !== szNorm(t.titel));
+    b = `<div class="sz-th-b">
+      ${t.text ? `<p class="sz-text">${szE(t.text)}</p>` : ''}
+      ${wort.length ? `<div class="sz-wort">${wort.map(x => `${szE(szVorname(x.name))}: „${szE(x.wort)}“`).join('<br>')}</div>` : ''}
+      ${zu ? `<div class="sz-l">Ergebnis</div><p class="sz-text">${t.ergebnis ? szE(t.ergebnis) : '<span style="color:var(--ink2)">Kein Ergebnis eingetragen.</span>'}</p>`
+        : `<label class="sz-l" for="szErg${t.id}">Ergebnis <small>für alle, steht im Protokoll</small><span class="sz-ok" data-sz-ok="e:${t.id}" aria-live="polite"></span></label>
+      <textarea class="sz-papier" id="szErg${t.id}" data-sz-erg="${t.id}" maxlength="6000" placeholder="Was wurde besprochen, was beschlossen?">${szE(t.ergebnis || '')}</textarea>`}
+      <label class="sz-l" for="szNot${t.id}">Deine Notiz <small>siehst nur du</small><span class="sz-ok" data-sz-ok="n:${t.id}" aria-live="polite"></span></label>
+      <textarea class="sz-papier mein" id="szNot${t.id}" data-sz-not="${t.id}" maxlength="8000" placeholder="Gedanken, Rückfragen, was du dir merken willst">${szE(t.notiz || '')}</textarea>
+      ${zu && !t.aufgaben.length ? '' : '<div class="sz-l">Aufgaben</div>'}
+      ${t.aufgaben.length ? `<ul class="sz-auf">${t.aufgaben.map(a => `<li><span>${a.status === 'erledigt' ? '✓ ' : ''}${szE(a.titel)}</span><small>${szE(a.wer_name || '')}${a.faellig ? ', bis ' + szE(new Date(a.faellig + 'T12:00:00').toLocaleDateString('de-DE', { day:'numeric', month:'numeric' })) : ''}</small></li>`).join('')}</ul>` : ''}
+      ${zu ? '' : `<div class="sz-neu"><input type="text" data-sz-at="${t.id}" maxlength="200" placeholder="Neue Aufgabe" aria-label="Neue Aufgabe" autocomplete="off">
+        <select data-sz-aw="${t.id}" aria-label="Zuständig">${d.teilnehmer.map(p => `<option value="${p.id}"${p.id === d.ich ? ' selected' : ''}>${szE(p.name)}</option>`).join('')}${d.teilnehmer.some(p => p.id === d.ich) ? '' : `<option value="${d.ich}" selected>Ich</option>`}</select>
+        <input type="date" data-sz-af="${t.id}" aria-label="Bis wann"><button type="button" class="btn ghost" data-sz-aneu="${t.id}">Anlegen</button></div>
+      <div class="sz-stat" role="group" aria-label="Stand">${[['offen', 'Offen'], ['besprochen', 'Besprochen'], ['vertagt', 'Vertagt']].map(([k, l]) => `<button type="button" data-sz-st="${t.id}:${k}" aria-pressed="${t.status === k}">${l}</button>`).join('')}</div>
+      <div class="sz-zeile">${!t.dabei || vn > 1 ? `<button type="button" class="btn ghost" data-sz-dabei="${t.id}">${t.dabei ? 'Nicht mehr mein Thema' : 'Betrifft mich auch'}</button>` : ''}
+        ${d.leiten || (t.meins && vn <= 1) ? `<button type="button" class="btn ghost" data-sz-weg="${t.id}">Thema entfernen</button>` : ''}</div>`}
+    </div>`;
+  }
+  return `<article class="sz-th" style="--c:${SZ_FARBE[t.bereich] || SZ_FARBE.sonstiges}" data-sz-th="${t.id}">
+    <button type="button" class="sz-th-k" data-sz-auf="${t.id}" aria-expanded="${auf}"><span class="sz-tx"><b>${szE(t.titel)}</b><small>${szE(von)}${t.aufgaben.length ? ' · ' + t.aufgaben.length + (t.aufgaben.length === 1 ? ' Aufgabe' : ' Aufgaben') : ''}${t.notiz ? ' · mit Notiz' : ''}</small></span>
+      ${vn > 1 ? `<span class="sz-prio" title="Von ${vn} Personen eingereicht">×${vn}</span>` : ''}${chip}</button>${b}</article>`;
+}
+
+function szAgenda(B){
+  const d = SZ.d, zu = d.stand === 'beendet';
+  if(!d.themen.length){
+    B.innerHTML = `<div class="sz-leer"><b>Noch keine Themen</b>Trag ein, was du besprechen willst. Du kannst tippen, diktieren oder eine ganze Liste einfügen. Die App macht daraus einzelne Punkte.
+      ${zu ? '' : '<div class="sz-zeile" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="szEin">Themen einreichen</button></div>'}</div><div id="szRunde"></div>`;
+  }else{
+    const gr = {}; d.themen.forEach(t => { (gr[t.bereich] = gr[t.bereich] || []).push(t); });
+    const folge = Object.keys(gr).sort((a, b) => Math.max(...gr[b].map(t => t.von.length)) - Math.max(...gr[a].map(t => t.von.length)) || Math.min(...gr[a].map(t => t.sort)) - Math.min(...gr[b].map(t => t.sort)));
+    B.innerHTML = folge.map(k => `<h2 class="sz-gr" style="--c:${SZ_FARBE[k] || SZ_FARBE.sonstiges}"><i></i>${szE(SZ_B[k] || 'Sonstiges')}</h2>` +
+      gr[k].slice().sort((a, b) => b.von.length - a.von.length || a.sort - b.sort).map(szThemaHtml).join('')).join('') +
+      '<div id="szRunde"></div>' + (zu ? '' : `<div class="sz-fab${Object.values(SZ.auf).some(Boolean) ? ' ruhig' : ''}"><button type="button" class="btn" id="szEin">Themen einreichen</button></div>`);   // beim Schreiben liegt die Taste nicht über den Feldern
+  }
+  const ein = B.querySelector('#szEin'); if(ein) ein.onclick = () => szEinreichen();
+  szRunde(B);
+  B.querySelectorAll('[data-sz-auf]').forEach(b => b.onclick = () => { szAllesSichern(); const id = b.dataset.szAuf; SZ.auf[id] = !SZ.auf[id]; const y = document.getElementById('szVoll').scrollTop; szAgenda(B); document.getElementById('szVoll').scrollTop = y; });
+  const thema = id => (SZ.d ? SZ.d.themen.find(t => t.id === id) : null) || {};
+  B.querySelectorAll('[data-sz-erg]').forEach(x => szTippen(x, 'e:' + x.dataset.szErg, () => szErgebnis(x.dataset.szErg, x.value), () => { thema(x.dataset.szErg).ergebnis = x.value; }));
+  B.querySelectorAll('[data-sz-not]').forEach(x => szTippen(x, 'n:' + x.dataset.szNot, () => szNotiz(x.dataset.szNot, x.value), () => { thema(x.dataset.szNot).notiz = x.value; }));
+  B.querySelectorAll('[data-sz-st]').forEach(b => b.onclick = async () => { const [id, st] = b.dataset.szSt.split(':'); await szAllesSichern();
+    const { error } = await SVB.sb.rpc('sitzung_thema_setzen', { p_id:id, p:{ status:st } }); if(error){ kToast('⚠️ ' + error.message); return; } await szNeu(); });
+  B.querySelectorAll('[data-sz-dabei]').forEach(b => b.onclick = async () => { const t = d.themen.find(x => x.id === b.dataset.szDabei); await szAllesSichern();
+    const { error } = await SVB.sb.rpc('sitzung_thema_dabei', { p_id:t.id, p_dabei:!t.dabei }); if(error){ kToast('⚠️ ' + error.message); return; } await szNeu(); });
+  B.querySelectorAll('[data-sz-weg]').forEach(b => b.onclick = async () => { if(b.dataset.sicher !== '1'){ b.dataset.sicher = '1'; b.textContent = 'Wirklich entfernen?'; return; }
+    const { error } = await SVB.sb.rpc('sitzung_thema_weg', { p_id:b.dataset.szWeg }); if(error){ kToast('⚠️ ' + error.message); return; } kToast('Thema entfernt'); await szNeu(); });
+  B.querySelectorAll('[data-sz-aneu]').forEach(b => b.onclick = async () => { const id = b.dataset.szAneu, ti = B.querySelector(`[data-sz-at="${id}"]`), wer = B.querySelector(`[data-sz-aw="${id}"]`), bis = B.querySelector(`[data-sz-af="${id}"]`);
+    if(!ti.value.trim()){ ti.focus(); return; } b.disabled = true; await szAllesSichern();
+    const { error } = await SVB.sb.rpc('sitzung_aufgabe', { p_thema:id, p_titel:ti.value, p_wer:wer.value, p_faellig:bis.value || null });
+    b.disabled = false; if(error){ kToast('⚠️ ' + error.message); return; } kToast('✓ Aufgabe angelegt. Sie steht bei den To-dos.'); await szNeu(); });
+}
+
+/* ---------- To-dos, die bei den Aufgaben schon „für die nächste Runde“ vorgemerkt sind ---------- */
+async function szRunde(B){
+  const d = SZ.d, box = B.querySelector('#szRunde'); if(!box || !d || d.stand === 'beendet' || typeof plAuf !== 'function') return;
+  try{ if(!(typeof PL !== 'undefined' && PL.d) && typeof plLaden === 'function') await plLaden(true); }catch(e){}
+  if(!document.body.contains(box) || SZ.d !== d) return;
+  const da = new Set(d.themen.map(t => szNorm(t.titel)));
+  const L = plAuf().filter(a => a.sitzung && a.status !== 'erledigt' && !da.has(szNorm(a.titel)));
+  if(!L.length) return;
+  box.innerHTML = `<details class="sz-rd"${SZ.rundeAuf ? ' open' : ''}><summary>Für die nächste Runde vorgemerkt <span>${L.length} ${L.length === 1 ? 'To-do' : 'To-dos'}</span></summary>
+    <p class="note" style="margin:8px 0 0">Diese To-dos sind bei den Aufgaben für die Runde markiert. Mit einem Tipp steht eines als Thema auf der Agenda.</p>
+    <ul class="sz-auf">${L.slice(0, 40).map(a => `<li><span>${szE(a.titel)}</span><small>${szE([SZ_B[a.bereich], typeof plWerName === 'function' ? plWerName(a) : ''].filter(Boolean).join(' · '))}</small><button type="button" class="btn ghost" data-sz-rd="${szE(a.id)}">Auf die Agenda</button></li>`).join('')}</ul></details>`;
+  box.querySelector('details').addEventListener('toggle', e => { SZ.rundeAuf = e.target.open; });
+  box.querySelectorAll('[data-sz-rd]').forEach(b => b.onclick = async () => { const a = L.find(x => String(x.id) === b.dataset.szRd); if(!a) return; b.disabled = true; await szAllesSichern();
+    const { error } = await SVB.sb.rpc('sitzung_themen_setzen', { p_event:SZ.id, p_themen:[{ titel:String(a.titel).slice(0, 160), bereich:SZ_B[a.bereich] ? a.bereich : 'sonstiges', wort:String(a.titel).slice(0, 300) }] });   // nur der Titel: Die Notiz am To-do bleibt in ihrem Bereich
+    if(error){ b.disabled = false; kToast('⚠️ ' + error.message); return; } kToast('✓ Steht auf der Agenda'); await szNeu(); });
+}
+
+/* ---------- Schreiben mit Sichern im Hintergrund ---------- */
+function szTippen(feld, key, sichern, merken){   // merken: sofort in den eigenen Stand, damit ein Neuzeichnen nichts Getipptes verliert
+  const los = () => { clearTimeout((SZ.t[key] || {}).z); const j = SZ.t[key]; if(!j || !j.offen) return Promise.resolve(); j.offen = false; return szSenden(j.f); };
+  feld.addEventListener('input', () => { if(merken) merken(); clearTimeout((SZ.t[key] || {}).z); SZ.t[key] = { offen:true, f:sichern, z:setTimeout(los, 2500) }; const o = document.querySelector(`[data-sz-ok="${key}"]`); if(o) o.textContent = ''; });
+  feld.addEventListener('blur', los);
+}
+function szSenden(f){ SZ.unterwegs++; return Promise.resolve().then(f).catch(() => {}).finally(() => { SZ.unterwegs--; SZ.zuletzt = Date.now(); }); }
+function szAllesSichern(){ const p = []; Object.keys(SZ.t).forEach(k => { const j = SZ.t[k]; clearTimeout(j.z); if(j.offen){ j.offen = false; p.push(szSenden(j.f)); } }); return Promise.all(p); }
+function szGesichert(key, fehler){ const o = document.querySelector(`[data-sz-ok="${key}"]`); if(o) o.textContent = fehler ? 'nicht gespeichert' : 'gespeichert'; }
+async function szErgebnis(id, text){ const t = SZ.d && SZ.d.themen.find(x => x.id === id), vor = t ? t._basis || '' : '';
+  const { data, error } = await SVB.sb.rpc('sitzung_thema_setzen', { p_id:id, p:t ? { ergebnis:text, ergebnis_vor:vor } : { ergebnis:text } });
+  if(error){ szGesichert('e:' + id, true); kToast('⚠️ ' + error.message); return; }
+  if(data && data.konflikt && t){   // jemand anderes hat inzwischen am Ergebnis geschrieben: dessen Text bleibt, das Eigene kommt dahinter
+    const fremd = data.ergebnis || '', mein = String(text || ''), neu = mein.startsWith(vor) ? mein.slice(vor.length).trim() : mein.trim(), zus = (fremd + (neu && !fremd.includes(neu) ? '\n' + neu : '')).slice(0, 6000);
+    t._basis = fremd; t.ergebnis = zus; const f = document.querySelector(`[data-sz-erg="${id}"]`); if(f) f.value = zus;
+    kToast('Jemand anderes hat hier auch geschrieben. Beides steht jetzt im Ergebnis.'); return szErgebnis(id, zus); }
+  if(t){ t.ergebnis = text; t._basis = String(text || '').trim(); } szGesichert('e:' + id); }
+async function szNotiz(id, text){ const ev = SZ.id; const { error } = await SVB.sb.rpc('sitzung_notiz_setzen', { p_event:ev, p_thema:id || null, p_text:text });
+  if(error){ szGesichert('n:' + (id || ''), true); kToast('⚠️ ' + error.message); return; }
+  if(SZ.d && SZ.id === ev){ if(id){ const t = SZ.d.themen.find(x => x.id === id); if(t) t.notiz = text; } else SZ.d.notiz = text; } szGesichert('n:' + (id || '')); }
+
+/* ---------- Meine Notizen ---------- */
+function szNotizen(B){
+  const d = SZ.d, mit = d.themen.filter(t => t.notiz);
+  B.innerHTML = `<label class="sz-l" for="szNotAll">Zur ganzen Sitzung <small>siehst nur du</small><span class="sz-ok" data-sz-ok="n:" aria-live="polite"></span></label>
+    <textarea class="sz-papier mein" id="szNotAll" style="min-height:204px" maxlength="8000" placeholder="Hier schreibst du mit wie in ein Notizbuch. Niemand außer dir kann das lesen, auch kein Admin.">${szE(d.notiz || '')}</textarea>
+    ${mit.length ? '<h2 class="sz-gr" style="--c:var(--ink2)"><i></i>Deine Notizen zu den Themen</h2>' + mit.map(t => `<label class="sz-l" for="szNotT${t.id}">${szE(t.titel)}<span class="sz-ok" data-sz-ok="n:${t.id}" aria-live="polite"></span></label>
+      <textarea class="sz-papier mein" id="szNotT${t.id}" data-sz-not="${t.id}" maxlength="8000">${szE(t.notiz)}</textarea>`).join('') : '<p class="note" style="margin-top:14px">Notizen zu einzelnen Themen schreibst du in der Agenda direkt beim Thema. Sie erscheinen dann auch hier.</p>'}`;
+  const all = B.querySelector('#szNotAll'); szTippen(all, 'n:', () => szNotiz('', all.value), () => { d.notiz = all.value; });
+  B.querySelectorAll('[data-sz-not]').forEach(x => szTippen(x, 'n:' + x.dataset.szNot, () => szNotiz(x.dataset.szNot, x.value), () => { const t = d.themen.find(y => y.id === x.dataset.szNot); if(t) t.notiz = x.value; }));
+}
+
+/* ---------- Protokoll ---------- */
+async function szProtokoll(B){
+  const d = SZ.d, zu = d.stand === 'beendet'; let text = d.protokoll || '';
+  if(!zu){ B.innerHTML = '<div class="sz-leer">Stelle das Protokoll zusammen …</div>';
+    const { data, error } = await SVB.sb.rpc('sitzung_protokoll_vorschau', { p_event:SZ.id }); if(SZ.tab !== 'protokoll' || !document.getElementById('szVoll')) return;
+    if(error){ B.innerHTML = `<div class="sz-leer"><b>Das hat nicht geklappt</b>${szE(error.message)}</div>`; return; } text = data || ''; }
+  B.innerHTML = `${zu ? '' : `<p class="note" style="margin:0 0 12px">So sieht das Protokoll im Moment aus. Es entsteht aus den Themen, den Ergebnissen und den Aufgaben. Eigene Notizen kommen nicht hinein.${d.leiten ? '' : ' Beendet wird die Sitzung von der Leitung, sonst von selbst 12 Stunden nach Beginn.'}</p>`}
+    <pre class="sz-prot" id="szProt">${szE(text)}</pre>
+    <div class="sz-zeile"><button type="button" class="btn${zu ? '' : ' ghost'}" id="szTeilen">${szI('share')} Teilen</button><button type="button" class="btn ghost" id="szKopie">Kopieren</button>
+      ${d.leiten && !zu ? '<button type="button" class="btn" id="szEnde">Sitzung beenden</button>' : ''}
+      ${d.leiten && zu ? '<button type="button" class="btn ghost" id="szProtEd">Protokoll bearbeiten</button><button type="button" class="btn ghost" id="szWieder">Wieder öffnen</button>' : ''}</div>
+    ${d.leiten && !zu && d.teilnehmer.length > 1 ? `<div class="sz-ein" style="margin-top:18px"><label class="sz-l" for="szLt">Wer leitet die Sitzung? <small>bekommt 5 Stunden nach Beginn die Frage, ob sie beendet ist</small></label>
+      <select id="szLt">${d.teilnehmer.map(p => `<option value="${p.id}"${d.leitung && d.leitung.id === p.id ? ' selected' : ''}>${szE(p.name)}</option>`).join('')}${d.leitung && !d.teilnehmer.some(p => p.id === d.leitung.id) ? `<option value="" selected>${szE(d.leitung.name)} (nicht in der Runde)</option>` : ''}</select>
+      <p class="sz-hin">Gilt auch für die nächsten Termine dieser Reihe.</p></div>` : ''}`;
+  const lt = B.querySelector('#szLt');
+  if(lt) lt.onchange = async () => { if(!lt.value) return; const { error } = await SVB.sb.rpc('sitzung_leitung_setzen', { p_event:SZ.id, p_wer:lt.value }); if(error){ kToast('⚠️ ' + error.message); return; } kToast('✓ Leitung geändert'); await szNeu(); };
+  const kopie = async () => { try{ await navigator.clipboard.writeText(text); kToast('✓ Kopiert'); }catch(e){ kToast('Kopieren ging nicht. Bitte den Text markieren.'); } };
+  B.querySelector('#szKopie').onclick = kopie;
+  B.querySelector('#szTeilen').onclick = async () => { if(navigator.share){ try{ await navigator.share({ title:'Protokoll: ' + d.event.titel, text }); }catch(e){} } else kopie(); };
+  const ende = B.querySelector('#szEnde');
+  if(ende) ende.onclick = async () => { if(ende.dataset.sicher !== '1'){ ende.dataset.sicher = '1'; ende.textContent = 'Wirklich beenden? Alle Teilnehmer bekommen Bescheid.'; return; }
+    ende.disabled = true; await szAllesSichern(); const { error } = await SVB.sb.rpc('sitzung_beenden', { p_event:SZ.id }); if(error){ ende.disabled = false; kToast('⚠️ ' + error.message); return; }
+    kToast('✓ Sitzung beendet, das Protokoll ist verteilt'); await szNeu(); };
+  const wieder = B.querySelector('#szWieder');
+  if(wieder) wieder.onclick = async () => { const { error } = await SVB.sb.rpc('sitzung_beenden', { p_event:SZ.id, p_wieder_offen:true }); if(error){ kToast('⚠️ ' + error.message); return; } await szNeu(); };
+  const ed = B.querySelector('#szProtEd');
+  if(ed) ed.onclick = () => { const M = svModal(`<div class="sz-ein"><h2>Protokoll bearbeiten</h2><textarea class="sz-papier" id="szProtT" style="min-height:50vh" maxlength="60000">${szE(text)}</textarea>
+      <div class="btnrow" style="margin-top:14px"><button type="button" class="btn" id="szProtOk">Speichern</button></div></div>`);
+    M.querySelector('#szProtOk').onclick = async () => { const { error } = await SVB.sb.rpc('sitzung_beenden', { p_event:SZ.id, p_protokoll:M.querySelector('#szProtT').value });
+      if(error){ kToast('⚠️ ' + error.message); return; } closeOverlay(); kToast('✓ Gespeichert'); await szNeu(); }; };
+}
+
+/* ---------- Themen einreichen ---------- */
+function szLokal(text){   // ohne KI: eine Zeile oder ein Aufzählungspunkt ist ein Thema
+  const d = SZ.d, out = [], gesehen = new Set();
+  String(text || '').split(/\n+/).map(z => z.replace(/^\s*(?:[-*•·]|\d{1,2}[.)]|[a-z][.)])\s+/i, '').trim()).filter(z => z.length >= 3).forEach(z => {
+    const titel = z.length > 160 ? z.slice(0, 157) + '…' : z, k = szNorm(titel); if(!k || gesehen.has(k)) return; gesehen.add(k);
+    const br = Object.keys(SZ_WORT).find(b => SZ_WORT[b].test(z)) || 'sonstiges';
+    out.push({ titel:titel.replace(/[.]+$/, ''), text:z.length > 160 ? z : '', bereich:br, zu:szGleich(titel, d ? d.themen : []) }); });
+  return out.slice(0, 40);
+}
+function szGleich(titel, themen){   // dasselbe Thema: gleiche Wörter, oder fast alle Wörter gemeinsam
+  const a = new Set(szNorm(titel).split(' ').filter(w => w.length > 2)); if(!a.size) return '';
+  let best = '', wert = 0;
+  themen.forEach(t => { const b = new Set(szNorm(t.titel).split(' ').filter(w => w.length > 2)); if(!b.size) return; let g = 0; a.forEach(w => { if(b.has(w)) g++; });
+    const j = g / (a.size + b.size - g); if(j > wert){ wert = j; best = t.id; } });
+  return wert >= 0.6 ? best : '';
+}
+function szEinreichen(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const M = svModal(`<div class="sz-ein"><h2>Themen einreichen</h2>
+    <p class="note">Schreib oder sprich, was du besprechen willst. Mehrere Themen sind kein Problem: Die App macht einzelne Punkte daraus und zeigt sie dir, bevor etwas gespeichert wird.</p>
+    <textarea class="sz-papier" id="szEinT" maxlength="12000" placeholder="Zum Beispiel:&#10;Winterpause: Wann fangen wir wieder an?&#10;Kabine 2 braucht neue Bänke&#10;Weihnachtsfeier, wer organisiert?" aria-label="Deine Themen"></textarea>
+    <div class="sz-zeile">${SR ? `<button type="button" class="btn ghost sz-mik" id="szMik" aria-pressed="false">${szI('mic')} Diktieren</button>` : ''}
+      <label class="btn ghost" style="cursor:pointer">${szI('upload')} Datei<input type="file" id="szDatei" accept=".pdf,.docx,.xlsx,.txt,.md,.csv,application/pdf,text/plain" hidden></label></div>
+    <p class="sz-hin" id="szEinH">${SR ? '' : 'Diktieren: Tipp ins Feld und nimm das Mikrofon auf deiner Tastatur. '}Datei: PDF, Word, Excel oder Text, bis 4 MB.</p>
+    <div class="btnrow" style="margin-top:14px"><button type="button" class="btn" id="szEinOk">Vorschau</button></div></div>`);
+  const T = M.querySelector('#szEinT'), H = M.querySelector('#szEinH'); let datei = null, rec = null;
+  setTimeout(() => { try{ T.focus(); }catch(e){} }, 80);
+  const mik = M.querySelector('#szMik');
+  if(mik) mik.onclick = () => { if(rec){ try{ rec.stop(); }catch(e){} return; }
+    try{ rec = new SR(); rec.lang = 'de-DE'; rec.continuous = true; rec.interimResults = false;
+      rec.onresult = ev => { for(let i = ev.resultIndex; i < ev.results.length; i++) if(ev.results[i].isFinal){ const s = ev.results[i][0].transcript.trim(); if(s) T.value = (T.value ? T.value.replace(/\s*$/, '') + '\n' : '') + s; } };
+      rec.onend = () => { rec = null; mik.setAttribute('aria-pressed', 'false'); mik.lastChild.textContent = ' Diktieren'; };
+      rec.onerror = () => { H.textContent = 'Das Mikrofon ließ sich nicht nutzen. Nimm das Mikrofon auf deiner Tastatur.'; };
+      rec.start(); mik.setAttribute('aria-pressed', 'true'); mik.lastChild.textContent = ' Aufnahme läuft, tippen zum Beenden'; }catch(e){ rec = null; H.textContent = 'Das Mikrofon ließ sich nicht nutzen. Nimm das Mikrofon auf deiner Tastatur.'; } };
+  M.querySelector('#szDatei').onchange = ev => { const f = ev.target.files && ev.target.files[0]; if(!f) return;
+    if(f.size > 4 * 1024 * 1024){ H.textContent = 'Die Datei ist zu groß (höchstens 4 MB).'; ev.target.value = ''; return; }
+    const r = new FileReader();
+    if(/\.(txt|md|csv)$/i.test(f.name) || /^text\//.test(f.type)){ r.onload = () => { T.value = (T.value ? T.value + '\n' : '') + String(r.result || ''); H.textContent = '„' + f.name + '“ steht jetzt im Feld.'; }; r.readAsText(f); }
+    else { r.onload = () => { datei = { name:f.name, typ:f.type, b64:String(r.result || '').replace(/^data:[^,]*,/, '') }; H.textContent = '„' + f.name + '“ ist angehängt. Die KI liest die Datei für die Vorschau.'; }; r.readAsDataURL(f); } };
+  M.querySelector('#szEinOk').onclick = async () => { const ok = M.querySelector('#szEinOk'), text = T.value.trim(); if(rec){ try{ rec.stop(); }catch(e){} }
+    if(!text && !datei){ T.focus(); return; }
+    ok.disabled = true; ok.textContent = 'Lese deine Themen …';
+    let themen = null, ki = false, hinweis = '';
+    try{ const { data, error } = await SVB.sb.functions.invoke('sitzung-ki', { body:{ event:SZ.id, text, datei } });
+      if(!error && data && data.ok && Array.isArray(data.themen) && data.themen.length){ themen = data.themen; ki = true; } else if(data && data.error) hinweis = data.error; }catch(e){}
+    if(!themen){ if(!text){ ok.disabled = false; ok.textContent = 'Vorschau'; H.textContent = (hinweis || 'Die Datei ließ sich gerade nicht lesen.') + ' Füg den Text bitte direkt ins Feld ein.'; return; }
+      themen = szLokal(text); }
+    if(!themen.length){ ok.disabled = false; ok.textContent = 'Vorschau'; H.textContent = 'Darin steht noch kein Thema.'; return; }
+    szVorschau(themen, ki, text); };
+}
+function szVorschau(themen, ki, roh){
+  const d = SZ.d;
+  const M = svModal(`<div class="sz-ein"><h2>${themen.length === 1 ? 'Ein Thema' : themen.length + ' Themen'} erkannt</h2>
+    <p class="note">${ki ? 'Die KI hat deine Eingabe sortiert.' : 'Jede Zeile ist ein Thema.'} Schau kurz drüber, ändere, was nicht passt, und nimm den Haken weg, wo du etwas nicht einreichen willst.</p>
+    <ul class="sz-vor">${themen.map((t, i) => `<li data-sz-v="${i}"><label><input type="checkbox" checked aria-label="Einreichen"><input type="text" value="${szE(t.titel)}" maxlength="160" aria-label="Titel"></label>
+      ${t.text ? `<small>${szE(t.text)}</small>` : ''}
+      <div class="sz-zwei"><select aria-label="Bereich" data-sz-vb>${Object.keys(SZ_B).map(k => `<option value="${k}"${k === t.bereich ? ' selected' : ''}>${szE(SZ_B[k])}</option>`).join('')}</select>
+      <select aria-label="Gehört zu" data-sz-vz><option value="">Neues Thema</option>${d.themen.map(x => `<option value="${x.id}"${x.id === t.zu ? ' selected' : ''}>Wie: ${szE(x.titel.slice(0, 60))}</option>`).join('')}</select></div></li>`).join('')}</ul>
+    <div class="btnrow" style="margin-top:14px"><button type="button" class="btn" id="szVorOk">Einreichen</button><button type="button" class="btn ghost" id="szVorZur">Zurück</button></div></div>`);
+  M.querySelector('#szVorZur').onclick = () => { szEinreichen(); const T = document.querySelector('#modal #szEinT'); if(T) T.value = roh || ''; };
+  M.querySelector('#szVorOk').onclick = async () => { const ok = M.querySelector('#szVorOk'), liste = [];
+    M.querySelectorAll('[data-sz-v]').forEach(li => { const i = +li.dataset.szV, t = themen[i]; if(!li.querySelector('input[type=checkbox]').checked) return; const titel = li.querySelector('input[type=text]').value.trim(); if(!titel) return;
+      liste.push({ titel, text:t.text || '', bereich:li.querySelector('[data-sz-vb]').value, zu:li.querySelector('[data-sz-vz]').value, wort:t.titel }); });
+    if(!liste.length){ kToast('Kein Thema ausgewählt'); return; } ok.disabled = true;
+    const { data, error } = await SVB.sb.rpc('sitzung_themen_setzen', { p_event:SZ.id, p_themen:liste }); if(error){ ok.disabled = false; kToast('⚠️ ' + error.message); return; }
+    closeOverlay(); kToast('✓ ' + (data.neu ? data.neu + (data.neu === 1 ? ' neues Thema' : ' neue Themen') : '') + (data.neu && data.dazu ? ', ' : '') + (data.dazu ? data.dazu + ' zu vorhandenen dazu' : ''));
+    SZ.tab = 'agenda'; await szNeu(); };
+}
+
+/* ---------- Archiv mit Suche ---------- */
+function szArchiv(){
+  const M = svModal(`<div class="sz-ein"><h2>Sitzungen</h2><input type="text" id="szSuch" placeholder="Suchen in Themen, Ergebnissen und deinen Notizen" aria-label="Suchen" autocomplete="off" style="width:100%;min-height:44px;font-size:16px;padding:8px 12px;box-sizing:border-box">
+    <ul class="sz-arch" id="szArchL"><li class="note">Lade …</li></ul></div>`);
+  const L = M.querySelector('#szArchL'), S = M.querySelector('#szSuch'); let z = null, lauf = 0;
+  const hol = async () => { const n = ++lauf, q = S.value.trim(); const { data, error } = await SVB.sb.rpc('sitzungen_archiv', { p_q:q || null }); if(n !== lauf) return;
+    if(error){ L.innerHTML = `<li class="note">${szE(error.message)}</li>`; return; }
+    L.innerHTML = (data || []).length ? data.map(x => `<li><button type="button" data-sz-o="${x.id}"><b>${szE(x.titel)}</b><small>${szE(szDatum(x.datum, x.zeit))} · ${x.themen} ${x.themen === 1 ? 'Thema' : 'Themen'}${x.stand === 'beendet' ? ' · mit Protokoll' : ''}</small>
+      ${(x.treffer || []).map(t => `<small>… ${szE(t)}</small>`).join('')}</button></li>`).join('') : `<li class="note">${q ? 'Dazu steht in keiner Sitzung etwas.' : 'Noch keine Sitzung mit Themen.'}</li>`;
+    L.querySelectorAll('[data-sz-o]').forEach(b => b.onclick = () => { closeOverlay(); szOeffnen(b.dataset.szO); }); };
+  S.oninput = () => { clearTimeout(z); z = setTimeout(hol, 300); }; hol();
+}
+
+/* ---------- Im Termin: „Agenda öffnen“ ---------- */
+if(typeof kalDetail === 'function'){ const _a = kalDetail; kalDetail = function(id){ const r = _a.apply(this, arguments);
+  try{ const i = kalItem(id), akt = document.querySelector('#modal .kal-det .kal-akt'); if(!akt || !szIstSitzung(i) || akt.querySelector('#kalAgenda')) return r;
+    const b = document.createElement('button'); b.className = 'btn'; b.id = 'kalAgenda'; b.type = 'button'; b.innerHTML = szI('book') + ' Agenda öffnen';
+    b.onclick = () => { closeOverlay(); szOeffnen(i.id); }; akt.insertBefore(b, akt.firstChild);
+    const sh = akt.querySelector('#kalShare'); if(sh) sh.classList.add('ghost'); }catch(e){}
+  return r; }; }
+
+/* ---------- Startseite: meine nächste Sitzung ---------- */
+async function szHeim(neu){
+  const home = document.getElementById('panel-home'); if(!home || !(typeof SVB !== 'undefined' && SVB.sb) || (typeof svRole === 'function' && !svRole())) return;
+  if(neu || Date.now() - SZ.heimAm > 120000){ SZ.heimAm = Date.now(); try{ const { data } = await SVB.sb.rpc('sitzung_naechste'); SZ.heim = data || null; }catch(e){ SZ.heim = null; } }
+  let k = document.getElementById('szHome'); const x = SZ.heim;
+  if(!x){ if(k) k.remove(); return; }
+  if(!k){ k = document.createElement('section'); k.id = 'szHome'; k.className = 'card sz-home'; k.setAttribute('aria-label', 'Sitzung'); home.appendChild(k); }
+  const zu = x.stand === 'beendet';
+  const html = `<div class="sechead" style="margin:0 0 4px">${zu ? 'Protokoll ist da' : 'Deine nächste Sitzung'}</div><div class="sz-h-t">${szE(x.titel)}</div>
+    <p class="sz-h-m">${szE(szDatum(x.datum, x.zeit))}${x.ort ? ' · ' + szE(x.ort) : ''} · ${x.themen} ${x.themen === 1 ? 'Thema' : 'Themen'}${x.meine ? ', ' + x.meine + ' von dir' : ''}</p>
+    <div class="btnrow"><button type="button" class="btn" data-sz-h="${zu ? 'protokoll' : 'agenda'}">${zu ? 'Protokoll lesen' : 'Agenda öffnen'}</button>${zu ? '' : '<button type="button" class="btn ghost" data-sz-h="ein">Themen einreichen</button>'}</div>`;
+  if(k.dataset.h !== html){ k.dataset.h = html; k.innerHTML = html;
+    k.querySelectorAll('[data-sz-h]').forEach(b => b.onclick = async () => { const w = b.dataset.szH; await szOeffnen(x.id, w === 'protokoll' ? 'protokoll' : 'agenda'); if(w === 'ein' && SZ.d && SZ.d.stand !== 'beendet') szEinreichen(); }); }
+}
+if(typeof renderHome === 'function'){ const _rh112 = renderHome; renderHome = function(){ const r = _rh112.apply(this, arguments); try{ szHeim(false); }catch(e){} return r; }; }
+
+/* ---------- Aus einer Mitteilung: „Deine Nachricht“ bekommt den Weg in die Sitzung, die Adresse …/#sitzung=<Kennung> geht auch ---------- */
+function szAusAdresse(h){ const m = /^#?sitzung=([0-9a-f-]{36})$/i.exec(String(h || '')); if(!m) return false; const t0 = Date.now();
+  const los = () => { const g = document.getElementById('gate'); if(typeof _remoteDone !== 'undefined' && _remoteDone && g && g.classList.contains('done')) szOeffnen(m[1]); else if(Date.now() - t0 < 60000) setTimeout(los, 400); }; los(); return true; }
+if(typeof svzInhalt === 'function'){ const _zi112 = svzInhalt; svzInhalt = async function(m){ const x = await _zi112.apply(this, arguments);
+  try{ const d = (m && m.data) || {}; if(d.typ === 'sitzung' && /^[0-9a-f-]{36}$/i.test(d.event || '')){ const prot = /^Protokoll:/.test(m.titel || '');
+    x.knopf = prot ? `<button class="btn" type="button" data-szm="${d.event}:protokoll">${szI('book')} Protokoll lesen</button>`
+      : `<button class="btn" type="button" data-szm="${d.event}:ein">${szI('plus')} Themen einreichen</button><button class="btn ghost" type="button" data-szm="${d.event}:agenda">${szI('book')} Agenda öffnen</button>`; } }catch(e){} return x; }; }
+if(typeof svMeldungZeigen === 'function'){ const _mz112 = svMeldungZeigen; svMeldungZeigen = async function(){ const r = await _mz112.apply(this, arguments);
+  try{ document.querySelectorAll('#modal [data-szm]').forEach(b => b.onclick = async () => { const [ev, w] = b.dataset.szm.split(':'); closeOverlay(); await szOeffnen(ev, w === 'protokoll' ? 'protokoll' : 'agenda');
+    if(w === 'ein' && SZ.d && SZ.d.stand !== 'beendet') szEinreichen(); }); }catch(e){} return r; }; }
+if(typeof svZiel === 'function'){ const _z112 = svZiel; svZiel = function(h){ if(szAusAdresse(h)) return Promise.resolve(true); return _z112.apply(this, arguments); }; }
+window.addEventListener('hashchange', e => { let h = ''; try{ h = new URL(e.newURL).hash; }catch(x){ h = location.hash; }
+  if(/^#sitzung=/.test(h)){ try{ history.replaceState(history.state, '', location.pathname + location.search); }catch(x){} szAusAdresse(h); } });
+if(navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', e => { const t = e.data && e.data.svbcZiel; if(typeof t === 'string') szAusAdresse(t); });
+if(/^#sitzung=/.test(SZ_START)) szAusAdresse(SZ_START);
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm107css'; s.textContent="/* 0.99.33: Startseite nach dringend und wichtig (svm107.js) */\n#panel-home > [data-hz-weg]{display:none!important;}\n.hz-k{margin:20px 2px 8px;font-size:12.5px;line-height:1.3;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);}\n.hz-k.ruhig{text-transform:none;letter-spacing:0;font-weight:500;font-size:14.5px;margin:8px 2px 14px;}\n#svHello + .hz-k{margin-top:10px;}\n.hz-anp{display:block;width:100%;min-height:46px;margin:14px 0 18px;padding:10px 14px;border-radius:var(--r-lg,14px);border:1px dashed var(--line);background:none;color:var(--ink2);font:inherit;font-size:14px;text-align:center;cursor:pointer;}\n.hz-anp:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}\n/* Der Wisch-Tipp schiebt die Karte „Neue Meldungen“ kurz zur Seite: Das darf die Seite nicht breiter machen */\n#panel-home > #sc2Home{overflow-x:clip;overflow-clip-margin:14px;}\n/* Die Leitung braucht das Lagebild aus Kader, Training und Radar nicht auf der Startseite */\n#panel-home[data-hz=\"leitung\"] #svBriefBtn{display:none!important;}\n\n/* Beta 0.99.38: Startseite kürzer. Ablage in der To-do-Karte als eine Zeile zum Wischen, erledigte erste Schritte eingeklappt. */\n#panel-home #prioHeute .abl{flex-direction:row;align-items:center;gap:10px;min-width:0;}\n#panel-home #prioHeute .abl-k{margin:0;flex:none;}\n#panel-home #prioHeute .abl-l{display:flex;gap:8px;overflow-x:auto;min-width:0;flex:1;scrollbar-width:none;padding:2px;}\n#panel-home #prioHeute .abl-l::-webkit-scrollbar{display:none;}\n#panel-home #prioHeute .abl-o{flex:none;min-height:44px;max-width:230px;padding:6px 14px;border-radius:999px;}\n#panel-home #prioHeute .abl-o small,#panel-home #prioHeute .abl-o .abl-ic{display:none;}\n#panel-home #prioHeute .abl-o b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;}\n.o1-liste.o1-kurz li.ok{display:none;}\n.o1-sum{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin:10px 0 0;padding:0 12px;border-radius:12px;border:0;background:transparent;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer;text-align:left;}\n.o1-sum span{font-weight:700;color:var(--ink);}.o1-sum small{margin-left:auto;text-decoration:underline;text-underline-offset:3px;}\n.o1-sum svg{width:18px;height:18px;color:var(--green,#1a8f55);flex:none;}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm92css'; s.textContent="/* Beta 0.99.4 · Fragen mit Ja und Nein */\n.fr-karte{border:1px solid rgba(91,155,255,.45)!important;margin-bottom:14px}\n.fr-h{margin:0 0 10px;font-size:17px}\n.fr-liste{display:flex;flex-direction:column;gap:10px}\n.fr-z{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:var(--surface2,rgba(148,163,196,.08));transition:box-shadow .3s,background .3s}\n.fr-z.fr-hin{box-shadow:0 0 0 2px var(--brand,#2f6bff)}\n.fr-tx{display:flex;flex-direction:column;gap:2px;min-width:0}\n.fr-tx span,.fr-tx small{color:var(--ink3);font-size:13.5px;overflow-wrap:anywhere}\n.fr-akt{display:flex;gap:8px;flex:none}\n.fr-akt .btn{min-height:44px;white-space:nowrap}\n.fr-akt .btn[disabled]{opacity:.5}\n@media (max-width:640px){.fr-z{grid-template-columns:1fr}.fr-akt .btn{flex:1}}\n"; document.head.appendChild(s); }catch(e){} })();
