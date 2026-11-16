@@ -1,3 +1,6 @@
+    {ic:'👁️',t:'Eye-Test als eigene Messung',d:'Eine Bewertung zählt ungefähr so viel wie eine volle Saison, ab drei Planern mehr als die Daten.',r:'scout',go:'eye'},
+    {ic:'📥',t:'Eure Spiele zählen im MScore',d:'Spiele, die ihr unter Training → Spiele übernehmt (zum Beispiel die season.json aus dem FuPa-Auswerter), rechnen bei den eigenen Spielern mit: Minuten, Startelf, Tore, Vorlagen und die Punkte mit und ohne den Spieler.',r:'team',go:'training'}]},
+  {id:'0.8',v:'0.8',datum:'2026-09-25',titel:'Neues Rating: die Liga setzt den Rahmen',kurz:'Der MScore ist neu gebaut. Ein Stammspieler der Kreisoberliga liegt jetzt klar vor einem Spieler der Kreisliga D. Innerhalb der Liga entscheiden Einsatz, Leistung im Vergleich zur gleichen Position und die Mannschaft. Wer seine Liga dominiert, kommt über den Rahmen hinaus.',
    punkte:[
     {ic:'🧮',t:'Jeder Wert erklärt',d:'Im Spielerprofil steht Schritt für Schritt: Rahmen der Liga, Einsatz, Leistung, Mannschaft und dann jeder Zu- und Abschlag mit Grund, etwa Trainernoten, frühere höhere Liga oder Alter.',r:'team',go:'training'},
     {ic:'📐',t:'Rahmen je Liga',d:'Gruppenliga 52 bis 82, Kreisoberliga 43 bis 73, Kreisliga A 31 bis 61, B 22 bis 52, C 14 bis 44, D 7 bis 37. Ein typischer Stammspieler liegt in der Kreisoberliga bei 63, in der A-Liga bei 51, passend zur Skala des Eye-Tests.',r:'scout',go:'model'},

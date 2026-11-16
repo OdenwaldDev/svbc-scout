@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.56', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.57', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18602,6 +18602,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.57',v:'0.99.57',datum:'2026-11-16',gross:true,titel:'Sitzungen mit rotem Faden',kurz:'Jede Agenda beginnt jetzt mit dem, was seit der letzten Sitzung offen ist, und führt Thema für Thema durch den Abend.',
+   punkte:[
+    {ic:'\u{1F501}',t:'Seit der letzten Sitzung',d:'Oben auf der Agenda stehen die Aufgaben vom letzten Mal zum Abhaken, überfällige in Rot. Themen, die offen blieben oder vertagt wurden, holst du mit einem Tipp auf die neue Agenda.'},
+    {ic:'\u25B6\uFE0F',t:'Sitzung starten',d:'Ein Thema nach dem anderen: Ergebnis eintragen, Aufgabe verteilen, „Besprochen, weiter“. Am Ende steht die Bilanz und das Protokoll ist fertig.'},
+    {ic:'\u{1F465}',t:'Wer hat eingereicht',d:'Die Agenda zeigt, von wem Themen da sind und von wem noch nichts. Verschickt wird dabei nichts.'},
+    {ic:'\u{1F4C5}',t:'Am Sitzungstag',d:'Die Startseite sagt „Heute: deine Sitzung“ und führt mit einem Tipp direkt hinein.'}]},
   {id:'0.99.56',v:'0.99.56',datum:'2026-11-16',titel:'Partner-Präsentation als Trichter, Ruhe beim Scouting',kurz:'Die Präsentation führt Firmen jetzt Schritt für Schritt zum Paket, statt es oben schon anzubieten. Das Scouting-Briefing kommt nicht mehr nach jedem Neuladen.',r:'team',
    punkte:[
     {ic:'\u{1F3AF}',t:'Erst Auftritt, dann Paket',d:'Oben steht kein Paket und kein Preis mehr. Firmen sehen zuerst ihren Auftritt und warum wir an sie gedacht haben, dann den Verein, dann erst die Pakete. Die Empfehlung steht vorn.'},
@@ -35708,12 +35714,13 @@ async function szHeim(neu){
   let k = document.getElementById('szHome'); const x = SZ.heim;
   if(!x){ if(k) k.remove(); return; }
   if(!k){ k = document.createElement('section'); k.id = 'szHome'; k.className = 'card sz-home'; k.setAttribute('aria-label', 'Sitzung'); home.appendChild(k); }
-  const zu = x.stand === 'beendet';
-  const html = `<div class="sechead" style="margin:0 0 4px">${zu ? 'Protokoll ist da' : 'Deine nächste Sitzung'}</div><div class="sz-h-t">${szE(x.titel)}</div>
+  const zu = x.stand === 'beendet', heute = !zu && x.datum === szHeute() && x.themen > 0;   // am Tag selbst führt die Karte direkt ins Durchgehen
+  const html = `<div class="sechead" style="margin:0 0 4px">${zu ? 'Protokoll ist da' : heute ? 'Heute: deine Sitzung' : 'Deine nächste Sitzung'}</div><div class="sz-h-t">${szE(x.titel)}</div>
     <p class="sz-h-m">${szE(szDatum(x.datum, x.zeit))}${x.ort ? ' · ' + szE(x.ort) : ''} · ${x.themen} ${x.themen === 1 ? 'Thema' : 'Themen'}${x.meine ? ', ' + x.meine + ' von dir' : ''}</p>
-    <div class="btnrow"><button type="button" class="btn" data-sz-h="${zu ? 'protokoll' : 'agenda'}">${zu ? 'Protokoll lesen' : 'Agenda öffnen'}</button>${zu ? '' : '<button type="button" class="btn ghost" data-sz-h="ein">Themen einreichen</button>'}</div>`;
+    <div class="btnrow"><button type="button" class="btn" data-sz-h="${zu ? 'protokoll' : heute ? 'los' : 'agenda'}">${zu ? 'Protokoll lesen' : heute ? 'Sitzung starten' : 'Agenda öffnen'}</button>${zu ? '' : '<button type="button" class="btn ghost" data-sz-h="ein">Themen einreichen</button>'}</div>`;
   if(k.dataset.h !== html){ k.dataset.h = html; k.innerHTML = html;
-    k.querySelectorAll('[data-sz-h]').forEach(b => b.onclick = async () => { const w = b.dataset.szH; await szOeffnen(x.id, w === 'protokoll' ? 'protokoll' : 'agenda'); if(w === 'ein' && SZ.d && SZ.d.stand !== 'beendet') szEinreichen(); }); }
+    k.querySelectorAll('[data-sz-h]').forEach(b => b.onclick = async () => { const w = b.dataset.szH; await szOeffnen(x.id, w === 'protokoll' ? 'protokoll' : 'agenda'); if(w === 'ein' && SZ.d && SZ.d.stand !== 'beendet') szEinreichen();
+      if(w === 'los' && SZ.d && SZ.d.stand !== 'beendet' && SZ.d.themen.length){ await szRueckLaden(); szLaufStart(); } }); }
 }
 if(typeof renderHome === 'function'){ const _rh112 = renderHome; renderHome = function(){ const r = _rh112.apply(this, arguments); try{ szHeim(false); }catch(e){} return r; }; }
 
@@ -35732,6 +35739,173 @@ window.addEventListener('hashchange', e => { let h = ''; try{ h = new URL(e.newU
   if(/^#sitzung=/.test(h)){ try{ history.replaceState(history.state, '', location.pathname + location.search); }catch(x){} szAusAdresse(h); } });
 if(navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', e => { const t = e.data && e.data.svbcZiel; if(typeof t === 'string') szAusAdresse(t); });
 if(/^#sitzung=/.test(SZ_START)) szAusAdresse(SZ_START);
+
+/* =====================================================================
+   Beta 0.99.57 · Der rote Faden von Sitzung zu Sitzung (179_sitzung_rueckblick.sql)
+   Albert, 16.11.2026: „Können wir das Tool noch stärker machen, dass es selbstverständlich ist, dass das jede Sitzung genutzt wird? Fehlt da was?“
+   Was fehlte: Jede Sitzung stand für sich. Jetzt beginnt jede Agenda mit dem, was seit dem letzten Mal offen ist, und führt durch den Abend.
+   - Rückblick (szRueck*): Aufgaben aus früheren Sitzungen derselben Reihe zum Abhaken, offene und vertagte Themen zum Übernehmen.
+   - Durchgehen (szLauf*): ein Thema nach dem anderen mit Ergebnis, Aufgaben und „Besprochen, weiter“. SZ.lauf ist 'rueck', 'ende' oder die Kennung des Themas.
+     Das ist eine Ansicht auf demselben Stand: Alles speichert wie auf der Agenda, mehrere können gleichzeitig durchgehen.
+   - Wer hat eingereicht (szWerHtml): Namen mit Anzahl, und von wem noch nichts da ist. Verschickt wird dabei nichts.
+   ===================================================================== */
+(function(){ try{ if(document.getElementById('svm112bcss')) return; const s = document.createElement('style'); s.id = 'svm112bcss';
+  s.textContent = `.sz-start{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px}
+.sz-start .btn{min-height:50px;padding:0 22px}
+.sz-start span{color:var(--ink2);font-size:13px}
+.sz-wer{margin:0 0 12px;color:var(--ink2);font-size:13px;line-height:1.5}
+.sz-rb{margin:0 0 16px;padding:14px 14px 10px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.sz-rb-h{margin:0 0 4px;font-size:16px;font-weight:800;color:var(--ink)}
+.sz-rb-h small{font-weight:600;color:var(--ink2);font-size:13px;margin-left:4px}
+.sz-rb-z{margin:0 0 6px;color:var(--ink2);font-size:14px}
+.sz-rb-z b{color:var(--ink)}
+.sz-rb-z b.rot{color:var(--red,#e0574f)}
+.sz-rb-l{list-style:none;margin:0;padding:0}
+.sz-rb-l li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.sz-rb-l li>span{flex:1;min-width:0}
+.sz-rb-l b{display:block;font-size:15px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.sz-rb-l small{display:block;color:var(--ink2);font-size:13px;margin-top:2px;overflow-wrap:anywhere}
+.sz-rb-l li.ok b{text-decoration:line-through;color:var(--ink2);font-weight:500}
+.sz-rb-l li.ueber small{color:var(--red,#e0574f)}
+.sz-rb-l .btn{min-height:44px;flex:none}
+.sz-rb-t{margin-top:12px}
+.sz-hk{flex:none;width:44px;height:44px;border-radius:12px;border:2px solid var(--line);background:transparent;color:#fff;font-size:20px;font-weight:800;cursor:pointer}
+.sz-hk[aria-pressed="true"]{background:var(--green,#22c55e);border-color:var(--green,#22c55e)}
+.sz-hk:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.sz-lf-k{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.sz-lf-k .btn{min-height:44px}
+.sz-lf-z{color:var(--ink2);font-size:13px}
+.sz-lf-bal{height:6px;border-radius:999px;background:var(--line);overflow:hidden;margin-bottom:16px}
+.sz-lf-bal i{display:block;height:100%;background:var(--brand);border-radius:999px;transition:width .3s ease}
+.sz-lf-nr{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.sz-lf-nr i{width:10px;height:10px;border-radius:3px;background:var(--c,var(--brand));flex:none}
+.sz-lf-t{margin:0 0 6px;font-size:26px;line-height:1.2;font-weight:800;color:var(--ink);text-wrap:balance;overflow-wrap:anywhere}
+.sz-lf-not{margin-top:12px;border-top:1px solid var(--line)}
+.sz-lf-not summary{min-height:44px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink)}
+.sz-lf-not summary small{font-weight:500;color:var(--ink2)}
+.sz-lf-nav{position:sticky;bottom:0;display:flex;gap:8px;margin:18px -4px 0;padding:10px 4px calc(10px + env(safe-area-inset-bottom));background:var(--bg,#05070c)}
+.sz-lf-nav .btn{min-height:50px;flex:1 1 0;padding:0 10px}
+.sz-lf-nav .btn:last-child{flex:2 1 0}
+.sz-lf .sz-neu .btn{min-height:44px}
+@media (prefers-reduced-motion:reduce){.sz-lf-bal i{transition:none}}`;
+  document.head.appendChild(s); }catch(e){} })();
+SZ.rueck = null; SZ.rueckFuer = null; SZ.lauf = null; SZ.laufSeit = 0;
+
+function szHeute(){ try{ return new Date().toLocaleDateString('sv-SE', { timeZone:'Europe/Berlin' }); }catch(e){ return new Date().toISOString().slice(0, 10); } }
+function szKurzDatum(d){ try{ return new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { day:'numeric', month:'numeric' }); }catch(e){ return d || ''; } }
+/* Die Themen in der Reihenfolge der Agenda: Bereiche nach der höchsten Priorität, darin nach Priorität und Eingang */
+function szFolge(d){
+  const gr = {}; (d.themen || []).forEach(t => { (gr[t.bereich] = gr[t.bereich] || []).push(t); });
+  return Object.keys(gr).sort((a, b) => Math.max(...gr[b].map(t => t.von.length)) - Math.max(...gr[a].map(t => t.von.length)) || Math.min(...gr[a].map(t => t.sort)) - Math.min(...gr[b].map(t => t.sort)))
+    .flatMap(k => gr[k].slice().sort((a, b) => b.von.length - a.von.length || a.sort - b.sort));
+}
+async function szRueckLaden(neu){
+  const ev = SZ.id; if(!ev) return null; if(!neu && SZ.rueckFuer === ev) return SZ.rueck;
+  let r = null; try{ const { data, error } = await SVB.sb.rpc('sitzung_rueckblick', { p_event:ev }); if(!error) r = data || null; }catch(e){}
+  if(SZ.id !== ev) return null; SZ.rueck = r; SZ.rueckFuer = ev; return r;
+}
+function szRueckOffen(){ const r = SZ.rueck; return !!(r && r.vorher && ((r.aufgaben || []).some(a => a.status !== 'erledigt') || (r.themen || []).length)); }
+function szRueckHtml(r){
+  const d = SZ.d; if(!d || !r || !r.vorher) return '';
+  const A = r.aufgaben || [], T = r.themen || [], zu = d.stand === 'beendet'; if(!A.length && (!T.length || zu)) return '';
+  const offen = A.filter(a => a.status !== 'erledigt'), fertig = A.length - offen.length, ueber = offen.filter(a => a.ueber).length;
+  return `<section class="sz-rb" aria-label="Seit der letzten Sitzung"><h2 class="sz-rb-h">Seit der letzten Sitzung<small>${szE(szKurzDatum(r.vorher.datum))}</small></h2>
+    ${A.length ? `<p class="sz-rb-z"><b>${offen.length}</b> ${offen.length === 1 ? 'Aufgabe' : 'Aufgaben'} offen${ueber ? `, davon <b class="rot">${ueber} überfällig</b>` : ''}${fertig ? ` · <b>${fertig}</b> erledigt` : ''}</p>
+    <ul class="sz-rb-l">${A.map(a => { const ok = a.status === 'erledigt'; return `<li class="${ok ? 'ok' : a.ueber ? 'ueber' : ''}"><button type="button" class="sz-hk" data-sz-hk="${szE(a.id)}" aria-pressed="${ok}" aria-label="${ok ? 'Wieder öffnen' : 'Erledigt'}: ${szE(a.titel)}"${zu ? ' disabled' : ''}>${ok ? '✓' : ''}</button>
+      <span><b>${szE(a.titel)}</b><small>${szE([a.wer_name, a.faellig ? 'bis ' + szKurzDatum(a.faellig) : '', a.thema ? 'Thema: ' + a.thema : ''].filter(Boolean).join(' · '))}</small></span></li>`; }).join('')}</ul>` : ''}
+    ${T.length && !zu ? `<div class="sz-rb-t"><p class="sz-rb-z"><b>${T.length}</b> ${T.length === 1 ? 'Thema blieb' : 'Themen blieben'} offen oder vertagt</p>
+    <ul class="sz-rb-l">${T.map(t => `<li><span><b>${szE(t.titel)}</b><small>${t.status === 'vertagt' ? 'vertagt' : 'nicht besprochen'}${(t.von || []).length ? ' · von ' + szE(t.von.map(szVorname).join(', ')) : ''}</small></span><button type="button" class="btn ghost" data-sz-ueb="${szE(t.id)}">Übernehmen</button></li>`).join('')}</ul>
+    ${T.length > 1 ? `<div class="sz-zeile"><button type="button" class="btn ghost" data-sz-ueb="alle">Alle ${T.length} übernehmen</button></div>` : ''}</div>` : ''}</section>`;
+}
+function szRueckDraht(box){
+  const neu = () => { const v = document.getElementById('szVoll'); if(!v) return; const y = v.scrollTop; szRender(); v.scrollTop = y; };
+  box.querySelectorAll('[data-sz-hk]').forEach(b => b.onclick = async () => { const an = b.getAttribute('aria-pressed') !== 'true'; b.disabled = true; await szAllesSichern();
+    const { error } = await SVB.sb.rpc('sitzung_aufgabe_haken', { p_id:b.dataset.szHk, p_erledigt:an }); if(error){ b.disabled = false; kToast('⚠️ ' + error.message); return; }
+    kToast(an ? '✓ Erledigt' : 'Wieder offen'); await szRueckLaden(true); neu(); });
+  box.querySelectorAll('[data-sz-ueb]').forEach(b => b.onclick = async () => { const ids = b.dataset.szUeb === 'alle' ? ((SZ.rueck || {}).themen || []).map(t => t.id) : [b.dataset.szUeb]; if(!ids.length) return; b.disabled = true; await szAllesSichern();
+    const { error } = await SVB.sb.rpc('sitzung_uebernehmen', { p_event:SZ.id, p_themen:ids }); if(error){ b.disabled = false; kToast('⚠️ ' + error.message); return; }
+    kToast(ids.length === 1 ? '✓ Steht auf der Agenda' : '✓ ' + ids.length + ' Themen stehen auf der Agenda'); await szRueckLaden(true); await szNeu(); });
+}
+function szWerHtml(d){
+  if(d.stand === 'beendet' || (d.teilnehmer || []).length < 2) return '';
+  const n = {}; d.themen.forEach(t => t.von.forEach(x => { n[x.id] = (n[x.id] || 0) + 1; }));
+  const da = d.teilnehmer.filter(p => n[p.id]), fehlt = d.teilnehmer.filter(p => !n[p.id]);
+  if(!da.length) return '<p class="sz-wer" id="szWer">Noch hat niemand Themen eingereicht.</p>';
+  return `<p class="sz-wer" id="szWer">Themen von ${da.map(p => szE(szVorname(p.name)) + ' (' + n[p.id] + ')').join(', ')}.${fehlt.length ? ' Noch nichts von ' + fehlt.map(p => szE(szVorname(p.name))).join(', ') + '.' : ''}</p>`;
+}
+/* Agenda: oben Start, wer eingereicht hat und der Rückblick */
+{ const _a = szAgenda; szAgenda = function(B){ const r = _a.apply(this, arguments); try{ szAgendaMehr(B); }catch(e){ console.warn(e); } return r; }; }
+function szAgendaMehr(B){
+  const d = SZ.d; if(!d || !B || B.querySelector('#szMehr')) return; const zu = d.stand === 'beendet', ev = SZ.id;
+  const k = document.createElement('div'); k.id = 'szMehr';
+  k.innerHTML = (!zu && d.themen.length ? `<div class="sz-start"><button type="button" class="btn" id="szLos">${szI('clock')} ${d.themen.some(t => t.status !== 'offen') ? 'Weiter durchgehen' : 'Sitzung starten'}</button><span>Thema für Thema, mit Ergebnis und Aufgaben</span></div>` : '') + szWerHtml(d) + '<div id="szRb"></div>';
+  B.insertBefore(k, B.firstChild);
+  const los = k.querySelector('#szLos'); if(los) los.onclick = async () => { await szRueckLaden(); szLaufStart(); };
+  const rb = k.querySelector('#szRb'), mal = () => { if(!document.body.contains(rb) || SZ.id !== ev) return; rb.innerHTML = szRueckHtml(SZ.rueck); szRueckDraht(rb); };
+  if(SZ.rueckFuer === ev) mal(); else szRueckLaden().then(mal);
+}
+/* Durchgehen */
+function szLaufStart(){
+  const d = SZ.d; if(!d || d.stand === 'beendet') return; const F = szFolge(d), erstes = F.find(t => t.status === 'offen');
+  SZ.lauf = szRueckOffen() && !F.some(t => t.status !== 'offen') ? 'rueck' : erstes ? erstes.id : 'ende';
+  if(!SZ.laufSeit) SZ.laufSeit = Date.now(); SZ.tab = 'agenda'; szRender(); const v = document.getElementById('szVoll'); if(v) v.scrollTop = 0;
+}
+{ const _r = szRender; szRender = function(){ const r = _r.apply(this, arguments); try{ if(SZ.lauf != null && SZ.tab === 'agenda') szLauf(); }catch(e){ console.warn(e); } return r; }; }
+{ const _o = szOeffnen; szOeffnen = function(){ SZ.lauf = null; SZ.laufSeit = 0; SZ.rueck = null; SZ.rueckFuer = null; return _o.apply(this, arguments); }; }
+function szLauf(){
+  const v = document.getElementById('szVoll'), d = SZ.d, B = v && v.querySelector('#szB'); if(!B || !d) return;
+  if(d.stand === 'beendet'){ SZ.lauf = null; return; }
+  const F = szFolge(d), n = F.length; let i = F.findIndex(t => t.id === SZ.lauf);
+  if(SZ.lauf !== 'rueck' && SZ.lauf !== 'ende' && i < 0){ SZ.lauf = n ? F[0].id : 'ende'; i = n ? 0 : -1; }   // das Thema wurde inzwischen entfernt
+  const min = Math.max(0, Math.round((Date.now() - SZ.laufSeit) / 60000)), durch = F.filter(t => t.status !== 'offen').length;
+  let h = `<div class="sz-lf" id="szLf"><div class="sz-lf-k"><button type="button" class="btn ghost" id="szLfZu">Zur Übersicht</button><span class="sz-lf-z">${durch} von ${n} durch${min ? ' · seit ' + min + ' Min' : ''}</span></div>
+    <div class="sz-lf-bal" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${durch}" aria-label="${durch} von ${n} Themen durch"><i style="width:${n ? Math.round(durch / n * 100) : 0}%"></i></div>`;
+  if(SZ.lauf === 'rueck'){
+    h += `<p class="sz-lf-nr"><i></i>Zuerst</p><h2 class="sz-lf-t">Was ist seit dem letzten Mal passiert?</h2><div id="szRb">${szRueckHtml(SZ.rueck) || '<p class="note">Aus der letzten Sitzung ist nichts offen.</p>'}</div>
+      <div class="sz-lf-nav"><button type="button" class="btn" data-sz-lf="vor">${n ? 'Zum ersten Thema' : 'Fertig'}</button></div>`;
+  }else if(SZ.lauf === 'ende'){
+    const bes = F.filter(t => t.status === 'besprochen').length, ver = F.filter(t => t.status === 'vertagt').length, off = n - bes - ver, auf = F.reduce((s, t) => s + t.aufgaben.length, 0);
+    h += `<p class="sz-lf-nr"><i></i>Geschafft</p><h2 class="sz-lf-t">Alle Themen durch</h2>
+      <p class="sz-text" id="szLfSum">${bes} besprochen${ver ? ', ' + ver + ' vertagt' : ''}${off ? ', ' + off + ' noch offen' : ''}. ${auf} ${auf === 1 ? 'Aufgabe' : 'Aufgaben'} verteilt.${ver || off ? ' Was offen oder vertagt ist, steht beim nächsten Mal oben zum Übernehmen.' : ''}</p>
+      <div class="sz-lf-nav"><button type="button" class="btn ghost" data-sz-lf="zurueck">Zurück</button><button type="button" class="btn" id="szLfProt">${d.leiten ? 'Zum Protokoll und beenden' : 'Protokoll ansehen'}</button></div>`;
+  }else{
+    const t = F[i], wort = t.von.filter(x => x.wort && szNorm(x.wort) !== szNorm(t.titel));
+    h += `<p class="sz-lf-nr" style="--c:${SZ_FARBE[t.bereich] || SZ_FARBE.sonstiges}"><i></i>Thema ${i + 1} von ${n} · ${szE(SZ_B[t.bereich] || 'Sonstiges')}</p>
+      <h2 class="sz-lf-t" id="szLfT">${szE(t.titel)}</h2>
+      <p class="sz-wann">${t.von.length ? 'von ' + szE(t.von.map(x => szVorname(x.name)).join(', ')) : 'ohne Absender'}${t.von.length > 1 ? ' · von ' + t.von.length + ' Personen eingereicht' : ''}${t.status === 'besprochen' ? ' · schon besprochen' : t.status === 'vertagt' ? ' · vertagt' : ''}</p>
+      ${t.text ? `<p class="sz-text">${szE(t.text)}</p>` : ''}
+      ${wort.length ? `<div class="sz-wort">${wort.map(x => `${szE(szVorname(x.name))}: „${szE(x.wort)}“`).join('<br>')}</div>` : ''}
+      <label class="sz-l" for="szErg${t.id}">Ergebnis <small>für alle, steht im Protokoll</small><span class="sz-ok" data-sz-ok="e:${t.id}" aria-live="polite"></span></label>
+      <textarea class="sz-papier" id="szErg${t.id}" data-sz-erg="${t.id}" maxlength="6000" placeholder="Was wurde besprochen, was beschlossen?">${szE(t.ergebnis || '')}</textarea>
+      <div class="sz-l">Aufgaben <small>wer macht was bis wann</small></div>
+      ${t.aufgaben.length ? `<ul class="sz-auf">${t.aufgaben.map(a => `<li><span>${a.status === 'erledigt' ? '✓ ' : ''}${szE(a.titel)}</span><small>${szE(a.wer_name || '')}${a.faellig ? ', bis ' + szE(szKurzDatum(a.faellig)) : ''}</small></li>`).join('')}</ul>` : ''}
+      <div class="sz-neu"><input type="text" data-sz-at="${t.id}" maxlength="200" placeholder="Neue Aufgabe" aria-label="Neue Aufgabe" autocomplete="off">
+        <select data-sz-aw="${t.id}" aria-label="Zuständig">${d.teilnehmer.map(p => `<option value="${p.id}"${p.id === d.ich ? ' selected' : ''}>${szE(p.name)}</option>`).join('')}${d.teilnehmer.some(p => p.id === d.ich) ? '' : `<option value="${d.ich}" selected>Ich</option>`}</select>
+        <input type="date" data-sz-af="${t.id}" aria-label="Bis wann"><button type="button" class="btn ghost" data-sz-aneu="${t.id}">Anlegen</button></div>
+      <details class="sz-lf-not"${t.notiz ? ' open' : ''}><summary>Deine Notiz <small>siehst nur du</small><span class="sz-ok" data-sz-ok="n:${t.id}" aria-live="polite"></span></summary>
+        <textarea class="sz-papier mein" data-sz-not="${t.id}" maxlength="8000" aria-label="Deine Notiz" placeholder="Gedanken, Rückfragen, was du dir merken willst">${szE(t.notiz || '')}</textarea></details>
+      <div class="sz-lf-nav"><button type="button" class="btn ghost" data-sz-lf="zurueck">Zurück</button><button type="button" class="btn ghost" data-sz-lf="vertagt">Vertagen</button><button type="button" class="btn" data-sz-lf="besprochen">Besprochen, weiter</button></div>`;
+  }
+  B.innerHTML = h + '</div>';
+  const oben = () => { const x = document.getElementById('szVoll'); if(x) x.scrollTop = 0; };
+  B.querySelector('#szLfZu').onclick = () => { szAllesSichern(); SZ.lauf = null; szRender(); };
+  const rb = B.querySelector('#szRb'); if(rb) szRueckDraht(rb);
+  const prot = B.querySelector('#szLfProt'); if(prot) prot.onclick = () => { SZ.lauf = null; SZ.tab = 'protokoll'; szRender(); oben(); };
+  const t = i >= 0 ? F[i] : null;
+  B.querySelectorAll('[data-sz-erg]').forEach(x => szTippen(x, 'e:' + x.dataset.szErg, () => szErgebnis(x.dataset.szErg, x.value), () => { if(t) t.ergebnis = x.value; }));
+  B.querySelectorAll('[data-sz-not]').forEach(x => szTippen(x, 'n:' + x.dataset.szNot, () => szNotiz(x.dataset.szNot, x.value), () => { if(t) t.notiz = x.value; }));
+  const aufgabe = async () => { if(!t) return true; const ti = B.querySelector(`[data-sz-at="${t.id}"]`), wer = B.querySelector(`[data-sz-aw="${t.id}"]`), bis = B.querySelector(`[data-sz-af="${t.id}"]`); if(!ti || !ti.value.trim()) return true;
+    const { error } = await SVB.sb.rpc('sitzung_aufgabe', { p_thema:t.id, p_titel:ti.value, p_wer:wer.value, p_faellig:bis.value || null }); if(error){ kToast('⚠️ ' + error.message); return false; } ti.value = ''; return true; };
+  B.querySelectorAll('[data-sz-aneu]').forEach(b => b.onclick = async () => { const ti = B.querySelector(`[data-sz-at="${t.id}"]`); if(!ti.value.trim()){ ti.focus(); return; } b.disabled = true; await szAllesSichern();
+    const gut = await aufgabe(); b.disabled = false; if(!gut) return; kToast('✓ Aufgabe angelegt. Sie steht bei den To-dos.'); await szNeu(); });
+  B.querySelectorAll('[data-sz-lf]').forEach(b => b.onclick = async () => { const w = b.dataset.szLf;
+    if(w === 'vor'){ const e = F.find(x => x.status === 'offen') || F[0]; SZ.lauf = e ? e.id : 'ende'; szRender(); oben(); return; }
+    if(w === 'zurueck'){ await szAllesSichern(); SZ.lauf = SZ.lauf === 'ende' ? (n ? F[n - 1].id : 'rueck') : i > 0 ? F[i - 1].id : (szRueckHtml(SZ.rueck) ? 'rueck' : SZ.lauf); szRender(); oben(); return; }
+    if(!t) return; b.disabled = true; await szAllesSichern();
+    if(!(await aufgabe())){ b.disabled = false; return; }   // eine angefangene Aufgabe geht beim Weitergehen nicht verloren
+    const { error } = await SVB.sb.rpc('sitzung_thema_setzen', { p_id:t.id, p:{ status:w } }); if(error){ b.disabled = false; kToast('⚠️ ' + error.message); return; }
+    SZ.lauf = i + 1 < n ? F[i + 1].id : 'ende'; await szNeu(); oben(); });
+}
 
 /* =====================================================================
    Beta 0.99.45 · Neuer Nutzer für die Leitung (Albert, 16.11.2026)
