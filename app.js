@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.57', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.58', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18602,6 +18602,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.58',v:'0.99.58',datum:'2026-11-16',titel:'Sitzungen: wer war da, Offenes geht von selbst weiter',kurz:'Das Durchgehen fragt zuerst, wer da ist, und das steht im Protokoll. Was offen bleibt oder vertagt wird, steht nach dem Ende von selbst auf der nächsten Agenda der Reihe.',
+   punkte:[
+    {ic:'\u{1F64B}',t:'Wer ist heute da?',d:'Namen antippen oder „Alle da“. Im Protokoll stehen dann „Anwesend“ und „Nicht dabei“ direkt unter dem Datum.'},
+    {ic:'\u27A1\uFE0F',t:'Offenes wandert von selbst weiter',d:'Endet eine Sitzung, gehen vertagte und nicht besprochene Themen auf die nächste Sitzung derselben Reihe, mit Einreichern und dem letzten Stand. Steht der nächste Termin noch nicht im Kalender, bietet der Rückblick sie später an.'}]},
   {id:'0.99.57',v:'0.99.57',datum:'2026-11-16',gross:true,titel:'Sitzungen mit rotem Faden',kurz:'Jede Agenda beginnt jetzt mit dem, was seit der letzten Sitzung offen ist, und führt Thema für Thema durch den Abend.',
    punkte:[
     {ic:'\u{1F501}',t:'Seit der letzten Sitzung',d:'Oben auf der Agenda stehen die Aufgaben vom letzten Mal zum Abhaken, überfällige in Rot. Themen, die offen blieben oder vertagt wurden, holst du mit einem Tipp auf die neue Agenda.'},
@@ -35720,7 +35724,7 @@ async function szHeim(neu){
     <div class="btnrow"><button type="button" class="btn" data-sz-h="${zu ? 'protokoll' : heute ? 'los' : 'agenda'}">${zu ? 'Protokoll lesen' : heute ? 'Sitzung starten' : 'Agenda öffnen'}</button>${zu ? '' : '<button type="button" class="btn ghost" data-sz-h="ein">Themen einreichen</button>'}</div>`;
   if(k.dataset.h !== html){ k.dataset.h = html; k.innerHTML = html;
     k.querySelectorAll('[data-sz-h]').forEach(b => b.onclick = async () => { const w = b.dataset.szH; await szOeffnen(x.id, w === 'protokoll' ? 'protokoll' : 'agenda'); if(w === 'ein' && SZ.d && SZ.d.stand !== 'beendet') szEinreichen();
-      if(w === 'los' && SZ.d && SZ.d.stand !== 'beendet' && SZ.d.themen.length){ await szRueckLaden(); szLaufStart(); } }); }
+      if(w === 'los' && SZ.d && SZ.d.stand !== 'beendet' && SZ.d.themen.length) await szLaufStart(); }); }
 }
 if(typeof renderHome === 'function'){ const _rh112 = renderHome; renderHome = function(){ const r = _rh112.apply(this, arguments); try{ szHeim(false); }catch(e){} return r; }; }
 
@@ -35787,9 +35791,17 @@ if(/^#sitzung=/.test(SZ_START)) szAusAdresse(SZ_START);
 .sz-lf-nav .btn{min-height:50px;flex:1 1 0;padding:0 10px}
 .sz-lf-nav .btn:last-child{flex:2 1 0}
 .sz-lf .sz-neu .btn{min-height:44px}
+.sz-dcs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.sz-dc{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.sz-dc[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.sz-dc:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.sz-dd{margin:0 0 12px;border:1px dashed var(--line);border-radius:14px;padding:4px 14px 10px}
+.sz-dd summary{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:48px;cursor:pointer;font-weight:700;color:var(--ink)}
+.sz-dd summary::-webkit-details-marker{display:none}
+.sz-dd summary span{font-weight:600;font-size:13px;color:var(--ink2)}
 @media (prefers-reduced-motion:reduce){.sz-lf-bal i{transition:none}}`;
   document.head.appendChild(s); }catch(e){} })();
-SZ.rueck = null; SZ.rueckFuer = null; SZ.lauf = null; SZ.laufSeit = 0;
+SZ.rueck = null; SZ.rueckFuer = null; SZ.lauf = null; SZ.laufSeit = 0; SZ.da = null; SZ.daFuer = null;
 
 function szHeute(){ try{ return new Date().toLocaleDateString('sv-SE', { timeZone:'Europe/Berlin' }); }catch(e){ return new Date().toISOString().slice(0, 10); } }
 function szKurzDatum(d){ try{ return new Date(d + 'T12:00:00').toLocaleDateString('de-DE', { day:'numeric', month:'numeric' }); }catch(e){ return d || ''; } }
@@ -35833,40 +35845,71 @@ function szWerHtml(d){
   if(!da.length) return '<p class="sz-wer" id="szWer">Noch hat niemand Themen eingereicht.</p>';
   return `<p class="sz-wer" id="szWer">Themen von ${da.map(p => szE(szVorname(p.name)) + ' (' + n[p.id] + ')').join(', ')}.${fehlt.length ? ' Noch nichts von ' + fehlt.map(p => szE(szVorname(p.name))).join(', ') + '.' : ''}</p>`;
 }
+/* Anwesenheit (seit 0.99.58, 180_sitzung_anwesend.sql): SZ.da = { erfasst, wer:Set }. Jeder Tipp speichert die ganze Liste. */
+async function szDaLaden(neu){
+  const ev = SZ.id; if(!ev) return null; if(!neu && SZ.daFuer === ev) return SZ.da;
+  let x = null; try{ const { data, error } = await SVB.sb.rpc('sitzung_anwesend', { p_event:ev }); if(!error && data) x = { erfasst:!!data.erfasst, wer:new Set(data.wer || []) }; }catch(e){}
+  if(SZ.id !== ev) return null; SZ.da = x; SZ.daFuer = ev; return x;
+}
+function szDaText(d){ const a = SZ.da; return a && a.erfasst ? d.teilnehmer.filter(p => a.wer.has(p.id)).length + ' von ' + d.teilnehmer.length + ' da' : 'noch nicht erfasst'; }
+function szDaChips(d){ const a = SZ.da || { wer:new Set() };
+  return `<div class="sz-dcs" role="group" aria-label="Wer ist da">${d.teilnehmer.map(p => `<button type="button" class="sz-dc" data-sz-da="${p.id}" aria-pressed="${a.wer.has(p.id)}">${szE(p.name)}</button>`).join('')}</div>
+    <div class="sz-zeile"><button type="button" class="btn ghost" data-sz-da-alle="1">Alle da</button></div>`; }
+function szDaDraht(box, nach){
+  const d = SZ.d; if(!d) return;
+  const sichern = async wer => { const vor = SZ.da; SZ.da = { erfasst:true, wer:new Set(wer) }; SZ.daFuer = SZ.id; nach();
+    const { error } = await SVB.sb.rpc('sitzung_anwesend_setzen', { p_event:SZ.id, p_wer:wer }); if(error){ SZ.da = vor; nach(); kToast('⚠️ ' + error.message); } };
+  box.querySelectorAll('[data-sz-da]').forEach(b => b.onclick = () => { const w = new Set((SZ.da && SZ.da.wer) || []); if(w.has(b.dataset.szDa)) w.delete(b.dataset.szDa); else w.add(b.dataset.szDa); sichern([...w]); });
+  box.querySelectorAll('[data-sz-da-alle]').forEach(b => b.onclick = () => sichern(d.teilnehmer.map(p => p.id)));
+}
+function szDaMalen(box){   // nach einem Tipp nur die Tasten und die Zahl nachziehen, nichts neu aufbauen
+  const d = SZ.d, a = SZ.da || { wer:new Set() }; if(!d || !box) return;
+  box.querySelectorAll('[data-sz-da]').forEach(b => b.setAttribute('aria-pressed', a.wer.has(b.dataset.szDa)));
+  const z = box.querySelector('[data-sz-da-z]'); if(z) z.textContent = szDaText(d);
+}
 /* Agenda: oben Start, wer eingereicht hat und der Rückblick */
 { const _a = szAgenda; szAgenda = function(B){ const r = _a.apply(this, arguments); try{ szAgendaMehr(B); }catch(e){ console.warn(e); } return r; }; }
 function szAgendaMehr(B){
   const d = SZ.d; if(!d || !B || B.querySelector('#szMehr')) return; const zu = d.stand === 'beendet', ev = SZ.id;
   const k = document.createElement('div'); k.id = 'szMehr';
-  k.innerHTML = (!zu && d.themen.length ? `<div class="sz-start"><button type="button" class="btn" id="szLos">${szI('clock')} ${d.themen.some(t => t.status !== 'offen') ? 'Weiter durchgehen' : 'Sitzung starten'}</button><span>Thema für Thema, mit Ergebnis und Aufgaben</span></div>` : '') + szWerHtml(d) + '<div id="szRb"></div>';
+  k.innerHTML = (!zu && d.themen.length ? `<div class="sz-start"><button type="button" class="btn" id="szLos">${szI('clock')} ${d.themen.some(t => t.status !== 'offen') ? 'Weiter durchgehen' : 'Sitzung starten'}</button><span>Thema für Thema, mit Ergebnis und Aufgaben</span></div>` : '') + szWerHtml(d) + '<div id="szDa"></div><div id="szRb"></div>';
   B.insertBefore(k, B.firstChild);
-  const los = k.querySelector('#szLos'); if(los) los.onclick = async () => { await szRueckLaden(); szLaufStart(); };
+  const da = k.querySelector('#szDa'), daMal = () => { if(!document.body.contains(da) || SZ.id !== ev || zu || d.teilnehmer.length < 2 || !SZ.da) return;
+    da.innerHTML = `<details class="sz-dd" id="szDaD"${SZ.daAuf ? ' open' : ''}><summary>Wer ist da? <span data-sz-da-z>${szDaText(d)}</span></summary>${szDaChips(d)}</details>`;
+    da.querySelector('details').addEventListener('toggle', e => { SZ.daAuf = e.target.open; }); szDaDraht(da, () => szDaMalen(da)); };
+  if(SZ.daFuer === ev) daMal(); else szDaLaden().then(daMal);
+  const los = k.querySelector('#szLos'); if(los) los.onclick = () => szLaufStart();
   const rb = k.querySelector('#szRb'), mal = () => { if(!document.body.contains(rb) || SZ.id !== ev) return; rb.innerHTML = szRueckHtml(SZ.rueck); szRueckDraht(rb); };
   if(SZ.rueckFuer === ev) mal(); else szRueckLaden().then(mal);
 }
 /* Durchgehen */
-function szLaufStart(){
-  const d = SZ.d; if(!d || d.stand === 'beendet') return; const F = szFolge(d), erstes = F.find(t => t.status === 'offen');
-  SZ.lauf = szRueckOffen() && !F.some(t => t.status !== 'offen') ? 'rueck' : erstes ? erstes.id : 'ende';
+function szLaufZiel(d){ const F = szFolge(d), erstes = F.find(t => t.status === 'offen'); return szRueckOffen() && !F.some(t => t.status !== 'offen') ? 'rueck' : erstes ? erstes.id : 'ende'; }
+async function szLaufStart(){
+  const ev = SZ.id; await Promise.all([szRueckLaden(), szDaLaden()]);
+  const d = SZ.d; if(!d || SZ.id !== ev || d.stand === 'beendet') return;
+  SZ.lauf = SZ.da && !SZ.da.erfasst && d.teilnehmer.length > 1 && SZ.daWeiter !== ev ? 'da' : szLaufZiel(d);   // zuerst: wer ist da, solange das noch niemand eingetragen hat
   if(!SZ.laufSeit) SZ.laufSeit = Date.now(); SZ.tab = 'agenda'; szRender(); const v = document.getElementById('szVoll'); if(v) v.scrollTop = 0;
 }
 { const _r = szRender; szRender = function(){ const r = _r.apply(this, arguments); try{ if(SZ.lauf != null && SZ.tab === 'agenda') szLauf(); }catch(e){ console.warn(e); } return r; }; }
-{ const _o = szOeffnen; szOeffnen = function(){ SZ.lauf = null; SZ.laufSeit = 0; SZ.rueck = null; SZ.rueckFuer = null; return _o.apply(this, arguments); }; }
+{ const _o = szOeffnen; szOeffnen = function(){ SZ.lauf = null; SZ.laufSeit = 0; SZ.rueck = null; SZ.rueckFuer = null; SZ.da = null; SZ.daFuer = null; SZ.daAuf = false; SZ.daWeiter = null; return _o.apply(this, arguments); }; }
 function szLauf(){
   const v = document.getElementById('szVoll'), d = SZ.d, B = v && v.querySelector('#szB'); if(!B || !d) return;
   if(d.stand === 'beendet'){ SZ.lauf = null; return; }
   const F = szFolge(d), n = F.length; let i = F.findIndex(t => t.id === SZ.lauf);
-  if(SZ.lauf !== 'rueck' && SZ.lauf !== 'ende' && i < 0){ SZ.lauf = n ? F[0].id : 'ende'; i = n ? 0 : -1; }   // das Thema wurde inzwischen entfernt
+  if(SZ.lauf !== 'da' && SZ.lauf !== 'rueck' && SZ.lauf !== 'ende' && i < 0){ SZ.lauf = n ? F[0].id : 'ende'; i = n ? 0 : -1; }   // das Thema wurde inzwischen entfernt
   const min = Math.max(0, Math.round((Date.now() - SZ.laufSeit) / 60000)), durch = F.filter(t => t.status !== 'offen').length;
   let h = `<div class="sz-lf" id="szLf"><div class="sz-lf-k"><button type="button" class="btn ghost" id="szLfZu">Zur Übersicht</button><span class="sz-lf-z">${durch} von ${n} durch${min ? ' · seit ' + min + ' Min' : ''}</span></div>
     <div class="sz-lf-bal" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${durch}" aria-label="${durch} von ${n} Themen durch"><i style="width:${n ? Math.round(durch / n * 100) : 0}%"></i></div>`;
-  if(SZ.lauf === 'rueck'){
+  if(SZ.lauf === 'da'){
+    h += `<p class="sz-lf-nr"><i></i>Zum Start</p><h2 class="sz-lf-t">Wer ist heute da?</h2><p class="sz-wann">Tipp die Namen an. Das steht später im Protokoll. Stand: <span data-sz-da-z>${szDaText(d)}</span>.</p>
+      <div id="szDaL">${szDaChips(d)}</div><div class="sz-lf-nav"><button type="button" class="btn" data-sz-lf="dann">Weiter</button></div>`;
+  }else if(SZ.lauf === 'rueck'){
     h += `<p class="sz-lf-nr"><i></i>Zuerst</p><h2 class="sz-lf-t">Was ist seit dem letzten Mal passiert?</h2><div id="szRb">${szRueckHtml(SZ.rueck) || '<p class="note">Aus der letzten Sitzung ist nichts offen.</p>'}</div>
       <div class="sz-lf-nav"><button type="button" class="btn" data-sz-lf="vor">${n ? 'Zum ersten Thema' : 'Fertig'}</button></div>`;
   }else if(SZ.lauf === 'ende'){
     const bes = F.filter(t => t.status === 'besprochen').length, ver = F.filter(t => t.status === 'vertagt').length, off = n - bes - ver, auf = F.reduce((s, t) => s + t.aufgaben.length, 0);
     h += `<p class="sz-lf-nr"><i></i>Geschafft</p><h2 class="sz-lf-t">Alle Themen durch</h2>
-      <p class="sz-text" id="szLfSum">${bes} besprochen${ver ? ', ' + ver + ' vertagt' : ''}${off ? ', ' + off + ' noch offen' : ''}. ${auf} ${auf === 1 ? 'Aufgabe' : 'Aufgaben'} verteilt.${ver || off ? ' Was offen oder vertagt ist, steht beim nächsten Mal oben zum Übernehmen.' : ''}</p>
+      <p class="sz-text" id="szLfSum">${bes} besprochen${ver ? ', ' + ver + ' vertagt' : ''}${off ? ', ' + off + ' noch offen' : ''}. ${auf} ${auf === 1 ? 'Aufgabe' : 'Aufgaben'} verteilt.${ver || off ? ' Was offen oder vertagt ist, steht beim nächsten Mal wieder auf der Agenda.' : ''}</p>
       <div class="sz-lf-nav"><button type="button" class="btn ghost" data-sz-lf="zurueck">Zurück</button><button type="button" class="btn" id="szLfProt">${d.leiten ? 'Zum Protokoll und beenden' : 'Protokoll ansehen'}</button></div>`;
   }else{
     const t = F[i], wort = t.von.filter(x => x.wort && szNorm(x.wort) !== szNorm(t.titel));
@@ -35890,6 +35933,7 @@ function szLauf(){
   const oben = () => { const x = document.getElementById('szVoll'); if(x) x.scrollTop = 0; };
   B.querySelector('#szLfZu').onclick = () => { szAllesSichern(); SZ.lauf = null; szRender(); };
   const rb = B.querySelector('#szRb'); if(rb) szRueckDraht(rb);
+  const dal = B.querySelector('#szDaL'); if(dal) szDaDraht(dal, () => szDaMalen(B));
   const prot = B.querySelector('#szLfProt'); if(prot) prot.onclick = () => { SZ.lauf = null; SZ.tab = 'protokoll'; szRender(); oben(); };
   const t = i >= 0 ? F[i] : null;
   B.querySelectorAll('[data-sz-erg]').forEach(x => szTippen(x, 'e:' + x.dataset.szErg, () => szErgebnis(x.dataset.szErg, x.value), () => { if(t) t.ergebnis = x.value; }));
@@ -35899,6 +35943,7 @@ function szLauf(){
   B.querySelectorAll('[data-sz-aneu]').forEach(b => b.onclick = async () => { const ti = B.querySelector(`[data-sz-at="${t.id}"]`); if(!ti.value.trim()){ ti.focus(); return; } b.disabled = true; await szAllesSichern();
     const gut = await aufgabe(); b.disabled = false; if(!gut) return; kToast('✓ Aufgabe angelegt. Sie steht bei den To-dos.'); await szNeu(); });
   B.querySelectorAll('[data-sz-lf]').forEach(b => b.onclick = async () => { const w = b.dataset.szLf;
+    if(w === 'dann'){ SZ.daWeiter = SZ.id; SZ.lauf = szLaufZiel(d); szRender(); oben(); return; }
     if(w === 'vor'){ const e = F.find(x => x.status === 'offen') || F[0]; SZ.lauf = e ? e.id : 'ende'; szRender(); oben(); return; }
     if(w === 'zurueck'){ await szAllesSichern(); SZ.lauf = SZ.lauf === 'ende' ? (n ? F[n - 1].id : 'rueck') : i > 0 ? F[i - 1].id : (szRueckHtml(SZ.rueck) ? 'rueck' : SZ.lauf); szRender(); oben(); return; }
     if(!t) return; b.disabled = true; await szAllesSichern();

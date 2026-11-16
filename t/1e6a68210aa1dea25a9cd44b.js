@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.58',v:'0.99.58',datum:'2026-11-16',titel:'Sitzungen: wer war da, Offenes geht von selbst weiter',kurz:'Das Durchgehen fragt zuerst, wer da ist, und das steht im Protokoll. Was offen bleibt oder vertagt wird, steht nach dem Ende von selbst auf der nächsten Agenda der Reihe.',
+   punkte:[
+    {ic:'\u{1F64B}',t:'Wer ist heute da?',d:'Namen antippen oder „Alle da“. Im Protokoll stehen dann „Anwesend“ und „Nicht dabei“ direkt unter dem Datum.'},
+    {ic:'\u27A1\uFE0F',t:'Offenes wandert von selbst weiter',d:'Endet eine Sitzung, gehen vertagte und nicht besprochene Themen auf die nächste Sitzung derselben Reihe, mit Einreichern und dem letzten Stand. Steht der nächste Termin noch nicht im Kalender, bietet der Rückblick sie später an.'}]},
   {id:'0.99.57',v:'0.99.57',datum:'2026-11-16',gross:true,titel:'Sitzungen mit rotem Faden',kurz:'Jede Agenda beginnt jetzt mit dem, was seit der letzten Sitzung offen ist, und führt Thema für Thema durch den Abend.',
    punkte:[
     {ic:'\u{1F501}',t:'Seit der letzten Sitzung',d:'Oben auf der Agenda stehen die Aufgaben vom letzten Mal zum Abhaken, überfällige in Rot. Themen, die offen blieben oder vertagt wurden, holst du mit einem Tipp auf die neue Agenda.'},
@@ -1537,6 +1541,3 @@ const SV_PATCHES=[
   {id:'0.9',v:'0.9',datum:'2026-09-25',titel:'Spielstärke wie bei FIFA',kurz:'Der MScore beschreibt jetzt, wie gut ein Spieler ist, nicht in welcher Liga er gerade spielt. Jede Saison ist ein Beleg, dazu Alter, Erfahrung, Eye-Test und FuPa-MVP. Wer aus einer höheren Liga kommt und unten vorne mitspielt, verliert nicht automatisch.',
    punkte:[
     {ic:'🧮',t:'Jede Saison ein Beleg',d:'Im Spielerprofil steht für 24/25, 25/26 und die laufende Saison je ein Wert: Liga-Niveau, Rolle, Leistung im Vergleich zu Spielern derselben Liga und Position, Mannschaft, Ausnahmeleistung, FuPa-MVP und Elf der Woche. Daneben, wie stark die Saison zählt.',r:'team',go:'training'},
-    {ic:'🪜',t:'Kein Ligadeckel mehr',d:'Ein 80er aus der Gruppenliga, der in die A-Liga wechselt und dort Leistungsträger ist, bleibt nahe 80. In einer tieferen Liga kann er nach oben nichts mehr beweisen, das nennt die App Deckeneffekt. Wer dort nur Ergänzung ist, rutscht ab.'},
-    {ic:'⏳',t:'Alter und Erfahrung',d:'Bis 24 legt man zu, ab 29 geht es bergab, ab 33 deutlich, auf dem Flügel und außen schneller, innen und im Tor langsamer. Im Profil stehen Potenzial und die Prognose für die nächste Saison.',r:'scout',go:'model'},
-    {ic:'🔵',t:'FuPa-MVP direkt im Profil',d:'Den MVP-Wert aus FuPa (Team, Spielerstatistik, Spalte MVP) trägst du im Profil unter dem MScore ein. Er zeigt, wie wichtig einer für sein Team ist, und zählt als Beleg mit. Ganze Teams gehen unter Datenbank.',r:'scout',go:'db'},
