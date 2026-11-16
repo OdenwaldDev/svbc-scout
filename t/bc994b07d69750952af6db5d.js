@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.61',v:'0.99.61',datum:'2026-11-16',titel:'Partner: Mit Gespräch und VIP-Stern',kurz:'In der Firmenliste gibt es „Mit Gespräch“ neben „Ohne Gespräch“, und Wunschfirmen lassen sich mit einem Stern als VIP kennzeichnen und danach filtern.',
+   punkte:[
+    {ic:'\u{2705}',t:'Mit Gespräch',d:'Zeigt die Partner mit Anruf oder Treffen seit dem Stichtag. Mit und Ohne Gespräch zusammen ergeben alle Partner.',r:'team'},
+    {ic:'\u{2B50}',t:'VIP-Stern',d:'In der Akte einer Firma lässt sich der Stern mit einem Tipp setzen oder entfernen, im Formular als Häkchen. Der Filter „VIP“ zeigt alle Wunschfirmen, die Excel-Datei hat eine Spalte VIP. Es ist nur ein Kennzeichen, eine Rangfolge gibt es nicht.',r:'team'}
+   ]},
   {id:'0.99.60',v:'0.99.60',datum:'2026-11-16',titel:'Partner: Pakete wie im Flyer, Filter Alte Struktur und Neues Konzept',kurz:'Die vier Pakete in der Präsentation zeigen wieder alles, was auf dem Flyer steht. In der Firmenliste sieht man, wer noch aus der alten Struktur kommt und wer im neuen Konzept ist.',
    punkte:[
     {ic:'\u{1F4CB}',t:'Pakete wie im Flyer',d:'Supporter, Club, Premium und 1896 Partner nennen in der Präsentation wieder alle Leistungen des Flyers, zum Beispiel Saison-Badge, Partnerabend, Business-Treffs, Porträt und Prioritätsrechte. Preise und Plätze bleiben.',r:'team'},
@@ -1536,8 +1541,3 @@ const SV_PATCHES=[
     {ic:'🔑',t:'Gegenprobe mit dem Leseschlüssel',d:'Jeder Abgleich prüft über die KLA-API, ob Schlüssel, Datenbasis und Stand passen, und zeigt, ob die Quelle gerade noch nachlädt.',r:'admin'},
    ]},
   {id:'0.14',v:'0.14',datum:'2026-09-26',titel:'Zahlen von FuPa, automatisch',kurz:'Einsätze, Minuten, Tore, Vorlagen und der MVP von FuPa kommen jetzt von selbst in die App. Nichts muss eingetippt oder bestätigt werden.',
-   punkte:[
-    {ic:'📊',t:'Zahlen im Spielerprofil',d:'Im Profil steht jetzt „Zahlen von FuPa“ je Saison. Der MVP von FuPa fließt automatisch in den MScore, ein von Hand eingetragener Wert hat weiter Vorrang.',r:'scout'},
-    {ic:'🏆',t:'Bestenliste mit echten Einsätzen',d:'Einsätze und Minuten in der Bestenliste kommen aus FuPa, solange für eure Mannschaft keine eigenen Spiele erfasst sind.',r:'scout',go:'best'},
-    {ic:'📅',t:'Spieltag trägt sich selbst ein',d:'Gespielte Ligaspiele der Ersten landen mit Ergebnis und Aufstellung in Training → Spiele. Was ihr von Hand erfasst habt, wird nie überschrieben.',r:'team'},
-    {ic:'🔭',t:'Gegner-Vorschau und Radar',d:'Vor dem nächsten Spiel zeigt die Vorschau Tabelle, Form und die torgefährlichsten Spieler des Gegners. Im Radar steht, wer diese Woche laut FuPa aufgefallen ist, und beobachtete Spieler melden sich bei neuen Einsätzen.',r:'scout'},

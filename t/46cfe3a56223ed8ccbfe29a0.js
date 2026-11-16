@@ -1,3 +1,8 @@
+   punkte:[
+    {ic:'📊',t:'Zahlen im Spielerprofil',d:'Im Profil steht jetzt „Zahlen von FuPa“ je Saison. Der MVP von FuPa fließt automatisch in den MScore, ein von Hand eingetragener Wert hat weiter Vorrang.',r:'scout'},
+    {ic:'🏆',t:'Bestenliste mit echten Einsätzen',d:'Einsätze und Minuten in der Bestenliste kommen aus FuPa, solange für eure Mannschaft keine eigenen Spiele erfasst sind.',r:'scout',go:'best'},
+    {ic:'📅',t:'Spieltag trägt sich selbst ein',d:'Gespielte Ligaspiele der Ersten landen mit Ergebnis und Aufstellung in Training → Spiele. Was ihr von Hand erfasst habt, wird nie überschrieben.',r:'team'},
+    {ic:'🔭',t:'Gegner-Vorschau und Radar',d:'Vor dem nächsten Spiel zeigt die Vorschau Tabelle, Form und die torgefährlichsten Spieler des Gegners. Im Radar steht, wer diese Woche laut FuPa aufgefallen ist, und beobachtete Spieler melden sich bei neuen Einsätzen.',r:'scout'},
     {ic:'🛡️',t:'Datenwächter',d:'Unter Importstatus steht, wenn etwas hakt. Die Hinweise verschwinden von selbst, sobald die Ursache weg ist.',r:'admin'},
    ]},
   {id:'0.10',v:'0.10',datum:'2026-09-26',titel:'Bestenliste je Position',kurz:'Unter Scouting gibt es jetzt die Bestenliste: die besten Torhüter, Abwehrspieler, Mittelfeldspieler und Stürmer, jeweils mit den Zahlen, die für die Position zählen, und einem Satz, warum einer oben steht.',

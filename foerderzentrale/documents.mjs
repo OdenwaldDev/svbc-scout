@@ -1,4 +1,4 @@
-import { cents, euro } from "./domain.mjs?v=beta-0.99.60";
+import { cents, euro } from "./domain.mjs?v=beta-0.99.61";
 
 const ink = "#143558";
 const text = "#263b50";

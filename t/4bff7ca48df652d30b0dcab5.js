@@ -596,7 +596,7 @@ function pzZeile(x,gross){
   const ruhe=['angeschrieben','angebot'].includes(x.status)?pzStill(x):null, still=ruhe&&ruhe.tage>=14;
   return `<article class="pz-z${gross?' gr':''}" data-pzakte="${pzE(x.id)}" tabindex="0" aria-label="${pzE(x.firma)} öffnen">
     <span class="pz-lg" style="--lc:${pzFarbe(x.firma)}" aria-hidden="true">${pzE(pzKurz(x.firma))}</span>
-    <div class="pz-zt"><b>${pzE(x.firma)}${typeof spoNeuK==='function'&&spoNeuK(x)?' <span class="pz-best pz-neuk">Neues Konzept</span>':x.bestand?' <span class="pz-best">Bestand</span>':''}</b><small>${pzE(unter)}${w.prio?` <em class="pz-prio p${w.prio}"${w.score?` title="Bewertung ${w.score} von 100"`:''}>${PZ_PRIO[w.prio]}</em>`:''}</small>
+    <div class="pz-zt"><b>${pzE(x.firma)}${x.vip?' <span class="pz-vip" title="VIP-Firma" aria-label="VIP-Firma">★</span>':''}${typeof spoNeuK==='function'&&spoNeuK(x)?' <span class="pz-best pz-neuk">Neues Konzept</span>':x.bestand?' <span class="pz-best">Bestand</span>':''}</b><small>${pzE(unter)}${w.prio?` <em class="pz-prio p${w.prio}"${w.score?` title="Bewertung ${w.score} von 100"`:''}>${PZ_PRIO[w.prio]}</em>`:''}</small>
       ${tipp?`<span class="pz-tipp">${pzE(tipp)}</span>`:!x.faellig&&s.h&&x.status!=='partner'?`<span class="pz-tipp pz-grund">${pzE(s.h)}</span>`:''}${x.faellig&&x.status!=='partner'&&!gz?`<span class="pz-tipp${x.faellig<=svtHeute()?' rot':''}">${SVI('clock')} ${pzE(spoDat(x.faellig))}</span>`:''}
       ${still?`<span class="pz-ruhe">Seit dem ${pzE(spoDat(ruhe.am))} nichts mehr vermerkt</span>`:''}
       <span class="pz-spur" aria-label="Station ${i+1} von 5">${spur}</span></div>

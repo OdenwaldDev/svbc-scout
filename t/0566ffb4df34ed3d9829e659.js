@@ -212,22 +212,24 @@ function spoAktiv(saison){ const s=+saison.slice(0,2); return SPO.V.filter(v=>v.
 
 /* ---------- Firmen (von der Idee bis zum Partner) ---------- */
 // Eine Firmenliste: dieselbe Zeile wie in der Zentrale (nächster Schritt mit Hauptknopf), fünf Filter, „Bestand“ als Etikett an der Zeile
-const SPO_FILTER=[['offen','Unterwegs'],['partner','Partner'],['alt','Alte Struktur'],['neu','Neues Konzept'],['ohneges','Ohne Gespräch'],['abgesagt','Abgesagt'],['pausiert','Pausiert'],['alle','Alle']];
+const SPO_FILTER=[['offen','Unterwegs'],['partner','Partner'],['alt','Alte Struktur'],['neu','Neues Konzept'],['mitges','Mit Gespräch'],['ohneges','Ohne Gespräch'],['vip','★ VIP'],['abgesagt','Abgesagt'],['pausiert','Pausiert'],['alle','Alle']];
 // Ohne Gespräch (Sven, 16.11.2026): Partner, bei denen seit der Neuausrichtung weder ein Anruf noch ein Treffen eingetragen ist. Stichtag ist wählbar und bleibt je Gerät stehen (Vorgabe: Saisonbeginn 01.07.2026).
 function spoNeu(){ let v=''; try{ v=localStorage.getItem('sv_spo_neu')||''; }catch(e){} return /^\d{4}-\d\d-\d\d$/.test(v)?v:'2026-07-01'; }
 function spoGespr(x,seit){ return SPO.K.some(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')&&String(k.am||'')>=seit); }
 function spoOhneGes(x){ return x.status==='partner'&&!spoGespr(x,spoNeu()); }
+function spoMitGes(x){ return x.status==='partner'&&spoGespr(x,spoNeu()); }   // Gegenstück (Sven, 16.11.2026): mit plus ohne Gespräch ergibt alle Partner
+function spoVip(x){ return !!x.vip; }   // Wunschfirma (Sven, 16.11.2026): nur ein Stern, keine Rangfolge
 // Alte Struktur oder neues Konzept (Albert, 16.11.2026): Ziel ist das neue Konzept für alle Partner. Überführt heißt: ein unterschriebener oder aktiver Vertrag im neuen Vertragssystem (partner_vertraege). Wer Partner ist und so einen Vertrag noch nicht hat, gehört zur alten Struktur.
 function spoNeuK(x){ if(!x||x.status!=='partner'||typeof PE==='undefined'||!PE.d)return false; const h=typeof svtHeute==='function'?svtHeute():new Date().toISOString().slice(0,10); return (PE.d.vertraege||[]).some(v=>v.sponsor===x.id&&v.art!=='spende'&&['unterschrieben','aktiv'].includes(v.status)&&(!v.ende||v.ende>=h)); }
 function spoAlt(x){ return x.status==='partner'&&!spoNeuK(x); }
-function spoZahl(k){ return k==='ohneges'?SPO.S.filter(spoOhneGes).length:k==='alt'?SPO.S.filter(spoAlt).length:k==='neu'?SPO.S.filter(spoNeuK).length:null; }
+function spoZahl(k){ return k==='ohneges'?SPO.S.filter(spoOhneGes).length:k==='mitges'?SPO.S.filter(spoMitGes).length:k==='vip'?SPO.S.filter(spoVip).length:k==='alt'?SPO.S.filter(spoAlt).length:k==='neu'?SPO.S.filter(spoNeuK).length:null; }
 function spoChips(B){ B.querySelectorAll('[data-spoff]').forEach(b=>{ const k=b.dataset.spoff, n=spoZahl(k); if(n!==null)b.textContent=(SPO_FILTER.find(f=>f[0]===k)||[0,''])[1]+' ('+n+')'; }); }
 function spoListe(B){
   const stat=['idee','angeschrieben','gespraech','angebot'].includes(SPO.flt)?SPO.flt:null;   // Station aus der Zentrale
   if(!stat&&!SPO_FILTER.some(f=>f[0]===SPO.flt))SPO.flt='offen';
   B.innerHTML=`<div class="pz pz-flach"><section class="pz-papier"><div class="svt-ch spo-fk"><label class="pz-such">${SVI('search')}<input type="search" id="spoQ" placeholder="Firma, Ansprechpartner, Branche" value="${svEsc(SPO.q)}" autocomplete="off" aria-label="Firmen durchsuchen"></label><button class="pz-b2 spo-neu" id="spoNeu" type="button">${SVI('plus')} Firma</button></div>
     <div class="spo-f2" role="group" aria-label="Auswahl">${(stat?[[stat,SPO_STL[stat]]]:[]).concat(SPO_FILTER).map(([k,l])=>`<button type="button" class="${SPO.flt===k?'on':''}" data-spoff="${k}" aria-pressed="${SPO.flt===k}">${l}${spoZahl(k)!==null?` (${spoZahl(k)})`:''}</button>`).join('')}</div>
-    <div class="spo-ges" id="spoGes" hidden><label>Seit <input type="date" id="spoNeuD" value="${spoNeu()}" aria-label="Kein Anruf und kein Treffen seit"></label><span>kein Anruf und kein Treffen eingetragen</span></div>
+    <div class="spo-ges" id="spoGes" hidden><label>Seit <input type="date" id="spoNeuD" value="${spoNeu()}" aria-label="Kein Anruf und kein Treffen seit"></label><span id="spoGesT">kein Anruf und kein Treffen eingetragen</span></div>
     ${swxZeile('Stand weiter','abgesagt')}
     <div class="spo-l pz-liste"></div>
     <p class="spo-csvz"><button type="button" class="pz-b2" id="spoCsv">Auswahl als Excel-Datei laden</button><span>Die Liste hier ist die einzige Pflege. Die Datei ist nur ein Abzug zum Weitergeben.</span></p></section></div>`;
@@ -235,7 +237,7 @@ function spoListe(B){
   const qi=B.querySelector('#spoQ'); qi.oninput=()=>{ SPO.q=qi.value; spoListeZeilen(B); };
   B.querySelector('#spoNeu').onclick=()=>spoForm(null);
   B.querySelector('#spoCsv').onclick=()=>spoCsv();
-  const gz=()=>{ const g=B.querySelector('#spoGes'); if(g)g.hidden=SPO.flt!=='ohneges'; }; gz();
+  const gz=()=>{ const g=B.querySelector('#spoGes'); if(g)g.hidden=SPO.flt!=='ohneges'&&SPO.flt!=='mitges'; const t=B.querySelector('#spoGesT'); if(t)t.textContent=SPO.flt==='mitges'?'Anruf oder Treffen eingetragen':'kein Anruf und kein Treffen eingetragen'; }; gz();
   B.querySelectorAll('[data-spoff]').forEach(b=>b.onclick=()=>{ SPO.flt=b.dataset.spoff; B.querySelectorAll('[data-spoff]').forEach(x=>{ x.classList.toggle('on',x===b); x.setAttribute('aria-pressed',x===b); }); gz(); spoListeZeilen(B); });
   const nd=B.querySelector('#spoNeuD'); if(nd)nd.onchange=()=>{ if(/^\d{4}-\d\d-\d\d$/.test(nd.value)){ try{ localStorage.setItem('sv_spo_neu',nd.value); }catch(e){} spoChips(B); spoListeZeilen(B); } };
   spoListeZeilen(B);
@@ -244,7 +246,7 @@ function spoListe(B){
 }
 function spoListeZeilen(B){
   const H=B.querySelector('.spo-l'); if(!H)return; const q=SPO.q.trim().toLowerCase(), weg=['idee','angeschrieben','gespraech','angebot'];
-  const L=SPO.S.filter(x=>SPO.flt==='alle'||(SPO.flt==='ohneges'?spoOhneGes(x):SPO.flt==='alt'?spoAlt(x):SPO.flt==='neu'?spoNeuK(x):SPO.flt==='offen'?weg.includes(x.status):x.status===SPO.flt))
+  const L=SPO.S.filter(x=>SPO.flt==='alle'||(SPO.flt==='ohneges'?spoOhneGes(x):SPO.flt==='mitges'?spoMitGes(x):SPO.flt==='vip'?spoVip(x):SPO.flt==='alt'?spoAlt(x):SPO.flt==='neu'?spoNeuK(x):SPO.flt==='offen'?weg.includes(x.status):x.status===SPO.flt))
     .filter(x=>!q||(x.firma+' '+(x.ansprechpartner||'')+' '+(x.branche||'')+' '+(x.ort||'')+' '+(x.notiz||'')).toLowerCase().includes(q))
     .sort((a,b)=>{ const i=weg.indexOf(a.status), j=weg.indexOf(b.status); if(j-i)return j-i;
       if(a.status==='idee'&&typeof pzWert==='function'){ const d=pzWert(b).rang-pzWert(a).rang; if(d)return d; }   // Ideen wie in der Zentrale nach Kriterienmatrix
@@ -255,9 +257,9 @@ function spoListeZeilen(B){
 }
 // Abzug der gerade gezeigten Auswahl für Excel (Semikolon, UTF-8 mit Kennung). Kein Datenabgleich zurück: gepflegt wird nur in der App.
 function spoCsv(){ const L=SPO.zeigt||[]; const z=v=>'"'+String(v==null?'':v).replace(/"/g,'""').replace(/\r?\n/g,' ')+'"';
-  const kopf=['Firma','Ansprechpartner','Funktion','E-Mail','Telefon','Straße','Ort','Branche','Stand','Bestandspartner','Konzept','Letzter Anruf oder Treffen','Nächster Schritt','Notiz'];
+  const kopf=['Firma','Ansprechpartner','Funktion','E-Mail','Telefon','Straße','Ort','Branche','Stand','Bestandspartner','VIP','Konzept','Letzter Anruf oder Treffen','Nächster Schritt','Notiz'];
   const letzt=x=>{ const k=SPO.K.filter(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')).map(k=>String(k.am||'')).sort().pop(); return k?k.slice(8,10)+'.'+k.slice(5,7)+'.'+k.slice(0,4):''; };
-  const zeilen=L.map(x=>[x.firma,x.ansprechpartner,x.funktion,x.email,x.telefon,x.strasse,x.ort,x.branche,SPO_STL[x.status]||x.status,x.bestand?'ja':'nein',x.status!=='partner'?'':spoNeuK(x)?'neu':'alt',letzt(x),x.naechster,x.notiz].map(z).join(';'));
+  const zeilen=L.map(x=>[x.firma,x.ansprechpartner,x.funktion,x.email,x.telefon,x.strasse,x.ort,x.branche,SPO_STL[x.status]||x.status,x.bestand?'ja':'nein',x.vip?'ja':'nein',x.status!=='partner'?'':spoNeuK(x)?'neu':'alt',letzt(x),x.naechster,x.notiz].map(z).join(';'));
   const txt='\ufeff'+[kopf.map(z).join(';')].concat(zeilen).join('\r\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'})); const d=new Date(); a.download='partner-'+d.toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
 // Stand ändern. Mit log entsteht ein Verlaufseintrag; zurück kommt dessen id, damit Rückgängig genau diesen Eintrag wieder löscht.
@@ -285,8 +287,9 @@ function spoSponsor(id){
   const x=SPO.S.find(s=>s.id===id); if(!x)return; const K=SPO.K.filter(k=>k.sponsor===id), L=SPO.L.filter(l=>l.sponsor===id), V=SPO.V.filter(v=>v.sponsor===id);
   // Akte in den Vereinsfarben (Navy, Orange, Creme), Avatar wie in der Zentrale
   const kz=typeof pzKurz==='function'?pzKurz(x.firma):x.firma.slice(0,2).toUpperCase(), kf=typeof pzFarbe==='function'?pzFarbe(x.firma):'#1d2760';
-  const M=svModal(`<div class="spo-akte"><div class="mhead"><div class="spo-av pz-lg" style="--lc:${kf}">${svEsc(kz)}</div><div><h2 style="margin:0">${svEsc(x.firma)}</h2>
+  const M=svModal(`<div class="spo-akte"><div class="mhead"><div class="spo-av pz-lg" style="--lc:${kf}">${svEsc(kz)}</div><div><h2 style="margin:0">${svEsc(x.firma)}${x.vip?' <span class="pz-vip" title="VIP-Firma">★</span>':''}</h2>
       <div class="msub">${[x.ansprechpartner&&(x.ansprechpartner+(x.funktion?' ('+x.funktion+')':'')),x.branche,x.bestand?'Bestandspartner':''].filter(Boolean).map(svEsc).join(' · ')}</div></div></div>
+    <p class="spo-vipz"><button type="button" class="spo-link" id="spoVip" aria-pressed="${x.vip?'true':'false'}">${x.vip?'★ VIP-Firma, Kennzeichen entfernen':'☆ Als VIP-Firma kennzeichnen'}</button></p>
     ${spoAkteSchritt(x)}
     <p class="spo-stand">Stand: <b>${svEsc(SPO_STL[x.status]||x.status)}</b> · <button type="button" class="spo-link" id="spoStA" aria-expanded="false">ändern</button></p>
     <div class="spo-stbar" id="spoStB" hidden>${SPO_ST.map(([k,l])=>`<button type="button" class="${x.status===k?'on s-'+k:''}" data-spost="${k}" aria-pressed="${x.status===k}">${l}</button>`).join('')}</div>
@@ -317,6 +320,7 @@ function spoSponsor(id){
     await stand(st); }));
   const pfv=M.querySelector('#spoPFv'); if(pfv)pfv.onclick=()=>paEinmal(pfv,()=>spoVertragLos(x));
   M.querySelector('#spoPFn').onclick=()=>{ pf.hidden=true; };
+  const vb=M.querySelector('#spoVip'); if(vb)vb.onclick=()=>paEinmal(vb,async()=>{ try{ const {error}=await SVB.sb.from('sponsoren').update({vip:!x.vip,geaendert_am:new Date().toISOString()}).eq('id',x.id); if(error)throw error; kToast(x.vip?'VIP-Kennzeichen entfernt':'★ Als VIP-Firma gekennzeichnet'); await spoLoad(true); spoSponsor(x.id); spoBody(); }catch(e){ kToast('⚠️ '+e.message); } },'Speichert …');
   const pfj=M.querySelector('#spoPFj'); pfj.onclick=()=>paEinmal(pfj,async()=>{ try{ const {error}=await SVB.sb.from('sponsoren').update({bestand:true,geaendert_am:new Date().toISOString()}).eq('id',x.id); if(error)throw error; x.bestand=true; }catch(e){ kToast('⚠️ '+e.message); return; } await stand('partner'); });
   let art=null; const kn=M.querySelector('#spoKN');
   M.querySelectorAll('[data-spoka]').forEach(b=>b.onclick=()=>{ art=b.dataset.spoka; M.querySelectorAll('[data-spoka]').forEach(y=>y.classList.toggle('on',y===b)); kn.hidden=false; M.querySelector('#spoKNt').focus(); });
@@ -396,6 +400,7 @@ function spoForm(x){
       <div class="field"><label>Stand</label><select name="status">${SPO_ST.filter(([k])=>k!=='partner'||x.status==='partner'||x.bestand||(x.id&&spoHatVertrag(x.id))).map(([k,l])=>`<option value="${k}"${x.status===k?' selected':''}>${l}</option>`).join('')}</select>
         ${x.status==='partner'||x.bestand||(x.id&&spoHatVertrag(x.id))?'':'<small class="note">„Partner“ wird eine Firma über den Vertrag. Alte Partner: Häkchen „Bestandspartner“ setzen.</small>'}</div>
       <label class="svt-cb"><input type="checkbox" name="bestand"${x.bestand?' checked':''}> Bestandspartner</label>
+      <label class="svt-cb"><input type="checkbox" name="vip"${x.vip?' checked':''}> VIP-Firma (Wunschpartner)</label>
       <div class="field"><label>Dürfen wir sie öffentlich als Partner nennen</label><select name="nennung">${[['offen','Noch nicht gefragt'],['ja','Ja, wir dürfen'],['nein','Nein, lieber nicht']].map(([k,l])=>`<option value="${k}"${(x.nennung||'offen')===k?' selected':''}>${l}</option>`).join('')}</select>
         <small class="note">Nur der Firmenname, nur auf unseren eigenen Seiten. Mit „Ja“ steht die Firma in der Infobox „Aktuelle Partner“ in der Partner-Präsentation.</small></div>
       <div class="field"><label>Nächster Schritt</label><input name="naechster" maxlength="200" placeholder="z.B. Präsentation schicken" value="${svEsc(x.naechster||'')}"></div>
@@ -407,7 +412,7 @@ function spoForm(x){
     const {error}=await SVB.sb.from('sponsoren').delete().eq('id',x.id); if(error)return kToast('⚠️ '+(/foreign|violates/.test(error.message)?'Mit Vertrag nicht löschbar. Stand auf „Pausiert“ setzen.':error.message)); closeOverlay(); spoReload(); };
   M.querySelector('#spoF').onsubmit=async e=>{ e.preventDefault(); const fd=new FormData(e.target), r={};
     ['firma','anrede','ansprechpartner','funktion','email','telefon','strasse','ort','web','branche','status','naechster','faellig','notiz'].forEach(k=>{ const v=String(fd.get(k)||'').trim(); r[k]=v||null; });
-    r.firma=r.firma||''; r.status=r.status||'idee'; r.bestand=fd.has('bestand'); r.geaendert_am=new Date().toISOString();
+    r.firma=r.firma||''; r.status=r.status||'idee'; r.bestand=fd.has('bestand'); r.vip=fd.has('vip'); r.geaendert_am=new Date().toISOString();
     { const nn=String(fd.get('nennung')||'offen'); if(['offen','ja','nein'].includes(nn)){ r.nennung=nn; if(nn!==(x.nennung||'offen'))r.nennung_am=new Date().toISOString(); } }
     const q=x.id?SVB.sb.from('sponsoren').update(r).eq('id',x.id).select().single():SVB.sb.from('sponsoren').insert(r).select().single();
     const {data,error}=await q; if(error)return kToast('⚠️ '+(/duplicate|unique/.test(error.message)?'Diese Firma gibt es schon':error.message));

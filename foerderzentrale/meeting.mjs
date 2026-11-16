@@ -1,5 +1,5 @@
-import { categories, euro, instruments, isOriginal, sourceUrl } from "./domain.mjs?v=beta-0.99.60";
-import { priority, priorityCard, prioritySummary, cleanAssessment, horizonLabels } from './priority.mjs?v=beta-0.99.60';
+import { categories, euro, instruments, isOriginal, sourceUrl } from "./domain.mjs?v=beta-0.99.61";
+import { priority, priorityCard, prioritySummary, cleanAssessment, horizonLabels } from './priority.mjs?v=beta-0.99.61';
 
 const decisions = { prepare: "Vorbereiten", clarify: "Zuerst klären", defer: "Zurückstellen" };
 const bundles = [
