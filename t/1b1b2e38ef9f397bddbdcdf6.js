@@ -212,30 +212,47 @@ function spoAktiv(saison){ const s=+saison.slice(0,2); return SPO.V.filter(v=>v.
 
 /* ---------- Firmen (von der Idee bis zum Partner) ---------- */
 // Eine Firmenliste: dieselbe Zeile wie in der Zentrale (nächster Schritt mit Hauptknopf), fünf Filter, „Bestand“ als Etikett an der Zeile
-const SPO_FILTER=[['offen','Unterwegs'],['partner','Partner'],['abgesagt','Abgesagt'],['pausiert','Pausiert'],['alle','Alle']];
+const SPO_FILTER=[['offen','Unterwegs'],['partner','Partner'],['ohneges','Ohne Gespräch'],['abgesagt','Abgesagt'],['pausiert','Pausiert'],['alle','Alle']];
+// Ohne Gespräch (Sven, 16.11.2026): Partner, bei denen seit der Neuausrichtung weder ein Anruf noch ein Treffen eingetragen ist. Stichtag ist wählbar und bleibt je Gerät stehen (Vorgabe: Saisonbeginn 01.07.2026).
+function spoNeu(){ let v=''; try{ v=localStorage.getItem('sv_spo_neu')||''; }catch(e){} return /^\d{4}-\d\d-\d\d$/.test(v)?v:'2026-07-01'; }
+function spoGespr(x,seit){ return SPO.K.some(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')&&String(k.am||'')>=seit); }
+function spoOhneGes(x){ return x.status==='partner'&&!spoGespr(x,spoNeu()); }
 function spoListe(B){
   const stat=['idee','angeschrieben','gespraech','angebot'].includes(SPO.flt)?SPO.flt:null;   // Station aus der Zentrale
   if(!stat&&!SPO_FILTER.some(f=>f[0]===SPO.flt))SPO.flt='offen';
   B.innerHTML=`<div class="pz pz-flach"><section class="pz-papier"><div class="svt-ch spo-fk"><label class="pz-such">${SVI('search')}<input type="search" id="spoQ" placeholder="Firma, Ansprechpartner, Branche" value="${svEsc(SPO.q)}" autocomplete="off" aria-label="Firmen durchsuchen"></label><button class="pz-b2 spo-neu" id="spoNeu" type="button">${SVI('plus')} Firma</button></div>
-    <div class="spo-f2" role="group" aria-label="Auswahl">${(stat?[[stat,SPO_STL[stat]]]:[]).concat(SPO_FILTER).map(([k,l])=>`<button type="button" class="${SPO.flt===k?'on':''}" data-spoff="${k}" aria-pressed="${SPO.flt===k}">${l}</button>`).join('')}</div>
+    <div class="spo-f2" role="group" aria-label="Auswahl">${(stat?[[stat,SPO_STL[stat]]]:[]).concat(SPO_FILTER).map(([k,l])=>`<button type="button" class="${SPO.flt===k?'on':''}" data-spoff="${k}" aria-pressed="${SPO.flt===k}">${l}${k==='ohneges'?` (${SPO.S.filter(spoOhneGes).length})`:''}</button>`).join('')}</div>
+    <div class="spo-ges" id="spoGes" hidden><label>Seit <input type="date" id="spoNeuD" value="${spoNeu()}" aria-label="Kein Anruf und kein Treffen seit"></label><span>kein Anruf und kein Treffen eingetragen</span></div>
     ${swxZeile('Stand weiter','abgesagt')}
-    <div class="spo-l pz-liste"></div></section></div>`;
+    <div class="spo-l pz-liste"></div>
+    <p class="spo-csvz"><button type="button" class="pz-b2" id="spoCsv">Auswahl als Excel-Datei laden</button><span>Die Liste hier ist die einzige Pflege. Die Datei ist nur ein Abzug zum Weitergeben.</span></p></section></div>`;
   // Suche zeichnet nur die Liste neu: Das Eingabefeld bleibt stehen, die Tastatur am iPhone bleibt offen
   const qi=B.querySelector('#spoQ'); qi.oninput=()=>{ SPO.q=qi.value; spoListeZeilen(B); };
   B.querySelector('#spoNeu').onclick=()=>spoForm(null);
-  B.querySelectorAll('[data-spoff]').forEach(b=>b.onclick=()=>{ SPO.flt=b.dataset.spoff; B.querySelectorAll('[data-spoff]').forEach(x=>{ x.classList.toggle('on',x===b); x.setAttribute('aria-pressed',x===b); }); spoListeZeilen(B); });
+  B.querySelector('#spoCsv').onclick=()=>spoCsv();
+  const gz=()=>{ const g=B.querySelector('#spoGes'); if(g)g.hidden=SPO.flt!=='ohneges'; }; gz();
+  B.querySelectorAll('[data-spoff]').forEach(b=>b.onclick=()=>{ SPO.flt=b.dataset.spoff; B.querySelectorAll('[data-spoff]').forEach(x=>{ x.classList.toggle('on',x===b); x.setAttribute('aria-pressed',x===b); }); gz(); spoListeZeilen(B); });
+  const nd=B.querySelector('#spoNeuD'); if(nd)nd.onchange=()=>{ if(/^\d{4}-\d\d-\d\d$/.test(nd.value)){ try{ localStorage.setItem('sv_spo_neu',nd.value); }catch(e){} const n=SPO.S.filter(spoOhneGes).length; const c=B.querySelector('[data-spoff="ohneges"]'); if(c)c.textContent='Ohne Gespräch ('+n+')'; spoListeZeilen(B); } };
   spoListeZeilen(B);
 }
 function spoListeZeilen(B){
   const H=B.querySelector('.spo-l'); if(!H)return; const q=SPO.q.trim().toLowerCase(), weg=['idee','angeschrieben','gespraech','angebot'];
-  const L=SPO.S.filter(x=>SPO.flt==='alle'||(SPO.flt==='offen'?weg.includes(x.status):x.status===SPO.flt))
+  const L=SPO.S.filter(x=>SPO.flt==='alle'||(SPO.flt==='ohneges'?spoOhneGes(x):SPO.flt==='offen'?weg.includes(x.status):x.status===SPO.flt))
     .filter(x=>!q||(x.firma+' '+(x.ansprechpartner||'')+' '+(x.branche||'')+' '+(x.ort||'')+' '+(x.notiz||'')).toLowerCase().includes(q))
     .sort((a,b)=>{ const i=weg.indexOf(a.status), j=weg.indexOf(b.status); if(j-i)return j-i;
       if(a.status==='idee'&&typeof pzWert==='function'){ const d=pzWert(b).rang-pzWert(a).rang; if(d)return d; }   // Ideen wie in der Zentrale nach Kriterienmatrix
       return String(a.firma).localeCompare(String(b.firma),'de'); });
+  SPO.zeigt=L;
   H.innerHTML=L.map(x=>`<div class="spo-zr" data-spor="${svEsc(x.id)}">${pzZeile(x,false)}</div>`).join('')||'<p class="pz-leer">Keine Firmen in dieser Auswahl.</p>';
   if(typeof pzVerdrahten==='function')pzVerdrahten(H);
 }
+// Abzug der gerade gezeigten Auswahl für Excel (Semikolon, UTF-8 mit Kennung). Kein Datenabgleich zurück: gepflegt wird nur in der App.
+function spoCsv(){ const L=SPO.zeigt||[]; const z=v=>'"'+String(v==null?'':v).replace(/"/g,'""').replace(/\r?\n/g,' ')+'"';
+  const kopf=['Firma','Ansprechpartner','Funktion','E-Mail','Telefon','Straße','Ort','Branche','Stand','Bestandspartner','Letzter Anruf oder Treffen','Nächster Schritt','Notiz'];
+  const letzt=x=>{ const k=SPO.K.filter(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')).map(k=>String(k.am||'')).sort().pop(); return k?k.slice(8,10)+'.'+k.slice(5,7)+'.'+k.slice(0,4):''; };
+  const zeilen=L.map(x=>[x.firma,x.ansprechpartner,x.funktion,x.email,x.telefon,x.strasse,x.ort,x.branche,SPO_STL[x.status]||x.status,x.bestand?'ja':'nein',letzt(x),x.naechster,x.notiz].map(z).join(';'));
+  const txt='\ufeff'+[kopf.map(z).join(';')].concat(zeilen).join('\r\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'})); const d=new Date(); a.download='partner-'+d.toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
 // Stand ändern. Mit log entsteht ein Verlaufseintrag; zurück kommt dessen id, damit Rückgängig genau diesen Eintrag wieder löscht.
 async function spoStatus(x,st,log){
   const {error}=await SVB.sb.from('sponsoren').update({status:st,geaendert_am:new Date().toISOString()}).eq('id',x.id); if(error)throw error;

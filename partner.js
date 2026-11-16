@@ -16,7 +16,7 @@
   const eur=(n,d)=>PLIB.eur(n,d);
   // 0.99.53: kurzer Ablauf (Albert, 16.11.2026: zu unübersichtlich, zu langweilig). Ohne Station „Bis 2030“, ohne die Beispielliste „Was es bewirkt", ohne die Zweite.
   const KURZ=true;
-  const CA_KEYS=['aermel_erste','aermel_zweite','trikot_jugend'], ca=l=>l&&CA_KEYS.indexOf(l.key)>=0?'ca. ':'';   // 0.99.52: Richtwert, die Spanne steht im Text der Leistung
+  const CA_KEYS=['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend'], ca=l=>l&&CA_KEYS.indexOf(l.key)>=0?'ca. ':'';   // 0.99.52: Richtwert, die Spanne steht im Text der Leistung
   const hp=new URLSearchParams(location.hash.slice(1)), code=(hp.get('d')||'').toLowerCase();
   const $=s=>document.querySelector(s);
   const WAPPEN='partner/wappen.png';

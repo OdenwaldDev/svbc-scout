@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.59',v:'0.99.59',datum:'2026-11-16',titel:'Partner: Filter „Ohne Gespräch“, Liste als Excel-Datei, Daten richtiggestellt',kurz:'In der Firmenliste zeigt „Ohne Gespräch“, bei welchen Partnern seit der Neuausrichtung kein Anruf und kein Treffen eingetragen ist. Die Auswahl lässt sich als Excel-Datei laden.',
+   punkte:[
+    {ic:'\u{1F50E}',t:'Ohne Gespräch',d:'Zeigt die Partner, bei denen seit dem Stichtag (Vorgabe 1. Juli 2026, änderbar) weder ein Anruf noch ein Treffen eingetragen ist. Der Zähler steht gleich am Knopf.',r:'team'},
+    {ic:'\u{1F4C4}',t:'Liste als Excel-Datei',d:'Unten in der Firmenliste: die gezeigte Auswahl als Datei laden. Gepflegt wird nur in der App, die Datei ist ein Abzug zum Weitergeben.',r:'team'},
+    {ic:'\u{1F455}',t:'Ärmel, Felix und BB',d:'Der Ärmel der Jugend kostet im Richtwert wie bei den anderen ca. 600 Euro. Felix Lohrer hat sein eigenes Büro und steht jetzt als eigene Firma da. BB Berns&Baltz hat sein Logo.',r:'team'}]},
   {id:'0.99.58',v:'0.99.58',datum:'2026-11-16',titel:'Sitzungen: wer war da, Offenes geht von selbst weiter',kurz:'Das Durchgehen fragt zuerst, wer da ist, und das steht im Protokoll. Was offen bleibt oder vertagt wird, steht nach dem Ende von selbst auf der nächsten Agenda der Reihe.',
    punkte:[
     {ic:'\u{1F64B}',t:'Wer ist heute da?',d:'Namen antippen oder „Alle da“. Im Protokoll stehen dann „Anwesend“ und „Nicht dabei“ direkt unter dem Datum.'},
@@ -1536,8 +1541,3 @@ const SV_PATCHES=[
    punkte:[
     {ic:'🏆',t:'Wer ist ein super Torwart?',d:'Torhüter und Abwehr werden an den Gegentoren ihrer Mannschaft im Vergleich zur Liga gemessen, mit ihrer Einsatzquote daneben. Wer weniger als die Hälfte spielt, ist als Ersatz markiert.',r:'scout',go:'best'},
     {ic:'⚽',t:'Tore, Tore je Spiel, Anteil',d:'Vorne zählen Tore, Tore je Spiel und der Anteil an den Teamtoren. Tore je Spiel lassen sich ligabereinigt vergleichen, im Maßstab der Kreisliga A.'},
-    {ic:'🔎',t:'Filter für die Kaderplanung',d:'Laufende Saison oder 25/26 komplett, Liga, Alter und eigene Spieler ein oder aus. Sortieren nach Stärke, Toren, Einsatz, Eye-Test oder Trainernote.',r:'scout',go:'best'},
-    {ic:'📥',t:'Vorlagen und Noten',d:'Vorlagen und Trainernoten erscheinen, sobald sie in der App stehen, zum Beispiel aus euren übernommenen Spielen.',r:'team',go:'training'}]},
-  {id:'0.9',v:'0.9',datum:'2026-09-25',titel:'Spielstärke wie bei FIFA',kurz:'Der MScore beschreibt jetzt, wie gut ein Spieler ist, nicht in welcher Liga er gerade spielt. Jede Saison ist ein Beleg, dazu Alter, Erfahrung, Eye-Test und FuPa-MVP. Wer aus einer höheren Liga kommt und unten vorne mitspielt, verliert nicht automatisch.',
-   punkte:[
-    {ic:'🧮',t:'Jede Saison ein Beleg',d:'Im Spielerprofil steht für 24/25, 25/26 und die laufende Saison je ein Wert: Liga-Niveau, Rolle, Leistung im Vergleich zu Spielern derselben Liga und Position, Mannschaft, Ausnahmeleistung, FuPa-MVP und Elf der Woche. Daneben, wie stark die Saison zählt.',r:'team',go:'training'},
