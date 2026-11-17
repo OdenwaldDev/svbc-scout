@@ -1,3 +1,160 @@
+(function(){ try{ const s=document.createElement('style'); s.id='svm58css'; s.textContent="/* Heute: Liste der häufigsten Bereiche je Rolle, im Stil einer iPhone-Einstellungsliste */\n.ht{margin:4px 0 18px}\n.ht-h{font-size:20px;font-weight:750;letter-spacing:-.02em;margin:0 4px 10px;color:var(--ink);text-wrap:balance}\n.ht-liste{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}\n.ht-z,.ht-mehr{display:flex;align-items:center;gap:14px;width:100%;min-height:60px;padding:10px 14px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}\n.ht-z+.ht-z::before{content:\"\";position:absolute;top:0;left:58px;right:0;height:1px;background:var(--line)}\n.ht-z:active,.ht-mehr:active{background:var(--card2)}\n@media (hover:hover){.ht-z:hover,.ht-mehr:hover{background:var(--card2)}}\n.ht-z:focus-visible,.ht-mehr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}\n.ht-ic{flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--c);color:#fff}\n.ht-ic svg{width:18px;height:18px;stroke-width:2.1}\n.ht-tx{flex:1;min-width:0;display:grid;gap:2px}\n.ht-tx b{font-size:16px;font-weight:620;letter-spacing:-.01em;line-height:1.25}\n.ht-tx small{font-size:13.5px;color:var(--ink2);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.ht-tx small.ht-heute{color:var(--accent);font-weight:600}\n.ht-n{flex:none;min-width:24px;height:24px;padding:0 7px;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;background:var(--card2);color:var(--ink2)}\n.ht-n.rot{background:var(--red);color:#fff}\n.ht-pf{flex:none;color:var(--ink3);display:grid;place-items:center;transition:transform .2s var(--ease,ease)}\n.ht-pf svg{width:16px;height:16px;stroke-width:2.4}\n.ht-pf.auf{transform:rotate(90deg)}\n/* Zugeklappte Scouting-Listen */\n.ht-mehr{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);margin:4px 0 16px;justify-content:space-between}\n.ht-mehr span:first-child{display:grid;gap:2px}\n.ht-mehr b{font-size:16px;font-weight:620}\n.ht-mehr small{font-size:13.5px;color:var(--ink2)}\n#panel-home.ht-kompakt:not(.ht-offen)>:is(#vrHome,#homeTiles,#homeKand,#svAct,#homeCrm,.sechead,#homeFocus,#homeWechsel,#homeGems,.frow,#homePress){display:none!important}\n/* Die neue Liste ersetzt die Schnellknöpfe im Cockpit, Hinweise und Lagebild bleiben */\n#panel-home.ht-kompakt #svCockpit .svc-acts,#panel-home.ht-kompakt #svCockpit .svc-top{display:none!important}\n@media (prefers-reduced-motion:reduce){.ht-pf{transition:none}}\n/* 0.74: Leerzustand für Jugendtrainer ohne Mannschaft */\n.ht-leer{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--card);color:var(--ink)}\n.ht-leer b{display:block;font-size:16px;margin-bottom:6px}\n.ht-leer p{margin:0;color:var(--ink2);line-height:1.5;font-size:14.5px}\n.ht-leer+.ht-liste{margin-top:10px}\n"; document.head.appendChild(s); }catch(e){} })();
+/* =====================================================================
+   Sportzentrale Beta 0.62 · Feinschliff nach Apples Human Interface Guidelines, für die ganze App
+   - Tippflächen: alles, was man antippen kann, ist mindestens 44 x 44 Punkt groß. Kleine Knöpfe behalten
+     ihr Aussehen, bekommen aber eine unsichtbar vergrößerte Tippfläche (wie bei iOS).
+   - Eingabefelder: am Handy mindestens 44 hoch und 16px Schrift (sonst zoomt das iPhone beim Antippen).
+   - VoiceOver: Eingabefelder ohne Beschriftung bekommen einen Namen aus Platzhalter, Spaltenkopf oder Text davor.
+   - Dialoge: „Abbrechen“ links, die Hauptaktion rechts (wie bei iOS), wenn die Knöpfe nebeneinander stehen.
+   - Textgröße: Wer am iPhone größeren Text eingestellt hat, bekommt die App entsprechend größer (abschaltbar).
+   - Kontrast der schwächsten Textfarbe angehoben, weniger Bewegung respektiert (Datei svm59.css).
+   - Text unter 11 Punkt hebt der Build an (build_v3.py, mind11).
+   ===================================================================== */
+const AP={t:null,mo:null,faktor:1,gross:new WeakSet(),text:new WeakSet()};
+const apGrob=()=>{ try{ return matchMedia('(pointer:coarse)').matches; }catch(e){ return false; } };
+const apSicht=e=>{ if(!e.isConnected)return false; const r=e.getBoundingClientRect(); return r.width>1&&r.height>1; };
+
+// ---------- Tippflächen ----------
+function apTippflaechen(root){
+  if(!apGrob())return;
+  (root||document).querySelectorAll('button, a[href], [role=button], summary, [role=tab], [role=radio], [role=checkbox]').forEach(e=>{
+    if(e.tagName==='A'&&!e.classList.contains('btn')&&getComputedStyle(e).display==='inline'&&e.parentElement&&/^(P|LI|SPAN|SMALL|TD)$/.test(e.parentElement.tagName)&&e.parentElement.textContent.trim().length>e.textContent.trim().length+3)return;   // Link mitten im Text
+    if(e.classList.contains('ap-hit')||e.dataset.apHit==='0'||!apSicht(e))return;
+    if(AP.gross.has(e))return; const r=e.getBoundingClientRect(); if(r.width>=44&&r.height>=44){ AP.gross.add(e); return; }
+    let after='none'; try{ after=getComputedStyle(e,'::after').content; }catch(x){}
+    if(after&&after!=='none'&&after!=='normal'){   // ::after ist schon belegt: dann ::before nehmen, sonst Gestaltung nicht anfassen
+      let vor='none'; try{ vor=getComputedStyle(e,'::before').content; }catch(x){}
+      if(vor&&vor!=='none'&&vor!=='normal'){ e.dataset.apHit='0'; return; }
+      if(getComputedStyle(e).position==='static')e.classList.add('ap-rel'); e.classList.add('ap-hit2'); e.dataset.apHit='0'; return; }
+    if(getComputedStyle(e).position==='static')e.classList.add('ap-rel');
+    e.classList.add('ap-hit'); });
+}
+
+// ---------- Namen für VoiceOver ----------
+function apText(s){ return String(s||'').replace(/\s+/g,' ').trim().slice(0,60); }
+function apNameFuer(e){
+  if(e.placeholder)return apText(e.placeholder);
+  const td=e.closest('td,th');
+  if(td){ const tab=td.closest('table'), i=td.cellIndex, kopf=tab&&tab.tHead&&tab.tHead.rows[0]&&tab.tHead.rows[0].cells[i];
+    const zeile=td.parentElement&&td.parentElement.cells[0]&&td.parentElement.cells[0]!==td?apText(td.parentElement.cells[0].textContent):'';
+    if(kopf&&apText(kopf.textContent))return apText(kopf.textContent)+(zeile?', '+zeile:''); }
+  let v=e.previousElementSibling; for(let k=0;v&&k<2;k++,v=v.previousElementSibling){ if(/^(LABEL|SPAN|B|SMALL|STRONG|EM|H4|H5|P|DIV)$/.test(v.tagName)&&!v.querySelector('input,select,textarea,button')){ const t=apText(v.textContent); if(t&&t.length<=60)return t; } }
+  const eltern=e.parentElement; if(eltern&&/^(SPAN|DIV|P)$/.test(eltern.tagName)){ const t=apText([...eltern.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join(' ')); if(t)return t; }
+  if(e.tagName==='SELECT'){ const o=e.options[e.selectedIndex]; if(o&&o.value==='')return apText(o.textContent); }
+  if(e.type==='search')return 'Suchen';
+  if(e.name)return apText(e.name.replace(/[_-]+/g,' '));
+  return '';
+}
+function apNamen(root){
+  (root||document).querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), select, textarea').forEach(e=>{
+    if(e.getAttribute('aria-label')||e.getAttribute('aria-labelledby')||e.closest('label')||e.title)return;
+    if(e.id){ try{ if(document.querySelector(`label[for="${CSS.escape(e.id)}"]`))return; }catch(x){} }
+    const n=apNameFuer(e); if(n)e.setAttribute('aria-label',n); });
+  // Knöpfe nur mit Symbol: Name aus dem Tooltip (data-tip) übernehmen
+  (root||document).querySelectorAll('button:not([aria-label])').forEach(b=>{ if(apText(b.textContent))return; const t=b.dataset.tip||b.title; if(t)b.setAttribute('aria-label',apText(t)); });
+}
+
+// ---------- Kästchen in Tabellen: die ganze Zelle ist Tippfläche ----------
+function apZellen(root){
+  if(!apGrob())return;
+  (root||document).querySelectorAll('td input[type=checkbox], td input[type=radio]').forEach(cb=>{
+    if(cb.closest('label'))return; const td=cb.closest('td'); if(!td||td.classList.contains('ap-zelle'))return;
+    if(td.querySelectorAll('input,select,button,a,textarea').length!==1)return;
+    td.classList.add('ap-zelle'); });
+}
+function apZeilen(root){
+  if(!apGrob())return;
+  // Beschriftete Kästchen: die Beschriftung ist die Tippfläche, mindestens 44 hoch
+  (root||document).querySelectorAll('label').forEach(l=>{
+    if(l.classList.contains('ap-lab')||!l.querySelector('input[type=checkbox],input[type=radio]')||!apSicht(l))return;
+    if(l.getBoundingClientRect().height>=44)return;
+    if(getComputedStyle(l).display==='inline')l.classList.add('ap-labi');
+    l.classList.add('ap-lab'); });
+  (root||document).querySelectorAll('input[type=checkbox], input[type=radio]').forEach(cb=>{
+    if(cb.closest('label,td')||cb.id&&document.querySelector(`label[for="${CSS.escape(cb.id)}"]`))return;
+    const z=cb.parentElement; if(!z||z.classList.contains('ap-zeile')||z===document.body)return;
+    if(z.querySelectorAll('input,select,button,a,textarea').length!==1)return;
+    z.classList.add('ap-zeile'); });
+}
+document.addEventListener('click',e=>{ const z=e.target.closest&&e.target.closest('.ap-zeile'); if(!z||e.target.closest('input,select,button,a,textarea,label'))return;
+  const cb=z.querySelector('input'); if(cb&&!cb.disabled)cb.click(); },true);
+document.addEventListener('click',e=>{ const td=e.target.closest&&e.target.closest('td.ap-zelle'); if(!td||e.target.closest('input,select,button,a,textarea,label'))return;
+  const cb=td.querySelector('input'); if(cb&&!cb.disabled)cb.click(); },true);
+
+// ---------- Text nie unter 11 Punkt (auch wenn er relativ zur Umgebung kleiner wird) ----------
+function apMindest(root){
+  const P=root||document.querySelector('.panel.active')||document; if(!P)return;
+  P.querySelectorAll('small,span,em,i,b,strong,label,td,th,p,div,a,button').forEach(e=>{
+    if(AP.text.has(e))return; let t=false; for(const n of e.childNodes){ if(n.nodeType===3&&n.textContent.trim()){ t=true; break; } } if(!t)return;
+    const fs=parseFloat(getComputedStyle(e).fontSize); if(!e.getClientRects().length)return; AP.text.add(e); if(fs&&fs<10.95&&fs>=6){ e.style.fontSize='11px'; e.dataset.ap11='1'; } });
+}
+
+// ---------- Dialoge: Abbrechen links, Hauptaktion rechts ----------
+function apDialog(){
+  const M=document.getElementById('modal'); if(!M)return;
+  M.querySelectorAll('.btnrow').forEach(row=>{
+    const knoepfe=[...row.children].filter(x=>x.tagName==='BUTTON'&&apSicht(x)); if(knoepfe.length<2)return;
+    const ab=knoepfe.find(x=>/^(Abbrechen|Doch nicht|Nicht jetzt)$/i.test(apText(x.textContent))); if(!ab)return;
+    const top=knoepfe[0].offsetTop, nebeneinander=knoepfe.every(x=>Math.abs(x.offsetTop-top)<4);
+    row.classList.toggle('ap-ios',nebeneinander);
+    ab.classList.toggle('ap-abbr',nebeneinander); });
+}
+
+// ---------- Textgröße wie am iPhone (Dynamic Type) ----------
+function apTextFaktor(){
+  try{ if(localStorage.getItem('sv_textgroesse')==='aus')return 1; }catch(e){}
+  try{ if(!CSS.supports('font','-apple-system-body'))return 1;
+    const p=document.createElement('span'); p.style.cssText='font:-apple-system-body;position:absolute;visibility:hidden'; p.textContent='x'; document.body.appendChild(p);
+    const px=parseFloat(getComputedStyle(p).fontSize); p.remove(); if(!px)return 1;
+    return Math.max(1,Math.min(1.35,Math.round(px/17*20)/20));   // 17pt ist Apples Standard. Nur vergrößern, höchstens 135 %
+  }catch(e){ return 1; }
+}
+function apTextAnwenden(f){
+  AP.faktor=f==null?apTextFaktor():f;
+  const h=document.documentElement; if(AP.faktor>1.001){ h.style.zoom=String(AP.faktor); h.dataset.apText=String(AP.faktor); } else { h.style.zoom=''; delete h.dataset.apText; }
+}
+
+// ---------- Mein Konto: Schalter für die Textgröße ----------
+// Erscheinungsbild (svhell.js) hängt sich erst danach ein, darum einen Takt später
+if(typeof svAccount==='function'){ const _acc=svAccount; svAccount=function(){ const r=_acc.apply(this,arguments);
+  setTimeout(apKontoSchalter,0); return r; }; }
+function apKontoSchalter(){
+  try{ const M=document.getElementById('modal'), th=M&&M.querySelector('#thSek'); if(th&&!M.querySelector('#apTextSw')){
+      let an=true; try{ an=localStorage.getItem('sv_textgroesse')!=='aus'; }catch(e){}
+      const d=document.createElement('label'); d.className='ap-sw'; d.innerHTML=`<input type="checkbox" id="apTextSw"${an?' checked':''}><span><b>Textgröße vom Gerät übernehmen</b><small>Hast du am iPhone größeren Text eingestellt, wird auch die App größer.</small></span>`;
+      th.appendChild(d); d.querySelector('input').onchange=e=>{ try{ localStorage.setItem('sv_textgroesse',e.target.checked?'an':'aus'); }catch(x){} apTextAnwenden(); }; } }catch(e){}
+}
+
+// ---------- Laufend anwenden ----------
+function apAlles(root){ try{ apNamen(root); }catch(e){} try{ apTippflaechen(root); }catch(e){} try{ apZellen(root); }catch(e){} try{ apZeilen(root); }catch(e){} try{ apMindest(); }catch(e){} try{ apDialog(); }catch(e){} }
+function apBald(){ if(AP.t)return; AP.t=setTimeout(()=>{ AP.t=null; apAlles(); },250); }
+(function(){ const go=()=>{ apTextAnwenden(); apAlles();
+    try{ AP.mo=new MutationObserver(m=>{ if(m.some(x=>x.addedNodes.length))apBald(); }); AP.mo.observe(document.body,{childList:true,subtree:true}); }catch(e){}
+    addEventListener('resize',apBald); };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go); else go(); })();
+{ const _gt=goTab; goTab=function(){ const r=_gt.apply(this,arguments); apBald(); return r; }; }
+
+(function(){ try{ const s=document.createElement('style'); s.id='svm59css'; s.textContent="/* Feinschliff nach Apples Human Interface Guidelines (Beta 0.62) */\n/* Schwächste Textfarbe: Kontrast mindestens 4,5:1 auf allen Flächen */\n:root:root{--ink3:#8d96ab}\nhtml[data-theme=\"hell\"]:root{--ink3:#4d5668}\n/* Aktive Segmente: Weiß auf kräftigerem Blau (5,2:1 statt 2,8:1) */\n.k1-seg button.on,.st-bf button.on,.st-mf button.on{background:#2563eb!important}\n\n/* Tippflächen mindestens 44 x 44, ohne das Aussehen zu ändern */\n@media (pointer:coarse){\n  .ap-rel{position:relative}\n  .ap-hit::after{content:\"\";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%);background:transparent}\n  .ap-hit2::before{content:\"\";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%);background:transparent}\n  /* Eingabefelder: 44 hoch und 16px Schrift, damit das iPhone beim Antippen nicht hineinzoomt */\n  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),select,textarea{min-height:44px!important;font-size:max(16px,1em)}\n  input[type=checkbox],input[type=radio]{min-width:22px;min-height:22px}\n  td.ap-zelle{cursor:pointer;min-width:44px;height:44px}\n  .ap-zeile{cursor:pointer;min-height:44px}\n  label.ap-lab{min-height:44px}\n  label.ap-labi{display:inline-flex;align-items:center;gap:6px}\n}\n\n/* Dialoge: Abbrechen links, Hauptaktion rechts, wenn die Knöpfe nebeneinander stehen */\n#modal .btnrow.ap-ios{display:flex;justify-content:flex-end}\n#modal .btnrow.ap-ios .ap-abbr{order:-1;margin-right:auto}\n\n/* Schalter Textgröße in Mein Konto */\n.ap-sw{display:flex;gap:12px;align-items:flex-start;margin-top:14px;cursor:pointer;min-height:44px}\n.ap-sw input{flex:none;width:22px;height:22px;margin-top:2px;accent-color:var(--accent)}\n.ap-sw span{display:grid;gap:2px}\n.ap-sw b{font-size:15px;font-weight:650}\n.ap-sw small{font-size:13px;color:var(--ink2);line-height:1.4}\n\n/* Weniger Bewegung: Animationen und Übergänge fast ganz aus, wenn am Gerät eingestellt */\n@media (prefers-reduced-motion:reduce){\n  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.01ms!important;transition-delay:0s!important;scroll-behavior:auto!important}\n}\n\n/* Fokus für Tastatur und Schalterbedienung immer sichtbar */\n:focus-visible{outline:2px solid var(--accent);outline-offset:2px}\n\n/* Einzelne Stellen mit zu wenig Kontrast */\n.pk-seg button.on{color:#141a2e}\nhtml[data-theme=\"hell\"] .k1-ann{color:#7a5200;border-color:color-mix(in srgb,#7a5200 50%,transparent)}\nhtml[data-theme=\"hell\"] .linkbox code{color:#1e3a8a;background:rgba(40,48,72,.06)}\nhtml[data-theme=\"hell\"] .trai-steps code{color:#1e3a8a!important;background:rgba(40,48,72,.06)!important}\n/* Partner-Steuerung: aktiver Unterreiter auch im hellen Modus gut lesbar */\n.pe-sub button.on{background:#2563eb!important;color:#fff!important;border-color:transparent!important}\n"; document.head.appendChild(s); }catch(e){} })();
+/* =====================================================================
+   Sportzentrale Beta 0.63 · Weiche für die Store-Apps (iPhone, Android) und „Konto löschen“
+   Die Web-App läuft unverändert weiter. In der Store-App (Capacitor) kommen dazu:
+   - Mitteilungen über Apple (APNs) und Google (FCM) statt Web-Push, mit denselben Knöpfen in der App
+   - Tipp auf eine Mitteilung öffnet genau die Meldung
+   - Entsperren mit Face ID oder Fingerabdruck (abschaltbar, nur wenn das Gerät es kann)
+   - Teilen über das Teilen-Menü des Telefons, spürbares Tippen auch am iPhone
+   - Links nach außen zeigen immer auf https://svbsc.kaderwerk.pro (svBasis in boot.js)
+   Für alle (Web und App): Konto selbst löschen unter Mein Konto (Apple Richtlinie 5.1.1).
+   ===================================================================== */
+const SVN={nativ:false,plattform:'web',plug:{},token:null,gesperrt:false};
+try{ const C=window.Capacitor; SVN.nativ=!!(C&&C.isNativePlatform&&C.isNativePlatform()); SVN.plattform=SVN.nativ&&C.getPlatform?C.getPlatform():'web'; SVN.plug=(C&&C.Plugins)||{}; }catch(e){}
+const svnLs=(k,v)=>{ try{ if(v===undefined)return localStorage.getItem(k); if(v===null)localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){ return null; } };
+
+if(SVN.nativ){
+  document.documentElement.classList.add('nativ','nativ-'+SVN.plattform);
+
+  // ---------- Updates in der Store-App (Beta 0.65) ----------
+  // Die Dateien liegen in der App selbst. Neue Versionen holt der Capgo-Updater still im Hintergrund (Funktion app-ota),
+  // sie gelten ab dem nächsten Öffnen. Service Worker und version.json-Abfrage der Web-App sind hier aus.
   appRegisterSW=function(){};
   appCheckUpdate=async function(){ return null; };
   try{ const U=SVN.plug.CapacitorUpdater; if(U&&U.notifyAppReady){ const ok=()=>{ try{ U.notifyAppReady(); }catch(e){} };
@@ -1382,593 +1539,3 @@ var qrcode = function() {
       [2, 35, 13],
 
       // 4
-      [1, 100, 80],
-      [2, 50, 32],
-      [2, 50, 24],
-      [4, 25, 9],
-
-      // 5
-      [1, 134, 108],
-      [2, 67, 43],
-      [2, 33, 15, 2, 34, 16],
-      [2, 33, 11, 2, 34, 12],
-
-      // 6
-      [2, 86, 68],
-      [4, 43, 27],
-      [4, 43, 19],
-      [4, 43, 15],
-
-      // 7
-      [2, 98, 78],
-      [4, 49, 31],
-      [2, 32, 14, 4, 33, 15],
-      [4, 39, 13, 1, 40, 14],
-
-      // 8
-      [2, 121, 97],
-      [2, 60, 38, 2, 61, 39],
-      [4, 40, 18, 2, 41, 19],
-      [4, 40, 14, 2, 41, 15],
-
-      // 9
-      [2, 146, 116],
-      [3, 58, 36, 2, 59, 37],
-      [4, 36, 16, 4, 37, 17],
-      [4, 36, 12, 4, 37, 13],
-
-      // 10
-      [2, 86, 68, 2, 87, 69],
-      [4, 69, 43, 1, 70, 44],
-      [6, 43, 19, 2, 44, 20],
-      [6, 43, 15, 2, 44, 16],
-
-      // 11
-      [4, 101, 81],
-      [1, 80, 50, 4, 81, 51],
-      [4, 50, 22, 4, 51, 23],
-      [3, 36, 12, 8, 37, 13],
-
-      // 12
-      [2, 116, 92, 2, 117, 93],
-      [6, 58, 36, 2, 59, 37],
-      [4, 46, 20, 6, 47, 21],
-      [7, 42, 14, 4, 43, 15],
-
-      // 13
-      [4, 133, 107],
-      [8, 59, 37, 1, 60, 38],
-      [8, 44, 20, 4, 45, 21],
-      [12, 33, 11, 4, 34, 12],
-
-      // 14
-      [3, 145, 115, 1, 146, 116],
-      [4, 64, 40, 5, 65, 41],
-      [11, 36, 16, 5, 37, 17],
-      [11, 36, 12, 5, 37, 13],
-
-      // 15
-      [5, 109, 87, 1, 110, 88],
-      [5, 65, 41, 5, 66, 42],
-      [5, 54, 24, 7, 55, 25],
-      [11, 36, 12, 7, 37, 13],
-
-      // 16
-      [5, 122, 98, 1, 123, 99],
-      [7, 73, 45, 3, 74, 46],
-      [15, 43, 19, 2, 44, 20],
-      [3, 45, 15, 13, 46, 16],
-
-      // 17
-      [1, 135, 107, 5, 136, 108],
-      [10, 74, 46, 1, 75, 47],
-      [1, 50, 22, 15, 51, 23],
-      [2, 42, 14, 17, 43, 15],
-
-      // 18
-      [5, 150, 120, 1, 151, 121],
-      [9, 69, 43, 4, 70, 44],
-      [17, 50, 22, 1, 51, 23],
-      [2, 42, 14, 19, 43, 15],
-
-      // 19
-      [3, 141, 113, 4, 142, 114],
-      [3, 70, 44, 11, 71, 45],
-      [17, 47, 21, 4, 48, 22],
-      [9, 39, 13, 16, 40, 14],
-
-      // 20
-      [3, 135, 107, 5, 136, 108],
-      [3, 67, 41, 13, 68, 42],
-      [15, 54, 24, 5, 55, 25],
-      [15, 43, 15, 10, 44, 16],
-
-      // 21
-      [4, 144, 116, 4, 145, 117],
-      [17, 68, 42],
-      [17, 50, 22, 6, 51, 23],
-      [19, 46, 16, 6, 47, 17],
-
-      // 22
-      [2, 139, 111, 7, 140, 112],
-      [17, 74, 46],
-      [7, 54, 24, 16, 55, 25],
-      [34, 37, 13],
-
-      // 23
-      [4, 151, 121, 5, 152, 122],
-      [4, 75, 47, 14, 76, 48],
-      [11, 54, 24, 14, 55, 25],
-      [16, 45, 15, 14, 46, 16],
-
-      // 24
-      [6, 147, 117, 4, 148, 118],
-      [6, 73, 45, 14, 74, 46],
-      [11, 54, 24, 16, 55, 25],
-      [30, 46, 16, 2, 47, 17],
-
-      // 25
-      [8, 132, 106, 4, 133, 107],
-      [8, 75, 47, 13, 76, 48],
-      [7, 54, 24, 22, 55, 25],
-      [22, 45, 15, 13, 46, 16],
-
-      // 26
-      [10, 142, 114, 2, 143, 115],
-      [19, 74, 46, 4, 75, 47],
-      [28, 50, 22, 6, 51, 23],
-      [33, 46, 16, 4, 47, 17],
-
-      // 27
-      [8, 152, 122, 4, 153, 123],
-      [22, 73, 45, 3, 74, 46],
-      [8, 53, 23, 26, 54, 24],
-      [12, 45, 15, 28, 46, 16],
-
-      // 28
-      [3, 147, 117, 10, 148, 118],
-      [3, 73, 45, 23, 74, 46],
-      [4, 54, 24, 31, 55, 25],
-      [11, 45, 15, 31, 46, 16],
-
-      // 29
-      [7, 146, 116, 7, 147, 117],
-      [21, 73, 45, 7, 74, 46],
-      [1, 53, 23, 37, 54, 24],
-      [19, 45, 15, 26, 46, 16],
-
-      // 30
-      [5, 145, 115, 10, 146, 116],
-      [19, 75, 47, 10, 76, 48],
-      [15, 54, 24, 25, 55, 25],
-      [23, 45, 15, 25, 46, 16],
-
-      // 31
-      [13, 145, 115, 3, 146, 116],
-      [2, 74, 46, 29, 75, 47],
-      [42, 54, 24, 1, 55, 25],
-      [23, 45, 15, 28, 46, 16],
-
-      // 32
-      [17, 145, 115],
-      [10, 74, 46, 23, 75, 47],
-      [10, 54, 24, 35, 55, 25],
-      [19, 45, 15, 35, 46, 16],
-
-      // 33
-      [17, 145, 115, 1, 146, 116],
-      [14, 74, 46, 21, 75, 47],
-      [29, 54, 24, 19, 55, 25],
-      [11, 45, 15, 46, 46, 16],
-
-      // 34
-      [13, 145, 115, 6, 146, 116],
-      [14, 74, 46, 23, 75, 47],
-      [44, 54, 24, 7, 55, 25],
-      [59, 46, 16, 1, 47, 17],
-
-      // 35
-      [12, 151, 121, 7, 152, 122],
-      [12, 75, 47, 26, 76, 48],
-      [39, 54, 24, 14, 55, 25],
-      [22, 45, 15, 41, 46, 16],
-
-      // 36
-      [6, 151, 121, 14, 152, 122],
-      [6, 75, 47, 34, 76, 48],
-      [46, 54, 24, 10, 55, 25],
-      [2, 45, 15, 64, 46, 16],
-
-      // 37
-      [17, 152, 122, 4, 153, 123],
-      [29, 74, 46, 14, 75, 47],
-      [49, 54, 24, 10, 55, 25],
-      [24, 45, 15, 46, 46, 16],
-
-      // 38
-      [4, 152, 122, 18, 153, 123],
-      [13, 74, 46, 32, 75, 47],
-      [48, 54, 24, 14, 55, 25],
-      [42, 45, 15, 32, 46, 16],
-
-      // 39
-      [20, 147, 117, 4, 148, 118],
-      [40, 75, 47, 7, 76, 48],
-      [43, 54, 24, 22, 55, 25],
-      [10, 45, 15, 67, 46, 16],
-
-      // 40
-      [19, 148, 118, 6, 149, 119],
-      [18, 75, 47, 31, 76, 48],
-      [34, 54, 24, 34, 55, 25],
-      [20, 45, 15, 61, 46, 16]
-    ];
-
-    var qrRSBlock = function(totalCount, dataCount) {
-      var _this = {};
-      _this.totalCount = totalCount;
-      _this.dataCount = dataCount;
-      return _this;
-    };
-
-    var _this = {};
-
-    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
-
-      switch(errorCorrectionLevel) {
-      case QRErrorCorrectionLevel.L :
-        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
-      case QRErrorCorrectionLevel.M :
-        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
-      case QRErrorCorrectionLevel.Q :
-        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
-      case QRErrorCorrectionLevel.H :
-        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
-      default :
-        return undefined;
-      }
-    };
-
-    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
-
-      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
-
-      if (typeof rsBlock == 'undefined') {
-        throw 'bad rs block @ typeNumber:' + typeNumber +
-            '/errorCorrectionLevel:' + errorCorrectionLevel;
-      }
-
-      var length = rsBlock.length / 3;
-
-      var list = [];
-
-      for (var i = 0; i < length; i += 1) {
-
-        var count = rsBlock[i * 3 + 0];
-        var totalCount = rsBlock[i * 3 + 1];
-        var dataCount = rsBlock[i * 3 + 2];
-
-        for (var j = 0; j < count; j += 1) {
-          list.push(qrRSBlock(totalCount, dataCount) );
-        }
-      }
-
-      return list;
-    };
-
-    return _this;
-  }();
-
-  //---------------------------------------------------------------------
-  // qrBitBuffer
-  //---------------------------------------------------------------------
-
-  var qrBitBuffer = function() {
-
-    var _buffer = [];
-    var _length = 0;
-
-    var _this = {};
-
-    _this.getBuffer = function() {
-      return _buffer;
-    };
-
-    _this.getAt = function(index) {
-      var bufIndex = Math.floor(index / 8);
-      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
-    };
-
-    _this.put = function(num, length) {
-      for (var i = 0; i < length; i += 1) {
-        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
-      }
-    };
-
-    _this.getLengthInBits = function() {
-      return _length;
-    };
-
-    _this.putBit = function(bit) {
-
-      var bufIndex = Math.floor(_length / 8);
-      if (_buffer.length <= bufIndex) {
-        _buffer.push(0);
-      }
-
-      if (bit) {
-        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
-      }
-
-      _length += 1;
-    };
-
-    return _this;
-  };
-
-  //---------------------------------------------------------------------
-  // qrNumber
-  //---------------------------------------------------------------------
-
-  var qrNumber = function(data) {
-
-    var _mode = QRMode.MODE_NUMBER;
-    var _data = data;
-
-    var _this = {};
-
-    _this.getMode = function() {
-      return _mode;
-    };
-
-    _this.getLength = function(buffer) {
-      return _data.length;
-    };
-
-    _this.write = function(buffer) {
-
-      var data = _data;
-
-      var i = 0;
-
-      while (i + 2 < data.length) {
-        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
-        i += 3;
-      }
-
-      if (i < data.length) {
-        if (data.length - i == 1) {
-          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
-        } else if (data.length - i == 2) {
-          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
-        }
-      }
-    };
-
-    var strToNum = function(s) {
-      var num = 0;
-      for (var i = 0; i < s.length; i += 1) {
-        num = num * 10 + chatToNum(s.charAt(i) );
-      }
-      return num;
-    };
-
-    var chatToNum = function(c) {
-      if ('0' <= c && c <= '9') {
-        return c.charCodeAt(0) - '0'.charCodeAt(0);
-      }
-      throw 'illegal char :' + c;
-    };
-
-    return _this;
-  };
-
-  //---------------------------------------------------------------------
-  // qrAlphaNum
-  //---------------------------------------------------------------------
-
-  var qrAlphaNum = function(data) {
-
-    var _mode = QRMode.MODE_ALPHA_NUM;
-    var _data = data;
-
-    var _this = {};
-
-    _this.getMode = function() {
-      return _mode;
-    };
-
-    _this.getLength = function(buffer) {
-      return _data.length;
-    };
-
-    _this.write = function(buffer) {
-
-      var s = _data;
-
-      var i = 0;
-
-      while (i + 1 < s.length) {
-        buffer.put(
-          getCode(s.charAt(i) ) * 45 +
-          getCode(s.charAt(i + 1) ), 11);
-        i += 2;
-      }
-
-      if (i < s.length) {
-        buffer.put(getCode(s.charAt(i) ), 6);
-      }
-    };
-
-    var getCode = function(c) {
-
-      if ('0' <= c && c <= '9') {
-        return c.charCodeAt(0) - '0'.charCodeAt(0);
-      } else if ('A' <= c && c <= 'Z') {
-        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
-      } else {
-        switch (c) {
-        case ' ' : return 36;
-        case '$' : return 37;
-        case '%' : return 38;
-        case '*' : return 39;
-        case '+' : return 40;
-        case '-' : return 41;
-        case '.' : return 42;
-        case '/' : return 43;
-        case ':' : return 44;
-        default :
-          throw 'illegal char :' + c;
-        }
-      }
-    };
-
-    return _this;
-  };
-
-  //---------------------------------------------------------------------
-  // qr8BitByte
-  //---------------------------------------------------------------------
-
-  var qr8BitByte = function(data) {
-
-    var _mode = QRMode.MODE_8BIT_BYTE;
-    var _data = data;
-    var _bytes = qrcode.stringToBytes(data);
-
-    var _this = {};
-
-    _this.getMode = function() {
-      return _mode;
-    };
-
-    _this.getLength = function(buffer) {
-      return _bytes.length;
-    };
-
-    _this.write = function(buffer) {
-      for (var i = 0; i < _bytes.length; i += 1) {
-        buffer.put(_bytes[i], 8);
-      }
-    };
-
-    return _this;
-  };
-
-  //---------------------------------------------------------------------
-  // qrKanji
-  //---------------------------------------------------------------------
-
-  var qrKanji = function(data) {
-
-    var _mode = QRMode.MODE_KANJI;
-    var _data = data;
-
-    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
-    if (!stringToBytes) {
-      throw 'sjis not supported.';
-    }
-    !function(c, code) {
-      // self test for sjis support.
-      var test = stringToBytes(c);
-      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
-        throw 'sjis not supported.';
-      }
-    }('\u53cb', 0x9746);
-
-    var _bytes = stringToBytes(data);
-
-    var _this = {};
-
-    _this.getMode = function() {
-      return _mode;
-    };
-
-    _this.getLength = function(buffer) {
-      return ~~(_bytes.length / 2);
-    };
-
-    _this.write = function(buffer) {
-
-      var data = _bytes;
-
-      var i = 0;
-
-      while (i + 1 < data.length) {
-
-        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
-
-        if (0x8140 <= c && c <= 0x9FFC) {
-          c -= 0x8140;
-        } else if (0xE040 <= c && c <= 0xEBBF) {
-          c -= 0xC140;
-        } else {
-          throw 'illegal char at ' + (i + 1) + '/' + c;
-        }
-
-        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
-
-        buffer.put(c, 13);
-
-        i += 2;
-      }
-
-      if (i < data.length) {
-        throw 'illegal char at ' + (i + 1);
-      }
-    };
-
-    return _this;
-  };
-
-  //=====================================================================
-  // GIF Support etc.
-  //
-
-  //---------------------------------------------------------------------
-  // byteArrayOutputStream
-  //---------------------------------------------------------------------
-
-  var byteArrayOutputStream = function() {
-
-    var _bytes = [];
-
-    var _this = {};
-
-    _this.writeByte = function(b) {
-      _bytes.push(b & 0xff);
-    };
-
-    _this.writeShort = function(i) {
-      _this.writeByte(i);
-      _this.writeByte(i >>> 8);
-    };
-
-    _this.writeBytes = function(b, off, len) {
-      off = off || 0;
-      len = len || b.length;
-      for (var i = 0; i < len; i += 1) {
-        _this.writeByte(b[i + off]);
-      }
-    };
-
-    _this.writeString = function(s) {
-      for (var i = 0; i < s.length; i += 1) {
-        _this.writeByte(s.charCodeAt(i) );
-      }
-    };
-
-    _this.toByteArray = function() {
-      return _bytes;
-    };
-
-    _this.toString = function() {
-      var s = '';
-      s += '[';
-      for (var i = 0; i < _bytes.length; i += 1) {
-        if (i > 0) {
-          s += ',';
-        }
-        s += _bytes[i];
-      }
-      s += ']';

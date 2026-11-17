@@ -212,17 +212,20 @@ function spoAktiv(saison){ const s=+saison.slice(0,2); return SPO.V.filter(v=>v.
 
 /* ---------- Firmen (von der Idee bis zum Partner) ---------- */
 // Eine Firmenliste: dieselbe Zeile wie in der Zentrale (nächster Schritt mit Hauptknopf), fünf Filter, „Bestand“ als Etikett an der Zeile
-const SPO_FILTER=[['offen','Unterwegs'],['partner','Partner'],['alt','Alte Struktur'],['neu','Neues Konzept'],['mitges','Mit Gespräch'],['ohneges','Ohne Gespräch'],['vip','★ VIP'],['abgesagt','Abgesagt'],['pausiert','Pausiert'],['alle','Alle']];
+const SPO_FILTER=[['offen','Unterwegs'],['partner','Partner'],['alt','Alte Struktur'],['neu','Neues Konzept'],['mitges','Mit Gespräch'],['ohneges','Ohne Gespräch'],['termin','Mit Termin'],['vip','★ VIP'],['abgesagt','Abgesagt'],['pausiert','Pausiert'],['alle','Alle']];
 // Ohne Gespräch (Sven, 16.11.2026): Partner, bei denen seit der Neuausrichtung weder ein Anruf noch ein Treffen eingetragen ist. Stichtag ist wählbar und bleibt je Gerät stehen (Vorgabe: Saisonbeginn 01.07.2026).
 function spoNeu(){ let v=''; try{ v=localStorage.getItem('sv_spo_neu')||''; }catch(e){} return /^\d{4}-\d\d-\d\d$/.test(v)?v:'2026-07-01'; }
-function spoGespr(x,seit){ return SPO.K.some(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')&&String(k.am||'')>=seit); }
+// Geplant (Partner-Team, 17.11.2026): Ein Anruf oder Treffen mit Datum in der Zukunft ist ein vereinbarter Termin. Er zählt erst als Gespräch, wenn der Tag da ist.
+function spoGeplant(k){ return (k.art==='anruf'||k.art==='treffen')&&String(k.am||'')>svtHeute(); }
+function spoTermin(x){ return SPO.K.some(k=>k.sponsor===x.id&&spoGeplant(k)); }
+function spoGespr(x,seit){ const h=svtHeute(); return SPO.K.some(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')&&String(k.am||'')>=seit&&String(k.am||'')<=h); }
 function spoOhneGes(x){ return x.status==='partner'&&!spoGespr(x,spoNeu()); }
 function spoMitGes(x){ return x.status==='partner'&&spoGespr(x,spoNeu()); }   // Gegenstück (Sven, 16.11.2026): mit plus ohne Gespräch ergibt alle Partner
 function spoVip(x){ return !!x.vip; }   // Wunschfirma (Sven, 16.11.2026): nur ein Stern, keine Rangfolge
 // Alte Struktur oder neues Konzept (Albert, 16.11.2026): Ziel ist das neue Konzept für alle Partner. Überführt heißt: ein unterschriebener oder aktiver Vertrag im neuen Vertragssystem (partner_vertraege). Wer Partner ist und so einen Vertrag noch nicht hat, gehört zur alten Struktur.
 function spoNeuK(x){ if(!x||x.status!=='partner'||typeof PE==='undefined'||!PE.d)return false; const h=typeof svtHeute==='function'?svtHeute():new Date().toISOString().slice(0,10); return (PE.d.vertraege||[]).some(v=>v.sponsor===x.id&&v.art!=='spende'&&['unterschrieben','aktiv'].includes(v.status)&&(!v.ende||v.ende>=h)); }
 function spoAlt(x){ return x.status==='partner'&&!spoNeuK(x); }
-function spoZahl(k){ return k==='ohneges'?SPO.S.filter(spoOhneGes).length:k==='mitges'?SPO.S.filter(spoMitGes).length:k==='vip'?SPO.S.filter(spoVip).length:k==='alt'?SPO.S.filter(spoAlt).length:k==='neu'?SPO.S.filter(spoNeuK).length:null; }
+function spoZahl(k){ return k==='termin'?SPO.S.filter(spoTermin).length:k==='ohneges'?SPO.S.filter(spoOhneGes).length:k==='mitges'?SPO.S.filter(spoMitGes).length:k==='vip'?SPO.S.filter(spoVip).length:k==='alt'?SPO.S.filter(spoAlt).length:k==='neu'?SPO.S.filter(spoNeuK).length:null; }
 function spoChips(B){ B.querySelectorAll('[data-spoff]').forEach(b=>{ const k=b.dataset.spoff, n=spoZahl(k); if(n!==null)b.textContent=(SPO_FILTER.find(f=>f[0]===k)||[0,''])[1]+' ('+n+')'; }); }
 function spoListe(B){
   const stat=['idee','angeschrieben','gespraech','angebot'].includes(SPO.flt)?SPO.flt:null;   // Station aus der Zentrale
@@ -246,7 +249,7 @@ function spoListe(B){
 }
 function spoListeZeilen(B){
   const H=B.querySelector('.spo-l'); if(!H)return; const q=SPO.q.trim().toLowerCase(), weg=['idee','angeschrieben','gespraech','angebot'];
-  const L=SPO.S.filter(x=>SPO.flt==='alle'||(SPO.flt==='ohneges'?spoOhneGes(x):SPO.flt==='mitges'?spoMitGes(x):SPO.flt==='vip'?spoVip(x):SPO.flt==='alt'?spoAlt(x):SPO.flt==='neu'?spoNeuK(x):SPO.flt==='offen'?weg.includes(x.status):x.status===SPO.flt))
+  const L=SPO.S.filter(x=>SPO.flt==='alle'||(SPO.flt==='termin'?spoTermin(x):SPO.flt==='ohneges'?spoOhneGes(x):SPO.flt==='mitges'?spoMitGes(x):SPO.flt==='vip'?spoVip(x):SPO.flt==='alt'?spoAlt(x):SPO.flt==='neu'?spoNeuK(x):SPO.flt==='offen'?weg.includes(x.status):x.status===SPO.flt))
     .filter(x=>!q||(x.firma+' '+(x.ansprechpartner||'')+' '+(x.branche||'')+' '+(x.ort||'')+' '+(x.notiz||'')).toLowerCase().includes(q))
     .sort((a,b)=>{ const i=weg.indexOf(a.status), j=weg.indexOf(b.status); if(j-i)return j-i;
       if(a.status==='idee'&&typeof pzWert==='function'){ const d=pzWert(b).rang-pzWert(a).rang; if(d)return d; }   // Ideen wie in der Zentrale nach Kriterienmatrix
@@ -258,7 +261,7 @@ function spoListeZeilen(B){
 // Abzug der gerade gezeigten Auswahl für Excel (Semikolon, UTF-8 mit Kennung). Kein Datenabgleich zurück: gepflegt wird nur in der App.
 function spoCsv(){ const L=SPO.zeigt||[]; const z=v=>'"'+String(v==null?'':v).replace(/"/g,'""').replace(/\r?\n/g,' ')+'"';
   const kopf=['Firma','Ansprechpartner','Funktion','E-Mail','Telefon','Straße','Ort','Branche','Stand','Bestandspartner','VIP','Konzept','Letzter Anruf oder Treffen','Nächster Schritt','Notiz'];
-  const letzt=x=>{ const k=SPO.K.filter(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')).map(k=>String(k.am||'')).sort().pop(); return k?k.slice(8,10)+'.'+k.slice(5,7)+'.'+k.slice(0,4):''; };
+  const letzt=x=>{ const k=SPO.K.filter(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')&&!spoGeplant(k)).map(k=>String(k.am||'')).sort().pop(); return k?k.slice(8,10)+'.'+k.slice(5,7)+'.'+k.slice(0,4):''; };
   const zeilen=L.map(x=>[x.firma,x.ansprechpartner,x.funktion,x.email,x.telefon,x.strasse,x.ort,x.branche,SPO_STL[x.status]||x.status,x.bestand?'ja':'nein',x.vip?'ja':'nein',x.status!=='partner'?'':spoNeuK(x)?'neu':'alt',letzt(x),x.naechster,x.notiz].map(z).join(';'));
   const txt='\ufeff'+[kopf.map(z).join(';')].concat(zeilen).join('\r\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'})); const d=new Date(); a.download='partner-'+d.toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }

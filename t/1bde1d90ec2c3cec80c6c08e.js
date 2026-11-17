@@ -1,584 +1,5 @@
-}
-{ const _arD=svAdminRender; svAdminRender=async function(){ const r=await _arD.apply(this,arguments); try{ await ogDriveKarte(document.getElementById('panel-admin')); }catch(e){ console.warn('Drive-Karte',e); } return r; }; }
-
-(function(){ try{ const s=document.createElement('style'); s.id='svm33css'; s.textContent="/* 0.31 · Aufgaben & Checklisten: groß, klar, zum Abhaken wie eine Einkaufsliste */\n#panel-orga{max-width:760px;}\n.og-kopf{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 14px;}\n.og-kopf h2{margin:0;font-family:var(--disp);font-size:30px;letter-spacing:.01em;}\n.og-kopf p{margin:4px 0 0;color:var(--ink2);font-size:15.5px;max-width:48ch;}\n.og-neu{min-height:48px;font-size:16px;}\n.og-meine{display:flex;align-items:center;gap:12px;width:100%;padding:16px 18px;margin:0 0 14px;border-radius:var(--r-lg);border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.1);color:var(--ink);font-size:17px;text-align:left;cursor:pointer;}\n.og-meine span{font-size:24px;} .og-meine b{flex:1;} .og-meine i svg{width:18px;height:18px;}\n.og-karten{display:flex;flex-direction:column;gap:10px;}\n.og-karte{display:flex;align-items:center;gap:14px;width:100%;padding:16px;border-radius:var(--r-lg);border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:left;cursor:pointer;transition:transform .15s var(--ease),border-color .15s;}\n.og-karte:hover{border-color:rgba(91,155,255,.4);} .og-karte:active{transform:scale(.985);}\n.og-karte.fertig{opacity:.75;}\n.og-em{flex:none;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:var(--surface2);}\n.og-em.gross{width:60px;height:60px;font-size:34px;border-radius:18px;}\n.og-kt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}\n.og-kt b{font-size:17.5px;line-height:1.25;}\n.og-kt small{font-size:14.5px;color:var(--ink2);}\n.og-kt .og-v{color:var(--ink3);font-size:13.5px;}\n.og-mein{display:inline-block;align-self:flex-start;margin-top:4px;padding:3px 10px;border-radius:999px;background:rgba(34,197,94,.16);color:#4ade80;font-style:normal;font-weight:700;font-size:13px;}\n.og-ring{flex:none;} .og-ring .bg{fill:none;stroke:var(--surface3);stroke-width:6;} .og-ring .fg{fill:none;stroke:var(--brand2);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .7s var(--ease),stroke .3s;}\n.og-ring .fg.voll{stroke:var(--green);} .og-ring text{fill:var(--ink);font-size:12.5px;font-weight:800;font-family:var(--font);}\n.og-ring.gross .og-ring,.og-ring.gross .bg,.og-ring.gross .fg{stroke-width:8;} .og-ring.gross text{font-size:17px;}\n.og-leer{text-align:center;padding:28px 18px;} .og-leer b{font-size:18px;} .og-leer p{color:var(--ink2);font-size:15px;max-width:44ch;margin:8px auto 0;}\n.og-leer-em{font-size:40px;margin-bottom:6px;}\n.og-vorbei{margin-top:18px;} .og-vorbei summary{cursor:pointer;color:var(--ink2);font-size:15px;padding:10px 0;}\n.og-fuss{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;}\n\n/* Eine Checkliste */\n.og-zurueck{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--brand2);font-size:16px;font-weight:700;padding:8px 0;cursor:pointer;margin-bottom:6px;}\n.og-zurueck svg{transform:rotate(180deg);width:18px;height:18px;}\n.og-hero{padding:18px;}\n.og-ht{display:flex;align-items:center;gap:14px;} .og-ht>div{flex:1;min-width:0;}\n.og-ht small{color:var(--ink3);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}\n.og-ht h2{margin:2px 0 4px;font-size:22px;line-height:1.2;}\n.og-ht p{margin:0;color:var(--ink2);font-size:15px;}\n.og-hstat{margin-top:12px;font-size:16px;color:var(--ink2);}\n.og-verant{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface2);color:var(--ink2);font-size:15.5px;text-align:left;cursor:pointer;}\n.og-verant b{color:var(--ink);} .og-verant svg{width:18px;height:18px;}\n.og-add{display:flex;gap:8px;margin:16px 0 6px;}\n.og-add input{flex:1;min-width:0;min-height:54px;padding:0 16px;font-size:17px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);}\n.og-add input:focus{border-color:var(--brand2);outline:none;box-shadow:0 0 0 4px var(--brandSoft);}\n.og-add .btn{min-width:54px;min-height:54px;justify-content:center;border-radius:14px;} .og-add .btn svg{width:22px;height:22px;}\n.og-merk{display:flex;align-items:center;gap:10px;font-size:14.5px;color:var(--ink2);margin:6px 2px 14px;cursor:pointer;}\n.og-merk input{width:22px;height:22px;accent-color:var(--brand);}\n.og-filter{display:flex;gap:6px;margin:0 0 10px;padding:4px;border-radius:14px;background:var(--surface);border:1px solid var(--line2);}\n.og-filter button{flex:1;min-height:44px;border:0;border-radius:11px;background:none;color:var(--ink2);font-size:15.5px;font-weight:700;cursor:pointer;}\n.og-filter button.on{background:var(--brand);color:#fff;}\n.og-grp{margin:14px 0 4px;}\n.og-grp h3,.og-grp>summary{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin:0 0 8px 4px;font-weight:800;}\n.og-grp h3 small,.og-grp>summary small{margin-left:6px;color:var(--ink3);font-weight:700;}\n.og-erl>summary{cursor:pointer;list-style:none;padding:8px 4px;} .og-erl>summary::-webkit-details-marker{display:none;} .og-erl>summary::before{content:'▸ ';}\n.og-erl[open]>summary::before{content:'▾ ';}\n.og-p{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 10px;margin-bottom:8px;border-radius:16px;background:var(--surface);border:1px solid var(--line2);transition:opacity .35s,transform .45s var(--ease),background .3s;}\n.og-p.meins{border-color:rgba(34,197,94,.35);background:linear-gradient(90deg,rgba(34,197,94,.08),var(--surface) 60%);}\n.og-p.neu{animation:ogNeu .6s var(--ease);}\n.og-haken{flex:none;width:44px;height:44px;border-radius:50%;border:2.5px solid rgba(162,172,191,.55);background:transparent;display:grid;place-items:center;cursor:pointer;padding:0;transition:border-color .2s,background .25s,transform .15s;}\n.og-haken:active{transform:scale(.9);}\n.og-haken svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:24;transition:stroke-dashoffset .35s var(--ease) .05s;}\n.og-p.done .og-haken,.og-p.hakt .og-haken{background:var(--green);border-color:var(--green);}\n.og-p.done .og-haken svg,.og-p.hakt .og-haken svg{stroke-dashoffset:0;}\n.og-p.hakt{animation:ogHakt .5s var(--ease) forwards;}\n.og-p.hakt .og-haken{animation:ogPop .35s var(--ease);}\n.og-p.loest{opacity:.5;}\n.og-p.done{opacity:.62;background:var(--bg2);}\n.og-p.done .og-pt b{text-decoration:line-through;text-decoration-color:rgba(162,172,191,.6);color:var(--ink2);}\n.og-pt{flex:1;min-width:0;text-align:left;background:none;border:0;color:var(--ink);padding:4px 0;cursor:pointer;display:flex;flex-direction:column;gap:5px;}\n.og-pt b{font-size:17px;line-height:1.3;font-weight:650;}\n.og-pm{display:flex;flex-wrap:wrap;gap:6px 12px;}\n.og-pm i{font-style:normal;font-size:14px;color:var(--ink2);display:inline-flex;align-items:center;gap:4px;}\n.og-pm i svg{width:14px;height:14px;}\n.og-uhr.ueber{color:#fbbf24;font-weight:700;}\n.og-wer.ich{color:#4ade80;font-weight:700;} .og-wer.leer{color:var(--brand2);}\n.og-ev{color:#4ade80!important;} .og-notiz{color:var(--ink3)!important;}\n.og-alle{text-align:center;padding:22px;} .og-alle b{font-size:19px;} .og-alle p{color:var(--ink2);margin:6px 0 0;}\n.og-helfer h3,.og-chat h3,.og-dateien h3{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:17px;}\n.og-helfer h3 svg,.og-chat h3 svg,.og-dateien h3 svg{width:18px;height:18px;}\n.og-helfer p{margin:0 0 10px;color:var(--ink2);font-size:14.5px;}\n.og-hl{display:flex;flex-wrap:wrap;gap:8px;}\n.og-hchip{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font-size:15px;cursor:pointer;}\n.og-hchip svg{width:15px;height:15px;}\n.og-chat h3 small{color:var(--ink3);font-weight:600;font-size:13px;}\n.og-msgs{max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px 8px;}\n.og-m{align-self:flex-start;max-width:85%;padding:10px 13px;border-radius:16px 16px 16px 4px;background:var(--surface2);}\n.og-m.ich{align-self:flex-end;border-radius:16px 16px 4px 16px;background:rgba(47,107,255,.22);}\n.og-m b{font-size:13px;color:var(--brand2);} .og-m.ich b{color:#9cc3ff;}\n.og-m p{margin:2px 0 0;font-size:16px;line-height:1.4;white-space:pre-wrap;word-break:break-word;}\n.og-m small{display:block;margin-top:4px;font-size:12px;color:var(--ink3);}\n.og-datei{display:inline-flex;align-items:center;gap:6px;margin-top:6px;color:var(--brand2);font-size:15px;}\n.og-datei svg{width:16px;height:16px;}\n.og-send{display:flex;gap:8px;align-items:center;margin-top:8px;}\n.og-send input{flex:1;min-width:0;min-height:50px;padding:0 14px;font-size:16.5px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);}\n.og-send .btn{min-width:50px;min-height:50px;justify-content:center;border-radius:14px;}\n.og-att{flex:none;width:50px;height:50px;border-radius:14px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface2);cursor:pointer;color:var(--ink2);}\n.og-att svg{width:22px;height:22px;}\n.og-dhin{margin:8px 0 0;font-size:13.5px;}\n.og-dz{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line2);color:var(--ink);text-decoration:none;font-size:15px;}\n.og-dz b{flex:1;font-weight:600;} .og-dz small{color:var(--ink3);}\n\n/* Formulare und Auswahl */\n.og-form h2{margin:0 0 10px;font-size:21px;line-height:1.25;}\n.og-fl{display:flex;flex-direction:column;gap:6px;margin:12px 0;font-size:14.5px;color:var(--ink2);font-weight:700;}\n.og-fl input,.og-werbtn{min-height:50px;padding:0 14px;font-size:16.5px;border-radius:13px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-weight:500;}\n.og-werbtn{text-align:left;display:flex;align-items:center;gap:8px;cursor:pointer;} .og-werbtn svg{width:16px;height:16px;}\n.og-zwei{display:grid;grid-template-columns:1fr 1fr;gap:10px;}\n.og-seg{display:flex;gap:6px;} .og-seg button{flex:1;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink2);font-size:15px;font-weight:700;cursor:pointer;}\n.og-seg button.on{background:var(--brand);border-color:var(--brand);color:#fff;}\n.og-weg{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid var(--line2);font-size:14px;color:var(--ink2);}\n.og-weg label{display:flex;align-items:center;gap:6px;} .og-weg .warn{color:var(--red);border-color:rgba(240,82,82,.4);}\n.og-wahl{position:fixed;inset:0;z-index:2000;background:rgba(2,4,8,.6);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s;}\n.og-wahl.auf{opacity:1;}\n.og-wahl-in{width:min(520px,100%);max-height:80vh;overflow:auto;background:var(--surface2);border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));transform:translateY(30px);transition:transform .25s var(--ease);}\n.og-wahl.auf .og-wahl-in{transform:none;}\n@media (min-width:700px){ .og-wahl{align-items:center;} .og-wahl-in{border-radius:22px;} }\n.og-wahl h3{margin:0 0 10px;font-size:19px;}\n.og-wahl input{width:100%;min-height:52px;padding:0 14px;font-size:17px;border-radius:13px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);box-sizing:border-box;}\n.og-wl{display:flex;flex-direction:column;gap:6px;margin:10px 0;}\n.og-wl button{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:13px;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:16.5px;text-align:left;cursor:pointer;}\n.og-wl button.on{border-color:var(--brand2);background:var(--brandSoft);} .og-wl button.frei{color:var(--brand2);font-weight:700;} .og-wl button small{color:var(--ink3);font-weight:500;}\n.og-wl svg{width:17px;height:17px;}\n.og-wtext,.og-code{width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;line-height:1.45;resize:vertical;}\n.og-code{font-family:ui-monospace,Menlo,monospace;font-size:12px;}\n.og-wa{background:#25d366!important;border-color:#25d366!important;color:#06240f!important;text-decoration:none;}\n.og-arten{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:12px 0;}\n.og-arten button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink2);font-size:14px;font-weight:700;cursor:pointer;}\n.og-arten button span{font-size:26px;} .og-arten button.on{border-color:var(--brand2);background:var(--brandSoft);color:var(--ink);}\n.og-vl{display:flex;flex-direction:column;gap:8px;}\n.og-vl button{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;text-align:left;cursor:pointer;}\n.og-vl button span{font-size:24px;} .og-vl button b{flex:1;} .og-vl button small{color:var(--ink3);}\n.og-vh{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin:16px 0 6px;}\n.og-vp{display:flex;align-items:center;gap:6px;margin-bottom:6px;}\n.og-vp input{flex:1;min-width:0;min-height:44px;padding:0 10px;font-size:15px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);}\n.og-vp small{flex:none;width:92px;color:var(--ink3);font-size:12px;}\n.og-vp button{flex:none;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink2);cursor:pointer;}\n.og-steps{padding-left:20px;font-size:15px;line-height:1.55;color:var(--ink2);} .og-steps li{margin-bottom:8px;} .og-steps b{color:var(--ink);}\n.og-form>input#ogDu{width:100%;box-sizing:border-box;min-height:50px;padding:0 12px;font-size:15px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);}\n\n/* Start und Termine */\n.og-home .og-hz{display:flex;align-items:center;gap:12px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line2);background:none;color:var(--ink);text-align:left;cursor:pointer;}\n.og-home .og-hz>span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;} .og-home .og-hz b{font-size:15.5px;} .og-home .og-hz small{color:var(--ink2);font-size:13.5px;}\n.og-home .og-em{width:40px;height:40px;font-size:22px;border-radius:12px;}\n.og-kalbtn{background:var(--green)!important;border-color:var(--green)!important;color:#052e14!important;}\n\n/* Bewegung */\n@keyframes ogHakt{0%{transform:none;}40%{transform:scale(1.02);}100%{transform:translateX(12px);opacity:.3;}}\n@keyframes ogPop{0%{transform:scale(.8);}60%{transform:scale(1.18);}100%{transform:scale(1);}}\n@keyframes ogNeu{0%{transform:translateY(-10px);opacity:0;background:var(--brandSoft);}100%{transform:none;opacity:1;}}\n.og-konfetti{position:fixed;z-index:3000;pointer-events:none;width:0;height:0;}\n.og-konfetti i{position:absolute;width:9px;height:14px;border-radius:2px;animation:ogKonf 1.2s cubic-bezier(.15,.7,.3,1) forwards;}\n@keyframes ogKonf{0%{transform:translate(0,0) rotate(0);opacity:1;}100%{transform:translate(var(--x),calc(var(--y) + 160px)) rotate(540deg);opacity:0;}}\n@media (prefers-reduced-motion:reduce){ .og-p,.og-haken,.og-haken svg,.og-ring .fg{transition:none!important;} .og-p.hakt,.og-p.neu,.og-p.hakt .og-haken{animation:none!important;} }\n@media (max-width:520px){ .og-kopf h2{font-size:26px;} .og-karte{padding:14px 12px;gap:12px;} .og-em{width:44px;height:44px;font-size:24px;} .og-ring:not(.gross){width:46px;height:46px;} }\n/* Formulare, Schichtplan, Kasse, Nummern */\n.og-p{flex-wrap:wrap;}\n.og-fo{margin-left:56px;padding:6px 12px;border-radius:999px;border:1px solid rgba(91,155,255,.35);background:var(--brandSoft);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer;}\n.og-p.done .og-fo{display:none;}\n.og-sotd{border-color:rgba(251,191,36,.35);}\n.og-schicht h3,.og-kasse h3,.og-num h3,.og-forms h3{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:17px;}\n.og-schicht h3 small{color:var(--ink3);font-weight:600;font-size:13px;margin-left:auto;}\n.og-schicht.blink{animation:ogBlink 1.2s var(--ease);}\n@keyframes ogBlink{0%,100%{box-shadow:none;}30%{box-shadow:0 0 0 4px var(--brandSoft);}}\n.og-regel{margin:0 0 12px;padding:10px 12px;border-radius:12px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);color:var(--ink2);font-size:14px;line-height:1.45;}\n.og-sr{padding:12px 0;border-top:1px solid var(--line2);}\n.og-sk{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;} .og-sk b{font-size:16.5px;} .og-sk small{color:var(--ink2);font-size:14px;}\n.og-sx{margin-left:auto;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink2);cursor:pointer;}\n.og-sh{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;}\n.og-shn{display:inline-flex;align-items:center;gap:6px;padding:7px 6px 7px 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);font-size:15px;}\n.og-shn.ich{border-color:rgba(34,197,94,.5);color:#4ade80;font-weight:700;}\n.og-shn button{border:0;background:none;color:var(--ink3);font-size:16px;cursor:pointer;padding:0 6px;} .og-shn button.warn{color:var(--red);font-size:13px;font-weight:700;}\n.og-shfrei{min-height:40px;padding:0 16px;border-radius:999px;border:1.5px dashed rgba(91,155,255,.55);background:none;color:var(--brand2);font-size:15px;font-weight:700;cursor:pointer;}\n.og-shr{color:var(--ink3);font-size:13px;}\n.og-sr.voll .og-sk b::after{content:' ✓';color:var(--green);}\n.og-papier{display:inline-block;margin-top:12px;color:var(--ink2);font-size:14px;}\n.og-schicht>.btn{margin-top:10px;}\n.og-ksum{margin:0 0 10px;font-size:15px;color:var(--ink2);} .og-ksum b{color:var(--ink);font-size:18px;}\n.og-kf h3{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--brand2);margin:16px 0 6px;}\n.og-kr,.og-kh{display:grid;grid-template-columns:1fr 84px 96px 88px;gap:6px;align-items:center;margin-bottom:6px;}\n.og-kh small{color:var(--ink3);font-size:11.5px;text-align:center;}\n.og-kr span{font-size:14.5px;} .og-kr input{min-width:0;min-height:44px;padding:0 8px;font-size:16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:right;}\n.og-kr b{text-align:right;font-size:14.5px;font-variant-numeric:tabular-nums;}\n.og-kr input[data-f=\"beleg\"]{text-align:left;}\n.og-kend{margin:14px 0 4px;padding:12px 14px;border-radius:14px;background:var(--surface2);border:1px solid var(--line);}\n.og-kend div{display:flex;justify-content:space-between;padding:4px 0;font-size:15px;font-variant-numeric:tabular-nums;} .og-kend .sum{border-top:2px solid #E8741F;margin-top:6px;padding-top:8px;font-size:17px;}\n@media (max-width:520px){ .og-kr,.og-kh{grid-template-columns:1fr 70px 80px;} .og-kr b,.og-kr i,.og-kh small:last-child{display:none;} }\n.og-nl{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;}\n.og-nl a,.og-nl div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--line2);color:var(--ink);text-decoration:none;}\n.og-nl span{font-size:13px;color:var(--ink2);} .og-nl b{font-size:18px;font-variant-numeric:tabular-nums;} .og-nl i{font-size:13px;color:var(--ink3);font-style:normal;}\n.og-fz{display:grid;grid-template-columns:52px 1fr;gap:0 10px;padding:10px 0;border-top:1px solid var(--line2);color:var(--ink);text-decoration:none;}\n.og-fz b{grid-row:span 2;align-self:center;font-family:var(--disp);font-size:18px;color:#E8741F;} .og-fz span{font-weight:700;font-size:15px;} .og-fz small{color:var(--ink3);font-size:13px;}\n.og-rolle{display:grid;grid-template-columns:1fr;gap:6px;padding:10px 0;border-top:1px solid var(--line2);}\n.og-rolle b{font-size:14.5px;} .og-rolle input{min-height:44px;padding:0 10px;font-size:15.5px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);}\n@media (min-width:640px){ .og-rolle{grid-template-columns:200px 1fr 170px;align-items:center;} }\n@media (max-width:520px){\n  .og-ht{align-items:flex-start;} .og-ht .og-em.gross{display:none;} .og-ht h2{font-size:20px;} .og-ring.gross{width:64px;height:64px;}\n  .og-kr{grid-template-columns:1fr 1fr;} .og-kr span{grid-column:1/-1;font-weight:600;margin-top:4px;} .og-kh{display:none;}\n  .og-kr input[data-f=\"beginn\"]::placeholder,.og-kr input[data-f=\"ende\"]::placeholder{color:var(--ink3);}\n}\n.og-p .og-pt{flex:1 1 calc(100% - 60px);} .og-p .og-fo{flex:0 0 auto;}\n/* 0.32 Vereins-Drive gut sichtbar */\n.og-dban{display:flex;align-items:center;gap:14px;padding:16px 18px;margin:0 0 14px;border-radius:var(--r-lg);border:2px solid rgba(59,123,255,.45);background:linear-gradient(135deg,rgba(59,123,255,.14),rgba(59,123,255,.04));}\n.og-dban-em{font-size:32px;line-height:1;flex:none;}\n.og-dban>div{flex:1;min-width:0;}\n.og-dban b{display:block;font-size:17px;}\n.og-dban p{margin:4px 0 0;font-size:14px;color:var(--ink2);}\n.og-dban .btn{flex:none;}\n@media (max-width:620px){ .og-dban{flex-wrap:wrap;} .og-dban .btn{width:100%;justify-content:center;} }\n.og-dhin .btn{margin-left:6px;vertical-align:middle;}\n.og-fdrive{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}\n.og-fdrive .note{margin:0 0 8px;}\n/* 0.32 Partnersheet im Partner-Bereich */\n.ps-karte{display:flex;gap:18px;align-items:flex-start;}\n.ps-bild{flex:none;width:150px;border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.25);transform:rotate(-1.5deg);transition:transform .2s var(--ease);}\n.ps-bild:hover{transform:rotate(0) scale(1.02);}\n.ps-bild img{display:block;width:100%;height:auto;}\n.ps-txt{flex:1;min-width:0;}\n.ps-txt h3{margin:0 0 6px;}\n.ps-txt p{margin:0 0 10px;font-size:14.5px;color:var(--ink2);}\n.ps-stufen{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin:0 0 12px;}\n.ps-stufen span{padding:8px 10px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);font-size:13.5px;color:var(--ink2);}\n.ps-stufen b{display:block;font-size:14px;color:var(--ink);}\n.ps-btns{display:flex;flex-wrap:wrap;gap:8px;}\n.ps-teilen{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}\n.ps-link{width:100%;font-size:13px;}\n@media (max-width:620px){ .ps-karte{flex-direction:column;align-items:stretch;} .ps-bild{width:120px;margin:0 auto;} .ps-btns .btn{flex:1 1 45%;justify-content:center;} }\n/* 0.33 Nach unten ziehen zum Aktualisieren */\n.ptr{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) - 48px);transform:translate(-50%,0);z-index:120;display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;background:var(--surface,#1b2130);color:var(--ink,#fff);border:1px solid var(--line,rgba(255,255,255,.15));box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:14.5px;font-weight:600;opacity:0;transition:opacity .15s;pointer-events:none;white-space:nowrap;}\n.ptr.an{opacity:1;}\n.ptr .ptr-i{font-style:normal;display:inline-block;transition:transform .2s;}\n.ptr.los .ptr-i{transform:rotate(180deg);}\n.ptr.dreht .ptr-i{animation:ptrDreh .8s linear infinite;}\n.ptr.dreht .ptr-i::before{content:'';}\n@keyframes ptrDreh{to{transform:rotate(360deg);}}\n.appupd{max-width:calc(100vw - 32px);white-space:normal;text-align:center;line-height:1.35;}\n/* 0.34 Banden am Sportplatz */\n.bd-k1{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;}\n.bd-std{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin:14px 0 10px;}\n.bd-std>div{padding:10px 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);}\n.bd-std b{display:block;font-size:13px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;}\n.bd-std span{font-size:14.5px;color:var(--ink);}\n.bd-wer{margin:4px 0 10px;font-size:15px;color:var(--ink2);}\n.bd-zahlen{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;}\n.bd-zahlen span,.bd-zahlen button{flex:1 1 90px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-size:13.5px;color:var(--ink2);background:transparent;text-align:left;font:inherit;font-size:13.5px;cursor:pointer;min-height:44px;transition:border-color .15s,background .15s;}\n.bd-zahlen button:hover{border-color:var(--ink2);} .bd-zahlen button.on{border-color:var(--ink);background:var(--card2,rgba(127,127,127,.08));box-shadow:inset 0 0 0 1px var(--ink);}\n.bd-zahlen button:focus-visible{outline:2px solid #60a5fa;outline-offset:2px;}\n.bd-zuord{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:10px;padding:10px 12px;border-radius:12px;border:1px dashed var(--line);font-size:13.5px;color:var(--ink2);}\n.bd-zuord span{flex:1 1 220px;}\n.bd-vor{display:block;margin-top:6px;color:var(--ink2);font-size:12.5px;line-height:1.5;}\n.bd-kand{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:8px 14px;margin:4px 6px 0 0;font:inherit;font-size:13.5px;cursor:pointer;min-height:44px;}\n.bd-zuord .btn{min-height:44px;}\nhtml[data-theme=\"hell\"] .bd-zahlen .z-erneuern b{color:#b45309;} html[data-theme=\"hell\"] .bd-zahlen .z-gut b{color:#15803d;} html[data-theme=\"hell\"] .bd-zahlen .z-unklar b{color:#1d4ed8;}\n.bd-zl{display:grid;gap:8px;margin:12px 0;}\n.bd-zr{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;}\n.bd-zr input{width:20px;height:20px;margin-top:2px;flex:none;}\n.bd-zr span{display:grid;gap:2px;} .bd-zr small{color:var(--ink2);}\n.bd-zahlen b{display:block;font-size:24px;color:var(--ink);}\n.bd-zahlen .z-erneuern b{color:#f59e0b;} .bd-zahlen .z-gut b{color:#22c55e;} .bd-zahlen .z-unklar b{color:#60a5fa;}\n.bd-f{margin:12px 0;}\n.bd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}\n.bd-b{display:flex;flex-direction:column;text-align:left;padding:0;border-radius:var(--r-lg);border:1px solid var(--line);background:var(--surface);color:var(--ink);overflow:hidden;cursor:pointer;font:inherit;}\n.bd-b.z-erneuern{border-color:rgba(245,158,11,.55);}\n.bd-bild{display:block;aspect-ratio:5/1.1;background:#10131a;overflow:hidden;}\n.bd-bild img{display:block;width:100%;height:100%;object-fit:cover;}\n.bd-bild i{display:flex;height:100%;align-items:center;justify-content:center;color:var(--ink3);font-style:normal;font-size:13px;}\n.bd-t{display:flex;flex-direction:column;gap:4px;padding:10px 12px 12px;}\n.bd-t b{font-size:15.5px;} .bd-t small{color:var(--ink3);font-size:12.5px;} .bd-t em{color:var(--ink2);font-size:13px;font-style:normal;}\n.bd-chips{display:flex;flex-wrap:wrap;gap:6px;}\n.bd-z,.bd-p{font-style:normal;font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);}\n.bd-z.z-gut{color:#22c55e;border-color:rgba(34,197,94,.45);} .bd-z.z-erneuern{color:#f59e0b;border-color:rgba(245,158,11,.5);} .bd-z.z-pruefen{color:var(--ink2);}\n.bd-p.p-ja{color:#22c55e;} .bd-p.p-unklar{color:#60a5fa;} .bd-p.p-nein{color:#f87171;}\n.bd-gross{display:block;width:100%;max-height:220px;object-fit:contain;border-radius:12px;margin:10px 0;background:#10131a;}\n.bd-seg button.on{background:linear-gradient(180deg,#3b78ff,#2459e6);color:#fff;}\n@media (max-width:620px){ .bd-k1{flex-direction:column;} .bd-grid{grid-template-columns:1fr;} }\n@media (max-width:620px){ .bd-std{grid-template-columns:1fr 1fr;gap:6px;} .bd-std>div{padding:8px 10px;} .bd-std b{font-size:11.5px;} .bd-std span{font-size:13px;line-height:1.35;} }\n/* 0.35 Helferpool */\n.hp h2 small{font-size:14px;color:var(--ink3);font-weight:600;margin-left:6px;}\n.hp-such input{width:100%;min-height:50px;padding:0 14px;font-size:16px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);}\n.hp-pruef{margin:10px 0;padding:12px 14px;border-radius:12px;font-size:15px;}\n.hp-pruef.ok{background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.45);} .hp-pruef.nein{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);}\n.hp-f{margin:10px 0;}\n.hp-l{display:flex;flex-direction:column;gap:8px;max-height:52vh;overflow:auto;}\n.hp-r{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);}\n.hp-kopf{display:flex;align-items:center;gap:8px;flex-wrap:wrap;} .hp-kopf b{font-size:16px;} .hp-kopf span{color:var(--ink3);font-size:13px;}\n.hp-drin{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink2);} .hp-drin input{width:20px;height:20px;}\n.hp-kontakt{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px;font-size:14px;} .hp-kontakt a{color:var(--brand2,#60a5fa);text-decoration:none;}\n.hp-int{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;} .hp-int i{font-style:normal;font-size:12.5px;padding:3px 8px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);}\n.hp-txt{margin-top:8px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;background:var(--surface2);border-radius:10px;padding:8px 10px;} .hp-txt b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px;} .hp-int i.hp-nicht{color:var(--ink3);} .hp-bf{margin-top:6px;} .hp-link{font-size:12px;font-weight:700;color:#25d366;white-space:nowrap;}\n.hp-fuss{display:flex;align-items:center;gap:8px;margin-top:8px;} .hp-fuss small{color:var(--ink3);flex:none;font-size:12px;}\n.hp-notiz{flex:1;min-width:0;min-height:36px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font-size:14px;}\n.hp-weg{margin-top:8px;padding:10px;border-radius:10px;background:rgba(239,68,68,.1);font-size:14px;}\n.hp-adm{margin-top:12px;} .hp-q{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;} .hp-q small{color:var(--ink3);flex:1;min-width:0;word-break:break-all;}\n.hp-fuss{flex-wrap:wrap;} .hp-notiz{flex:1 1 100%;order:3;}\n.hp-ans{margin:6px 0 4px;} .hp-ber{border:1px solid var(--line);border-radius:12px;margin-top:10px;background:var(--surface2);} .hp-ber>summary{display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:12px 14px;cursor:pointer;list-style:none;} .hp-ber>summary span{font-size:12.5px;color:var(--ink3);}\n.hp-ber[open]>summary{border-bottom:1px solid var(--line);} .hp-gl{padding:10px 14px 0;} .hp-gl label{display:block;font-size:12px;font-weight:700;color:var(--ink2);} .hp-glr{display:flex;gap:8px;margin-top:4px;} .hp-glr input{flex:1;min-width:0;} .hp-gl small{display:block;color:var(--ink3);font-size:11.5px;margin-top:4px;}\n.hp-bl{padding:4px 14px;} .hp-br{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);} .hp-br>div:first-child{display:flex;flex-direction:column;min-width:0;} .hp-br small{color:var(--ink3);font-size:12px;} .hp-br small.hp-ok{color:#22c55e;font-weight:600;}\n.hp-bk{display:flex;gap:6px;flex:none;} .hp-ber .btnrow{padding:8px 14px 12px;}\n.hp-glr input{min-height:40px;padding:0 12px;font-size:15px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);}\n"; document.head.appendChild(s); }catch(e){} })();
-/* =====================================================================
-   Sportzentrale Beta 0.32 · Partnersheet 2027/28 in der App
-   - Das Partnersheet (Nachbau 1:1, echter Text, Preise wie besprochen) liegt als PDF unter formulare/
-   - Im Partner-Bereich in der Ablage (seit 0.72 nur noch dort): ansehen, per WhatsApp oder Mail weitergeben, Link kopieren, in den Vereins-Drive legen
-   - Dazu die Rechnungsvorlage F-09 für Partnerrechnungen und eine kurze Preisübersicht (aus SPO_STUFE, damit alles gleich bleibt)
-   Immer „Partner“, nie „Sponsor“.
-   ===================================================================== */
-const PS_DATEI='Partnersheet-2027-28.pdf', PS_SAISON='2027/28';
-const psUrl=()=>{ try{ return new URL('formulare/'+PS_DATEI,location.href).href; }catch(e){ return 'formulare/'+PS_DATEI; } };
-function psKarte(){
-  const admin=typeof isAdmin==='function'&&isAdmin(), drive=typeof OG!=='undefined'&&OG.ue&&OG.ue.drive;
-  const stufen=Object.values(SPO_STUFE).map(s=>`<span><b>${svEsc(s.t)}</b>${spoEur(s.p)}${s.max?` · max. ${s.max}`:''}</span>`).join('');
-  return `<div class="card ps-karte" id="psKarte">
-    <a class="ps-bild" href="formulare/${PS_DATEI}" target="_blank" rel="noopener" aria-label="Partnerblatt ansehen"><img src="formulare/Partnersheet-2027-28-vorschau.jpg" alt="Partnerblatt ${PS_SAISON}, Seite 1" loading="lazy"></a>
-    <div class="ps-txt"><h3>Partnerblatt ${PS_SAISON}</h3>
-      <p>Stufen, Leistungen und Preise auf zwei Seiten, zum Weitergeben an Firmen. Partner des Tages: Supporter 189 €, Club 169 €, Premium 149 €, beim 1896 Partner ist ein Heimspiel inklusive.</p>
-      <div class="ps-stufen">${stufen}</div>
-      <div class="ps-btns"><a class="btn" href="formulare/${PS_DATEI}" target="_blank" rel="noopener">${SVI('file')} Ansehen</a>
-        <button type="button" class="btn ghost" id="psTeilen">${SVI('share')} Weitergeben</button>
-        <a class="btn ghost" href="formulare/F-09-Rechnungsvorlage.pdf" target="_blank" rel="noopener">${SVI('file')} Rechnungsvorlage</a>
-        ${admin&&drive?`<button type="button" class="btn ghost" id="psDrive">${SVI('upload')} In den Vereins-Drive</button>`:''}</div>
-      <p class="note small" id="psMsg"></p></div></div>`;
-}
-function psVerdrahten(root){
-  const t=root.querySelector('#psTeilen'); if(t)t.onclick=()=>psTeilen();
-  const d=root.querySelector('#psDrive'); if(d)d.onclick=async()=>{ const m=root.querySelector('#psMsg'); d.disabled=true; m.textContent='Lege das Partnerblatt in den Vereins-Drive …';
-    try{ const r=await ogVorlageInDrive('formulare/'+PS_DATEI,PS_DATEI); m.innerHTML='✓ Liegt im Vereins-Drive unter „04 Partner / Anschreiben & Präsentation“.'+(r.ordner_link?` <a href="${svEsc(r.ordner_link)}" target="_blank" rel="noopener">Ordner öffnen</a>`:''); }
-    catch(e){ m.textContent='⚠️ '+e.message; d.disabled=false; } };
-}
-function psTeilen(){
-  const url=psUrl(), text=`Hallo, hier ist unser Partnerblatt ${PS_SAISON} vom SV/BSC Mörlenbach mit allen Partnerstufen und Preisen: ${url}`;
-  const M=svModal(`<div class="og-form"><h2>${SVI('share')} Partnerblatt weitergeben</h2>
-    <p class="note">Der Link öffnet das PDF direkt, ohne Anmeldung. Du kannst ihn per WhatsApp, Mail oder als Nachricht schicken.</p>
-    <div class="ps-teilen">${navigator.share?`<button type="button" class="btn" id="psNativ">${SVI('share')} Teilen …</button>`:''}
-      <a class="btn ghost" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">${SVI('chat')} WhatsApp</a>
-      <a class="btn ghost" href="mailto:?subject=${encodeURIComponent('Partnerblatt '+PS_SAISON+' SV/BSC Mörlenbach')}&body=${encodeURIComponent(text)}">${SVI('mail')} Mail</a>
-      <button type="button" class="btn ghost" id="psKopie">${SVI('copy')} Link kopieren</button></div>
-    <input class="ps-link" readonly value="${svEsc(url)}"></div>`);
-  const n=M.querySelector('#psNativ'); if(n)n.onclick=async()=>{ try{ await navigator.share({title:'Partnerblatt '+PS_SAISON,text:'Partnerblatt '+PS_SAISON+' vom SV/BSC Mörlenbach',url}); }catch(e){} };
-  M.querySelector('#psKopie').onclick=async()=>{ try{ await navigator.clipboard.writeText(url); kToast('✓ Link kopiert'); }catch(e){ const i=M.querySelector('.ps-link'); i.select(); } };
-}
-{ const _a=spoAblage; spoAblage=function(B){ const r=_a.apply(this,arguments); try{ if(B&&!B.querySelector('#psKarte')){ B.insertAdjacentHTML('afterbegin',psKarte()); psVerdrahten(B); } }catch(e){ console.warn('Partnersheet',e); } return r; }; }
-
-/* =====================================================================
-   Sportzentrale Beta 0.33 · Immer die neueste Version
-   Wunsch Albert (29.09.2026): Lukas hing noch auf einer alten Version. Ab jetzt:
-   - Prüfen beim Start sofort, beim Zurückholen der App, bei Fokus, wenn das Netz wieder da ist und alle 5 Minuten
-   - Neue Version wird automatisch geladen. Warten nur, solange jemand gerade etwas eintippt oder noch gespeichert wird,
-     danach lädt sie von selbst (ein offenes Info-Fenster hält nicht mehr auf)
-   - Klappt das Laden nicht (alter Zwischenspeicher), wird der App-Speicher geleert und neu geladen
-   - Nach dem Update kurz „Aktualisiert auf Beta …“
-   - Nach unten ziehen (installierte App): prüft auf neue Version und lädt die Daten neu
-   Nie Daten in Gefahr: Eingaben, ungespeicherte Änderungen und laufendes Speichern gehen immer vor.
-   ===================================================================== */
-const UPD={dirty:false,warte:null,letzte:0,laeuft:false};
-const UPD_KEY='svbcUpd';
-function updLesen(){ try{ return JSON.parse(sessionStorage.getItem(UPD_KEY)||'{}')||{}; }catch(e){ return {}; } }
-function updSchreiben(o){ try{ sessionStorage.setItem(UPD_KEY,JSON.stringify(o)); }catch(e){} }
-// Eingaben in einem offenen Fenster merken, damit dort nichts verloren geht
-document.addEventListener('input',e=>{ try{ if(e.target&&e.target.closest&&e.target.closest('#modal'))UPD.dirty=true; }catch(_){} },true);
-{ const _sm=svModal; svModal=function(){ UPD.dirty=false; return _sm.apply(this,arguments); }; }
-{ const _co=closeOverlay; closeOverlay=function(){ UPD.dirty=false; const r=_co.apply(this,arguments); if(UPD.warte)setTimeout(updVersuchen,400); return r; }; }
-
-appSafeToReload=function(){
-  try{ if(crmIsTyping())return false; }catch(e){}
-  if(typeof SYNC_ST!=='undefined'&&(SYNC_ST==='pending'||SYNC_ST==='err'))return false;
-  try{ if(mvpDirty)return false; }catch(e){}
-  try{ const ov=document.getElementById('overlay'); if(ov&&ov.classList.contains('open')&&UPD.dirty)return false; }catch(e){}
-  try{ if(document.querySelector('.spo-sig canvas')&&document.getElementById('overlay').classList.contains('open'))return false; }catch(e){}
-  return true;
-};
-
-async function updHart(){
-  // Alter Zwischenspeicher hält fest: App-Speicher leeren und den Service Worker neu holen (Anmeldung und Daten bleiben)
-  try{ const ks=await caches.keys(); await Promise.all(ks.filter(k=>k.startsWith('svbc-scout-')).map(k=>caches.delete(k))); }catch(e){}
-  try{ const r=await navigator.serviceWorker.getRegistration(); if(r)await r.unregister(); }catch(e){}
-}
-appReload=function(hart){
-  const ziel=_appNew||String(Date.now()), s=updLesen();
-  const n=s.build===ziel?(s.n||0)+1:1; updSchreiben({build:ziel,n,von:APP_BUILD});
-  try{ sessionStorage.setItem('svbcReloadFor',ziel); }catch(e){}
-  try{ lsSet(OUTBOX_KEY,syncSer()); }catch(e){}
-  const go=()=>location.replace(location.pathname+'?v='+encodeURIComponent(ziel)+location.hash);
-  (async()=>{
-    try{ if(hart===true||n>=2)await updHart(); else { const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(r)await r.update().catch(()=>{}); } }catch(e){}
-    go();
-  })();
-};
-function updBanner(text){
-  let el=document.getElementById('appUpd');
-  if(!el){ el=document.createElement('button'); el.id='appUpd'; el.className='appupd'; el.type='button'; document.body.appendChild(el); }
-  el.onclick=()=>{ if(typeof SYNC_ST!=='undefined'&&SYNC_ST==='pending'){ kToast('Wird noch gespeichert: gleich nochmal tippen'); return; } appReload(); };
-  el.innerHTML=text; el.style.display='';
-}
-appShowUpdate=function(){ updBanner('🔄 <b>Neue Version ist da</b> · lädt gleich von selbst'); };
-function updVersuchen(){
-  if(!_appNew||_appNew===APP_BUILD)return;
-  const s=updLesen();
-  if(s.build===_appNew&&(s.n||0)>=3){ updBanner('🔄 <b>Neue Version</b> · bitte einmal tippen'); return; }  // nicht endlos neu laden
-  if(appSafeToReload()){ clearInterval(UPD.warte); UPD.warte=null; appReload(); return; }
-  appShowUpdate();
-  if(!UPD.warte)UPD.warte=setInterval(()=>{ if(document.visibilityState==='visible')updVersuchen(); },3000);
-}
-appCheckUpdate=async function(auto){
-  if(!/^https?:$/.test(location.protocol))return null;
-  const now=Date.now(); if(now-UPD.letzte<8000)return null; UPD.letzte=now;
-  try{
-    const r=await fetch('version.json?t='+now,{cache:'no-store'}); if(!r.ok)return null;
-    const v=await r.json(); if(!v||typeof v.build!=='string'||!v.build)return null;
-    if(v.build===APP_BUILD)return false;
-    _appNew=v.build; updVersuchen(); return true;
-  }catch(e){ return null; }
-};
-// Wann geprüft wird: sofort, beim Zurückholen, bei Fokus, wenn das Netz zurück ist, alle 5 Minuten, und wenn der Service Worker eine neue Version meldet
-setTimeout(()=>appCheckUpdate(true),600);
-window.addEventListener('focus',()=>appCheckUpdate(true));
-window.addEventListener('pageshow',e=>{ if(e.persisted)appCheckUpdate(true); });
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')appCheckUpdate(true); });   // 0.99.44: installierte App kommt aus dem Hintergrund, ohne dass „focus“ feuert
-window.addEventListener('online',()=>{ UPD.letzte=0; appCheckUpdate(true); });
-setInterval(()=>{ if(document.visibilityState==='visible')appCheckUpdate(true); },5*60*1000);
-if(navigator.serviceWorker)navigator.serviceWorker.addEventListener('message',e=>{ if(e.data&&e.data.svbcNeu&&e.data.svbcNeu!==APP_BUILD){ UPD.letzte=0; appCheckUpdate(true); } });
-
-// Nach dem Update einmal bestätigen, dann den Merker löschen
-(function(){ const s=updLesen(); if(s.build&&s.build===APP_BUILD){ updSchreiben({}); try{ sessionStorage.removeItem('svbcReloadFor'); }catch(e){}
-  setTimeout(()=>{ try{ kToast('✓ Aktualisiert auf '+APP_BUILD.replace(/^beta-/,'Beta ')); }catch(e){} },1800); } })();
-
-/* ---------- Nach unten ziehen zum Aktualisieren (installierte App) ---------- */
-(function(){
-  if(!('ontouchstart' in window))return;
-  let y0=null,x0=0,dy=0,box=null;
-  const SCHWELLE=110;
-  const oben=()=>(window.scrollY||document.documentElement.scrollTop||0)<=0;
-  const darf=t=>{ try{ if(!(typeof appStandalone==='function'&&appStandalone()))return false; if(document.getElementById('overlay').classList.contains('open'))return false;
-    if(!document.getElementById('gate')||!document.getElementById('gate').classList.contains('done'))return false;
-    if(t&&t.closest&&t.closest('input,textarea,select,canvas,.spo-sig,[data-noptr]'))return false;
-    let el=t; while(el&&el!==document.body){ if(el.scrollTop>0)return false; el=el.parentElement; } return oben(); }catch(e){ return false; } };
-  const zeig=()=>{ if(!box){ box=document.createElement('div'); box.className='ptr'; box.innerHTML='<i class="ptr-i">↓</i><span></span>'; document.body.appendChild(box); } return box; };
-  const weg=()=>{ if(box){ box.classList.remove('an','los','dreht'); box.style.transform=''; box.querySelector('.ptr-i').textContent='↓'; } y0=null; dy=0; };
-  document.addEventListener('touchstart',e=>{ if(e.touches.length!==1||UPD.laeuft||!darf(e.target)){ y0=null; return; } y0=e.touches[0].clientY; x0=e.touches[0].clientX; dy=0; },{passive:true});
-  document.addEventListener('touchmove',e=>{ if(y0==null)return; const t=e.touches[0]; dy=t.clientY-y0; const dx=Math.abs(t.clientX-x0);
-    if(dy<=0||dx>dy||!oben()){ weg(); return; }
-    const b=zeig(), h=Math.min(dy*.45,80); b.classList.add('an'); b.classList.toggle('los',dy>SCHWELLE); b.style.transform=`translate(-50%,${h}px)`;
-    b.querySelector('span').textContent=dy>SCHWELLE?'Loslassen zum Aktualisieren':'Zum Aktualisieren ziehen'; },{passive:true});
-  document.addEventListener('touchend',()=>{ if(y0==null)return; const los=dy>SCHWELLE; if(!los){ weg(); return; }
-    const b=zeig(); b.classList.add('dreht'); b.querySelector('.ptr-i').textContent='↻'; b.querySelector('span').textContent='Wird aktualisiert …'; y0=null; updJetzt(b); },{passive:true});
-  document.addEventListener('touchcancel',weg,{passive:true});
-  async function updJetzt(b){
-    UPD.laeuft=true; UPD.letzte=0;
-    try{
-      const neu=await appCheckUpdate(true);
-      if(neu===true){ b.querySelector('span').textContent='Neue Version wird geladen …'; if(appSafeToReload())appReload(); return; }
-      try{ if(typeof svDatenNeuLaden==='function')await svDatenNeuLaden(); }catch(e){}
-      b.querySelector('span').textContent='✓ Alles aktuell · '+APP_BUILD.replace(/^beta-/,'Beta ');
-      b.classList.remove('dreht');
-    }finally{ setTimeout(()=>{ UPD.laeuft=false; if(box){ box.classList.remove('an','los','dreht'); box.style.transform=''; box.querySelector('.ptr-i').textContent='↓'; } },1300); }
-  }
-})();
-
-/* =====================================================================
-   Sportzentrale Beta 0.34 · Banden am Sportplatz (Partner-Bereich, Reiter „Banden“)
-   - Standard aus der Begehung mit Benjamin Steinmaus (29.09.2026): 500 × 80 cm aus zwei Platten 250 × 80 cm, 3 mm Aluminiumverbund
-   - Jede Bande mit Foto, Firma, Lage, Maßen, Zustand (gut / erneuern / prüfen) und ob der Partner dabei bleibt
-   - Zuständig: Rolle „banden“ aus den Zuständigkeiten (Name kommt aus der Datenbank, nicht aus dem Code)
-   Immer „Partner“, nie „Sponsor“.
-   ===================================================================== */
-const BD={L:[],flt:'alle',rolle:null,err:null};
-// Zustand mit Linien-Icons (wie im übrigen Partnerbereich), Wort immer dabei
-const BD_Z={gut:['gut',SVI('check')+' Gut'],erneuern:['erneuern',SVI('refresh')+' Erneuern'],pruefen:['pruefen',SVI('info')+' Prüfen']};
-const BD_P={ja:'Partner bleibt',unklar:'Partner fragen',nein:'Partner hört auf'};
-const BD_STANDARD='500 × 80 cm (2 Platten à 250 × 80 cm)';
-async function bdLaden(){
-  try{ const {data,error}=await SVB.sb.from('banden').select('*').order('nr').order('firma'); if(error)throw error; BD.L=data||[]; BD.err=null; }catch(e){ BD.err=String(e.message||e); }
-  if(BD.rolle===null){ try{ const R=await ogRpc('orga_rollen'); BD.rolle=(R||[]).find(r=>r.key==='banden')||false; }catch(e){ BD.rolle=false; } }
-}
-async function spoBanden(B){
-  // Filter antippen lädt nicht neu (die Liste ist schon da), sonst frisch vom Server
-  if(BD.ohneLaden&&BD.L.length){ BD.ohneLaden=false; }else{ B.innerHTML='<div class="card"><div class="empty">Lade Banden …</div></div>'; await bdLaden(); } if(SPO.view!=='banden')return;
-  if(BD.err){ B.innerHTML=`<div class="card"><div class="empty">Banden konnten nicht geladen werden: ${svEsc(BD.err)}</div></div>`; return; }
-  const L=BD.L, n=k=>L.filter(b=>b.zustand===k).length, unklar=L.filter(b=>b.partner_aktiv==='unklar'&&b.bild!=='banden/nichtraucher.jpg').length;
-  const F=[['alle','Alle '+L.length],['erneuern','Erneuern '+n('erneuern')],['pruefen','Prüfen '+n('pruefen')],['gut','Gut '+n('gut')],['unklar','Partner fragen '+unklar]];
-  const liste=L.filter(b=>BD.flt==='alle'||(BD.flt==='unklar'?b.partner_aktiv==='unklar'&&b.bild!=='banden/nichtraucher.jpg':b.zustand===BD.flt));
-  const R=BD.rolle;
-  B.innerHTML=`<div class="card bd-kopf"><div class="bd-k1"><div><h3 class="trh" style="margin:0">${SVI('grid')} Banden am Sportplatz</h3>
-        <p class="note" style="margin:6px 0 0">Bei der Begehung am 29.09.2026${R&&R.namen?' mit '+svEsc(R.namen):''} hieß es: 14 Banden sollten erneuert werden, sofern die Partner dabei bleiben. Ein Angebot kommt. Die Zahlen unten sind unsere Einschätzung nach den Fotos.</p></div>
-        <button class="btn sm" type="button" id="bdNeu">${SVI('plus')} Bande</button></div>
-      <div class="bd-std"><div><b>Standardmaß</b><span>500 × 80 cm, zwei Platten à 250 × 80 cm</span></div><div><b>Material</b><span>3 mm Aluminiumverbund</span></div>
-        <div><b>Haltbarkeit</b><span>Druck bleibt 7 bis 10 Jahre farbstabil, danach neu mit Folie bekleben, die Platten bleiben</span></div>
-        <div><b>Rückseiten</b><span>Meist noch alte Schutzfolie drauf, deshalb hinten nicht mehr beschriftbar</span></div></div>
-      ${R&&R.namen?`<div class="bd-wer">Zuständig: <b>${svEsc(R.namen)}</b>${R.tel?` · <a href="tel:${svEsc(String(R.tel).replace(/[^0-9+]/g,''))}">${svEsc(R.tel)}</a>`:''}</div>`:''}
-      <div class="bd-zahlen">${[['erneuern',n('erneuern'),'erneuern'],['pruefen',n('pruefen'),'prüfen'],['gut',n('gut'),'gut'],['unklar',unklar,'Partner fragen']].map(([k,z,l])=>`<button type="button" class="z-${k}${BD.flt===k?' on':''}" data-bdf="${k}" data-bdzahl="1" aria-pressed="${BD.flt===k}"><b>${z}</b>${l}</button>`).join('')}</div>
-      <p class="note small">Zustand nach den Fotos geschätzt. Bitte mit der Liste vom Platzwart abgleichen. Zahl antippen zeigt genau diese Banden, Bande antippen zum Ändern.</p>
-      ${bdOhnePartner().length?`<div class="bd-zuord"><span>${SVI('link')} ${bdOhnePartner().length===1?'1 Bande passt zu einer Firma im Partner-Bereich, ist aber':bdOhnePartner().length+' Banden passen zu einer Firma im Partner-Bereich, sind aber'} noch nicht verknüpft.</span><button class="btn sm ghost" type="button" id="bdZuord">Firmen zuordnen</button></div>`:''}</div>
-    <div class="chips4 bd-f">${F.map(([k,l])=>`<button type="button" class="${BD.flt===k?'on':''}" data-bdf="${k}">${l}</button>`).join('')}</div>
-    <div class="bd-grid">${liste.map(b=>`<button type="button" class="bd-b z-${svEsc(b.zustand)}" data-bd="${svEsc(b.id)}">
-        <span class="bd-bild">${b.bild?`<img src="${svEsc(b.bild)}" alt="" loading="lazy">`:'<i>Kein Foto</i>'}</span>
-        <span class="bd-t"><b>${b.nr?b.nr+'. ':''}${svEsc(b.firma)}</b><small>${[b.lage,b.masse!==BD_STANDARD?b.masse:''].filter(Boolean).map(svEsc).join(' · ')}</small>
-          <span class="bd-chips"><i class="bd-z z-${svEsc(b.zustand)}">${BD_Z[b.zustand][1]}</i>${b.bild==='banden/nichtraucher.jpg'?'':`<i class="bd-p p-${svEsc(b.partner_aktiv)}">${BD_P[b.partner_aktiv]}</i>`}</span>
-          ${b.notiz?`<em>${svEsc(b.notiz)}</em>`:''}</span></button>`).join('')||'<div class="empty">Keine Banden in dieser Auswahl.</div>'}</div>`;
-  B.querySelectorAll('[data-bdf]').forEach(x=>x.onclick=async()=>{ const zahl=!!x.dataset.bdzahl, k=x.dataset.bdf; BD.flt=(zahl&&BD.flt===k)?'alle':k; BD.springen=zahl; BD.ohneLaden=true; await spoBanden(B); });
-  if(BD.springen){ BD.springen=false; const g=B.querySelector('.bd-f'); if(g)try{ g.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} }
-  const zb=B.querySelector('#bdZuord'); if(zb)zb.onclick=()=>bdZuordnen(B);
-  B.querySelectorAll('[data-bd]').forEach(x=>x.onclick=()=>bdForm(BD.L.find(b=>b.id===x.dataset.bd),B));
-  B.querySelector('#bdNeu').onclick=()=>bdForm(null,B);
-}
-function bdForm(b,B){
-  const x=b||{zustand:'pruefen',partner_aktiv:'unklar',masse:BD_STANDARD,material:'3 mm Aluminiumverbund',nr:(BD.L.reduce((a,y)=>Math.max(a,y.nr||0),0)+1)};
-  const vor=bdTreffer(x.firma,x.partner_nein);
-  const seg=(name,werte,akt)=>`<div class="svt-seg3 bd-seg" data-bdseg="${name}">${werte.map(([k,l])=>`<button type="button" class="${akt===k?'on':''}" data-v="${k}">${l}</button>`).join('')}</div>`;
-  const M=svModal(`<div class="mhead"><div><h2 style="margin:0">${b?svEsc(b.firma):'Neue Bande'}</h2><div class="msub">${b&&b.lage?svEsc(b.lage):'Banden am Sportplatz'}</div></div></div>
-    ${b&&b.bild?`<img class="bd-gross" src="${svEsc(b.bild)}" alt="">`:''}
-    <form id="bdF" class="editgrid svt-form" autocomplete="off">
-      <div class="field" style="grid-column:1/-1"><label>Firma / Motiv *</label><input name="firma" required maxlength="120" value="${svEsc(x.firma||'')}"></div>
-      <div class="field"><label>Nr. am Platz</label><input name="nr" type="number" min="0" max="999" value="${svEsc(x.nr||0)}"></div>
-      <div class="field"><label>Lage</label><input name="lage" maxlength="60" placeholder="z.B. Längsseite" value="${svEsc(x.lage||'')}"></div>
-      <div class="field"><label>Maße</label><input name="masse" maxlength="80" value="${svEsc(x.masse||'')}"></div>
-      <div class="field"><label>Material</label><input name="material" maxlength="80" value="${svEsc(x.material||'')}"></div>
-      <div class="field" style="grid-column:1/-1"><label>Zustand</label>${seg('zustand',[['gut',BD_Z.gut[1]],['erneuern',BD_Z.erneuern[1]],['pruefen',BD_Z.pruefen[1]]],x.zustand)}</div>
-      <div class="field" style="grid-column:1/-1"><label>Bleibt der Partner dabei?</label>${seg('partner_aktiv',[['ja','Ja'],['unklar','Fragen'],['nein','Nein']],x.partner_aktiv)}</div>
-      <div class="field" style="grid-column:1/-1"><label>Firma im Partner-Bereich</label><select name="sponsor"><option value="">keine</option>${[...SPO.S].sort((a,c)=>String(a.firma||'').localeCompare(String(c.firma||''),'de')).map(s=>`<option value="${svEsc(s.id)}"${(x.sponsor||vor.id)===s.id?' selected':''}>${svEsc(s.firma)}</option>`).join('')}</select>
-        ${!x.sponsor&&vor.id?`<small class="bd-vor">${SVI('link')} Passend zur Bande vorgeschlagen. Mit Speichern wird sie verknüpft.</small>`:''}
-        ${!x.sponsor&&!vor.id&&vor.kand.length?`<small class="bd-vor">Passt vielleicht: ${vor.kand.map(s=>`<button type="button" class="bd-kand" data-bdkand="${svEsc(s.id)}">${svEsc(s.firma)}</button>`).join(' ')}</small>`:''}</div>
-      <div class="field" style="grid-column:1/-1"><label>Notiz</label><textarea name="notiz" maxlength="600" rows="2">${svEsc(x.notiz||'')}</textarea></div>
-      <div class="field" style="grid-column:1/-1"><label>Foto-Link (Drive)</label><input name="foto_link" type="url" maxlength="300" placeholder="https://…" value="${svEsc(x.foto_link||'')}"></div>
-      <div class="btnrow sbact" style="grid-column:1/-1"><button class="btn" type="submit">Speichern</button>${b?'<button class="btn ghost danger" type="button" id="bdDel">Entfernen</button>':''}<button class="btn ghost" type="button" onclick="closeOverlay()">Abbrechen</button></div>
-    </form>`);
-  const wert={zustand:x.zustand,partner_aktiv:x.partner_aktiv};
-  M.querySelectorAll('[data-bdkand]').forEach(k=>k.onclick=()=>{ M.querySelector('select[name="sponsor"]').value=k.dataset.bdkand; k.closest('.bd-vor').textContent='Ausgewählt. Mit Speichern wird sie verknüpft.'; });
-  M.querySelectorAll('[data-bdseg]').forEach(g=>g.querySelectorAll('button').forEach(k=>k.onclick=()=>{ wert[g.dataset.bdseg]=k.dataset.v; g.querySelectorAll('button').forEach(y=>y.classList.toggle('on',y===k)); }));
-  M.querySelector('#bdF').onsubmit=async e=>{ e.preventDefault(); const fd=new FormData(e.target), t=k=>String(fd.get(k)||'').trim()||null;
-    const r={firma:t('firma'),nr:+fd.get('nr')||0,lage:t('lage'),masse:t('masse')||BD_STANDARD,material:t('material'),zustand:wert.zustand,partner_aktiv:wert.partner_aktiv,
-      sponsor:t('sponsor'),partner_nein:(!x.sponsor&&vor.id&&t('sponsor')!==vor.id)?vor.id:(x.partner_nein||null),notiz:t('notiz'),foto_link:t('foto_link'),geaendert_am:new Date().toISOString(),geaendert_von:SVU.name||null};
-    if(!r.firma)return kToast('⚠️ Bitte die Firma eintragen');
-    if(r.foto_link&&!/^https:\/\//.test(r.foto_link))return kToast('⚠️ Der Foto-Link muss mit https:// beginnen');
-    const q=b?SVB.sb.from('banden').update(r).eq('id',b.id):SVB.sb.from('banden').insert(r);
-    const {error}=await q; if(error)return kToast('⚠️ '+error.message);
-    closeOverlay(); kToast('✓ Gespeichert'); spoBanden(B); };
-  const d=M.querySelector('#bdDel'); if(d)d.onclick=async()=>{ const alt=b; const {error}=await SVB.sb.from('banden').delete().eq('id',b.id); if(error)return kToast('⚠️ '+error.message);
-    closeOverlay(); spoBanden(B); kToast('Bande entfernt','Rückgängig',async()=>{ const {id,...rest}=alt; await SVB.sb.from('banden').insert(rest); spoBanden(B); }); };
-}
-
-/* 0.89 · Firma im Partner-Bereich automatisch finden.
-   Namen werden vereinfacht (Umlaute, Rechtsformen und Füllwörter raus), dann zählen gemeinsame Wörter.
-   Ein Wort, das in vielen Firmen vorkommt, zählt weniger; Branchen- und Ortswörter fast nichts.
-   Vorgeschlagen wird nur, wenn eine Firma klar vorne liegt. */
-const BD_STOP=new Set(['gmbh','mbh','ggmbh','co','kg','ag','eg','ug','gbr','ek','e','k','inh','inhaber','inhaberin','und','der','die','das','von','fuer','ihr','ihre','am','im','filiale','niederlassung','intern','vertriebs','group','of','companies','gesellschaft','name','pruefen','bande','banner','schwarz','dunkelgruen','verein','gemeinde','fa','firma']);
-const BD_ALLG=new Set(['bad','heizung','sanitaer','installation','installationen','elektro','elektrotechnik','getraenke','markt','spedition','autohaus','auto','reisen','immobilien','bau','baustoffe','transporte','versicherung','versicherungen','service','moerlenbach','odenwald','odenwaelder','weschnitztal','kurpfalz','senioren','pflegeheim','partner','steuerberatung','modehaus','aktiv','abholmarkt','kuehlung','lebensmittel']);
-const BD_ORTE=new Set(['weschnitztal','kurpfalz','starkenburg','bergstrasse','odenwald','moerlenbach','weinheim','rimbach','fuerth','birkenau','heppenheim','bensheim','lorsch','mannheim','heidelberg','darmstadt']);
-function bdWorte(t){
-  return String(t||'').toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!BD_STOP.has(w));
-}
-function bdTreffer(firma,nein){
-  const S=(typeof SPO!=='undefined'&&SPO.S)||[], w=[...new Set(bdWorte(firma))]; if(!w.length||!S.length)return {id:null,kand:[]};
-  const voll=w.join(' '), W=S.filter(s=>s.id!==nein).map(s=>({s,w:new Set(bdWorte(s.firma))}));
-  const gleich=W.filter(x=>[...x.w].join(' ')===voll); if(gleich.length===1)return {id:gleich[0].s.id,kand:[gleich[0].s]};
-  const df={}; W.forEach(x=>x.w.forEach(t=>{ df[t]=(df[t]||0)+1; }));
-  // Steht bei beiden ein Ort und der Ort ist ein anderer (Volksbank Weschnitztal, Volksbank Kurpfalz), passt es nicht
-  const ort=w.filter(t=>BD_ORTE.has(t)), passtOrt=x=>{ const o=[...x.w].filter(t=>BD_ORTE.has(t)); return !ort.length||!o.length||o.some(t=>ort.includes(t)); };
-  const P=W.filter(passtOrt).map(x=>({s:x.s,p:w.reduce((a,t)=>a+(x.w.has(t)?(BD_ALLG.has(t)?0.25:1)/df[t]:0),0)})).filter(x=>x.p>0).sort((a,b)=>b.p-a.p);
-  const kand=P.filter(x=>x.p>=0.45).slice(0,3).map(x=>x.s);
-  if(P.length&&P[0].p>=0.9&&(!P[1]||P[0].p-P[1].p>=0.5))return {id:P[0].s.id,kand};
-  return {id:null,kand};
-}
-function bdOhnePartner(){ return BD.L.filter(b=>!b.sponsor).map(b=>({b,id:bdTreffer(b.firma,b.partner_nein).id})).filter(x=>x.id); }
-function bdZuordnen(B){
-  const L=bdOhnePartner(); if(!L.length)return kToast('Alles schon verknüpft');
-  const fn=id=>(SPO.S.find(s=>s.id===id)||{}).firma||'';
-  const M=svModal(`<div class="mhead"><div><h2 style="margin:0">Firmen zuordnen</h2><div class="msub">Diese Banden passen zu einer Firma im Partner-Bereich. Haken raus, wenn etwas nicht stimmt.</div></div></div>
-    <div class="bd-zl">${L.map((x,i)=>`<label class="bd-zr"><input type="checkbox" checked data-bdzi="${i}"><span><b>${svEsc(x.b.firma)}</b><small>wird verknüpft mit ${svEsc(fn(x.id))}</small></span></label>`).join('')}</div>
-    <p class="note small">Ohne Haken wird diese Firma für die Bande nicht mehr vorgeschlagen.</p>
-    <div class="btnrow sbact"><button class="btn" type="button" id="bdZok">Verknüpfen</button><button class="btn ghost" type="button" onclick="closeOverlay()">Abbrechen</button></div>`);
-  M.querySelector('#bdZok').onclick=async e=>{ const btn=e.currentTarget; if(btn.disabled)return; btn.disabled=true; btn.textContent='Speichere …';
-    const C=[...M.querySelectorAll('[data-bdzi]')], wahl=C.filter(c=>c.checked).map(c=>L[+c.dataset.bdzi]), nein=C.filter(c=>!c.checked).map(c=>L[+c.dataset.bdzi]); let ok=0, fehler='';
-    for(const x of wahl){ const {data,error}=await SVB.sb.from('banden').update({sponsor:x.id,geaendert_am:new Date().toISOString(),geaendert_von:SVU.name||null}).eq('id',x.b.id).is('sponsor',null).select('id'); if(error)fehler=svFehlerText(error); else ok+=(data||[]).length; }
-    // Haken rausgenommen: diese Firma für die Bande nicht mehr vorschlagen
-    for(const x of nein){ const {error}=await SVB.sb.from('banden').update({partner_nein:x.id}).eq('id',x.b.id).is('sponsor',null); if(error)fehler=svFehlerText(error); }
-    closeOverlay(); const z=(ok===1?'1 Bande':ok+' Banden')+' verknüpft'; kToast(fehler?'⚠️ '+z+', Rest nicht gespeichert: '+fehler:'✓ '+z); spoBanden(B); };
-}
-
-/* =====================================================================
-   Sportzentrale Beta 0.35 · Helferpool
-   - Wer bei der Jahreshauptversammlung den QR-Code scannt, trägt sich mit Namen, Geburtsdatum, Handy und E-Mail ein
-     und kommt danach in die WhatsApp-Gruppe „Unterstützer und Helferpool“ (Seite: svbsc.albertklee.de/#mitmachen=jhv26)
-   - Hier in der App (Aufgaben → Helferpool): Liste, Suche, „Nummer prüfen“ für Beitrittsanfragen in WhatsApp,
-     Anrufen/WhatsApp, „In der Gruppe“ abhaken, Notiz, löschen auf Wunsch, alle als Kontakte (vCard) oder Liste (CSV) speichern
-   - Admin: Anmeldung öffnen/schließen, Aushang zum Ausdrucken
-   ===================================================================== */
-const HP={d:null,q:'',nur:'alle',b:''};
-const HP_I={kasse:'💶 Kasse',ausschank:'🍺 Ausschank',grill:'🌭 Grill',kuchen:'🍰 Kaffee & Kuchen',aufbau:'🛠️ Auf- und Abbau',fahrdienst:'🚗 Fahrdienst',handwerk:'🔧 Handwerk',medien:'📸 Medien',jugend:'⚽ Jugend & Turniere',ueberall:'🙌 Überall'};
-// Bereiche wie auf dem Mitmach-Zettel (ab 0.46)
-const HP_B={vereinsentwicklung:'Vereinsentwicklung & Projekte',heimspieltag:'Heimspieltag & Spielbetrieb',veranstaltungen:'Veranstaltungen',kommunikation:'Kommunikation & Marketing',partner:'Partnerschaften',jugend:'Jugend',senioren:'Senioren & Sportentwicklung',soma:'SOMA',unsicher:'Noch unsicher',nicht:'Möchte nicht mithelfen'};
-const HP_LINK='https://svbsc.albertklee.de/#mitmachen=';
-function hpNorm(t){ let x=String(t||'').replace(/\(0\)/g,'').replace(/[^0-9+]/g,''); if(x.startsWith('00'))x='+'+x.slice(2); if(x.startsWith('0'))x='+49'+x.slice(1); if(/^1[5-7]\d{8,9}$/.test(x))x='+49'+x; if(!x.startsWith('+'))x='+'+x; if(x.startsWith('+490'))x='+49'+x.slice(4); return x; }
-function hpZeigeNr(h){ const m=String(h||'').match(/^\+49(1\d{2})(\d+)$/); return m?'0'+m[1]+' '+m[2]:String(h||'').replace(/^\+49/,'0'); }
-async function hpLaden(){ HP.d=await ogRpc('helferpool_liste'); return HP.d; }
-// Knopf unten bei den Aufgaben
-{ const _r=ogRender; ogRender=async function(){ const r=await _r.apply(this,arguments);
-  try{ const P=document.getElementById('panel-orga'), f=P&&P.querySelector('.og-fuss'); if(f&&!f.querySelector('#ogHelfer')&&OG.ue&&OG.ue.darf){ const b=document.createElement('button'); b.type='button'; b.className='btn ghost sm'; b.id='ogHelfer'; b.innerHTML='🙌 Helferpool'; f.prepend(b); b.onclick=()=>hpOeffnen(); } }catch(e){} return r; }; }
-async function hpOeffnen(){
-  const M=svModal('<div class="og-form"><h2>🙌 Helferpool</h2><div class="empty">Lade …</div></div>');
-  try{ await hpLaden(); }catch(e){ M.querySelector('.empty').textContent='⚠️ '+e.message; return; }
-  hpZeigen();
-}
-function hpZeigen(){
-  const M=document.getElementById('modal'); if(!M||!HP.d)return;
-  const H=HP.d.helfer||[], q=HP.q.trim().toLowerCase(), ziffern=HP.q.replace(/[^0-9]/g,''), qn=ziffern.length>=5?hpNorm(HP.q):'';
-  const nrPasst=h=>!!qn&&!!h.handy&&(h.handy===qn||h.handy.includes(ziffern)||h.handy.replace(/^\+49/,'0').includes(ziffern));
-  const L=H.filter(h=>(HP.nur==='alle'||(HP.nur==='link'?!!h.geklickt:HP.nur==='neu'?!h.in_gruppe:h.in_gruppe))&&(!HP.b||(h.bereiche||[]).includes(HP.b))&&(!q||(h.vorname+' '+h.nachname+' '+(h.email||'')+' '+(h.idee||'')+' '+(h.mitgeben||'')).toLowerCase().includes(q)||nrPasst(h)));
-  const bz={}; H.forEach(h=>(h.bereiche||[]).forEach(b=>bz[b]=(bz[b]||0)+1));
-  const nichtDrin=H.filter(h=>!h.in_gruppe).length, geklickt=H.filter(h=>h.geklickt).length, admin=svRole()==='admin';
-  M.innerHTML=`<button class="close" id="svClose" aria-label="Schließen">✕</button><div class="og-form hp"><h2>🙌 Helferpool <small>${H.length} eingetragen</small></h2>
-    <p class="note">Alles vom Mitmach-Zettel und von der Online-Seite: Kontakt, Bereiche, Ideen und was die Leute uns mit auf den Weg geben. Wer eine Nummer angibt, steht hier, bevor er in der WhatsApp-Gruppe ist.</p>
-    <div class="hp-such"><input type="search" id="hpQ" placeholder="Name oder Handynummer, z.B. aus einer Beitrittsanfrage" value="${svEsc(HP.q)}"></div>
-    ${ziffern.length>=7&&/^[+0-9 ()\/-]+$/.test(HP.q.trim())?`<div class="hp-pruef ${L.length?'ok':'nein'}">${L.length?`✓ Die Nummer gehört zu <b>${svEsc(L[0].vorname+' '+L[0].nachname)}</b>`:'✗ Diese Nummer hat sich <b>nicht</b> eingetragen. Im Zweifel erst nachfragen.'}</div>`:''}
-    <div class="chips4 hp-f">${[['alle','Alle '+H.length],['neu','Noch nicht in der Gruppe '+nichtDrin],['drin','In der Gruppe '+(H.length-nichtDrin)],['link','Gruppenlink getippt '+geklickt]].map(([k,l])=>`<button type="button" class="${HP.nur===k?'on':''}" data-hpf="${k}">${l}</button>`).join('')}</div>
-    ${Object.keys(bz).length?`<div class="chips4 hp-f hp-bf"><button type="button" class="${!HP.b?'on':''}" data-hpb="">Alle Bereiche</button>${Object.keys(HP_B).filter(k=>bz[k]).map(k=>`<button type="button" class="${HP.b===k?'on':''}" data-hpb="${k}">${svEsc(HP_B[k])} ${bz[k]}</button>`).join('')}</div>`:''}
-    <div class="hp-l">${L.map(h=>`<div class="hp-r" data-hp="${svEsc(h.id)}"><div class="hp-kopf"><b>${svEsc(h.vorname+' '+h.nachname)}</b><span>${h.alter!=null?h.alter+' J.':''}</span>${h.geklickt?`<span class="hp-link" title="${svEsc(h.klicks+'× auf den Gruppenlink getippt')}">💬 Link getippt ${svEsc(new Date(h.geklickt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}))} ${svEsc(new Date(h.geklickt).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}))}</span>`:''}
-        <label class="hp-drin"><input type="checkbox" data-hpg="${svEsc(h.id)}"${h.in_gruppe?' checked':''}> in der Gruppe</label></div>
-        <div class="hp-kontakt">${h.handy?`<a href="tel:${svEsc(h.handy)}">📞 ${svEsc(hpZeigeNr(h.handy))}</a><a href="https://wa.me/${svEsc(h.handy.replace('+',''))}" target="_blank" rel="noopener">💬 WhatsApp</a>`:''}${h.email?`<a href="mailto:${svEsc(h.email)}">✉️ ${svEsc(h.email)}</a>`:''}</div>
-        ${(h.bereiche||[]).length?`<div class="hp-int">${h.bereiche.map(i=>`<i class="${i==='nicht'?'hp-nicht':''}">${svEsc(HP_B[i]||i)}</i>`).join('')}</div>`:''}
-        ${(h.interessen||[]).length?`<div class="hp-int">${h.interessen.map(i=>`<i>${svEsc(HP_I[i]||i)}</i>`).join('')}</div>`:''}
-        ${h.idee?`<div class="hp-txt"><b>Meine Idee</b>${svEsc(h.idee)}</div>`:''}${h.mitgeben?`<div class="hp-txt"><b>Mit auf den Weg</b>${svEsc(h.mitgeben)}</div>`:''}
-        <div class="hp-fuss"><small>${svEsc(h.quelle||'')} · ${svEsc(new Date(h.am).toLocaleDateString('de-DE'))}</small><input class="hp-notiz" data-hpn="${svEsc(h.id)}" maxlength="300" placeholder="Notiz" value="${svEsc(h.bemerkung||'')}"><button type="button" class="svt-x" data-hpx="${svEsc(h.id)}" aria-label="Löschen">✕</button></div></div>`).join('')||'<div class="empty">Niemand gefunden.</div>'}</div>
-    <div class="btnrow sbact"><button class="btn" type="button" id="hpVcf">📇 Alle als Kontakte speichern</button><button class="btn ghost" type="button" id="hpCsv">📄 Liste (CSV)</button>
-      <button class="btn ghost" type="button" id="hpLink">🔗 Anmeldelink</button>${admin?`<a class="btn ghost" href="formulare/Aushang-Helferpool.pdf" target="_blank" rel="noopener">🖨️ Aushang mit QR-Code</a>`:''}</div>
-    <p class="note small">Tipp: In WhatsApp unter Gruppeneinstellungen „Neue Mitglieder genehmigen“ einschalten. Dann siehst du bei jeder Beitrittsanfrage die Nummer und prüfst sie oben. Nach dem Speichern als Kontakte zeigt WhatsApp in der Gruppe die Namen statt Nummern.</p>
-    ${admin&&HP.d.quellen?`<details class="hp-adm"><summary>Anmeldung verwalten (Admin)</summary>${HP.d.quellen.map(x=>`<div class="hp-q"><b>${svEsc(x.titel)}</b><small>${svEsc(HP_LINK+x.code)}${x.wa?'':' · kein Gruppenlink'}</small><button type="button" class="btn ghost sm" data-hpq="${svEsc(x.code)}" data-an="${x.aktiv?0:1}" data-t="${svEsc(x.titel)}">${x.aktiv?'Schließen':'Wieder öffnen'}</button></div>`).join('')}</details>`:''}</div>`;
-  document.getElementById('svClose').onclick=()=>closeOverlay();
-  const qi=M.querySelector('#hpQ'); qi.oninput=()=>{ HP.q=qi.value; const pos=qi.selectionStart; hpZeigen(); const n=document.getElementById('hpQ'); n.focus(); try{ n.setSelectionRange(pos,pos); }catch(e){} };
-  M.querySelectorAll('[data-hpf]').forEach(b=>b.onclick=()=>{ HP.nur=b.dataset.hpf; hpZeigen(); });
-  M.querySelectorAll('[data-hpb]').forEach(b=>b.onclick=()=>{ HP.b=b.dataset.hpb; hpZeigen(); });
-  M.querySelectorAll('[data-hpg]').forEach(c=>c.onchange=async()=>{ try{ await ogRpc('helferpool_aendern',{p_id:c.dataset.hpg,p:{in_gruppe:c.checked}}); const h=HP.d.helfer.find(x=>x.id===c.dataset.hpg); if(h)h.in_gruppe=c.checked; kToast(c.checked?'✓ In der Gruppe':'Nicht in der Gruppe'); }catch(e){ kToast('⚠️ '+e.message); c.checked=!c.checked; } });
-  M.querySelectorAll('[data-hpn]').forEach(i=>i.onchange=async()=>{ try{ await ogRpc('helferpool_aendern',{p_id:i.dataset.hpn,p:{bemerkung:i.value}}); const h=HP.d.helfer.find(x=>x.id===i.dataset.hpn); if(h)h.bemerkung=i.value; kToast('✓ Notiz gespeichert'); }catch(e){ kToast('⚠️ '+e.message); } });
-  M.querySelectorAll('[data-hpx]').forEach(b=>b.onclick=()=>{ const h=HP.d.helfer.find(x=>x.id===b.dataset.hpx); if(!h)return; const r=b.closest('.hp-r');
-    if(!r.querySelector('.hp-weg')){ r.insertAdjacentHTML('beforeend',`<div class="hp-weg">${svEsc(h.vorname)} wirklich löschen? Das geht nicht rückgängig. <button type="button" class="btn sm danger" data-hpja="1">Ja, löschen</button> <button type="button" class="btn ghost sm" data-hpnein="1">Nein</button></div>`);
-      r.querySelector('[data-hpnein]').onclick=()=>r.querySelector('.hp-weg').remove();
-      r.querySelector('[data-hpja]').onclick=async()=>{ try{ await ogRpc('helferpool_loeschen',{p_id:h.id}); HP.d.helfer=HP.d.helfer.filter(x=>x.id!==h.id); kToast('Gelöscht'); hpZeigen(); }catch(e){ kToast('⚠️ '+e.message); } }; } });
-  M.querySelector('#hpVcf').onclick=()=>hpDatei('vcf'); M.querySelector('#hpCsv').onclick=()=>hpDatei('csv');
-  M.querySelector('#hpLink').onclick=async()=>{ const u=HP_LINK+'jhv26'; try{ await navigator.clipboard.writeText(u); kToast('✓ Link kopiert'); }catch(e){ kToast(u); } };
-  M.querySelectorAll('[data-hpq]').forEach(b=>b.onclick=async()=>{ try{ await ogRpc('helfer_quelle_speichern',{p_code:b.dataset.hpq,p_titel:b.dataset.t,p_wa:null,p_aktiv:b.dataset.an==='1'}); await hpLaden(); hpZeigen(); kToast(b.dataset.an==='1'?'✓ Anmeldung wieder offen':'Anmeldung geschlossen'); }catch(e){ kToast('⚠️ '+e.message); } });
-}
-function hpDatei(art){
-  const H=(HP.d&&HP.d.helfer)||[]; if(!H.length)return kToast('Noch niemand eingetragen');
-  let txt, name, typ;
-  if(art==='vcf'){ const e=s=>String(s||'').replace(/([,;\\])/g,'\\$1');
-    txt=H.filter(h=>h.handy||h.email).map(h=>['BEGIN:VCARD','VERSION:3.0',`N:${e(h.nachname)};${e(h.vorname)};;;`,`FN:${e(h.vorname+' '+h.nachname)} (Helfer SV)`,h.handy?`TEL;TYPE=CELL:${h.handy}`:'',h.email?`EMAIL:${e(h.email)}`:'','ORG:SV/BSC Mörlenbach Helferpool',
-      h.geburtsdatum?`BDAY:${h.geburtsdatum}`:'','END:VCARD'].filter(Boolean).join('\r\n')).join('\r\n')+'\r\n'; name='Helferpool-SV-BSC.vcf'; typ='text/vcard'; }
-  else { const c=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-    txt='﻿'+[['Vorname','Nachname','Geburtsdatum','Handy','E-Mail','Bereiche','Meine Idee','Mit auf den Weg','Hilft bei (alt)','Gruppenlink getippt','In der Gruppe','Notiz','Eingetragen'].map(c).join(';')]
-      .concat(H.map(h=>[h.vorname,h.nachname,h.geburtsdatum,h.handy?hpZeigeNr(h.handy):'',h.email,(h.bereiche||[]).map(i=>HP_B[i]||i).join(', '),h.idee,h.mitgeben,(h.interessen||[]).map(i=>(HP_I[i]||i).replace(/^\S+\s/,'')).join(', '),h.geklickt?new Date(h.geklickt).toLocaleString('de-DE'):'',h.in_gruppe?'ja':'nein',h.bemerkung,new Date(h.am).toLocaleDateString('de-DE')].map(c).join(';'))).join('\r\n');
-    name='Helferpool-SV-BSC.csv'; typ='text/csv'; }
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:typ+';charset=utf-8'})); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
-  kToast(art==='vcf'?'✓ Kontakte gespeichert: Datei öffnen und „Alle hinzufügen“':'✓ Liste gespeichert');
-}
-
-/* =====================================================================
-   Beta 0.47 · Helferpool nach Bereichen
-   - Wer interessiert sich wofür: je Bereich die Leute, „noch unsicher“ als eigene Gruppe
-   - Je Bereich einen eigenen WhatsApp-Gruppenlink hinterlegen
-   - „Einladen“ öffnet WhatsApp oder Mail auf dem eigenen Handy mit fertigem Text; die App merkt sich, wer wen wann eingeladen hat
-   - Je Bereich: Nummern kopieren, Kontakte (vCard), Liste (CSV)
-   ===================================================================== */
-const HP_REIHE=['heimspieltag','veranstaltungen','vereinsentwicklung','kommunikation','partner','jugend','senioren','soma','unsicher'];
-{ const _hz=hpZeigen; hpZeigen=function(){ if(HP.ansicht==='bereiche')return hpBereiche(); const r=_hz.apply(this,arguments);
-    try{ const M=document.getElementById('modal'), h2=M&&M.querySelector('.hp h2'); if(h2&&!M.querySelector('#hpAnsicht')){ const b=document.createElement('div'); b.className='chips4 hp-ans'; b.id='hpAnsicht';
-        b.innerHTML='<button type="button" class="on">Alle Personen</button><button type="button" data-hpa="bereiche">Nach Bereichen</button>'; h2.insertAdjacentElement('afterend',b);
-        b.querySelector('[data-hpa]').onclick=()=>{ HP.ansicht='bereiche'; hpZeigen(); }; } }catch(e){}
-    return r; }; }
-function hpMeinName(){ return (typeof SVU!=='undefined'&&SVU.name)||''; }
-function hpEingeladen(h,b){ return (h.einladungen||[]).filter(e=>e.bereich===b).slice(-1)[0]||null; }
-function hpText(h,b){ const link=(HP.d.gruppen||{})[b], n=hpMeinName(), was=HP_B[b]||b;
-  if(b==='unsicher')return `Hallo ${h.vorname}, schön, dass du beim SV/BSC Mörlenbach mitmachen willst! Du hattest angekreuzt, dass du noch unsicher bist. Hast du in den nächsten Tagen kurz Zeit für ein Telefonat? Dann schauen wir zusammen, was zu dir passt.${n?'\n\nViele Grüße\n'+n:''}`;
-  return `Hallo ${h.vorname}, schön, dass du beim SV/BSC Mörlenbach mitmachen willst! Du hast „${was}“ angekreuzt. `+(link?`Hier kommst du in unsere Gruppe dafür:\n${link}`:`Ich melde mich die Tage bei dir, dann schauen wir zusammen, wie du einsteigen kannst.`)+(n?`\n\nViele Grüße\n${n}`:'');
-}
-function hpBereiche(){
-  const M=document.getElementById('modal'); if(!M||!HP.d)return;
-  const H=HP.d.helfer||[], G=HP.d.gruppen||{};
-  const block=b=>{ const L=H.filter(h=>(h.bereiche||[]).includes(b)); if(!L.length)return '';
-    const offen=L.filter(h=>!hpEingeladen(h,b)).length, link=G[b];
-    return `<details class="hp-ber"${HP.offen===b?' open':''} data-hpbo="${b}"><summary><b>${svEsc(HP_B[b]||b)}</b><span>${L.length} ${L.length===1?'Person':'Personen'}${offen?` · ${offen} noch nicht eingeladen`:' · alle eingeladen'}</span></summary>
-      ${b==='unsicher'?'<p class="note small">Hier lohnt sich ein kurzer Anruf: herausfinden, was passt.</p>':`<div class="hp-gl"><label>WhatsApp-Gruppe für „${svEsc(HP_B[b])}“</label><div class="hp-glr"><input data-hpgl="${b}" placeholder="https://chat.whatsapp.com/…" value="${svEsc(link||'')}"><button type="button" class="btn ghost sm" data-hpgs="${b}">Speichern</button></div>
-        <small>${link?'Mit „Einladen“ geht der Link direkt mit.':'Ohne Link schreibt „Einladen“, dass ihr euch meldet.'}</small></div>`}
-      <div class="hp-bl">${L.map(h=>{ const e=hpEingeladen(h,b);
-        return `<div class="hp-br"><div><b>${svEsc(h.vorname+' '+h.nachname)}</b><small>${h.handy?svEsc(hpZeigeNr(h.handy)):svEsc(h.email||'')}${(h.bereiche||[]).length>1?' · auch: '+svEsc(h.bereiche.filter(x=>x!==b).map(x=>HP_B[x]||x).join(', ')):''}</small>
-            ${e?`<small class="hp-ok">✓ eingeladen ${svEsc(new Date(e.am).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}))}${e.von?' von '+svEsc(e.von):''} (${svEsc({whatsapp:'WhatsApp',mail:'Mail',anruf:'Anruf',gruppe:'Gruppe'}[e.art]||e.art)})</small>`:''}</div>
-          <div class="hp-bk">${h.handy?`<a class="btn sm${e?' ghost':''}" data-hpe="${svEsc(h.id)}" data-b="${b}" data-art="whatsapp" href="https://wa.me/${svEsc(h.handy.replace('+',''))}?text=${encodeURIComponent(hpText(h,b))}" target="_blank" rel="noopener">💬 ${e?'Nochmal':'Einladen'}</a>`:''}
-            ${!h.handy&&h.email?`<a class="btn sm${e?' ghost':''}" data-hpe="${svEsc(h.id)}" data-b="${b}" data-art="mail" href="mailto:${svEsc(h.email)}?subject=${encodeURIComponent('Mitmachen beim SV/BSC: '+(HP_B[b]||b))}&body=${encodeURIComponent(hpText(h,b))}">✉️ ${e?'Nochmal':'Einladen'}</a>`:''}
-            ${h.handy?`<a class="btn ghost sm" data-hpe="${svEsc(h.id)}" data-b="${b}" data-art="anruf" href="tel:${svEsc(h.handy)}" title="Anrufen">📞</a>`:''}</div></div>`; }).join('')}</div>
-      <div class="btnrow"><button type="button" class="btn ghost sm" data-hpnr="${b}">Nummern kopieren</button><button type="button" class="btn ghost sm" data-hpvb="${b}">📇 Kontakte</button><button type="button" class="btn ghost sm" data-hpcb="${b}">📄 Liste</button></div></details>`; };
-  const ohne=H.filter(h=>!(h.bereiche||[]).length&&!(h.interessen||[]).length).length;
-  const nicht=H.filter(h=>(h.bereiche||[]).includes('nicht')).length;
-  M.innerHTML=`<button class="close" id="svClose" aria-label="Schließen">✕</button><div class="og-form hp"><h2>🙌 Helferpool <small>${H.length} eingetragen</small></h2>
-    <div class="chips4 hp-ans" id="hpAnsicht"><button type="button" data-hpa="liste">Alle Personen</button><button type="button" class="on">Nach Bereichen</button></div>
-    <p class="note">Wer sich für welchen Bereich interessiert. „Einladen“ öffnet WhatsApp oder Mail auf deinem Handy mit fertigem Text, du schickst selbst ab. Die App merkt sich, wer schon eingeladen ist.</p>
-    ${HP_REIHE.map(block).join('')||'<div class="empty">Noch hat niemand einen Bereich angekreuzt.</div>'}
-    ${nicht||ohne?`<p class="note small">${nicht?nicht+' möchten nicht mithelfen (haben aber vielleicht Ideen hinterlassen). ':''}${ohne?ohne+' ohne Bereich (ältere Anmeldungen).':''}</p>`:''}</div>`;
-  document.getElementById('svClose').onclick=()=>closeOverlay();
-  M.querySelector('[data-hpa]').onclick=()=>{ HP.ansicht='liste'; hpZeigen(); };
-  M.querySelectorAll('[data-hpbo]').forEach(d=>d.addEventListener('toggle',()=>{ if(d.open)HP.offen=d.dataset.hpbo; }));
-  M.querySelectorAll('[data-hpgs]').forEach(b=>b.onclick=async()=>{ const k=b.dataset.hpgs, v=M.querySelector(`[data-hpgl="${k}"]`).value.trim();
-    try{ await ogRpc('helfer_bereich_gruppe',{p_bereich:k,p_wa:v}); HP.d.gruppen=HP.d.gruppen||{}; if(v)HP.d.gruppen[k]=v; else delete HP.d.gruppen[k]; HP.offen=k; kToast(v?'✓ Gruppenlink gespeichert':'Gruppenlink entfernt'); hpBereiche(); }catch(e){ kToast('⚠️ '+e.message); } });
-  M.querySelectorAll('[data-hpe]').forEach(a=>a.addEventListener('click',()=>{ const id=a.dataset.hpe, b=a.dataset.b, art=a.dataset.art; HP.offen=b;
-    ogRpc('helfer_einladung_merken',{p_helfer:id,p_bereich:b,p_art:art}).then(()=>{ const h=HP.d.helfer.find(x=>x.id===id); if(h){ h.einladungen=(h.einladungen||[]).concat([{bereich:b,art,am:new Date().toISOString(),von:hpMeinName()}]); }
-      setTimeout(()=>{ if(HP.ansicht==='bereiche')hpBereiche(); },400); }).catch(e=>kToast('⚠️ '+e.message)); }));
-  const leute=b=>H.filter(h=>(h.bereiche||[]).includes(b));
-  M.querySelectorAll('[data-hpnr]').forEach(x=>x.onclick=async()=>{ const t=leute(x.dataset.hpnr).filter(h=>h.handy).map(h=>h.vorname+' '+h.nachname+': '+hpZeigeNr(h.handy)).join('\n'); if(!t)return kToast('Keine Nummern');
-    try{ await navigator.clipboard.writeText(t); kToast('✓ Nummern kopiert'); }catch(e){ kToast(t); } });
-  M.querySelectorAll('[data-hpvb]').forEach(x=>x.onclick=()=>{ const alt=HP.d.helfer; HP.d.helfer=leute(x.dataset.hpvb); try{ hpDatei('vcf'); }finally{ HP.d.helfer=alt; } });
-  M.querySelectorAll('[data-hpcb]').forEach(x=>x.onclick=()=>{ const alt=HP.d.helfer; HP.d.helfer=leute(x.dataset.hpcb); try{ hpDatei('csv'); }finally{ HP.d.helfer=alt; } });
-}
-
-/* =====================================================================
-   Sportzentrale Beta 0.36 · Wer hat welche Version? Update-Nachricht per WhatsApp
-   Wunsch Albert (30.09.2026): In der Nutzerverwaltung sehen, wer noch auf einer alten Version hängt,
-   und direkt von dort eine Update-Nachricht schicken, zur Not mit Anmelde-Link, der in die neueste Version führt.
-   - Jedes Gerät meldet beim Start Version, Adresse (alt/neu), ob als App installiert und die Plattform
-   - Nutzerverwaltung: pro Person die Version, oben die Zusammenfassung, Knopf „Update-Nachricht“
-   - Der Anmelde-Link geht an die Adresse, auf der die Person ihre App hat (alte Adresse = App vor dem 28.09. installiert)
-   ===================================================================== */
-const AV_ADR={alt:'https://odenwalddev.github.io/svbc-scout/',neu:'https://svbsc.kaderwerk.pro/'};
-const AV_ADR_T={alt:'alte Adresse',neu:'svbsc.kaderwerk.pro',andere:'andere Adresse'};
-const AV_NEU_AB='2026-09-28';
-
-function avGeraet(){
-  let g=''; try{ g=localStorage.getItem('sv_geraet')||''; }catch(e){}
-  if(!/^[a-z0-9-]{8,40}$/.test(g)){
-    try{ g=crypto.randomUUID(); }catch(e){ g=Math.random().toString(36).slice(2,12)+'-'+Date.now().toString(36); }
-    g=String(g).toLowerCase(); try{ localStorage.setItem('sv_geraet',g); }catch(e){}
-  }
-  return g;
-}
-function avPlattform(){ const u=navigator.userAgent||'';
-  if(/iPhone|iPod/.test(u))return 'iPhone'; if(/iPad/.test(u)||(/Macintosh/.test(u)&&navigator.maxTouchPoints>1))return 'iPad';
-  if(/Android/.test(u))return /Mobile/.test(u)?'Android-Handy':'Android-Tablet';
-  if(/Windows/.test(u))return 'Windows'; if(/Macintosh/.test(u))return 'Mac'; if(/Linux/.test(u))return 'Linux'; return 'anderes'; }
-function avBrowser(){ const u=navigator.userAgent||'';
-  if(/SamsungBrowser/.test(u))return 'Samsung Internet'; if(/Edg[A]?\//.test(u))return 'Edge'; if(/Firefox|FxiOS/.test(u))return 'Firefox';
-  if(/CriOS|Chrome/.test(u))return 'Chrome'; if(/Safari/.test(u))return 'Safari'; return 'anderer'; }
-function avApp(){ try{ return matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true; }catch(e){ return false; } }
-let _avGemeldet=0;
-async function appMelden(){
-  _avGemeldet=Date.now();
-  try{ const host=(location.host+location.pathname).replace(/index\.html$/,'');
-    await SVB.sb.rpc('app_melden',{p:{geraet:avGeraet(),build:APP_BUILD,host,app:avApp(),plattform:avPlattform(),browser:avBrowser()}}); }catch(e){}
-}
-setTimeout(appMelden,2500);
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&Date.now()-_avGemeldet>6*36e5)appMelden(); });
-
-/* ---------- Auswertung ---------- */
-function avNr(b){ const m=String(b||'').match(/(\d+)\.(\d+)/); return m?(+m[1])*1000+(+m[2]):null; }
-function avV(b){ const s=String(b||''); return /^beta-/.test(s)?'Beta '+s.slice(5):(/^\d+\.\d+$/.test(s)?'Beta '+s:s); }
-function avStatus(info){
-  const g=(info&&info.geraete)||[], cur=avNr(APP_BUILD);
-  if(g.length){ const n=g[0], nr=avNr(n.build);
-    const ok=n.build===APP_BUILD||(cur!=null&&nr!=null&&nr>=cur);
-    return {k:ok?'ok':'alt',build:n.build,g:n,t:avV(n.build)}; }
-  if(info&&info.patch&&avNr(info.patch)!=null&&avNr(info.patch)<100000)return {k:'alt',build:null,g:null,t:'vor Beta 0.36',patch:info.patch};
-  return {k:'unb',build:null,g:null,t:'noch keine Meldung'};
-}
-function avGeraetText(g){ if(!g)return ''; return [g.app?'App':'Browser',g.plattform,AV_ADR_T[g.adresse]||''].filter(Boolean).join(' · '); }
-function avZiel(u,info){
-  const g=(info&&info.geraete)||[];
-  if(g.length&&(g[0].adresse==='alt'||g[0].adresse==='neu'))return g[0].adresse;
-  return (u.created_at&&String(u.created_at).slice(0,10)<AV_NEU_AB)?'alt':'neu';
-}
-
-let AV_DATA=null;
-async function avLaden(){ const {data,error}=await SVB.sb.rpc('app_versionen'); if(error)throw error; AV_DATA=data||{}; return AV_DATA; }
-
-async function avAdminVersionen(){
-  const P=document.getElementById('panel-admin'); if(!P||!isAdmin())return;
-  try{ await avLaden(); }catch(e){ console.warn('Versionen',e); return; }
-  const rows=[...P.querySelectorAll('.urow[data-u]')]; if(!rows.length)return;
-  let ok=0, alt=[], unb=[];
-  rows.forEach(r=>{
-    const id=r.dataset.u, u=SV_USERS.find(x=>x.id===id); if(!u)return;
-    const S=avStatus(AV_DATA[id]); const st=r.querySelector('.st');
-    if(u.active&&(u.pw_set||u.last_sign_in_at)){ if(S.k==='ok')ok++; else if(S.k==='alt')alt.push(u); else unb.push(u); }
-    if(st&&!st.querySelector('.av-v')){
-      const d=document.createElement('span'); d.className='av-v '+S.k;
-      d.innerHTML=(S.k==='ok'?'✓ ':S.k==='alt'?'⚠️ ':'')+svEsc(S.t)+(S.g?' · '+svEsc(avGeraetText(S.g)):'');
-      d.title=S.g?'zuletzt gemeldet '+svAgo(S.g.zuletzt):(S.patch?'Neuigkeiten zuletzt gelesen: '+avV(S.patch):'Dieses Gerät hat sich noch nicht gemeldet');
-      st.appendChild(document.createElement('br')); st.appendChild(d);
-    }
-    const acts=r.querySelector('.acts');
-    if(acts&&u.id!==SVU.id&&u.active&&(u.pw_set||u.last_sign_in_at)&&!acts.querySelector('[data-avupd]')){
-      const b=document.createElement('button'); b.className='iconbtn'+(S.k==='ok'?'':' av-hin'); b.dataset.avupd=u.id; b.title='Update-Nachricht schicken'; b.innerHTML=SVI('send');
-      b.onclick=()=>avUpdateFenster(u.id); acts.insertBefore(b,acts.firstChild);
-    }
-  });
-  const head=P.querySelector('.ulist'); if(!head)return;
-  P.querySelectorAll('.av-sum').forEach(x=>x.remove());
-  const d=document.createElement('div'); d.className='av-sum';
-  const namen=l=>l.map(u=>svEsc(svFirst(u.name)||u.email)).join(', ');
-  d.innerHTML=`<b>📲 App-Versionen</b><span>Aktuell ist <b>${svEsc(avV(APP_BUILD))}</b>. ${ok} ${ok===1?'Person ist':'Personen sind'} auf dem neuesten Stand.`
-    +(alt.length?` Noch alt: ${namen(alt)}.`:'')+(unb.length?` Ohne Meldung: ${namen(unb)}.`:'')
-    +`</span><small>Mit ${SVI('send').replace('<svg','<svg style="width:13px;height:13px;vertical-align:-2px"')} schickst du eine Update-Nachricht per WhatsApp, auf Wunsch mit Anmelde-Link.</small>`;
-  head.before(d);
-}
-{ const _arV=svAdminRender; svAdminRender=async function(){ const r=await _arV.apply(this,arguments); try{ await avAdminVersionen(); }catch(e){ console.warn('Versionen',e); } return r; }; }
-
-/* ---------- Update-Nachricht ---------- */
-function avText(u,link){
-  const fn=svFirst(u.name)||'du';
-  return `Hallo ${fn}! In der SV/BSC Sportzentrale gibt es ein Update (${avV(APP_BUILD)}).\n\nMach die App einfach einmal ganz zu und öffne sie wieder, dann holt sie sich die neue Version von selbst. Wenn sie offen ist, reicht auch einmal nach unten ziehen.`
-    +(link?`\n\nFalls du danach abgemeldet bist, tipp auf diesen Link, der meldet dich direkt an:\n${link}\n\nDer Link ist nur für dich und nur begrenzt gültig.`:'');
-}
-async function avUpdateFenster(id){
-  const u=SV_USERS.find(x=>x.id===id); if(!u)return;
-  const info=(AV_DATA||{})[id]||{}, S=avStatus(info), g=info.geraete||[];
-  const st={ziel:avZiel(u,info),mitLink:true,links:{},laedt:false};
-  const M=svModal(`<div class="og-form av-f"><h2>📲 Update für ${svEsc(u.name||u.email)}</h2>
-    <div class="av-stand ${S.k}"><b>${S.k==='ok'?'✓ Ist auf dem neuesten Stand':S.k==='alt'?'⚠️ Hat noch eine ältere Version':'Noch keine Meldung von einem Gerät'}</b>
-      <span>${g.length?g.slice(0,4).map(x=>`${svEsc(avV(x.build))} · ${svEsc(avGeraetText(x))} · ${svEsc(svAgo(x.zuletzt))}`).join('<br>')
-        :(info.patch?'Neuigkeiten zuletzt gelesen in '+svEsc(avV(info.patch))+'. Geräte melden sich erst ab Beta 0.36.':'Geräte melden sich erst ab Beta 0.36.')}</span>
-      ${info.push===undefined?'':`<span class="av-push">${info.push?'🔔 Push ist an'+(S.k==='ok'?'':'. Bleibt die App alt, kommt automatisch höchstens alle 7 Tage eine Erinnerung')+(info.erinnert?' · letzte Erinnerung '+svEsc(svAgo(info.erinnert)):'')+'.':'🔕 Kein Push aktiviert, also nur per WhatsApp erreichbar.'}</span>`}</div>
-    <label class="av-l">Wo hat ${svEsc(svFirst(u.name)||'die Person')} die App?</label>
-    <div class="av-ziel">
-      <label><input type="radio" name="avZ" value="alt"${st.ziel==='alt'?' checked':''}> <span><b>Alte Adresse</b><small>App vor dem 28.09. installiert</small></span></label>
-      <label><input type="radio" name="avZ" value="neu"${st.ziel==='neu'?' checked':''}> <span><b>svbsc.kaderwerk.pro</b><small>ab dem 28.09. installiert</small></span></label>
-    </div>
-    <label class="av-chk"><input type="checkbox" id="avMitLink" checked> Anmelde-Link mitschicken, falls die App nach dem Update nach dem Passwort fragt</label>
-    <textarea id="avTxt" rows="9" class="search" style="width:100%;height:auto;padding:12px;line-height:1.45"></textarea>
-    <div class="btnrow" style="margin-top:12px">
-      <a class="btn" id="avWa" href="#" target="_blank" rel="noopener">${SVI('chat')} Per WhatsApp</a>
-      <button class="btn ghost" id="avCopy">${SVI('copy')} Text kopieren</button>
-    </div>
-    <p class="note small" style="margin-top:10px">WhatsApp öffnet sich mit dem fertigen Text, du wählst nur noch ${svEsc(svFirst(u.name)||'die Person')} aus. Auf dem iPhone öffnet der Link Safari: Ist die App dort nicht abgemeldet, reicht das Neustarten der App.</p>
-  </div>`);
-  M.querySelectorAll('.btn svg').forEach(s=>{ s.style.cssText='width:16px;height:16px;vertical-align:-3px;margin-right:4px'; });
-  const T=M.querySelector('#avTxt'), WA=M.querySelector('#avWa'), CB=M.querySelector('#avMitLink');
-  let eigen=false; T.addEventListener('input',()=>{ eigen=true; setWa(); });
-  function setWa(){ WA.href='https://wa.me/?text='+encodeURIComponent(T.value); }
-  function fuellen(){ if(eigen)return; const l=st.mitLink?st.links[st.ziel]:null; T.value=avText(u,l||(st.mitLink?'(Link wird erstellt …)':'')); setWa(); }
-  async function linkHolen(){
-    if(!st.mitLink||st.links[st.ziel])return fuellen();
-    const z=st.ziel; st.laedt=true; fuellen(); WA.classList.add('dis');
-    try{ const r=await SVB.admin('link',{user_id:u.id,kind:'magiclink',app_url:AV_ADR[z]}); st.links[z]=r.link; }
-    catch(e){ kToast('⚠️ '+e.message); st.mitLink=false; CB.checked=false; }
-    st.laedt=false; WA.classList.remove('dis'); if(st.ziel===z)fuellen();
-  }
-  M.querySelectorAll('input[name=avZ]').forEach(r=>r.onchange=()=>{ st.ziel=r.value; eigen=false; linkHolen(); });
-  CB.onchange=()=>{ st.mitLink=CB.checked; eigen=false; linkHolen(); };
-  WA.onclick=e=>{ if(st.laedt){ e.preventDefault(); kToast('Einen Moment, der Link wird noch erstellt'); } };
-  M.querySelector('#avCopy').onclick=()=>{ if(st.laedt){ kToast('Einen Moment, der Link wird noch erstellt'); return; } kCopy(T.value); };
-  linkHolen();
-}
-
-(function(){ try{ const s=document.createElement('style'); s.id='svm38css'; s.textContent=`
-.av-v{display:inline-block;margin-top:2px;font-size:11.5px;font-weight:700;color:var(--ink3)}
-.av-v.ok{color:#86efac}.av-v.alt{color:#fbbf24}
-.iconbtn.av-hin{border-color:rgba(251,191,36,.55);color:#fbbf24}
-.av-sum{display:flex;flex-direction:column;gap:4px;margin:4px 0 12px;padding:12px 14px;border-radius:14px;background:rgba(143,201,236,.08);border:1px solid rgba(143,201,236,.25);font-size:13.5px;line-height:1.45}
-.av-sum small{color:var(--ink3);font-size:12px}
-.av-f h2{margin:0 0 12px}
-.av-stand{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:14px;background:var(--surface3,rgba(255,255,255,.05));font-size:13px;line-height:1.5;margin-bottom:14px}
-.av-stand.ok b{color:#86efac}.av-stand.alt b{color:#fbbf24}
-.av-stand span{color:var(--ink2)}
-.av-stand .av-push{color:var(--ink3);font-size:12px}
-.av-l{display:block;font-weight:700;font-size:13px;margin:0 0 8px}
-.av-ziel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.av-ziel label{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid var(--line);cursor:pointer}
-.av-ziel label span{display:flex;flex-direction:column;gap:2px;font-size:13px}.av-ziel small{color:var(--ink3);font-size:11.5px}
-.av-chk{display:flex;gap:8px;align-items:flex-start;font-size:13px;margin-bottom:10px;line-height:1.4}
-.btn.dis{opacity:.55}
-@media (max-width:520px){.av-ziel{grid-template-columns:1fr}}
-`; document.head.appendChild(s); }catch(e){} })();
-
-/* =====================================================================
-   SV/BSC Scout · Runde 20: „Was ist neu“: Update-Fenster & Patch-Historie
-   - Nach jedem Update ein Pop-up: das Wichtigste in Kürze → „OK“ oder „Mehr erfahren“ (ganze Historie)
-   - Jederzeit erreichbar: Seitenleiste / „Mehr“ / Mein Konto → „Was ist neu“
-   - Gesehen wird je Nutzer gespeichert (geräteübergreifend), neue Nutzer bekommen nach der Einführung kein Update-Fenster
-   - NEUE VERSION: oben in SV_PATCHES eintragen (id eindeutig, neueste zuerst). Mehr ist nicht nötig
-   Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
-   ===================================================================== */
-const SV_PATCHES=[
+    {ic:'\u{1F4DD}',t:'Wer war wann wo',d:'Im Verlauf steht jetzt, wer eingetragen hat, wer dabei war, mit Uhrzeit und Ort. Notizen lassen sich nachtragen. Der „Rückblick“ zeigt alle Gespräche über alle Firmen, damit neue Helfer sofort im Bild sind.',r:'team'}
+   ]},
   {id:'0.99.67',v:'0.99.67',datum:'2026-11-17',titel:'Partner: die neue Reise',kurz:'Der persönliche Link für Partner beginnt jetzt mit der neuen Reise durch den Verein. Danach geht es wie bisher in die Auswahl mit Vertrag.',
    punkte:[
     {ic:'\u{1F3DF}',t:'Erst der Verein, dann die Pakete',d:'Zehn Szenen im Vollbild: worum es bei uns geht, was dem Betrieb wichtig ist, welcher Platz passt. Am Ende und über „Direkt zu Paketen und Vertrag“ steht die bisherige Auswahl. Der Name der Firma kommt aus dem Link.',r:'team'}
@@ -1545,3 +966,650 @@ const SV_PATCHES=[
     {ic:'👁',t:'Im Blickfeld',d:'Jeder hat seine eigene Beobachtungsliste, geordnet vom Torwart bis zum Sturm. Mit dem Auge in der Suche oder im Profil hinzufügen. Montags kommt dein Wochenbericht nur mit deinen Spielern: Spiele, Minuten, Tore oder kein Einsatz.',r:'scout',go:'blick'},
     {ic:'🎉',t:'Ehrungen verpasst keiner mehr',d:'Ein Jubiläum erscheint 3 Spiele vorher auf der Übersicht. Wegwischen geht, 1 Spiel vorher kommt es trotzdem noch einmal.',r:'team'},
     {ic:'↩️',t:'Rückkehrer-Radar zum Wischen',d:'Ehemalige im Verein-Bereich: nach rechts heißt kein Interesse, nach links interessiert (Merkliste).',r:'scout'},
+    {ic:'🤖',t:'Co-Trainer schlägt selbst nach',d:'Nennst du einen Namen, sucht er sofort in der Datenbank, auch mit Tippfehler, und antwortet mit echten Werten. Statt im Kreis zu fragen, bietet er Profil und Blickfeld direkt an.',r:'team'},
+   ]},
+  {id:'0.18',v:'0.18',datum:'2026-09-27',titel:'Mannschaft neu geordnet',kurz:'Eine Spielerliste mit eigenen Ansichten, die Massenpflege für alle Spielerdaten und klare Reiter für Training, Spiele, Abwesenheiten und Materialdienst.',
+   punkte:[
+    {ic:'🗂️',t:'Massenpflege',d:'Fuß, Eye-Test, Position, Mannschaft, Kontaktdaten, Geburtsdatum, Skills, Größe und Gewicht: alle internen Spieler untereinander bearbeiten und mit einem Tipp speichern. Profile zeigen die Daten nur noch an, „Spielerdaten pflegen“ springt direkt hierher.',r:'team',go:'pflege'},
+    {ic:'👥',t:'Eine Spielerliste, eigene Ansichten',d:'Statt fester Ansichten wie Trainer oder Kontakte stellst du Spalten, Filter und Sortierung selbst ein und speicherst sie als eigene Ansicht, auf jedem Gerät.',r:'team',go:'spieler'},
+    {ic:'✅',t:'Training: Da oder Fehlt',d:'Die Einheiten zeigen nur noch Trainings. Wer zu spät kam, ist da und bekommt die Notiz „zu spät“. Die Notiz zur Einheit steht direkt unter der Trainingsnote, die Statistik ist reine Auswertung.',r:'team'},
+    {ic:'⚽',t:'Spiele mit Statistik',d:'Die Spiele der laufenden Saison und daneben die Auswertung: Bilanz, Form, Einsätze, Minuten, Tore und Vorlagen je Spieler.',r:'team',go:'gstat'},
+    {ic:'🌴',t:'Abwesenheiten und Materialdienst',d:'Beide haben jetzt einen eigenen Reiter. Neu ist die Mannschaft „Umfeld“ für Spieler mit Pass, die nicht regelmäßig spielen.',r:'team',go:'abwesend'},
+   ]},
+  {id:'0.16',v:'0.16',datum:'2026-09-26',titel:'Daten live aktuell',kurz:'Ändern sich Daten oder kommen neue FuPa-Werte, sieht die App das sofort. Kein Neuladen nötig.',
+   punkte:[
+    {ic:'⚡',t:'Ohne Neuladen aktuell',d:'Korrekturen im Datenbestand und neue FuPa-Werte erscheinen von selbst, auch in einem gerade offenen Profil. War das Handy kurz offline, holt die App Verpasstes beim Wiederverbinden nach.',r:'team',go:'home'},
+    {ic:'📍',t:'Liga immer aus der richtigen Saison',d:'Aktuelle Liga, Ligaabstand und Wechselbegründung kommen aus der laufenden Saison. Die Verbandsliga ist jetzt eine eigene Liga. Gründe aus der Vorsaison sind mit 25/26 gekennzeichnet.',r:'scout'},
+   ]},
+  {id:'0.15',v:'0.15',datum:'2026-09-26',titel:'Spieler-Abgleich zum Wischen',kurz:'Wo die App nicht sicher ist, welcher FuPa-Spieler zu welchem Spieler gehört, entscheidest du jetzt mit einem Wisch. Einmal, dann gilt es dauerhaft.',
+   punkte:[
+    {ic:'👈',t:'Nach links: bestätigen',d:'Stimmt der Vorschlag, nach links wischen oder „Bestätigen“ tippen. Die Werte stehen sofort im Profil, im MScore und in der Bestenliste und bleiben so, auch nach jedem neuen Abgleich.',r:'scout',go:'radar'},
+    {ic:'👉',t:'Nach rechts: ignorieren',d:'Ist es ein anderer Spieler, nach rechts wischen. Das Paar kommt nie wieder. Findet die App gar nichts, suchst du den Spieler selbst oder blendest ihn für FuPa aus. Alles lässt sich zurücknehmen.',r:'scout'},
+    {ic:'📍',t:'Aktuelle Liga statt Vorjahr',d:'Startseite, Profil und Wechselchance zeigen jetzt die Liga der laufenden Saison. Wo es noch keine aktuellen Daten gibt, steht „Stand 25/26“ dran, bei Platz 1 oder 2 mit „vermutlich aufgestiegen“.',r:'scout'},
+    {ic:'🗓️',t:'Neue Saison stellt sich selbst um',d:'Nach der Sommerpause erkennt die App die neue Saison am Spielplan, sobald das erste Spiel höchstens 14 Tage entfernt ist. Radar, Beobachtungen und Spieltag zählen dann automatisch die neue Saison.',r:'scout'},
+    {ic:'🔑',t:'Gegenprobe mit dem Leseschlüssel',d:'Jeder Abgleich prüft über die KLA-API, ob Schlüssel, Datenbasis und Stand passen, und zeigt, ob die Quelle gerade noch nachlädt.',r:'admin'},
+   ]},
+  {id:'0.14',v:'0.14',datum:'2026-09-26',titel:'Zahlen von FuPa, automatisch',kurz:'Einsätze, Minuten, Tore, Vorlagen und der MVP von FuPa kommen jetzt von selbst in die App. Nichts muss eingetippt oder bestätigt werden.',
+   punkte:[
+    {ic:'📊',t:'Zahlen im Spielerprofil',d:'Im Profil steht jetzt „Zahlen von FuPa“ je Saison. Der MVP von FuPa fließt automatisch in den MScore, ein von Hand eingetragener Wert hat weiter Vorrang.',r:'scout'},
+    {ic:'🏆',t:'Bestenliste mit echten Einsätzen',d:'Einsätze und Minuten in der Bestenliste kommen aus FuPa, solange für eure Mannschaft keine eigenen Spiele erfasst sind.',r:'scout',go:'best'},
+    {ic:'📅',t:'Spieltag trägt sich selbst ein',d:'Gespielte Ligaspiele der Ersten landen mit Ergebnis und Aufstellung in Training → Spiele. Was ihr von Hand erfasst habt, wird nie überschrieben.',r:'team'},
+    {ic:'🔭',t:'Gegner-Vorschau und Radar',d:'Vor dem nächsten Spiel zeigt die Vorschau Tabelle, Form und die torgefährlichsten Spieler des Gegners. Im Radar steht, wer diese Woche laut FuPa aufgefallen ist, und beobachtete Spieler melden sich bei neuen Einsätzen.',r:'scout'},
+    {ic:'🛡️',t:'Datenwächter',d:'Unter Importstatus steht, wenn etwas hakt. Die Hinweise verschwinden von selbst, sobald die Ursache weg ist.',r:'admin'},
+   ]},
+  {id:'0.10',v:'0.10',datum:'2026-09-26',titel:'Bestenliste je Position',kurz:'Unter Scouting gibt es jetzt die Bestenliste: die besten Torhüter, Abwehrspieler, Mittelfeldspieler und Stürmer, jeweils mit den Zahlen, die für die Position zählen, und einem Satz, warum einer oben steht.',
+   punkte:[
+    {ic:'🏆',t:'Wer ist ein super Torwart?',d:'Torhüter und Abwehr werden an den Gegentoren ihrer Mannschaft im Vergleich zur Liga gemessen, mit ihrer Einsatzquote daneben. Wer weniger als die Hälfte spielt, ist als Ersatz markiert.',r:'scout',go:'best'},
+    {ic:'⚽',t:'Tore, Tore je Spiel, Anteil',d:'Vorne zählen Tore, Tore je Spiel und der Anteil an den Teamtoren. Tore je Spiel lassen sich ligabereinigt vergleichen, im Maßstab der Kreisliga A.'},
+    {ic:'🔎',t:'Filter für die Kaderplanung',d:'Laufende Saison oder 25/26 komplett, Liga, Alter und eigene Spieler ein oder aus. Sortieren nach Stärke, Toren, Einsatz, Eye-Test oder Trainernote.',r:'scout',go:'best'},
+    {ic:'📥',t:'Vorlagen und Noten',d:'Vorlagen und Trainernoten erscheinen, sobald sie in der App stehen, zum Beispiel aus euren übernommenen Spielen.',r:'team',go:'training'}]},
+  {id:'0.9',v:'0.9',datum:'2026-09-25',titel:'Spielstärke wie bei FIFA',kurz:'Der MScore beschreibt jetzt, wie gut ein Spieler ist, nicht in welcher Liga er gerade spielt. Jede Saison ist ein Beleg, dazu Alter, Erfahrung, Eye-Test und FuPa-MVP. Wer aus einer höheren Liga kommt und unten vorne mitspielt, verliert nicht automatisch.',
+   punkte:[
+    {ic:'🧮',t:'Jede Saison ein Beleg',d:'Im Spielerprofil steht für 24/25, 25/26 und die laufende Saison je ein Wert: Liga-Niveau, Rolle, Leistung im Vergleich zu Spielern derselben Liga und Position, Mannschaft, Ausnahmeleistung, FuPa-MVP und Elf der Woche. Daneben, wie stark die Saison zählt.',r:'team',go:'training'},
+    {ic:'🪜',t:'Kein Ligadeckel mehr',d:'Ein 80er aus der Gruppenliga, der in die A-Liga wechselt und dort Leistungsträger ist, bleibt nahe 80. In einer tieferen Liga kann er nach oben nichts mehr beweisen, das nennt die App Deckeneffekt. Wer dort nur Ergänzung ist, rutscht ab.'},
+    {ic:'⏳',t:'Alter und Erfahrung',d:'Bis 24 legt man zu, ab 29 geht es bergab, ab 33 deutlich, auf dem Flügel und außen schneller, innen und im Tor langsamer. Im Profil stehen Potenzial und die Prognose für die nächste Saison.',r:'scout',go:'model'},
+    {ic:'🔵',t:'FuPa-MVP direkt im Profil',d:'Den MVP-Wert aus FuPa (Team, Spielerstatistik, Spalte MVP) trägst du im Profil unter dem MScore ein. Er zeigt, wie wichtig einer für sein Team ist, und zählt als Beleg mit. Ganze Teams gehen unter Datenbank.',r:'scout',go:'db'},
+    {ic:'👁️',t:'Eye-Test als eigene Messung',d:'Eine Bewertung zählt ungefähr so viel wie eine volle Saison, ab drei Planern mehr als die Daten.',r:'scout',go:'eye'},
+    {ic:'📥',t:'Eure Spiele zählen im MScore',d:'Spiele, die ihr unter Training → Spiele übernehmt (zum Beispiel die season.json aus dem FuPa-Auswerter), rechnen bei den eigenen Spielern mit: Minuten, Startelf, Tore, Vorlagen und die Punkte mit und ohne den Spieler.',r:'team',go:'training'}]},
+  {id:'0.8',v:'0.8',datum:'2026-09-25',titel:'Neues Rating: die Liga setzt den Rahmen',kurz:'Der MScore ist neu gebaut. Ein Stammspieler der Kreisoberliga liegt jetzt klar vor einem Spieler der Kreisliga D. Innerhalb der Liga entscheiden Einsatz, Leistung im Vergleich zur gleichen Position und die Mannschaft. Wer seine Liga dominiert, kommt über den Rahmen hinaus.',
+   punkte:[
+    {ic:'🧮',t:'Jeder Wert erklärt',d:'Im Spielerprofil steht Schritt für Schritt: Rahmen der Liga, Einsatz, Leistung, Mannschaft und dann jeder Zu- und Abschlag mit Grund, etwa Trainernoten, frühere höhere Liga oder Alter.',r:'team',go:'training'},
+    {ic:'📐',t:'Rahmen je Liga',d:'Gruppenliga 52 bis 82, Kreisoberliga 43 bis 73, Kreisliga A 31 bis 61, B 22 bis 52, C 14 bis 44, D 7 bis 37. Ein typischer Stammspieler liegt in der Kreisoberliga bei 63, in der A-Liga bei 51, passend zur Skala des Eye-Tests.',r:'scout',go:'model'},
+    {ic:'⚖️',t:'Fair je Position',d:'Mittelfeldspieler werden nicht mehr an Stürmertoren gemessen, sondern an Mittelfeldspielern derselben Liga. Abwehr und Torwart zählen über die Gegentore der Mannschaft.'},
+    {ic:'🚀',t:'Ausnahmeleistung zählt',d:'Wer mehr als ein Tor je Spiel schießt, bekommt bis zu 30 Punkte obendrauf. Ein Stürmer der Kreisliga D mit drei Toren je Spiel landet so um 60.',r:'scout',go:'model'},
+    {ic:'👁️',t:'Eye-Test zählt mehr',d:'Eure Bewertung zieht den Wert in ihre Richtung: bei einer Bewertung zu 25 %, bei zwei zu 35 %, ab drei zu 45 %.',r:'scout',go:'eye'},
+    {ic:'🏠',t:'Startseite klarer',d:'Die große Zahl ist die Stärke, daneben steht die Wechselchance. Die Mischzahl „Transfer-Chance“ fällt weg.',r:'scout',go:'home'}]},
+  {id:'0.7',v:'0.7',datum:'2026-09-25',titel:'Lukas\u2019 Liste komplett, Urlaub und Materialdienst',kurz:'Alle 27 Punkte aus Lukas\u2019 Vorschlägen sind jetzt drin, dazu Urlaub in der Kabine und der Materialdienst: Verfügbarkeit je Zeitraum, freie Plätze direkt in der Liste, eine echte Traumelf, Eye-Test je Kategorie, ein erklärter MScore und ein Änderungsverlauf.',
+   punkte:[
+    {ic:'🌴',t:'Urlaub in der Kabine',d:'Spieler tragen Urlaub frühzeitig über ihren Kabinen-Link ein. Für jedes Training im Zeitraum sind sie automatisch abgemeldet, bekommen keine Einladung und keine Erinnerung und stehen im Training mit Grund drin. Das Trainerteam kann Urlaub auch selbst eintragen.',r:'team',go:'abst'},
+    {ic:'🧺',t:'Materialdienst',d:'Unter Mannschaft → Abstimmungen ein Team für vier Wochen einteilen, Zeitraum frei änderbar, oder die nächsten Teams vorschlagen lassen. Die Eingeteilten sehen es in der Kabine und bekommen zum Start und an Trainingstagen eine WhatsApp-Nachricht.',r:'team',go:'abst'},
+    {ic:'🕘',t:'Änderungsverlauf',d:'Bei jedem Spiel und jedem Spieler im Kaderplan steht, wer wann was geändert hat, mit altem und neuem Wert. So bleibt nachvollziehbar, woher eine Zahl kommt.',r:'team',go:'training'},
+    {ic:'🗓️',t:'Verfügbarkeit je Zeitraum',d:'Voll, eingeschränkt oder nicht verfügbar, mit Grund. Eingeschränkt zählt in der Abdeckung halb, nicht verfügbar gar nicht. Geplant wird in Wechselperioden: Rückrunde über das Winterfenster, die nächsten Saisons über das Sommerfenster.',r:'scout',go:'kader'},
+    {ic:'➕',t:'Freie Plätze in der Liste',d:'Fehlt auf einer Position jemand, steht dort eine Zeile „Freier Platz“ mit Bedarf. Über „+ Spieler“ legst du auch einen offenen Platz an, ohne schon einen Namen zu haben.',r:'scout',go:'kader'},
+    {ic:'🌓',t:'Primär und Sekundär',d:'Wer auch in der anderen Mannschaft spielen kann, steht dort ausgegraut und zählt nur einmal. Inaktive und nicht verfügbare Spieler rutschen in die Reserve.',r:'scout',go:'kader'},
+    {ic:'🧾',t:'Stand der Planung',d:'Im Menü jedes Spielers auf einen Blick: Systemannahme, Planung, letztes Gespräch und Zusage.',r:'scout',go:'kader'},
+    {ic:'🗣️',t:'Anforderungen des Trainers',d:'„Insgesamt mehr Tempo“ oder „ein Sechser, der eröffnet“: solche Wünsche stehen im Bedarf und werden mit einem Tipp zum Suchauftrag.',r:'scout',go:'kader'},
+    {ic:'🛟',t:'Backup mit Zweiter und Jugend',d:'In der Backup-Ansicht stehen unter jeder Position ausgegraut auch Spieler aus der Zweiten, der Jugend und mit anderer Hauptmannschaft.',r:'scout',go:'kader'},
+    {ic:'✨',t:'Traumelf je Zeitraum',d:'Rückrunde, nächste und übernächste Saison, mit jedem Spieler, auch ohne Zusage. Daneben der Vergleich mit dem Kaderplan und ein Knopf, um mit einem Wunschspieler ein Gespräch festzuhalten.',r:'scout',go:'sxi'},
+    {ic:'👁️',t:'Eye-Test je Kategorie',d:'Alle Spieler in einer Kategorie untereinander, mit Höchstem, Niedrigstem und Schnitt. Deine Einschätzung trägst du direkt mit dem Regler ein. Dazu der Filter „Review fällig“ und im Profil erst der Schnitt, die Einzelwerte eingeklappt.',r:'scout',go:'eye'},
+    {ic:'📊',t:'MScore erklärt',d:'Jeder Baustein sagt, was er misst und warum er eigenständig ist. Einsatz & Liga rechnet frühere höhere Ligen mit an, Vorlagen zählen halb als Zusatz, und die Form von Abwehr und Torwart kommt aus den Gegentoren.',r:'scout',go:'model'},
+    {ic:'❤️',t:'Vereinstreue in fünf Stufen',d:'Von „Am Anfang“ bis „Vereinsikone“, im Profil, in der Spielerliste und ab Stufe drei als Abzeichen auf der Karte.',r:'team',go:'training'},
+    {ic:'📋',t:'Spielerliste: Ansicht Scouting',d:'Neue Ansicht mit Mannschaft, MScore, Eye-Test und Datenbasis. Die Spalte Mannschaft zeigt auch, wo einer zusätzlich spielt.',r:'team',go:'training'},
+    {ic:'🔁',t:'FuPa nochmal abgleichen',d:'Spiele, die noch vorläufig sind, stehen mit Hinweis oben. FuPa wird oft erst Tage später vollständig, dann die Datei einfach noch einmal hochladen. Im Spiel-Detail stehen jetzt auch die Noten.',r:'team',go:'training'}]},
+  {id:'0.6',v:'0.6',datum:'2026-09-25',titel:'Kaderplanung, Eye-Test und Gespräche',kurz:'Der Kaderplan zeigt, wie sicher jede Planung ist, wo Plätze frei sind und was an Qualität fehlt. Dazu ein neuer Eye-Test mit regionaler Skala, ein fairerer MScore und Gespräche per Co-Trainer.',
+   punkte:[
+    {ic:'🎯',t:'Fakt, Zusage, Planung, Annahme',d:'Neben jedem Spieler steht, wie sicher die Planung für die nächste Saison ist. Wer noch nicht gesprochen wurde, ist nur angenommen. Antippen und festlegen.',r:'scout',go:'kader'},
+    {ic:'📐',t:'Abdeckung statt Zählen',d:'Je Position gilt: 2 × Startplätze der Formation. Wer die Position nur nebenbei spielt, zählt halb, inaktive Spieler gar nicht. Oben stehen die freien Kaderplätze.',r:'scout',go:'kader'},
+    {ic:'🧩',t:'Backup-Ansicht',d:'Wer springt ein, wenn einer aus der Startelf fehlt? Mit einem Tipp von der Liste auf „Backup“ wechseln.',r:'scout',go:'kader'},
+    {ic:'🦶',t:'Was fehlt an Qualität',d:'Linksfuß in der Abwehr, Kopfballstärke, Tempo, Führung, Standards und Altersstruktur. Fehlt etwas, legst du mit einem Tipp den Bedarf fürs Scouting an.',r:'scout',go:'kader'},
+    {ic:'🌱',t:'Übergang aus der A-Jugend',d:'Wer zu alt für die A-Jugend wird, steht in der Planung der nächsten Saison: Erste, Zweite oder hört auf.',r:'scout',go:'kader'},
+    {ic:'🧭',t:'Plausibilität und Wechselfenster',d:'Die App findet Widersprüche, etwa „bleibt“ trotz Absage im Gespräch, und zeigt, wann das nächste Wechselfenster offen ist. Die Standards stellst du unter „Standards“ selbst ein.',r:'scout',go:'kader'},
+    {ic:'🤝',t:'Neuzugang erst nach Gespräch',d:'Externe Spieler kommen erst als Neuzugang in den Kaderplan, wenn ein Gespräch festgehalten ist. Vorher sind es Wunschspieler in der Traumelf.',r:'scout',go:'kader'},
+    {ic:'👁️',t:'Eye-Test mit regionaler Skala',d:'50 heißt solider Stammspieler der Kreisliga A, 70 stark bis Gruppenliga, 90 Top der Region. Im neuen Reiter Eye-Test siehst du den Schnitt aller Planer, wo ihr euch uneinig seid und wo deine Bewertung fehlt.',r:'scout',go:'eye'},
+    {ic:'📊',t:'MScore neu gewichtet',d:'Einsatz und Liga zählen am meisten, Presse nur noch rund 5 Prozent. Bei eigenen Spielern fließen eure Trainings- und Spielnoten ein. Jeder MScore zeigt, auf wie viel echten Daten er beruht. Die Vereinstreue steht als eigenes Abzeichen daneben.',r:'scout',go:'scout'},
+    {ic:'🔎',t:'Mehr Filter',d:'Im Spielermarkt nach starkem Fuß, Stammspielern, MScore und guter Datenbasis filtern. Der KI-Auftrag übernimmt Alter, Fuß, Liga und Entfernung.',r:'scout',go:'scout'},
+    {ic:'🧱',t:'Elf der Woche mit Abwehr',d:'Vorne die Torschützen, hinten Abwehr und Torwart der Mannschaften mit den wenigsten Gegentoren.',r:'scout',go:'totw'},
+    {ic:'🔁',t:'FuPa-Abgleich',d:'Lädst du die FuPa-Datei erneut hoch, zeigt die App nur, was sich geändert hat. Unveränderte und von Hand korrigierte Spiele bleiben unangetastet.',r:'team',go:'training'},
+    {ic:'💬',t:'Gespräche und Verletzungen erzählen',d:'„Mit Tim gesprochen, er will bleiben, möchte mehr Spielzeit“: der Co-Trainer hält das Gespräch fest und trägt die Zukunft in den Kaderplan ein. Verletzungen genauso.',r:'scout',go:'gespr'}]},
+  {id:'5.0',v:'0.5',datum:'2026-09-25',titel:'Mannschaft, Kader, Scouting',kurz:'Die App folgt jetzt deinem Ablauf: erst die Mannschaft von heute, dann der Kader von morgen, dann die Suche. Training erfasst du mit Noten von 1 bis 6, Spiele kommen aus deiner FuPa-Datei.',
+   punkte:[
+    {ic:'🧭',t:'Neue Reihenfolge',d:'Mannschaft, Kader und Scouting stehen oben, Gegnercheck und Kasse weiter unten. Jede Ansicht erklärt sich in einem kleinen Kasten, den du einklappen kannst.',r:'team',go:'training'},
+    {ic:'📋',t:'Eine Spielerliste für alles',d:'Erste und Zweite getrennt, mit Beteiligung, Durchschnittsnote, Einsätzen und Minuten. Ansichten für Trainer, Kaderplanung, Kontakte und Torhüter. Fehlende Angaben sind markiert.',r:'team',go:'training'},
+    {ic:'🎓',t:'Training mit Noten 1 bis 6',d:'Die Anwesenheit kommt aus der Abstimmung, wer nichts sagt, bekommt eine 3 als Annahme. Neben jeder Angabe steht, woher sie kommt: Abstimmung, Co-Trainer, Annahme oder von dir bestätigt.',r:'team',go:'training'},
+    {ic:'🎙️',t:'Einfach erzählen',d:'Sag dem Co-Trainer nach dem Training, wie es war. Er schlägt Noten und Fehlgründe vor, du prüfst sie auf Wunsch im Formular.',r:'team',go:'cotrainer'},
+    {ic:'⚽',t:'Spiele aus FuPa',d:'Unter Mannschaft → Spiele die Datei deines FuPa-Auswerters hochladen. Die App ordnet Datum und Namen zu, rechnet Minuten aus und gleicht mit fussball.de ab. Du siehst alles vorher.',r:'team',go:'training'},
+    {ic:'🏆',t:'Beteiligung bei Rankings & Verein',d:'Die Beteiligung über mehrere Saisons steht jetzt unter Rankings & Verein. Abstimmungen und Automatik sind auf einer Seite.',r:'team',go:'verein'}]},
+  {id:'4.5',v:'0.4.5',datum:'2026-09-25',titel:'Einfach wegwischen',kurz:'Spieler und Meldungen wischst du jetzt wie auf dem Sperrbildschirm weg. Die anderen rücken nach, und aussortierte Spieler holst du genauso leicht zurück.',
+   punkte:[
+    {ic:'👉',t:'Nach rechts: weg damit',d:'Spieler in Scouting, Radar und Bedarf nach rechts wischen heißt Kein Interesse. Meldungen und Hinweise nach rechts heißt erledigt. Kurz danach kannst du es rückgängig machen.',go:'radar'},
+    {ic:'👈',t:'Nach links: Merkliste',d:'Einen Spieler nach links wischen setzt ihn auf die Merkliste (grün) oder nimmt ihn wieder runter.',go:'scout'},
+    {ic:'↩️',t:'Liste „Kein Interesse“',d:'Alle aussortierten Spieler auf einen Blick. Nach rechts wischen holt einen Spieler zurück, nach links kommt er gleich auf die Merkliste. Zu finden im Spielermarkt und im Radar über „Liste ansehen“.',go:'scout'},
+    {ic:'🤏',t:'Scrollen bleibt Scrollen',d:'Die App erkennt, ob du wischst oder scrollst. Beim ersten Mal zeigt dir ein Eintrag kurz, wie es geht.'}]},
+  {id:'4.4',v:'0.4.4',datum:'2026-09-25',titel:'Mit Schwung & Klang',kurz:'Wer kein Interesse hat, fliegt jetzt sichtbar raus. Dazu leise Töne und ein Lagebild, das zuverlässig kommt.',
+   punkte:[
+    {ic:'💨',t:'Kein Interesse? Weg damit',d:'Tippst du bei einem Spieler auf „Kein Interesse“, fliegt er mit einem Swoosh aus der Liste oder das Profil schließt sich. Kurz danach kannst du es noch rückgängig machen.',go:'radar'},
+    {ic:'🔈',t:'Leise Töne',d:'Ein zartes Klicken beim Wechseln, ein kurzer Klang bei Erfolg. Auf dem stummen iPhone bleibt alles still, abschalten unter Mein Konto → App.'},
+    {ic:'🧠',t:'Lagebild des Co-Trainers',d:'Das KI-Lagebild auf der Übersicht zeigt jetzt, dass es arbeitet, und kommt zuverlässig mit bis zu fünf konkreten Punkten für heute.',go:'home'}]},
+  {id:'4.3',v:'0.4.3',datum:'2026-09-24',titel:'Lebendiger & flüssiger',kurz:'Neuer Look mit sanft bewegtem Verlauf, weichen Übergängen beim Wechseln und einem Tippen-Gefühl auf dem Handy.',
+   punkte:[
+    {ic:'🌊',t:'Sanft bewegter Hintergrund',d:'Ein ruhiger Farbverlauf im Vereinsblau bewegt sich ganz langsam hinter der App, auch auf der Anmeldeseite. Im Hintergrund pausiert er, der Akku bleibt geschont.'},
+    {ic:'✨',t:'Weiche Übergänge',d:'Beim Wechseln der Bereiche und Reiter gleitet die Seite in die richtige Richtung, Karten erscheinen kurz nacheinander, der Reiter-Strich wandert mit.',go:'training'},
+    {ic:'📳',t:'Haptik auf dem Handy',d:'Kurzes Tippen-Gefühl bei Navigation, Auswahl und Meldungen (Android und iPhone ab iOS 18). Abschalten unter Mein Konto → App.'},
+    {ic:'📱',t:'Mehr App-Gefühl',d:'Kein Hineinzoomen beim Tippen in Felder, kein Nachfedern am Rand, Knöpfe geben beim Drücken nach. Wer „Bewegung reduzieren“ eingestellt hat, bekommt eine ruhige App.'}]},
+  {id:'4.2',v:'0.4.2',datum:'2026-09-24',titel:'WhatsApp & Mail ohne Umweg',kurz:'Einladungen per WhatsApp und Berichte per Mail laufen jetzt direkt über den Server der App, ohne extra n8n-Server.',
+   punkte:[
+    {ic:'💬',t:'WhatsApp direkt über Superchat',d:'Die Kabine verschickt Abstimmungen und Erinnerungen direkt, der Superchat-Zugang liegt sicher auf dem Server, nicht in der App.',r:'team',go:'kabine'},
+    {ic:'✉️',t:'Berichte per Mail',d:'Beim Export „E-Mail an mich“ wählen. Der Bericht kommt als Anhang ins Postfach.',r:'team',go:'training'},
+    {ic:'🔌',t:'Versand & Zugänge in der Verwaltung',d:'Auf einen Blick: WhatsApp, Mail und KI aktiv? Mit „Jetzt prüfen“ nach dem Hinterlegen eines Schlüssels.',r:'admin'}]},
+  {id:'4.1',v:'0.4.1',datum:'2026-09-24',titel:'Beteiligung, Fotos & Saison-Album',kurz:'Wer war wie oft im Training und im Spiel, von 21/22 bis heute. Dazu Spielerfotos auf einen Schlag und ein Album je Saison.',
+   punkte:[
+    {ic:'🏃',t:'Trainings- & Spielbeteiligung',d:'Julians Listen sind drin: 21/22 bis 26/27, je Spieler Training, Spiele und Zuschauer, unter Mannschaft → Beteiligung, im Spielerprofil und als Quote im Kaderplan. Damit ist auch 23/24 nicht mehr leer.',r:'team',go:'training'},
+    {ic:'📷',t:'Spielerfotos auf einen Schlag',d:'Verwaltung → Fotos auswählen: die App erkennt am Dateinamen, wer drauf ist. Kurz prüfen, speichern: die Fotos erscheinen auf Karten, im Profil und in der Aufstellung.',r:'team'},
+    {ic:'📸',t:'Saison-Album',d:'Unter Mannschaft → Spiele gibt es je Saison ein Album mit den Spieltagsbildern. Vorstand und Kaderplanung laden hoch, alle sehen es.',r:'team',go:'training'},
+    {ic:'🔌',t:'n8n-Verbindung in der Verwaltung',d:'WhatsApp-Versand und Berichte in den Drive/per Mail lassen sich jetzt selbst verbinden: Production-URL aus n8n einfügen, speichern.',r:'admin'}]},
+  {id:'4.0',v:'0.4',datum:'2026-09-24',titel:'SV/BSC Sportzentrale',kurz:'Neuer Name, neue Ordnung: Kader, Scouting und Mannschaft so, wie ihr arbeitet, vom aktuellen Kader über den Bedarf zum passenden Spieler.',
+   punkte:[
+    {ic:'🏟',t:'Aus „Scout“ wird Sportzentrale',d:'Die App kann längst mehr als Scouting: Kader, Mannschaft, Spieltag, eigene Jugend und Kasse. Der neue Name zeigt das.'},
+    {ic:'🧭',t:'Navigation nach Arbeitsbereichen',d:'Links nur noch: Kader · Scouting · Mannschaft · Spieltag · Kasse · Eigene Jugend · Verein. Die Unterpunkte stehen oben als Tabs. Am PC ist jetzt alles sichtbar, was es vorher nur am Handy gab.'},
+    {ic:'📋',t:'Kaderplan neu gedacht',d:'Start ist der aktuelle Kader (1. · 2. · A-Jugend). Je Spieler die Zukunft (Standard: bleibt), rechts die Aufstellung im FIFA-Stil mit Haupt- und Alternativ-Aufstellung, darunter die Bedarfsanalyse: was fehlt jetzt (Winter, aus der Zweiten, aus der Jugend) und nächste Saison.',r:'scout',go:'kader'},
+    {ic:'🎯',t:'Bedarf statt wilder Suche',d:'Erst der Bedarf (z. B. Innenverteidiger für 27/28, Ersatz für …), dann Suchprofil, Kandidaten, Beobachtung, Shortlist, Kontakt, Entscheidung. KI-Scouts suchen nach dem Profil, interne Lösungen (Zweite, Jugend) stehen gleich mit dabei.',r:'scout',go:'bedarf'},
+    {ic:'💬',t:'Spielergespräche',d:'Letztes Gespräch, wie der Spieler seine Zukunft sieht, offene Themen und Entscheidung, und die Zukunft landet direkt im Kaderplan.',r:'scout',go:'gespr'},
+    {ic:'🪪',t:'Spielerprofil aufgeräumt',d:'Oben nur das Wichtigste: Beziehung zum Verein, Karte, MScore, Einsätze (wann, wo, für wen) und Zukunft. Alles andere ist eingeklappt, jeder Wert hat ein ⓘ mit Quelle und Stand. Ein „Bearbeiten“ statt drei, und nach dem Speichern bleibst du im Profil.',go:'scout'},
+    {ic:'👁',t:'Eye-Test wie im Ultimate Team',d:'Tempo, Schuss, Pass, Dribbling, Defensive, Physis. Jeder bewertet selbst, die Karte zeigt den Schnitt. Externe Spieler nur, wenn man sie gesehen hat. Fremde Bewertungen löschen nur Admin und Vorstand.',r:'scout'},
+    {ic:'📐',t:'MScore 2.0',d:'Einsätze und Liga zählen jetzt mit. Stammspieler einer höheren Liga stehen vorne, Torhüter mit drei Einsätzen nicht mehr. Der Eye-Test fließt ein. Jeder Baustein ist erklärt.',r:'scout',go:'model'},
+    {ic:'📚',t:'Saison-Records ab 2013/14',d:'Die Vereinsdaten von Lukas sind drin: Einsätze und Tore der Ersten von 13/14 bis 22/23, im Spielerprofil und unter Mannschaft → Spiele je Saison.',r:'team',go:'training'},
+    {ic:'⭐',t:'Nach dem Spiel bewerten',d:'Noten 1–6 je Spieler, auch per Sprache („Müller 2, Schmidt 3 …“). Training bewerten und Eye-Test gleich daneben.',r:'team',go:'training'},
+    {ic:'🌱',t:'Eigene Jugend',d:'A- und B-Jugend: Statistik, Entwicklung und Einschätzungen der Jugendtrainer, auch per Spracheingabe. Jugendtrainer können mit der neuen Aufgabe „Jugend“ mitmachen, ohne Kontaktdaten und Fotos.',r:'team',go:'ejugend'},
+    {ic:'🗺',t:'Gegnercheck ohne KI-Matchplan',d:'Den Plan macht der Trainer. Neu: Grundordnung und Abwehrkette des Gegners eintragen. Beim Rückspiel steht sie wieder da. Auf der Übersicht nur noch eine Zeile.',r:'team',go:'gegner'},
+    {ic:'🧹',t:'Weniger Doppelungen',d:'Kandidaten sind nur noch externe Spieler, Datenbank und Scouting-Liste sind ein Spielermarkt (Karten oder Tabelle), Rohdiamanten stecken im Radar, weniger Tags. Beim Kontakt lässt sich der Wohnort hinterlegen, für die echte Entfernung.',r:'scout',go:'scout'}]},
+  {id:'3.5',v:'0.3.5',datum:'2026-09-24',titel:'Kontakte, Kassen-Transparenz & Update-Fenster',kurz:'Handynummern & E-Mails zentral, Kassen-Rangliste für die Mannschaft und ab jetzt dieses Fenster bei jedem Update.',
+   punkte:[
+    {ic:'📇',t:'Zentrale Kontakte',d:'Im Spielerprofil ganz unten: Handynummer und E-Mail hinzufügen, mit einem Tipp per WhatsApp schreiben, anrufen oder mailen. Korrekturen landen im Verlauf (alte Nummer lässt sich zurückholen), löschen kann nur der Admin. Unter Kabine → Kontakte siehst du, wem noch etwas fehlt, und kannst ganze Listen einfügen.',r:'team',go:'kontakte'},
+    {ic:'🏆',t:'Kassen-Transparenz für die Mannschaft',d:'Neue Seite mannschaftskasse.albertklee.de: Kassenstand gesamt, Top-Supporter (Hauptpartner, Premium-Partner, Trikotpartner), offene Deckel und, für Lukas, die Tunnelkönige im Eck. Nur mit dem Link aus der Mannschaftsgruppe.',go:'kasse'},
+    {ic:'⭐',t:'Smartes Scouting',d:'Bei jedem Spieler: Merken, „Halte mich up to date“ (Spieltag für Spieltag) oder „Kein Interesse“, dann taucht er nie wieder auf. Das Radar zeigt nur noch die wichtigsten Tipps und richtet sich nach eurem Positions-Bedarf.',r:'scout',go:'scout'},
+    {ic:'🧩',t:'Positions-Bedarf & Schattenkader',d:'Im Kaderplan je Position festlegen, wie dringend (hoch, mittel, kurz- oder langfristig, kein Bedarf), plus Schattenkader für diese, nächste und übernächste Saison.',r:'scout',go:'kaderplan'},
+    {ic:'🔎',t:'KI-Scouting-Aufträge',d:'„Scout mir mal den Spieler“ oder „Wir brauchen einen Torwart“: läuft im Hintergrund, du bekommst eine Meldung, sobald der Bericht fertig ist.',r:'scout',go:'scout'},
+    {ic:'📄',t:'Berichte als PDF & Excel',d:'Scouting, Trainingsbeteiligung, Spiele, Kasse und Kaderplanung als PDF oder Excel, herunterladen, per WhatsApp teilen, in den Drive legen oder mailen.',r:'team',go:'training'},
+    {ic:'🧠',t:'Co-Trainer denkt mit',d:'Nach jeder Antwort schlägt er die nächsten Schritte zum Antippen vor und weist auf blinde Flecken hin. Neu: Kontaktdaten per Satz eintragen („Die Nummer von … ist …“).',r:'team',go:'cotrainer'},
+    {ic:'🔑',t:'Einladung & Passwort zuverlässiger',d:'Wer den Einladungslink zweimal öffnet oder dessen Browser die Anmeldung zwischendurch verliert, kann sein Passwort jetzt trotzdem festlegen. Wer noch kein eigenes Passwort hat, wird beim nächsten Öffnen direkt danach gefragt.'},
+    {ic:'🤖',t:'KI-Schlüssel nur noch auf dem Server',d:'Der KI-Schlüssel wird nicht mehr in der App eingegeben, sondern einmal sicher auf dem Server hinterlegt. Unter Nutzer & Rollen → KI siehst du den Status und prüfst ihn mit einem Tipp.',r:'admin',go:'admin'},
+    {ic:'✨',t:'Was ist neu',d:'Dieses Fenster erscheint ab jetzt bei jedem Update. Die ganze Historie findest du jederzeit unter „Mehr“ bzw. in der Seitenleiste.'}]},
+  {id:'3.4',v:'0.3.4',datum:'2026-09-24',titel:'Kasse mit Kassenwart, Einladen & Einführung',kurz:'Zahlungen zählen erst nach Bestätigung, Einladen per Gruppenlink, persönliche Einführung.',
+   punkte:[
+    {ic:'💶',t:'Mannschaftskasse mit Kassenwart',d:'„Ich habe bezahlt“ zählt erst, wenn der Kassenwart abhakt. Er bekommt eine Meldung und eine Liste, bucht Zuzahlungen, Gebühren und Korrekturen. Kassenstand je Konto (Bank, PayPal, bar) mit Dreh-Karte.',go:'kasse'},
+    {ic:'📣',t:'Spieler zum Training einladen',d:'Pop-up mit fertigem Link fürs nächste Training, einmal in die Gruppe, jeder tippt Vor- und Nachname an und sagt „dabei“ oder „nicht dabei“. Kurzadresse svbsc.albertklee.de.',r:'team',go:'abst'},
+    {ic:'👋',t:'Persönliche Einführung',d:'Begrüßung, deine Aufgaben, Erlaubnis für Pop-ups und Uploads und ein Rundgang mit Pfeil. Jederzeit wiederholbar unter Mein Konto.'},
+    {ic:'⚽',t:'Spiele genauer erfassen',d:'Startelf, eingewechselt, im Kader, zugeschaut oder nicht da, und direkt aus dem Spielbericht übernehmen.',r:'team',go:'training'}]},
+  {id:'3.3',v:'0.3.3',datum:'2026-09-23',titel:'Kabine & Spieltag',kurz:'Abstimmungen per WhatsApp-Link, Mannschaftskasse, Gegnercheck und Elf der Woche.',
+   punkte:[
+    {ic:'🗳️',t:'Kabine: Abstimmungen',d:'Trainings-Abstimmungen per WhatsApp-Link, auf Wunsch automatisch; persönliche Links je Spieler, Nachhaken per WhatsApp.',go:'abst'},
+    {ic:'💰',t:'Mannschaftskasse',d:'Strafen, Beiträge und Ausgaben. Spieler sehen ihre offenen Posten und zahlen per PayPal oder Überweisung.',go:'kasse'},
+    {ic:'🎯',t:'Gegnercheck & Elf der Woche',d:'Vor dem Spiel: Gegner in einem Satz, auf wen achten, wo wir sie packen. Ergebnisse und Saison-Statistik kommen automatisch aus den Spielberichten.',go:'gegner'},
+    {ic:'🌱',t:'A-Jugend-Radar',d:'Talente aus der A-Jugend im Umkreis im Blick, mit Realismus-Filter.',r:'scout',go:'jugend'}]},
+  {id:'3.2',v:'0.3.2',datum:'2026-09-23',titel:'Training, Verein & Radar',kurz:'Co-Trainer fürs Training, Rankings & Vereinsleben, Scouting-Radar.',
+   punkte:[
+    {ic:'🏃',t:'Training mit Co-Trainer',d:'Anwesenheit, Gründe, Motivation, Fitness und Verletzungen. Per Satz, Screenshot oder WhatsApp-Export. Warnt bei sinkender Beteiligung.',r:'team',go:'training'},
+    {ic:'🏅',t:'Rankings & Verein',d:'Trainings- und Loyalitäts-Ranking, Helfer bei Veranstaltungen, Allzeit-Statistik mit Legenden und Meilensteinen.',go:'verein'},
+    {ic:'📡',t:'Scouting-Radar',d:'Meldet automatisch Torserien, Überflieger und junge Talente aus der Region.',r:'scout',go:'radar'}]},
+  {id:'3.0',v:'0.3',datum:'2026-09-23',titel:'Die App mit Login',kurz:'Anmeldung mit Rollen, als App installierbar, Push-Erinnerungen, Saison 26/27 live.',
+   punkte:[
+    {ic:'🔐',t:'Login & Rollen',d:'Jeder sieht, was er braucht: Admin, Vorstand, Kaderplanung, Trainer, Gast. Daten nur noch hinter der Anmeldung.'},
+    {ic:'📲',t:'Als App installieren',d:'Auf dem Handy „Zum Startbildschirm“. Startet wie eine richtige App und aktualisiert sich selbst.'},
+    {ic:'🔔',t:'Push-Erinnerungen',d:'Fällige Kandidaten-Kontakte, Trainings-Hinweise und das Wochen-Briefing aufs Handy, im Konto pro Gerät einschalten.',r:'team'},
+    {ic:'🃏',t:'Spielerbogen & Positions-Check',d:'Spielerkarten wie in EA FC und ein Check, ob jeder auf seiner Position spielt.',go:'elf'}]},
+  {id:'2.0',v:'0.2',datum:'2026-09-22',titel:'Kaderplanung',kurz:'Kandidaten-Pipeline mit Überfällig-Ampel und druckbarem Kaderplan.',
+   punkte:[
+    {ic:'📋',t:'Kandidaten-Pipeline',d:'Letzter Kontakt, Wechselchance, Zielposition und wer sich kümmert, mit Ampel, wenn der Kontakt zu lange her ist.',r:'scout',go:'kandidaten'},
+    {ic:'🖨️',t:'Kaderplan-Board',d:'Traumelf plus Backups je Position. Zum Ausdrucken für die Sitzung.',r:'scout',go:'kaderplan'}]},
+  {id:'1.1',v:'0.1.1',datum:'2026-07-30',titel:'Datenbank & Schattenelf',kurz:'Alle Kader der Region, Scouting-Markierungen und die Schattenelf.',
+   punkte:[
+    {ic:'🗄️',t:'Komplett-Datenbank',d:'Alle Kader von Kreisoberliga bis Kreisliga D in der Region, über 2.600 Spieler.',r:'scout',go:'db'},
+    {ic:'👥',t:'Schattenelf',d:'Startelf, Backup und Transferziel je Position auf dem Feld.',r:'scout',go:'sxi'}]},
+  {id:'1.0',v:'0.1',datum:'2026-07-26',titel:'Der Start',kurz:'Die erste Version: Scouting, Aufstellung und Transfer-Vorschläge.',
+   punkte:[
+    {ic:'🚀',t:'SV/BSC Scout ist da',d:'Scouting-Datenbank, Aufstellung mit Formationen und Drag & Drop, Bedarfsanalyse und Transfer-Vorschläge.'}]}
+];
+// Neue Vereine sehen die Historie erst ab ihrem Start (verein/<id>.json: patch_ab = älteste gezeigte Version)
+{ const ab=(window.VEREIN||{}).patch_ab; if(ab){ const i=SV_PATCHES.findIndex(p=>p.id===ab); if(i>=0)SV_PATCHES.splice(i+1); } }
+const SV_PATCH_LATEST=SV_PATCHES[0].id;
+const spV=p=>'Beta '+((p&&(p.v||p.id))||'');
+const SV_PATCH_LABEL=spV(SV_PATCHES[0]);
+function spFor(p){ return (p.punkte||[]).filter(x=>!x.r||(x.r==='team'&&canTraining())||(x.r==='scout'&&canScout())||(x.r==='admin'&&isAdmin())||(x.r==='partner'&&typeof spoDarf==='function'&&spoDarf('sponsoring'))||(x.r==='studio'&&typeof svTabAllowed==='function'&&svTabAllowed('studio'))||(!['team','scout','admin','partner','studio'].includes(x.r)&&typeof svTabAllowed==='function'&&svTabAllowed(x.r))); }
+function spDate(d){ try{ return new Date(d+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}); }catch(e){ return d; } }
+function spSeen(){ let l=''; try{ l=localStorage.getItem('sv_patch')||''; }catch(e){} return (SV_PREFS&&SV_PREFS.patch_seen)||l||''; }
+function spUnseen(){ const s=spSeen(), i=SV_PATCHES.findIndex(p=>p.id===s); return i<0?(s?SV_PATCHES.slice(0,1):SV_PATCHES.slice(0,1)):SV_PATCHES.slice(0,i); }
+async function spMark(){ try{ localStorage.setItem('sv_patch',SV_PATCH_LATEST); }catch(e){} if(SV_PREFS)SV_PREFS.patch_seen=SV_PATCH_LATEST; spBadge();
+  try{ await SVB.sb.rpc('patch_gesehen',{p_id:SV_PATCH_LATEST}); }catch(e){ console.warn(e); } }
+function spGo(k){
+  closeOverlay(); try{ svSheet(false); }catch(e){}
+  const kb=v=>{ KB.view=v; goTab('kabine'); };
+  const F={kontakte:()=>kb('kontakte'),kasse:()=>kb('kasse'),abst:()=>kb('abst'),pflege:()=>sv4Go('training:pflege'),spieler:()=>sv4Go('training:players'),abwesend:()=>sv4Go('training:urlaub'),gstat:()=>sv4Go('training:gstat'),games:()=>sv4Go('training:games'),gnext:()=>sv4Go('training:gnext'),cotrainer:()=>{ const f=document.getElementById('trFab'); if(f)f.click(); }}[k];
+  if(F)F(); else goTab(k);
+}
+const SP_TEAM=['kontakte','kasse','abst','cotrainer','training','pflege','spieler','abwesend','gstat','games','gnext'], SP_SCOUT=['blick','scout','best','radar','kaderplan','kandidaten','db','sxi','jugend'];
+function spCanGo(g){ return !!g&&(SP_TEAM.includes(g)?canTraining():SP_SCOUT.includes(g)?canScout():(typeof svTabAllowed==='function'?svTabAllowed(g):true)); }
+function spItem(x,btn){ return `<div class="sp-it"><span class="sp-ic">${x.ic||'•'}</span><div><b>${svEsc(x.t)}</b><p>${svEsc(x.d)}</p>${btn&&spCanGo(x.go)?`<button class="sp-go" data-spgo="${svEsc(x.go)}">Ausprobieren →</button>`:''}</div></div>`; }
+function spWire(M){ M.querySelectorAll('[data-spgo]').forEach(b=>b.onclick=()=>spGo(b.dataset.spgo)); }
+
+/* ---------- Pop-up nach einem Update ---------- */
+function spPopup(force){
+  if(!force){
+    if(!SV_PREFS||!(SV_PREFS.onboarding_at||SV_PREFS.skip))return;
+    if(SV_PREFS.skip){ let t=''; try{ t=localStorage.getItem('sv_patch_test')||''; }catch(e){} if(!t)return; }   // automatisierte Browser: nur auf Wunsch
+    if(spSeen()===SV_PATCH_LATEST||window.__spShown)return;
+    const g=document.getElementById('gate');
+    if((g&&!g.classList.contains('done'))||document.querySelector('#overlay.open')||document.getElementById('onb')||document.getElementById('onbTourL')){   // gerade ein anderes Fenster offen → gleich nochmal versuchen
+      spPopup.n=(spPopup.n||0)+1; if(spPopup.n<30)setTimeout(()=>spPopup(),2000); return; }
+  }
+  window.__spShown=true;
+  const U0=spUnseen(); let U=U0.filter(p=>spFor(p).length);   // 0.30: neuestes Update, das für diese Rolle etwas enthält
+  if(!U.length&&SV_PATCHES.findIndex(p=>p.id===spSeen())<0){ const f=SV_PATCHES.find(p=>spFor(p).length); if(f)U=[f]; }   // noch nie gesehen: das neueste passende
+  const P=U[0], L=P?spFor(P):[], more=U.length-1;
+  if(!L.length){ spMark(); return; }   // nichts für diese Rolle dabei: kein leeres Fenster
+  svModal(`<div class="sp-pop"><div class="sp-burst">🚀</div><span class="trpill">Update · ${svEsc(spV(P))}</span>
+    <h2>${svEsc(P.titel)}</h2><p class="note">${svEsc(P.kurz)} Wir arbeiten laufend an der App, das ist neu:</p>
+    <div class="sp-list">${L.slice(0,4).map(x=>`<div class="sp-li"><span>${x.ic}</span><div><b>${svEsc(x.t)}</b></div></div>`).join('')}${L.length>4?`<div class="sp-li more">+ ${L.length-4} weitere Neuerung${L.length-4>1?'en':''}</div>`:''}</div>
+    ${more>0?`<p class="note small">Dazu ${more} weitere${more>1?'':'s'} Update${more>1?'s':''} seit deinem letzten Besuch.</p>`:''}
+    <button class="btn kbpop-go" id="spMore">✨ Mehr erfahren</button><div class="btnrow"><button class="btn ghost sm" id="spOk">OK, verstanden</button></div></div>`);
+  document.getElementById('spOk').onclick=()=>{ spMark(); closeOverlay(); };
+  document.getElementById('spMore').onclick=()=>{ spMark(); spHistory(); };
+}
+/* ---------- Patch-Historie ---------- */
+function spHistory(){
+  const U=new Set(spUnseen().map(p=>p.id));
+  const M=svModal(`<div class="sp-hist"><div class="sp-head"><span class="sp-burst sm">✨</span><div><h2>Was ist neu</h2><p class="note">Die App ist noch in der Beta und wird laufend weiterentwickelt. Hier siehst du, was nach und nach dazukam.</p></div></div>
+    <div class="sp-tl">${SV_PATCHES.map((p,i)=>{ const L=spFor(p); if(!L.length)return ''; i=SV_PATCHES.findIndex(x=>spFor(x).length)===i?0:i+1; return `<details class="sp-v${i===0?' now':''}"${i===0?' open':''}><summary><span class="sp-dot"></span><div class="sp-vh"><span class="sp-ver">${svEsc(p.v||p.id)}</span><b>${svEsc(p.titel)}</b>${U.has(p.id)&&i!==0?'<em class="sp-new">neu</em>':''}<small>${spDate(p.datum)} · ${svEsc(p.kurz)}</small></div></summary>
+      <div class="sp-items">${L.map(x=>spItem(x,true)).join('')}</div></details>`; }).join('')}</div>
+    <p class="note small" style="text-align:center;margin-top:14px">Ideen oder Wünsche? Einfach dem Admin sagen. Vieles hier kam genau so zustande. 💬</p></div>`);
+  spWire(M);
+}
+/* ---------- Einstiege: Seitenleiste, „Mehr“, Mein Konto ---------- */
+function spBadge(){ const n=spSeen()===SV_PATCH_LATEST?0:1; document.querySelectorAll('.sp-badge').forEach(b=>b.style.display=n?'':'none'); }
+function spEntries(){
+  const nav=document.querySelector('.snav'); if(nav&&!nav.querySelector('.sp-nav')){ const b=document.createElement('button'); b.className='sp-nav'; b.type='button'; b.setAttribute('data-tip','Was ist neu');
+    b.innerHTML=`<span class="sp-nic">✨</span><span>Was ist neu</span><span class="cnt sp-badge">neu</span>`; b.onclick=()=>spHistory(); const h=nav.querySelector('[data-tab="home"]'); if(h)h.after(b); else nav.prepend(b); }
+  const sh=document.getElementById('moreSheet'); if(sh&&!sh.querySelector('.sp-sheet')){ const b=document.createElement('button'); b.className='sp-sheet'; b.type='button';
+    b.innerHTML=`<span>✨</span><div><b>Was ist neu</b><small>${svEsc(SV_PATCH_LABEL)} · ${spDate(SV_PATCHES[0].datum)}</small></div><em class="sp-badge">neu</em><i>›</i>`; b.onclick=()=>{ svSheet(false); spHistory(); };
+    const g=sh.querySelector('.grab'); if(g)g.after(b); else sh.prepend(b); }
+  spBadge();
+}
+{ const _acc5=svAccount; svAccount=function(){ const r=_acc5.apply(this,arguments); try{ const M=document.getElementById('modal'); if(M&&!M.querySelector('#spAcc')){ const s=document.createElement('div'); s.className='editsec'; s.id='spAcc';
+    s.innerHTML=`<h4>Was ist neu</h4><button class="btn ghost sm" id="spAccB">✨ Patch-Historie · ${svEsc(SV_PATCH_LABEL)}</button>`; M.appendChild(s); document.getElementById('spAccB').onclick=()=>spHistory(); } }catch(e){ console.warn(e); } return r; }; }
+// Einführung gerade gemacht → kein Update-Fenster hinterher
+{ const _od=svOnbDone; svOnbDone=async function(){ if(!spSeen())spMark(); return _od.apply(this,arguments); }; }
+// nach dem Laden: zuerst das Update-Fenster, danach die übrigen Pop-ups wie gehabt
+{ const _pr=svPopupsRun; svPopupsRun=function(){ try{ spEntries(); spPopup(); }catch(e){ console.warn(e); } return _pr.apply(this,arguments); }; }
+{ let t=0; const iv=setInterval(()=>{ if(++t>60)return clearInterval(iv); if(document.querySelector('.snav')||document.getElementById('moreSheet')){ try{ spEntries(); }catch(e){} if(SV_PREFS)clearInterval(iv); } },1000); }
+
+
+/* =====================================================================
+   Sportzentrale Beta 0.37 · Neuigkeiten nur einmal, Erinnerung bei alter Version
+   Wunsch Albert (30.09.2026): „Ich will nicht jedes Mal die Patch-Notes angezeigt bekommen, wenn ich die App öffne.“
+   - Das Update-Fenster zählt als gesehen, sobald es zu ist, egal wie (OK, ✕, daneben tippen, App zu)
+   - Höchstens ein Update-Fenster pro Tag und Gerät. Mehrere Updates an einem Tag: gesammelt beim nächsten Mal, bis dahin „neu“ im Menü
+   - Gesehen wird aus Datenbank UND Gerät gelesen, das Neuere gilt (fällt das Speichern im Funkloch aus, kommt es trotzdem nicht wieder)
+   - Push „Neue Version“ (Server, höchstens alle 7 Tage bei wirklich veralteter App): Tipp darauf öffnet direkt „Was ist neu“
+   ===================================================================== */
+const SP_POP_KEY='sv_patch_pop', SP_POP_PAUSE=20*36e5;
+function spIdx(x){ const k=SV_PATCHES.findIndex(p=>p.id===x); return k<0?1e9:k; }
+spSeen=function(){
+  let l=''; try{ l=localStorage.getItem('sv_patch')||''; }catch(e){}
+  const d=(SV_PREFS&&SV_PREFS.patch_seen)||'';
+  if(!d||!l)return d||l||'';
+  return spIdx(l)<spIdx(d)?l:d;
+};
+// Gerät weiß mehr als die Datenbank (Speichern ging mal nicht durch): nachtragen
+setTimeout(()=>{ try{ const l=localStorage.getItem('sv_patch')||''; const d=(SV_PREFS&&SV_PREFS.patch_seen)||'';
+  if(l&&spIdx(l)<1e9&&spIdx(l)<spIdx(d)){ if(SV_PREFS)SV_PREFS.patch_seen=l; SVB.sb.rpc('patch_gesehen',{p_id:l}).then(()=>{},()=>{}); } }catch(e){} },4000);
+
+function spPopZeit(){ let t=0; try{ t=+localStorage.getItem(SP_POP_KEY)||0; }catch(e){} return t; }
+let _spOffen=false;
+function spFertig(){ if(!_spOffen)return; _spOffen=false; spMark(); }
+{ const _sp=spPopup; spPopup=function(force){
+  if(!force&&spSeen()!==SV_PATCH_LATEST&&!window.__spShown&&Date.now()-spPopZeit()<SP_POP_PAUSE){ try{ spBadge(); }catch(e){} return; }   // heute schon eins gesehen: nur „neu“ im Menü
+  const r=_sp.apply(this,arguments);
+  if(document.querySelector('#modal .sp-pop')){ _spOffen=true; try{ localStorage.setItem(SP_POP_KEY,String(Date.now())); }catch(e){} }
+  return r; }; }
+// Wie auch immer das Fenster zugeht: gesehen
+{ const _co39=closeOverlay; closeOverlay=function(){ const war=!!document.querySelector('#modal .sp-pop, #modal .sp-hist'); const r=_co39.apply(this,arguments); if(war)spFertig(); return r; }; }
+{ const _sh39=spHistory; spHistory=function(){ const r=_sh39.apply(this,arguments); if(_spOffen)spFertig(); return r; }; }
+window.addEventListener('pagehide',()=>{ if(_spOffen){ try{ localStorage.setItem('sv_patch',SV_PATCH_LATEST); }catch(e){} spFertig(); } });
+
+/* ---------- Push „Neue Version“ öffnet direkt „Was ist neu“ ---------- */
+SVZ_ART.update=['📲','Update'];
+{ const _zi39=svzInhalt; svzInhalt=async function(m){ if(m&&m.art==='update')return {h:'',knopf:`<button class="btn" type="button" data-svzneu>✨ Was ist neu</button>`,ohneText:false}; return _zi39.apply(this,arguments); }; }
+{ const _mz39=svMeldungZeigen; svMeldungZeigen=async function(ids){
+  let M=null; try{ const {data,error}=await SVB.sb.from('meldungen').select('id,art,gelesen_at').in('id',ids); if(!error)M=data||[]; }catch(e){}
+  if(M&&M.length&&M.every(m=>m.art==='update')){
+    const neu=M.filter(m=>!m.gelesen_at).map(m=>m.id);
+    if(neu.length){ try{ await SVB.sb.rpc('meldungen_gelesen',{p_ids:neu}); }catch(e){} try{ svBadges(); }catch(e){} }
+    try{ localStorage.setItem(SP_POP_KEY,String(Date.now())); }catch(e){}
+    window.__spShown=true; _spOffen=true; spHistory();
+    try{ kToast('✓ Du bist auf '+SV_PATCH_LABEL); }catch(e){}
+    return;
+  }
+  const r=await _mz39.apply(this,arguments);
+  document.querySelectorAll('#modal [data-svzneu]').forEach(b=>b.onclick=()=>{ closeOverlay(); setTimeout(()=>spHistory(),60); });
+  return r; }; }
+
+(function(){ try{ const s=document.createElement('style'); s.id='svm40css'; s.textContent="/* ===== Beta 0.38 · Lukas' Änderungswünsche ===== */\n/* Seitenleiste: eine Spalte, scrollt bis zum letzten Eintrag (vorher brach die Liste in eine unsichtbare zweite Spalte um) */\n.side .snav{flex-wrap:nowrap!important;justify-content:flex-start!important;align-content:flex-start!important;min-height:0;overflow-y:auto!important;overscroll-behavior:contain;}\n.side .snav > *{flex:none;}\n.side .snav::-webkit-scrollbar{display:block;width:6px;}\n.side .snav::-webkit-scrollbar-thumb{background:rgba(148,163,196,.28);border-radius:6px;}\n.side .snav.sv40-mehr{-webkit-mask-image:linear-gradient(#000 calc(100% - 26px),transparent);mask-image:linear-gradient(#000 calc(100% - 26px),transparent);}\n\n/* Reiterleiste: am Rechner umbrechen statt abschneiden („Massenpf…“), am Handy wischen mit Hinweis */\n@media (min-width:761px){ .hub-in{flex-wrap:wrap;row-gap:0;} }\n@media (max-width:760px){ .hubbar{position:relative;} .hubbar.sv40-r:after{content:'';position:absolute;right:0;top:0;bottom:1px;width:28px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(5,7,12,.95));} }\n\n/* Breite Tabellen: links/rechts blättern */\n.sv40-tnav{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin:-2px 0 6px;font-size:12px;color:var(--ink3);}\n.sv40-tnav button{border:1px solid var(--line2);background:rgba(148,163,196,.08);color:var(--ink);border-radius:9px;width:34px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:800;}\n.sv40-tnav button:disabled{opacity:.35;cursor:default;}\n.sv40-tnav span{margin-right:auto;}\n.trtw.sv40-wide{scroll-behavior:smooth;}\n\n/* Tabellenköpfe: Erklärung beim Überfahren */\nth.kpi-th{cursor:help;}\n\n/* Massenpflege: PlayStyles erklärt */\n.sv40-pst{margin-top:10px;border-top:1px solid var(--line2);padding-top:8px;}\n.sv40-pst summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--ink2);}\n.sv40-pst dl{display:grid;grid-template-columns:minmax(130px,190px) 1fr;gap:4px 12px;margin:8px 0 0;font-size:12.5px;}\n.sv40-pst dt{font-weight:750;color:var(--ink);}\n.sv40-pst dd{margin:0;color:var(--ink2);}\n.sv40-pst h5{grid-column:1/-1;margin:8px 0 2px;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);}\n.sv40-pstd{min-height:18px;margin:6px 0 0;font-size:12.5px;color:var(--ink2);}\n@media (max-width:560px){ .sv40-pst dl{grid-template-columns:1fr;} .sv40-pst dd{margin-bottom:6px;} }\n\n/* Bevorstehende Spiele mit Gegneranalyse */\n.sv40-next tbody tr{cursor:pointer;}\n.sv40-next tbody tr:hover td{background:rgba(148,163,196,.06);}\n.sv40-ga{margin-top:14px;}\n.sv40-ga-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px;}\n.sv40-ga-h h3{margin:0;}\n.sv40-hist{display:flex;flex-direction:column;gap:8px;}\n.sv40-hr{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line2);border-radius:12px;background:rgba(148,163,196,.04);flex-wrap:wrap;}\n.sv40-hr .d{min-width:74px;font-weight:750;color:var(--ink2);font-size:13px;}\n.sv40-hr .t{flex:1;min-width:180px;font-size:13px;color:var(--ink2);}\n.sv40-hr .t b{color:var(--ink);}\n.sv40-hr .t p{margin:4px 0 0;white-space:pre-wrap;}\n.sv40-hr .q{font-size:11px;font-weight:750;color:var(--ink3);}\n.sv40-ki{border-color:rgba(139,124,246,.35);background:rgba(139,124,246,.07);}\n.sv40-nf{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}\n.sv40-nf textarea{flex:1;min-width:200px;min-height:54px;}\n\n/* Aufgabensteuerung: Vorstand & Ziele */\n#panel-vorstand .card{margin-bottom:16px;}\n\n/* Wissen: Datenquellen, MScore */\n.sv40-doc h4{margin:16px 0 6px;}\n.sv40-doc p,.sv40-doc li{font-size:13.5px;line-height:1.55;color:var(--ink2);max-width:78ch;}\n.sv40-doc ol,.sv40-doc ul{padding-left:20px;margin:6px 0;}\n.sv40-doc table{font-size:13px;}\n.sv40-skala{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:8px 0;}\n.sv40-skala div{border:1px solid var(--line2);border-radius:12px;padding:8px 10px;background:rgba(148,163,196,.05);}\n.sv40-skala b{display:block;font-size:20px;font-variant-numeric:tabular-nums;}\n.sv40-skala span{font-size:12px;color:var(--ink3);}\n.sv40-dup{display:flex;flex-direction:column;gap:10px;margin-top:8px;}\n.sv40-dupg{border:1px solid var(--line2);border-radius:12px;padding:10px 12px;}\n.sv40-dupg label{display:flex;gap:8px;align-items:center;font-size:13px;padding:3px 0;}\n.sv40-dupg small{color:var(--ink3);}\n"; document.head.appendChild(s); }catch(e){} })();
+/* =====================================================================
+   Sportzentrale Beta 0.40 (Mein Spieltag) · 0.39 (Look) · 0.38 Lukas' Änderungswünsche (strukturiert und harmonisiert)
+   1. Navigation: Seitenleiste scrollt bis zum letzten Eintrag, alle Bereiche auf allen Geräten
+   2. Aufgabensteuerung: Termine, Aufgaben, Vorstand & Ziele an einem Ort
+   3. Mannschaft → Spieler: aufgeräumte Spalten, Erklärung an jedem Tabellenkopf, breite Tabellen seitlich blättern
+   4. Training: „Ohne Grund“ entfällt (es werden keine Abwesenheitsgründe mehr erfasst)
+   5. Spiele: FuPa hat Vorrang bei Toren, Vorlagen und Minuten, ältere Spiele aus dem fussball.de-Bericht,
+      Gegneranalyse direkt bei den bevorstehenden Spielen, Historie je Gegner
+   6. Massenpflege: keine Mannschaftsfilter mehr, PlayStyles erklärt, kein PlayStyle+
+   7. Eine Skala für alles: Eye-Test 1 bis 10 in halben Schritten, mal zehn = Spielstärke (MScore)
+   8. Wissen: Datenquellen und Abgleich, MScore vollständig erklärt, doppelte Spieler zusammenführen
+   ===================================================================== */
+const SV40={hist:new Map(),histBusy:new Set(),dup:null,dupBusy:false};
+const sv40E=s=>svEsc(s==null?'':String(s));
+const sv40Key=s=>String(s||'').toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+const sv40N=(v,d=1)=>{ if(v==null||isNaN(v))return '–'; return (Math.round(v*Math.pow(10,d))/Math.pow(10,d)).toLocaleString('de-DE'); };
+
+/* =====================================================================
+   1. Seitenleiste
+   ===================================================================== */
+function sv40NavFade(){ const n=document.querySelector('.side .snav'); if(!n)return; n.classList.toggle('sv40-mehr',n.scrollHeight-n.scrollTop-n.clientHeight>8); }
+(function(){ const go=()=>{ const n=document.querySelector('.side .snav'); if(!n)return; n.addEventListener('scroll',sv40NavFade,{passive:true}); window.addEventListener('resize',sv40NavFade); setTimeout(sv40NavFade,600); };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go); else go(); })();
+// Die aktive Seite immer sichtbar in der Leiste
+{ const _gt40n=goTab; goTab=function(){ const r=_gt40n.apply(this,arguments);
+  setTimeout(()=>{ try{ const b=document.querySelector('.side .snav button.active'); if(b&&b.scrollIntoView)b.scrollIntoView({block:'nearest'}); sv40NavFade(); }catch(e){} },60); return r; }; }
+
+/* =====================================================================
+   2. Aufgabensteuerung: Termine · Aufgaben · Vorstand & Ziele
+   ===================================================================== */
+SV4_HUB.steuerung={t:'Aufgabensteuerung',tabs:[['kalender','Termine'],['orga','Aufgaben'],['vorstand','Vorstand & Ziele']]};
+Object.assign(SV4_OF,{kalender:'steuerung',orga:'steuerung',vorstand:'steuerung'}); SV4_SIDEKEY.steuerung='kalender';
+SV_TBL.vorstand=['target','Vorstand & Ziele']; SV_TBL.kalender=['cal','Aufgaben'];
+Object.assign(SV_PAGES,{vorstand:['Aufgabensteuerung','Vorstand, Zuständigkeiten und unsere Ziele bis 2030'],
+  kalender:['Aufgabensteuerung','Termine: Spiele, Veranstaltungen und Geburtstage'],orga:['Aufgabensteuerung','Aufgaben und Checklisten für Heimspiele und Veranstaltungen']});
+{ const _ta40=svTabAllowed; svTabAllowed=function(t){ if(t==='vorstand')return typeof SVR==='undefined'||!SVR.loaded||!!SVR.role; return _ta40.apply(this,arguments); }; }
+function sv40VsPanel(){ let P=document.getElementById('panel-vorstand'); if(P)return P;
+  const ref=document.getElementById('panel-home')||document.querySelector('.panel'); if(!ref)return null;
+  P=document.createElement('section'); P.className='panel'; P.id='panel-vorstand'; ref.parentNode.insertBefore(P,ref.nextSibling); return P; }
+function sv40VsRender(){ const P=sv40VsPanel(); if(!P)return; let B=P.querySelector('#vsBody'); if(!B){ P.innerHTML='<div id="vsBody"></div>'; B=P.querySelector('#vsBody'); }
+  try{ vrViewOrg(B); }catch(e){ console.warn('Vorstand & Ziele',e); B.innerHTML='<div class="card"><div class="empty">Vorstand & Ziele konnten nicht geladen werden.</div></div>'; } }
+if(typeof orgLoad==='function'){ const _ol40=orgLoad; orgLoad=async function(){ const r=await _ol40.apply(this,arguments); try{ if(svCurTab()==='vorstand')sv40VsRender(); }catch(e){} return r; }; }
+// Verein: der Reiter „Vorstand & Ziele“ wohnt jetzt in der Aufgabensteuerung
+if(typeof vrRender==='function'){ const _vr40=vrRender; vrRender=function(){ if(typeof VR!=='undefined'&&VR.view==='org'){ VR.view='allzeit'; setTimeout(()=>goTab('vorstand'),0); }
+  const r=_vr40.apply(this,arguments); try{ document.querySelectorAll('#panel-verein [data-vrv="org"]').forEach(b=>b.remove()); }catch(e){} return r; }; }
+SV_PAGES.verein=['Verein','Rankings, Helfer & Veranstaltungen, Allzeit-Statistik und Legenden'];
+// Untere Leiste am Handy: „Gegnercheck“ gibt es nicht mehr, dafür die Aufgabensteuerung
+Object.keys(SV_TABBAR).forEach(r=>{ const L=SV_TABBAR[r]; if(!Array.isArray(L))return; const i=L.indexOf('gegner'); if(i>=0)L.splice(i,1,L.includes('kalender')?'kasse':'kalender'); });
+Object.keys(SV_SIDE).forEach(r=>{ const L=SV_SIDE[r]; if(!Array.isArray(L))return; const i=L.indexOf('Spieltag & Kasse'); if(i>=0)L[i]='Kasse'; });
+{ const _gt40=goTab; goTab=function(tab){
+  if(tab==='steuerung')tab='kalender';
+  if(tab==='vorstand')sv40VsPanel();
+  const r=_gt40.apply(this,arguments);
+  try{ if(svCurTab()==='vorstand'){ sv40VsRender(); sv4HubBar('vorstand'); }
+    const side=document.querySelector('.snav button[data-tab="kalender"]'); if(side&&['kalender','orga','vorstand'].includes(svCurTab())){ document.querySelectorAll('.snav button[data-tab]').forEach(b=>b.classList.toggle('active',b===side)); } }catch(e){ console.warn('Aufgabensteuerung',e); }
+  return r; }; }
+// Hubleiste auch für Termine und Aufgaben (deren eigene goTab-Hüllen zeichnen sie nicht)
+{ const _gt40h=goTab; goTab=function(){ const r=_gt40h.apply(this,arguments); try{ const c=svCurTab(); if(c==='kalender'||c==='orga'||c==='vorstand')sv4HubBar(c); sv40HubFade(); }catch(e){} return r; }; }
+function sv40HubFade(){ const bar=document.getElementById('hubbar'), inn=bar&&bar.querySelector('.hub-in'); if(!inn)return; const upd=()=>bar.classList.toggle('sv40-r',inn.scrollWidth-inn.scrollLeft-inn.clientWidth>6); upd(); if(!inn.dataset.sv40){ inn.dataset.sv40=1; inn.addEventListener('scroll',upd,{passive:true}); } }
+
+/* =====================================================================
+   3. Mannschaft → Spieler
+   ===================================================================== */
+// Spalten, die nicht mehr gepflegt werden oder doppelt sind: Schwacher Fuß, Datenbasis (steht im Profil), Zuletzt da (steckt in Beteiligung und Status),
+// Mannschaft (die Liste ist schon je Mannschaft), Rolle und Charakter (seit 0.22 durch PlayStyles ersetzt, werden nicht mehr gepflegt)
+const SV40_WEG=['wf','basis','last','team','rolle','charakter','luecken'];   // 0.42: Lücken raus aus der Spielerübersicht
+{ const _co40=mnColOk; mnColOk=function(c){ return !SV40_WEG.includes(c)&&_co40.apply(this,arguments); }; }
+MN_STD.cols.splice(0,MN_STD.cols.length,'pos','alter','fuss','status','bet','note','ein','min','tore'); MN_STD.group=false;
+MN_COLGRP.splice(0,MN_COLGRP.length,['Spielerdaten',['pos','pos2','alter','geb','fuss','groesse','gewicht']],['Verfügbarkeit & Training',['status','bet','r28','note']],['Spiele',['ein','min','tore']],
+  ['Bewertung',['mscore','eye','skills','treue']],['Planung',['zuk']],['Kontakt',['tel','mail']]);
+if(SV50_COLS.skills)SV50_COLS.skills.t='PlayStyles';
+if(SV50_COLS.status)SV50_COLS.status.t='Verfügbar';
+{ const _vp40=trViewPlayers; trViewPlayers=function(B){ try{ if(typeof MN!=='undefined'&&MN.sp){ MN.sp.group=false; MN.sp.cols=MN.sp.cols.filter(mnColOk); } }catch(e){}
+  const r=_vp40.apply(this,arguments);
+  try{ B.querySelectorAll('[data-mngrp]').forEach(b=>b.remove()); }catch(e){}
+  return r; }; }
+// Gespeicherte Ansichten ohne Gruppierung vergleichen (sonst steht dauernd „geändert“ dran)
+{ const _vd40=mnViewDef; mnViewDef=function(id){ const v=_vd40.apply(this,arguments); return v&&v.group!==false?Object.assign({},v,{group:false}):v; }; }
+
+/* ---------- Erklärung an jedem Tabellenkopf ---------- */
+const SV40_KPI=[
+  {g:'Spielerübersicht',l:['Verfügbar'],t:'Verfügbar',k:'Heute verfügbar, verletzt oder abwesend.',d:'Aus Verletzungen und eingetragenen Abwesenheiten. „verfügbar“ heißt: nichts eingetragen.'},
+  {g:'Bewertung',l:['Rolle','Spielerrolle'],t:'Spielerrolle (alt)',k:'Frühere Rolle aus dem Spielerbogen, wird seit den PlayStyles nicht mehr gepflegt.',d:'Taktische Rolle je Position (zum Beispiel Box-to-Box). Seit Beta 0.22 durch die PlayStyles ersetzt.'},
+  {g:'Bewertung',l:['Charakter'],t:'Charakter (alt)',k:'Früherer Schnitt aus Fleiß, Laufstärke, Teamgeist und mehr, wird nicht mehr gepflegt.',d:'Steht nur noch bei älteren Einträgen. Trainingsleistung und Spielleistung im MScore ersetzen ihn.'},
+  {g:'Spielerübersicht',l:['Schw. Fuß','Schwacher Fuß'],t:'Schwacher Fuß (alt)',k:'Früher gepflegt, 1 bis 5 Sterne.',d:'Wird nicht mehr erfasst. Was beidfüßig spielt, steht unter „Fuß“.'},
+  {g:'Training',l:['Training'],t:'Training',k:'Beteiligung im Training.',d:'Da geteilt durch alle Trainings im Zeitraum. Verletzt und krank zählen nicht dagegen.'},
+  {g:'Training',l:['Spiele'],t:'Spiele',k:'Beteiligung an Spielen: im Kader oder eingesetzt.',d:'Startelf, Einwechslung oder Bank geteilt durch alle Spiele im Zeitraum.'},
+  {g:'Training',l:['Gesamt'],t:'Gesamt',k:'Training und Spiele zusammen.',d:'Alle Termine im Zeitraum, bei denen er dabei war.'},
+  {g:'Training',l:['Einheit','Datum'],t:'Datum',k:'Tag des Trainings oder Spiels.',d:'Antippen öffnet den Eintrag.'},
+  {g:'Training',l:['Da','Anwesend'],t:'Anwesend',k:'War dabei.',d:'Pünktlich oder später gekommen.'},
+  {g:'Training',l:['Fehlt','Abwesend'],t:'Fehlt',k:'War nicht dabei oder ist an dem Tag als abwesend gemeldet.',d:'Bei bevorstehenden Spielen: eingetragene Abwesenheiten und Verletzungen, Namen beim Überfahren.'},
+  {g:'Spiele',l:['Anstoß'],t:'Anstoß',k:'Uhrzeit des Anpfiffs.',d:'Aus FuPa oder fussball.de.'},
+  {g:'Spiele',l:['Art'],t:'Art',k:'Liga, Pokal oder Freundschaftsspiel.',d:'Freundschaftsspiele zählen nicht in die Statistik der Pflichtspiele.'},
+  {g:'Spiele',l:['Spiel'],t:'Spiel',k:'„vs“ = Heimspiel, „@“ = auswärts.',d:'Antippen öffnet die Gegneranalyse mit Formkurve, Spielberichten und der Historie gegen diesen Gegner.'},
+  {g:'Spiele',l:['Wettbewerb'],t:'Wettbewerb',k:'Liga oder Pokal, mit Spieltag.',d:'Wie bei FuPa und fussball.de angegeben.'},
+  {g:'Spiele',l:['Quelle'],t:'Quelle',k:'Woher der Eintrag kommt.',d:'FuPa, fussball.de oder App. Bei mehreren Quellen gilt die Reihenfolge unter Wissen → Datenquellen.'},
+  {g:'Spiele',l:['Angabe'],t:'Angabe',k:'Welche Information gemeint ist.',d:'Zum Beispiel Ergebnis, Aufstellung oder Torschützen.'},
+  {g:'Spiele',l:['Es gilt'],t:'Es gilt',k:'Welche Quelle Vorrang hat.',d:'Die erste genannte Quelle zählt, die zweite springt ein, wenn die erste nichts liefert.'},
+  {g:'Spiele',l:['Warum'],t:'Warum',k:'Begründung für den Vorrang.',d:'Zum Beispiel: FuPa hat Minuten und Vorlagen, fussball.de ist der amtliche Bericht.'},
+  {g:'Verwaltung',l:['Bereich'],t:'Bereich',k:'Teil der App, für den ein Recht gilt.',d:'Haken bedeutet: Diese Rolle darf den Bereich sehen oder bearbeiten.'},
+  {g:'Verwaltung',l:['Vorstand'],t:'Rolle Vorstand',k:'Vorstand: sieht fast alles, pflegt Verein, Partner und Planung.',d:'Rechte je Bereich in der Tabelle.'},
+  {g:'Verwaltung',l:['Planer'],t:'Rolle Planer',k:'Kaderplaner: Kader, Scouting und Planung.',d:'Rechte je Bereich in der Tabelle.'},
+  {g:'Verwaltung',l:['Trainer'],t:'Rolle Trainer',k:'Trainerteam: Mannschaft, Training, Spiele, Kasse.',d:'Rechte je Bereich in der Tabelle.'},
+  {g:'Verwaltung',l:['Gast'],t:'Rolle Gast',k:'Nur lesen, ausgewählte Bereiche.',d:'Rechte je Bereich in der Tabelle.'},
+  {g:'Verwaltung',l:['Jugend'],t:'Rolle Jugend',k:'Jugendtrainer: eigene Jugendmannschaft.',d:'Rechte je Bereich in der Tabelle.'},
+  {g:'Verwaltung',l:['Mitglied'],t:'Mitglied',k:'Person mit Zugang zur App.',d:'Name und Rolle.'},
+  {g:'Verwaltung',l:['Zuletzt'],t:'Zuletzt',k:'Letzte Nutzung der App.',d:'Datum der letzten Anmeldung oder Aktivität.'},
+  {g:'Verwaltung',l:['Zeit 7 T'],t:'Zeit 7 Tage',k:'Nutzungszeit der letzten 7 Tage.',d:'Nur Zeit, in der die App sichtbar geöffnet war.'},
+  {g:'Verwaltung',l:['Zeit 30 T'],t:'Zeit 30 Tage',k:'Nutzungszeit der letzten 30 Tage.',d:'Nur Zeit, in der die App sichtbar geöffnet war.'},
+  {g:'Verwaltung',l:['Aktive Tage'],t:'Aktive Tage',k:'An wie vielen Tagen die App genutzt wurde (30 Tage).',d:'Ein Tag zählt, sobald die App kurz geöffnet war.'},
+  {g:'Verwaltung',l:['Meistgenutzt'],t:'Meistgenutzt',k:'Die Bereiche, in denen die Person am meisten Zeit verbringt.',d:'Hilft zu sehen, was wirklich gebraucht wird.'},
+  {g:'Verwaltung',l:['Co-Trainer'],t:'Co-Trainer',k:'Fragen an den KI-Co-Trainer.',d:'Anzahl der Fragen im Zeitraum.'},
+  {g:'Bewertung',l:['Baustein'],t:'Baustein',k:'Teil des MScore.',d:'Unter Wissen → Modell ist jeder Baustein erklärt.'},
+  {g:'Bewertung',l:['Liga','Niveau'],t:'Liga-Niveau',k:'Spielstärke eines typischen Stammspielers dieser Liga.',d:'Kreisliga C 40, B 55, A 70, Kreisoberliga 85, Gruppenliga 100. Entspricht dem Eye-Test mal zehn.'},
+  {g:'Kasse',l:['Betrag'],t:'Betrag',k:'Betrag in Euro.',d:'Plus = Einnahme, minus = Ausgabe.'},
+  {g:'Kasse',l:['Grund'],t:'Grund',k:'Wofür gebucht wurde.',d:'Zum Beispiel Strafe, Beitrag oder Ausgabe.'}
+];
+(function(){ if(typeof SVM_KPI==='undefined')return; SV40_KPI.forEach(x=>{ if(!SVM_KPI.some(y=>y.t===x.t)){ SVM_KPI.push(x); x.l.forEach(l=>{ if(!SVM_KPI_BY.has(l))SVM_KPI_BY.set(l,x); }); } });
+  const ps=SVM_KPI.find(x=>x.t==='PlayStyles'); if(ps){ ps.k='Besondere Stärken des Spielers nach Kategorien wie in EA SPORTS FC.'; ps.d='Einheitliche Beschreibung der Fähigkeiten: Torwart, Körperlich, Ballkontrolle, Defensive, Pass, Abschluss. Jeder PlayStyle ist in der Massenpflege erklärt. Es gibt keine Abstufung mit „+“ mehr.'; }
+  const ey=SVM_KPI.find(x=>x.t==='Eye-Test'); if(ey){ ey.k='Wie ihn die Beobachter sehen: 1 bis 10 in halben Schritten, mal zehn = Spielstärke.'; ey.d='Feldspieler: Tempo, Schuss, Pass, Dribbling, Defensive, Physis. Torhüter: Hechten, Ballsicherheit, Abschlag, Stellungsspiel, Reflexe. 4 = Kreisliga C, 5,5 = B, 7 = A, 8,5 = Kreisoberliga, 10 = Gruppenliga. Der Schnitt aller Bewerter zählt.'; }
+  const ms=SVM_KPI.find(x=>x.t==='MScore'); if(ms){ ms.k='Spielstärke, gleiche Skala wie der Eye-Test mal zehn: 70 = Stammspieler Kreisliga A, 100 = Gruppenliga.'; ms.d='40 = Stammspieler Kreisliga C, 55 = B, 70 = A, 85 = Kreisoberliga, 100 = Gruppenliga. Setzt sich zusammen aus Einsatz, Leistung, Eye-Test und bei eigenen Spielern Trainings- und Spielleistung. Unter Wissen → Modell ist alles erklärt.'; }
+  const og=SVM_KPI.find(x=>x.t==='Ohne Grund gefehlt'); if(og){ const i=SVM_KPI.indexOf(og); SVM_KPI.splice(i,1); }
+})();
+const SV40_KPI_RE=[[/^Monate/,'Beteiligung in den Monaten des gewählten Zeitraums, je Monat eine Spalte.'],[/^(Jan|Feb|Mär|Apr|Mai|Jun|Jul|Aug|Sep|Okt|Nov|Dez)\b/,'Beteiligung in diesem Monat.'],
+  [/^\d{1,2}\.\d{1,2}\.?$/,'Termin an diesem Tag.'],[/^(KW|Woche)/,'Kalenderwoche.']];
+{ const _st40=svmTipps; svmTipps=function(root){ _st40.apply(this,arguments);
+  try{ (root||document).querySelectorAll('th').forEach(th=>{ if(th.title||th.classList.contains('kpi-th'))return; const n=svmNorm(th.textContent); if(!n)return;
+      let tip=null; for(const [re,t] of SV40_KPI_RE){ if(re.test(n)){ tip=t; break; } }
+      if(!tip){ const tb=th.closest('table'), h=tb&&tb.querySelector('thead th'); if(th.closest('tbody')&&h&&svmNorm(h.textContent)==='Bereich')tip='Bereich der App: Haken = diese Rolle darf ihn nutzen.'; }
+      if(tip){ th.title=tip; th.classList.add('kpi-th'); const b=th.querySelector('button'); if(b)b.title=tip; } }); }catch(e){}
+  try{ sv40Breit(root||document); }catch(e){} }; }
+
+/* ---------- Breite Tabellen: Pfeile zum seitlichen Blättern ---------- */
+function sv40Breit(root){
+  (root.querySelectorAll?root:document).querySelectorAll('.trtw').forEach(w=>{
+    const breit=w.scrollWidth>w.clientWidth+12, nav=w.previousElementSibling&&w.previousElementSibling.classList.contains('sv40-tnav')?w.previousElementSibling:null;
+    if(!breit){ if(nav)nav.remove(); w.classList.remove('sv40-wide'); return; }
+    w.classList.add('sv40-wide');
+    let n=nav; if(!n){ n=document.createElement('div'); n.className='sv40-tnav'; n.innerHTML='<span>Tabelle ist breiter als der Bildschirm</span><button type="button" data-l aria-label="Nach links">‹</button><button type="button" data-r aria-label="Nach rechts">›</button>';
+      w.before(n); const step=()=>Math.max(160,w.clientWidth*0.7);
+      n.querySelector('[data-l]').onclick=()=>w.scrollBy({left:-step(),behavior:'smooth'}); n.querySelector('[data-r]').onclick=()=>w.scrollBy({left:step(),behavior:'smooth'});
+      w.addEventListener('scroll',()=>sv40BreitBtn(w,n),{passive:true}); }
+    sv40BreitBtn(w,n); });
+}
+function sv40BreitBtn(w,n){ const l=n.querySelector('[data-l]'), r=n.querySelector('[data-r]'); if(l)l.disabled=w.scrollLeft<4; if(r)r.disabled=w.scrollLeft+w.clientWidth>=w.scrollWidth-4; }
+window.addEventListener('resize',()=>{ clearTimeout(SV40._rt); SV40._rt=setTimeout(()=>{ try{ sv40Breit(document); }catch(e){} },200); });
+
+/* =====================================================================
+   4. Training: „Ohne Grund“ entfällt
+   ===================================================================== */
+{ const _vh40=trViewHome; trViewHome=function(B){ const r=_vh40.apply(this,arguments);
+  try{ B.querySelectorAll('table.trtab').forEach(t=>{ const hs=[...t.querySelectorAll('thead th')], i=hs.findIndex(h=>/^Ohne Grund/.test(h.textContent.trim())); if(i<0)return;
+      hs[i].remove(); t.querySelectorAll('tbody tr').forEach(tr=>{ const td=tr.children[i]; if(td)td.remove(); }); });
+    B.querySelectorAll('.card > .note').forEach(n=>{ n.textContent=n.textContent.replace(/\s*„Ohne Grund“ zählt auch fehlende Rückmeldungen\./,''); });
+  }catch(e){ console.warn('Statistik 0.38',e); }
+  return r; }; }
+
+/* =====================================================================
+   5. Spiele
+   ===================================================================== */
+// Vorrang: FuPa für Ergebnis, Tore, Vorlagen und Minuten; das Trainerteam für Startelf, Eindruck und Notizen
+if(typeof SVM_QUELLEN!=='undefined'){ const s=SVM_QUELLEN.find(x=>x[0]==='Spiele'); if(s){ s[1]=['FuPa (Ergebnis, Tore, Vorlagen, Minuten)','Spielbericht von fussball.de (wenn FuPa das Spiel nicht kennt)','Eintrag in der App (Startelf, Eindruck, Notizen und Spiele ohne Quelle)','Annahme: wer nicht im Kader stand, hat zugeschaut'];
+  s[2]='Tore, Vorlagen und Minuten kommen immer von FuPa, auch wenn in der App schon etwas steht, weil FuPa nachgetragen wird und Vorlagen kennt. Liefert FuPa ein Spiel nicht, gilt der amtliche Spielbericht von fussball.de. Startelf, Eindruck und Notizen des Trainerteams werden nie überschrieben.'; } }
+if(typeof mn31QuellenHtml==='function'){ mn31QuellenHtml=function(){
+  return `<div class="mn31-qt"><p class="note small"><b>Automatisch:</b> ${mnCtx()==='1'?'FuPa (Spielplan, Ergebnis, Aufstellung, Tore, Vorlagen, Minuten, Karten) und fussball.de (amtlicher Spielbericht mit Startelf, Wechseln, Toren, Minuten, auch Pokal und Freundschaftsspiele)':'fussball.de (Spielplan und amtlicher Spielbericht mit Startelf, Wechseln, Toren und Minuten, auch Pokal und Freundschaftsspiele). FuPa liefert für die 2. Mannschaft keine Spieldaten'}. Beide werden mehrmals pro Woche neu abgefragt, jede Stunde in die Spiele übernommen.</p>
+    <table class="trtab mn31-qtab"><thead><tr><th>Angabe</th><th>Es gilt</th><th>Warum</th></tr></thead><tbody>
+      <tr><td>Ergebnis, Tore, Vorlagen, Minuten</td><td><b>FuPa</b>, sonst fussball.de</td><td>FuPa wird oft nachgetragen und kennt Vorlagen und Minuten. Das gilt auch, wenn in der App schon etwas steht.</td></tr>
+      <tr><td>Startelf, Einwechslung, Bank</td><td><b>App</b>, sonst FuPa, sonst fussball.de</td><td>Was das Trainerteam einträgt, bleibt. Ohne Eintrag kommt die Aufstellung automatisch.</td></tr>
+      <tr><td>Eindruck, Notizen, Gegner-Notizen</td><td><b>App</b></td><td>Auch was über den Co-Trainer eingesprochen wird. Wird nie überschrieben.</td></tr>
+      <tr><td>Spiele, die FuPa nicht hat</td><td><b>fussball.de</b></td><td>Diese Saison liefert FuPa erst ab dem 20.09. Alles davor (Liga und Pokal) kommt aus dem amtlichen Spielbericht.</td></tr>
+      <tr><td>Freundschaftsspiele</td><td><b>fussball.de</b></td><td>Stehen in der Liste, zählen aber nicht in die Statistik der Pflichtspiele.</td></tr>
+      <tr><td>Wer nirgends steht</td><td><b>Annahme</b> „zugeschaut“</td><td>Bis jemand etwas anderes einträgt.</td></tr></tbody></table>
+    <p class="note small"><b>Widerspruch:</b> Weichen App und fussball.de voneinander ab, bekommt das Spiel einen roten Hinweis. Im Spiel steht, was wo steht.</p></div>`; }; }
+// Torschützen: FuPa hat Vorrang, das ist kein Widerspruch mehr
+if(typeof mn31Konflikte==='function'){ const _k40=mn31Konflikte; mn31Konflikte=function(g){ return _k40.apply(this,arguments).filter(h=>!(h.k==='tore'&&/FuPa/.test(h.t))); }; }
+// Admins: Spiele aus FuPa und fussball.de sofort übernehmen
+{ const _vg40=MN_VIEWS.games; MN_VIEWS.games=function(B){ const r=_vg40.apply(this,arguments);
+  try{ if(isAdmin()&&!B.querySelector('[data-sv40nach]')){ const p=B.querySelector('.mn31-add')||B.querySelector('.mn31-src'); if(p)p.insertAdjacentHTML('afterend',`<p class="note small"><a href="#" data-sv40nach>Spieldaten jetzt aus FuPa und fussball.de nachtragen</a> (sonst jede Stunde automatisch)</p>`);
+      const a=B.querySelector('[data-sv40nach]'); if(a)a.onclick=async e=>{ e.preventDefault(); a.textContent='Trage nach …';
+        try{ const {data,error}=await SVB.sb.rpc('spiele_nachtragen'); if(error)throw error; const f=data&&data.fussballde||{}, k=data&&data.fupa||{};
+          kToast(`✓ ${f.neu||0} Spiele aus fussball.de neu, ${(k.neu||0)+(k.aktualisiert||0)} aus FuPa`); if(typeof trLoad==='function')await trLoad(true); trRender(); }catch(x){ kToast('⚠️ '+(x.message||x)); a.textContent='Nochmal versuchen'; } }; } }catch(e){}
+  return r; }; }
+
+/* ---------- Bevorstehende Spiele mit Gegneranalyse und Historie ---------- */
+function sv40Own(){ return mnCtx()==='2'?'svbscmoerlenbachii':'svbscmoerlenbach'; }
+function sv40Sub(){ return mnCtx()==='2'?'D2':'A'; }
+function sv40Gegner(d,name){ const own=sv40Own();
+  try{ if(typeof SP!=='undefined'&&SP.loaded){ const f=(SP.fx||[]).find(x=>x.datum===d&&(x.heim_key===own||x.gast_key===own)); if(f)return {key:f.heim_key===own?f.gast_key:f.heim_key,name:f.heim_key===own?f.gast:f.heim,heim:f.heim_key===own}; } }catch(e){}
+  let k=sv40Key(name); if(mnCtx()==='2'&&k&&!/ii+$/.test(k))k+='ii'; return k?{key:k,name}:null; }
+async function sv40HistLoad(key,name,force,team){ const tm=team||mnCtx(); const id=tm+'|'+key; if(!force&&SV40.hist.has(id))return SV40.hist.get(id); if(SV40.histBusy.has(id))return null; SV40.histBusy.add(id);
+  try{ const {data,error}=await SVB.sb.rpc('gegner_historie',{p_key:key,p_name:name||null,p_team:tm==='2'?'2':'1'}); if(error)throw error; SV40.hist.set(id,data||{}); return data||{}; }
+  catch(e){ console.warn('Gegner-Historie',e); SV40.hist.set(id,{fehler:true}); return {fehler:true}; } finally{ SV40.histBusy.delete(id); } }
+function sv40HistHtml(H,name){
+  if(!H)return '<div class="empty">Lade Historie …</div>'; if(H.fehler)return '<div class="note">Historie gerade nicht abrufbar.</div>';
+  const nm=id=>{ const p=trP(id); return p?p.name:'?'; }, res=(tw,tg)=>tw==null?'':`<i class="res ${tw>tg?'w':tw===tg?'d':'l'}">${tw}:${tg}</i>`;
+  const by=new Map(); (H.spiele||[]).forEach(s=>by.set(s.datum,Object.assign({},s))); (H.app||[]).forEach(a=>by.set(a.datum,Object.assign(by.get(a.datum)||{datum:a.datum},{app:a},a.tw!=null&&!by.has(a.datum)?{tw:a.tw,tg:a.tg,heim:a.heim}:{})));
+  const L=[...by.values()].sort((a,b)=>String(b.datum).localeCompare(String(a.datum)));
+  const sp=L.map(s=>{ const a=s.app, tore=a&&(a.tore||[]).length?a.tore.map(([id,t,v])=>`${sv40E(nm(id))}${t?' ⚽'.repeat(Math.min(t,5)):''}${v?` <small>${v} Vorl.</small>`:''}`).join(', '):'';
+      const tw=s.tw!=null?s.tw:a&&a.tw, tg=s.tg!=null?s.tg:a&&a.tg;
+      return `<div class="sv40-hr"><span class="d">${sv40E(TRC.fmt(s.datum))}${String(s.datum).slice(2,4)}</span><div class="t"><b>${s.heim?'vs':'@'} ${sv40E(name)}</b> ${res(tw,tg)}${s.code==='PO'?' <small>Pokal</small>':''}
+        ${tore?`<p>${tore}</p>`:''}${a&&a.notiz?`<p>„${sv40E(a.notiz)}“</p>`:''}${a&&a.hinweise?`<p><small>${sv40E(a.hinweise)}</small></p>`:''}</div><span class="q">${a?sv40E({fupa:'FuPa',fussballde:'fussball.de',ki:'Co-Trainer',manuell:'App'}[a.quelle]||'App'):'fussball.de'}</span></div>`; }).join('');
+  const ki=(H.ki||[]).map(k=>`<div class="sv40-hr sv40-ki"><span class="d">${sv40E(TRC.fmt(String(k.datum||k.am).slice(0,10)))}</span><div class="t"><b>Einschätzung des KI-Co-Trainers</b><p>${sv40E(k.text)}</p></div></div>`).join('');
+  const no=(H.notizen||[]).map(n=>`<div class="sv40-hr"><span class="d">${sv40E(TRC.fmt(String(n.am).slice(0,10)))}</span><div class="t"><b>${sv40E(n.von||'Notiz')}</b><p>${sv40E(n.text)}</p></div>${n.eigene||isAdmin()?`<button type="button" class="btn ghost sm" data-sv40ndel="${sv40E(n.id)}">Löschen</button>`:''}</div>`).join('');
+  return `<div class="sv40-hist">${sp||'<p class="note">Noch keine früheren Spiele gegen diesen Gegner in der App, bei FuPa oder fussball.de.</p>'}${ki}${no}</div>
+    ${canTraining()?`<div class="sv40-nf"><textarea data-sv40nt maxlength="1500" placeholder="Notiz zum Gegner, z. B. „spielt lange Bälle auf die 9, Standards gefährlich“"></textarea><button type="button" class="btn sm" data-sv40ns>Notiz speichern</button></div>`:''}`;
+}
+async function sv40Analyse(box,g){
+  const G=sv40Gegner(g.d,g.gegner); if(!G){ box.innerHTML='<div class="note">Gegner nicht erkannt.</div>'; return; }
+  box.dataset.g=g.d;
+  const sub=sv40Sub(), own=sv40Own(), sicht=SV40.sicht==='wir'?'wir':'gegner', W=mnCtx()==='2'?'SV/BSC II':'SV/BSC';
+  box.innerHTML=`<div class="sv40-ga-h"><h3 class="trh">${SVI('target')} Gegneranalyse: ${sv40E(G.name)} <small>${sv40E(TRC.fmt(g.d))} · ${g.heim?'Heimspiel':'auswärts'}</small></h3></div><div data-sv40ana><div class="card"><div class="empty">Lade Spielberichte …</div></div></div>
+    <div class="card"><h3 class="trh">${SVI('clock')} Historie gegen ${sv40E(G.name)}</h3><div data-sv40hist>${sv40HistHtml(SV40.hist.get(mnCtx()+'|'+G.key),G.name)}</div></div>`;
+  const ana=box.querySelector('[data-sv40ana]'), hist=box.querySelector('[data-sv40hist]');
+  const bindHist=()=>sv40HistBind(hist,G.key,G.name,mnCtx()==='2'?'2':'1');
+  const _altBind=()=>{ const s=hist.querySelector('[data-sv40ns]'); if(s)s.onclick=async()=>{ const t=hist.querySelector('[data-sv40nt]'), v=(t.value||'').trim(); if(!v)return; s.disabled=true;
+        const me=(typeof SVU!=='undefined'&&(SVU.name||SVU.email))||null;
+        const {error}=await SVB.sb.from('gegner_notizen').insert({gegner_key:G.key,gegner:String(G.name||'').slice(0,80),text:v,team:mnCtx()==='2'?'2':'1',von_name:me});
+        if(error){ s.disabled=false; return kToast('⚠️ '+error.message); } kToast('✓ Notiz gespeichert'); hist.innerHTML=sv40HistHtml(await sv40HistLoad(G.key,G.name,true),G.name); bindHist(); };
+      hist.querySelectorAll('[data-sv40ndel]').forEach(b=>b.onclick=async()=>{ if(!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent='Wirklich?'; return; }
+        const {error}=await SVB.sb.from('gegner_notizen').delete().eq('id',b.dataset.sv40ndel); if(error)return kToast('⚠️ '+error.message); hist.innerHTML=sv40HistHtml(await sv40HistLoad(G.key,G.name,true),G.name); bindHist(); }); };
+  sv40HistLoad(G.key,G.name).then(H=>{ if(!hist.isConnected)return; hist.innerHTML=sv40HistHtml(H,G.name); bindHist(); }); bindHist();
+  const kopf=box.querySelector('.sv40-ga-h'); if(kopf&&!box.closest('#modal')){ kopf.insertAdjacentHTML('beforeend','<button type="button" class="btn ghost sm" data-sv40ganz>Ganze Analyse öffnen →</button>'); kopf.querySelector('[data-sv40ganz]').onclick=()=>sv40ZurAnalyse(g); }
+  if(typeof gcLoad!=='function'){ ana.innerHTML=''; return; }
+  const [Do,Dw]=await Promise.all([gcLoad(sub,G.key),gcLoad(sub,own)]);
+  if(!ana.isConnected||box.dataset.g!==g.d)return;
+  if(!Do||!Do.spiele||!Do.spiele.length){ ana.innerHTML=`<div class="card"><div class="note">Für ${sv40E(G.name)} sind noch keine Spielberichte da. Sie kommen nach dem nächsten Abruf (sonntags abends, montags, dienstags und donnerstags früh).</div></div>`; return; }
+  const D=sicht==='wir'?Dw:Do, key=sicht==='wir'?own:G.key, wer=sicht==='wir'?'Wir':G.name;
+  ana.innerHTML=`<div class="card gc-card"><div class="svc-h"><h3>${SVI('chart')} Saisonverlauf</h3><div class="trtabs gc-sicht"><button class="${sicht==='gegner'?'on':''}" data-gcsicht="gegner">${sv40E(G.name)}</button><button class="${sicht==='wir'?'on':''}" data-gcsicht="wir">${sv40E(W)}</button></div></div>
+      ${D?gcKurve(D,key,wer):'<div class="note">Noch keine Daten.</div>'}</div>
+    <div class="card gc-card"><h3 class="trh">${SVI('target')} Vor dem Spiel: ${sv40E(sicht==='wir'?W:G.name)}</h3>${D?gcKarteVorSpiel(D,key,sicht==='wir'?'Unser Team':G.name):''}</div>
+    ${D?gcEinsaetzeKarte(D):''}${gcGemeinsam(Do,G.key,Dw,own)}
+    <div class="note">Spielberichte: FUSSBALL.DE, öffentlich. ${Do.berichte_liga||0} von ${Do.spiele_liga||0} Ligaspielen mit Bericht.${(Do.fupa||[]).length?` FuPa-Spielberichte des Gegners: ${(Do.fupa||[]).length}.`:''}</div>`;
+  try{ gcBind(ana); }catch(e){}
+  ana.querySelectorAll('[data-gcsicht]').forEach(b=>b.onclick=()=>{ SV40.sicht=b.dataset.gcsicht; sv40Analyse(box,g); });
+  ana.querySelectorAll('[data-gcmode]').forEach(b=>b.onclick=()=>{ GC.modus[b.dataset.gckey]=b.dataset.gcmode; sv40Analyse(box,g); });
+}
+{ const _gn40=MN_VIEWS.gnext; MN_VIEWS.gnext=function(B){
+  if(typeof SP!=='undefined'&&!SP.loaded&&typeof spLoad==='function')mnLoadOnce('sp40',()=>spLoad(),mnRerender('gnext'));
+  const r=_gn40.apply(this,arguments);
+  try{ const card=B.querySelector('.svm-next'); if(!card)return r; card.classList.add('sv40-next');
+    const t=trToday(), rows=[...card.querySelectorAll('tbody tr')];
+    // Spiele aus dem gleichen Datensatz wie die Tabelle: Datum aus der ersten Zelle ist formatiert, daher neu zusammensetzen
+    const L=sv40Kommend(t); rows.forEach((tr,i)=>{ const g=L[i]; if(!g)return; tr.dataset.sv40g=i; tr.title='Gegneranalyse öffnen'; tr.onclick=()=>sv40ZurAnalyse(g); });
+    if(L.length){ const box=document.createElement('div'); box.className='sv40-ga'; card.after(box); sv40Analyse(box,L[0]); }
+    const n=card.querySelector('p.note.small'); if(n)n.insertAdjacentHTML('beforeend',' Ein Spiel antippen öffnet die ganze Gegneranalyse mit Direktvergleich, gefährlichen Spielern und Historie. Das Wichtigste zum nächsten Spiel steht direkt darunter.');
+  }catch(e){ console.warn('Gegneranalyse',e); }
+  return r; }; }
+// gleiche Reihenfolge wie svmViewKommend
+function sv40Kommend(t){
+  const key0=(window.VEREIN&&VEREIN.texte&&VEREIN.texte.fde_schluessel)||'', key=key0&&mnCtx()==='2'?key0+'ii':key0, G=new Map();
+  svm31Plan().filter(g=>svmPlanD(g)>=t).forEach(g=>{ const d=svmPlanD(g); G.set(d+'|A',{d,zeit:String(g.anstoss).slice(11,16),heim:g.heim,gegner:g.gegner}); });
+  try{ if(typeof SP!=='undefined'&&SP.loaded&&key)(SP.fx||[]).filter(f=>f.datum>=t&&(f.heim_key===key||f.gast_key===key)).forEach(f=>{ const k=f.datum+'|'+(f.sub||'A');
+      if(G.has(k))return; G.set(k,{d:f.datum,zeit:(f.zeit||'').slice(0,5),heim:f.heim_key===key,gegner:f.heim_key===key?f.gast:f.heim}); }); }catch(e){}
+  return [...G.values()].sort((a,b)=>a.d.localeCompare(b.d)||(a.zeit||'').localeCompare(b.zeit||'')).slice(0,40);
+}
+function sv40HistBind(hist,key,name,team){
+  const s=hist.querySelector('[data-sv40ns]'); if(s)s.onclick=async()=>{ const t=hist.querySelector('[data-sv40nt]'), v=(t.value||'').trim(); if(!v)return; s.disabled=true;
+    const me=(typeof SVU!=='undefined'&&(SVU.name||SVU.email))||null;
+    const {error}=await SVB.sb.from('gegner_notizen').insert({gegner_key:key,gegner:String(name||'').slice(0,80),text:v,team,von_name:me});
+    if(error){ s.disabled=false; return kToast('⚠️ '+error.message); } kToast('✓ Notiz gespeichert'); SV40.hist.delete(team+'|'+key); hist.innerHTML=sv40HistHtml(await sv40HistLoadT(key,name,team),name); sv40HistBind(hist,key,name,team); };
+  hist.querySelectorAll('[data-sv40ndel]').forEach(b=>b.onclick=async()=>{ if(!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent='Wirklich?'; return; }
+    const {error}=await SVB.sb.from('gegner_notizen').delete().eq('id',b.dataset.sv40ndel); if(error)return kToast('⚠️ '+error.message); SV40.hist.delete(team+'|'+key); hist.innerHTML=sv40HistHtml(await sv40HistLoadT(key,name,team),name); sv40HistBind(hist,key,name,team); }); }
+async function sv40HistLoadT(key,name,team){ return sv40HistLoad(key,name,true,team); }
+function sv40AnalyseModal(g){ const M=svModal(`<div id="sv40ga" class="sv40-ga"></div><div class="btnrow sbact"><button class="btn ghost" type="button" onclick="closeOverlay()">Schließen</button></div>`); const box=M.querySelector('#sv40ga'); sv40Analyse(box,g); }
+SV_PAGES.gegner=['Gegneranalyse','Der nächste Gegner: Formkurve, Spielberichte, gefährliche Spieler, Historie'];
+// Die Gegneranalyse ist kein eigener Bereich mehr: sie hängt an Mannschaft → Spiele → Bevorstehende
+SV4_OF.gegner='mannschaft';
+{ const _sb40=sv4Sub; sv4Sub=function(tab){ return tab==='gegner'?'training:games':_sb40.apply(this,arguments); }; }
+function sv40GcFixture(){ try{ const team=SP.team, own=SP_OWN[team], next=spNext(team), f=(SP.sel&&next.find(x=>x.id===SP.sel))||next[0]; if(!f)return null;
+  return {team,own,f,key:f.heim_key===own?f.gast_key:f.heim_key,name:f.heim_key===own?f.gast:f.heim}; }catch(e){ return null; } }
+async function sv40GcHist(){
+  const P=document.getElementById('panel-gegner'); if(!P||!P.classList.contains('active'))return; const F=sv40GcFixture(); if(!F)return;
+  if(!P.querySelector('.sv40-gczur')){ const z=document.createElement('p'); z.className='sv40-gczur note'; z.innerHTML=`<a href="#" data-sv40zur>← Bevorstehende Spiele</a>`; P.prepend(z);
+    z.querySelector('a').onclick=e=>{ e.preventDefault(); try{ mnCtxSet(F.team==='D2'?'2':'1',false); }catch(x){} sv4Go('training:gnext'); }; }
+  let box=P.querySelector('#sv40GcHist'); if(!box){ box=document.createElement('div'); box.id='sv40GcHist'; box.className='card'; (P.querySelector('#gcBox')||P.lastElementChild||P).after(box); }
+  const tm=F.team==='D2'?'2':'1';
+  box.innerHTML=`<h3 class="trh">${SVI('clock')} Historie gegen ${sv40E(F.name)}</h3><div data-sv40hist>${sv40HistHtml(SV40.hist.get(tm+'|'+F.key),F.name)}</div>`;
+  const hist=box.querySelector('[data-sv40hist]'); const H=await sv40HistLoad(F.key,F.name,false,tm);
+  if(!hist.isConnected)return; hist.innerHTML=sv40HistHtml(H,F.name); sv40HistBind(hist,F.key,F.name,F.team==='D2'?'2':'1'); }
+if(typeof spRender==='function'){ const _spr40=spRender; spRender=async function(){ const r=await _spr40.apply(this,arguments); try{ await sv40GcHist(); }catch(e){ console.warn('Gegner-Historie',e); } return r; }; }
+function sv40ZurAnalyse(g){ const own=mnCtx()==='2'?'svbscmoerlenbachii':'svbscmoerlenbach', team=mnCtx()==='2'?'D2':'A';
+  try{ const f=(SP.fx||[]).find(x=>x.datum===g.d&&(x.heim_key===own||x.gast_key===own)); if(f){ SP.team=team; SP.sel=f.id; goTab('gegner'); return; } }catch(e){}
+  sv40AnalyseModal(g); }
+if(typeof SV50_INFO!=='undefined'&&SV50_INFO['training:games'])SV50_INFO['training:games'].h='Tore, Vorlagen und Minuten kommen von FuPa, auch wenn in der App schon etwas steht. Spiele, die FuPa nicht kennt, kommen aus dem amtlichen Spielbericht von fussball.de. Startelf, Eindruck und Notizen des Trainerteams werden nie überschrieben.';
+
+/* =====================================================================
+   6. Massenpflege
+   ===================================================================== */
+{ const _pf40=MN_VIEWS.pflege; MN_VIEWS.pflege=mnViewPflege=function(B){ if(typeof MN!=='undefined'&&MN.team!=='X')MN.team='alle'; const r=_pf40.apply(this,arguments);
+  // Mannschaftsfilter weg (die Mannschaft steht oben fest), „Extern“ bleibt: dort lassen sich ausgeschiedene Spieler zurückholen
+  try{ B.querySelectorAll('.mp-f [data-mpt]').forEach(b=>{ if(b.dataset.mpt==='X')return; if(b.dataset.mpt==='alle'&&MN.team==='X'){ b.textContent=mnCtxT(); b.classList.remove('on'); return; } b.remove(); });
+    if(MN.area==='skills'){
+      B.querySelectorAll('.mp18 > p.note.small').forEach(x=>{ x.textContent=x.textContent.replace(/,?\s*„\+“ = herausragend/,''); }); }
+  }catch(e){ console.warn('Massenpflege 0.38',e); }
+  return r; }; }
+// PlayStyles: Erklärung unter den Chips (auch nach dem Neuzeichnen einer Zeile)
+if(typeof MN_A!=='undefined'&&MN_A.skills){ const _ctl40=MN_A.skills.ctl; MN_A.skills.ctl=function(p,v,ok){ let h=_ctl40.apply(this,arguments);
+  if(!MN.open||!MN.open.has(p.id))return h;
+  h=h.replace(/<p class="note small">Einmal antippen[^<]*<\/p>/,'<p class="note small">Antippen = hat er, nochmal antippen = entfernen.</p>');
+  return h.replace(/<\/div>\s*$/,`<p class="sv40-pstd" aria-live="polite">Fahr über einen PlayStyle oder tipp ihn an, dann steht hier, was er bedeutet.</p>${sv40PstListe(p)}</div>`); }; }
+['mouseover','focusin','click'].forEach(ev=>document.addEventListener(ev,e=>{ const c=e.target.closest&&e.target.closest('.mn-sb.svm-pst .sbskchip'); if(!c)return;
+  const s=SB_SK[(c.dataset.set||'').split(':')[1]], out=c.closest('.mn-sb').querySelector('.sv40-pstd'); if(s&&out)setTimeout(()=>{ const o=document.querySelector('.mn-sb.svm-pst .sv40-pstd'); if(o)o.textContent=`${s.t}: ${s.d}${s.fc?' (EA FC: '+s.fc+')':''}`; },ev==='click'?50:0); },true));
+function sv40PstListe(p){ const tw=p&&p.pos==='TW';
+  const G=tw?['Torwart','Pass','Körperlich']:SB_GROUPS.filter(g=>g!=='Torwart');
+  return `<details class="sv40-pst"><summary>Alle PlayStyles erklärt</summary><dl>${G.map(g=>`<h5>${sv40E(g)}</h5>${SB_SKILLS.filter(s=>s.g===g).map(s=>`<dt>${sv40E(s.t)}</dt><dd>${sv40E(s.d)}${s.fc?` <small>(EA FC: ${sv40E(s.fc)})</small>`:''}</dd>`).join('')}`).join('')}</dl></details>`; }
+// PlayStyle+ gibt es nicht mehr: einmal antippen = hat er, nochmal = weg; gespeicherte „+“ zählen als normaler PlayStyle
+if(typeof sbSk==='function'){ const _sk40=sbSk; sbSk=function(v){ return _sk40.apply(this,arguments).map(x=>Object.assign({},x,{plus:false})); }; }
+if(typeof MN_A!=='undefined'&&MN_A.skills){ const _set40=MN_A.skills.set; MN_A.skills.set=function(v,k,x){ if(k==='sk'){ const o=mnSkObj(v.sk); if(o[x])delete o[x]; else o[x]=1; v.sk=mnSkStr(o); return; } return _set40.apply(this,arguments); }; }
+// Spielerbogen (externe Spieler): ein zweiter Tipp entfernt den PlayStyle wieder
+document.addEventListener('click',e=>{ const c=e.target.closest&&e.target.closest('.sbskchip[data-sk].v1'); if(!c)return; const k=c.dataset.sk, root=c.closest('#modal')||document;
+  setTimeout(()=>{ const n=root.querySelector(`.sbskchip[data-sk="${k}"].v2`); if(n)n.click(); },0); },true);
+
+/* =====================================================================
+   7. Eine Skala: Eye-Test mal zehn = Spielstärke = MScore
+   Kreisliga D 25 · C 40 · B 55 · A 70 · Kreisoberliga 85 · Gruppenliga 100
+   ===================================================================== */
+const SV40_K=1.6;   // alte Abstände (rund 9 Punkte je Liga) auf die neuen 15 Punkte je Liga
+const SV40_MAX=125; // 100 = Stammspieler Gruppenliga (Eye-Test 10); wer darüber liegt, bleibt unterscheidbar
+Object.assign(SV94_NIVEAU,{HL:115,VL:108,GL:100,KOL:85,A:70,B:55,C:40,D:25});
+Object.assign(SV4_LVL,{GL:100,KOL:85,A:70,B:55,C:40,D:25});
+SV94_WMAP.splice(0,SV94_WMAP.length,[0.3,15],[0.42,25],[0.6,40],[0.78,55],[1,70],[1.25,85],[1.55,100]);
+{ const _ra40=sv94Rate; sv94Rate=function(){ return _ra40.apply(this,arguments)*SV40_K; }; }
+sv94Pot=function(wert,age,pos){ if(age==null)return null; let s=0; for(let a=age;a<27;a++)s+=Math.max(0,sv94Rate(a,pos)); return Math.round(Math.min(SV40_MAX,wert+s*0.8)*10)/10; };
+tierColor=function(t){ return t>=85?'#b39df7':t>=70?'#2fd27a':t>=55?'#ffd60a':'#ff6b6b'; };
+tierName=function(t){ return t>=85?'Elite':t>=70?'Gut':t>=55?'Mittel':'Schwach'; };
+sv94Eval=function(p,s,grp,mvp){
+  const K=SV40_K, lv=sv94Lv(s.liga); if(!lv)return null; const L=SV94_NIVEAU[lv];
+  let q=s.q, qEst=false; if(q==null){ q=s.qF!=null?s.qF:0.55; qEst=true; }
+  const n=s.sp!=null?s.sp:Math.round((s.teamSp||0)*q);
+  let role=(q>=0.75?(q-0.75)*8:(q-0.75)*20)*K;
+  const t=s.rank!=null&&s.tc>1?sv94C(1-(s.rank-1)/(s.tc-1),0,1):0.5;
+  let pct=null, raw=null;
+  if(grp==='def')pct=sv94Def(s.club,s.sk,s.liga);
+  else { const sp=Math.max(1,n); raw=(s.tore||0)/sp+(s.ast>0?0.5*s.ast/sp:0); pct=n>0?sv94Pct(lv+'|'+grp,raw):null; }
+  const lei=pct==null?0.5:pct;
+  let prod=(lei-0.5)*12*K*(n/(n+4));
+  if(grp==='def'){ prod*=0.5+0.5*Math.min(1,q/0.75); if(s.tore>0)prod+=Math.min(3,s.tore*0.8)*K; }
+  const team=0, gpg=(s.tore||0)/Math.max(1,n);
+  const dom=grp!=='def'&&gpg>1&&n>=6?Math.min(30,(gpg-1)*13)*K:0;
+  let mvpOff=0; if(mvp!=null){ mvpOff=(mvp-60)/40*8*K; role*=0.5; prod*=0.5; }
