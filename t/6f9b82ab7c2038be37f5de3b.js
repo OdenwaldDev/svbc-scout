@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.79',v:'0.99.79',datum:'2026-11-17',titel:'Im Vertrag stehen die Leistungen vollständig',kurz:'Die Beschreibung der Leistung im Partnervertrag brach bei langen Paketen ab. Jetzt steht sie ganz drin.',
+   punkte:[
+    {ic:'\u{1F4C4}',t:'Leistungen vollständig',d:'Im Partnervertrag stehen alle Leistungen eines Pakets. Vorher endete der Text bei den großen Paketen mitten im Satz.',r:'team'},
+    {ic:'\u{1F4B6}',t:'Betrag im Verlauf',d:'Der Betrag eines neuen Vertrags steht im Verlauf der Firma in deutscher Schreibweise.',r:'team'}
+   ]},
   {id:'0.99.78',v:'0.99.78',datum:'2026-11-17',titel:'Von der Präsentation direkt in den Vertrag',kurz:'Sagt eine Firma in der Präsentation Ja, steht ihre Wahl bei Paketen und Vertrag schon in der Auswahl. Trikots stehen auf dem Zettel als eigene Rechnung.',
    punkte:[
     {ic:'\u{270D}\u{FE0F}',t:'Auswahl ist schon da',d:'Paket, Zusätze und Laufzeit aus der Präsentation stehen im Abschluss, nichts muss noch einmal angeklickt werden. Bausteine für eine Jugendmannschaft wählt man dort mit der Mannschaft dazu.',r:'team'},
