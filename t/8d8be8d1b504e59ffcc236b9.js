@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.67',v:'0.99.67',datum:'2026-11-17',titel:'Partner: die neue Reise',kurz:'Der persönliche Link für Partner beginnt jetzt mit der neuen Reise durch den Verein. Danach geht es wie bisher in die Auswahl mit Vertrag.',
+   punkte:[
+    {ic:'\u{1F3DF}',t:'Erst der Verein, dann die Pakete',d:'Zehn Szenen im Vollbild: worum es bei uns geht, was dem Betrieb wichtig ist, welcher Platz passt. Am Ende und über „Direkt zu Paketen und Vertrag“ steht die bisherige Auswahl. Der Name der Firma kommt aus dem Link.',r:'team'}
+   ]},
   {id:'0.99.66',v:'0.99.66',datum:'2026-11-17',titel:'Training: Absage nur mit Grund',kurz:'Wer zum Training absagt, sagt kurz warum. Das Trainerteam bekommt um 17 Uhr die Übersicht, wer heute fehlt und weshalb.',
    punkte:[
     {ic:'\u{1F4AC}',t:'Absage mit Grund',d:'Bei „Ich kann nicht“ wählst du den Grund, bei Privat schreibst du ein paar Worte dazu. Bei einer Zusage kommt ein kurzes Danke. Spontan doch absagen geht weiter in der App.',r:'alle'},
@@ -1541,6 +1545,3 @@ const SV_PATCHES=[
     {ic:'👁',t:'Im Blickfeld',d:'Jeder hat seine eigene Beobachtungsliste, geordnet vom Torwart bis zum Sturm. Mit dem Auge in der Suche oder im Profil hinzufügen. Montags kommt dein Wochenbericht nur mit deinen Spielern: Spiele, Minuten, Tore oder kein Einsatz.',r:'scout',go:'blick'},
     {ic:'🎉',t:'Ehrungen verpasst keiner mehr',d:'Ein Jubiläum erscheint 3 Spiele vorher auf der Übersicht. Wegwischen geht, 1 Spiel vorher kommt es trotzdem noch einmal.',r:'team'},
     {ic:'↩️',t:'Rückkehrer-Radar zum Wischen',d:'Ehemalige im Verein-Bereich: nach rechts heißt kein Interesse, nach links interessiert (Merkliste).',r:'scout'},
-    {ic:'🤖',t:'Co-Trainer schlägt selbst nach',d:'Nennst du einen Namen, sucht er sofort in der Datenbank, auch mit Tippfehler, und antwortet mit echten Werten. Statt im Kreis zu fragen, bietet er Profil und Blickfeld direkt an.',r:'team'},
-   ]},
-  {id:'0.18',v:'0.18',datum:'2026-09-27',titel:'Mannschaft neu geordnet',kurz:'Eine Spielerliste mit eigenen Ansichten, die Massenpflege für alle Spielerdaten und klare Reiter für Training, Spiele, Abwesenheiten und Materialdienst.',
