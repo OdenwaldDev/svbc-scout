@@ -125,6 +125,8 @@ async function s102Antwort(i){
       + (vorbei ? '<p class="note">Das Training ist vorbei oder die Abstimmung ist geschlossen.</p>' : !f ? '<p class="note">Für dieses Training gibt es noch keine Frage an dich. Melde dich bitte beim Trainerteam.</p>'
         : `<div class="s102-kn"><button type="button" class="btn${a === 'ja' ? '' : ' ghost'}" data-s102a="ja" aria-pressed="${a === 'ja'}">Ich bin dabei</button><button type="button" class="btn${a === 'nein' ? '' : ' ghost'}" data-s102a="nein" aria-pressed="${a === 'nein'}">Ich kann nicht</button></div><p class="note small">Ändern kannst du bis zum Training.</p>`);
     box.querySelectorAll('[data-s102a]').forEach(b => b.onclick = () => paEinmal(b, async () => {
+      // Seit 0.99.66: Absage zu Training und Spiel nur mit Grund (svm117.js)
+      if(b.dataset.s102a === 'nein' && typeof s117AbsageWenn === 'function'){ try{ if(await s117AbsageWenn(f.id, w => { f.antwort = w; i.info = w === 'ja' ? 'Du hast zugesagt.' : 'Du hast abgesagt.'; })) return; }catch(e){} }
       try{ const r = await SVB.sb.rpc('frage_antwort', { p_id:f.id, p_wert:b.dataset.s102a, p_via:'app' }); if(r.error) throw r.error; f.antwort = b.dataset.s102a;
         i.info = f.antwort === 'ja' ? 'Du hast zugesagt.' : 'Du hast abgesagt.'; mal(); kToast(f.antwort === 'ja' ? 'Zusage ist gespeichert.' : 'Absage ist gespeichert.');
         try{ if(svCurTab() === 'kalender') kalRender(); }catch(e){} try{ if(typeof frLaden === 'function') frLaden(true).then(() => { try{ frKarte(); }catch(e){} }); }catch(e){} }

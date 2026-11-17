@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.66',v:'0.99.66',datum:'2026-11-17',titel:'Training: Absage nur mit Grund',kurz:'Wer zum Training absagt, sagt kurz warum. Das Trainerteam bekommt um 17 Uhr die Übersicht, wer heute fehlt und weshalb.',
+   punkte:[
+    {ic:'\u{1F4AC}',t:'Absage mit Grund',d:'Bei „Ich kann nicht“ wählst du den Grund, bei Privat schreibst du ein paar Worte dazu. Bei einer Zusage kommt ein kurzes Danke. Spontan doch absagen geht weiter in der App.',r:'alle'},
+    {ic:'\u{1F4CB}',t:'Wer fehlt heute',d:'Am Trainingstag um 17 Uhr bekommt das Trainerteam eine Mitteilung: wer fehlt, mit Grund, und wer noch nicht geantwortet hat. Sagt danach noch jemand ab, kommt das sofort.',r:'team'}
+   ]},
   {id:'0.99.65',v:'0.99.65',datum:'2026-11-17',titel:'Wer angemeldet ist, ist bekannt',kurz:'Ein Konto mit dem Namen eines eigenen Spielers gehört von selbst zu ihm. Die Frage zum Training kommt dann direkt in die App, ohne den Namen noch einmal zu wählen.',
    punkte:[
     {ic:'\u{1F464}',t:'Konto und Spieler finden sich von selbst',d:'Bisher musste die Leitung jedes Konto von Hand mit dem Spieler verbinden. Jetzt reicht der gleiche Name. Hat jemand zwei Konten, zählt das, das er benutzt.',r:'team'}
@@ -1539,7 +1544,3 @@ const SV_PATCHES=[
     {ic:'🤖',t:'Co-Trainer schlägt selbst nach',d:'Nennst du einen Namen, sucht er sofort in der Datenbank, auch mit Tippfehler, und antwortet mit echten Werten. Statt im Kreis zu fragen, bietet er Profil und Blickfeld direkt an.',r:'team'},
    ]},
   {id:'0.18',v:'0.18',datum:'2026-09-27',titel:'Mannschaft neu geordnet',kurz:'Eine Spielerliste mit eigenen Ansichten, die Massenpflege für alle Spielerdaten und klare Reiter für Training, Spiele, Abwesenheiten und Materialdienst.',
-   punkte:[
-    {ic:'🗂️',t:'Massenpflege',d:'Fuß, Eye-Test, Position, Mannschaft, Kontaktdaten, Geburtsdatum, Skills, Größe und Gewicht: alle internen Spieler untereinander bearbeiten und mit einem Tipp speichern. Profile zeigen die Daten nur noch an, „Spielerdaten pflegen“ springt direkt hierher.',r:'team',go:'pflege'},
-    {ic:'👥',t:'Eine Spielerliste, eigene Ansichten',d:'Statt fester Ansichten wie Trainer oder Kontakte stellst du Spalten, Filter und Sortierung selbst ein und speicherst sie als eigene Ansicht, auf jedem Gerät.',r:'team',go:'spieler'},
-    {ic:'✅',t:'Training: Da oder Fehlt',d:'Die Einheiten zeigen nur noch Trainings. Wer zu spät kam, ist da und bekommt die Notiz „zu spät“. Die Notiz zur Einheit steht direkt unter der Trainingsnote, die Statistik ist reine Auswertung.',r:'team'},
