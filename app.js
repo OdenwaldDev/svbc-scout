@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.70', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.71', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18638,6 +18638,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.71',v:'0.99.71',datum:'2026-11-17',titel:'Weg zur App zum Durchklicken',kurz:'Die Seite zum Einstieg in die App fragt jetzt eine Sache je Bild, statt ein langes Formular zu zeigen.',
+   punkte:[
+    {ic:'\u{1F449}',t:'Eine Frage je Bild',d:'Handy wählen, Name, E-Mail, Handynummer, Rolle im Verein: jede Frage steht allein im Bild, mit Fortschritt oben. Die Rolle tippt man an, statt sie aus einer Liste zu wählen. Dahinter passiert dasselbe wie vorher.',r:'team'}
+   ]},
   {id:'0.99.70',v:'0.99.70',datum:'2026-11-17',titel:'Partner: aufgeräumt, mit Partner-Start',kurz:'Der Partner-Bereich hat vier Gruppen statt zwölf Reitern. Für den Termin vor Ort gibt es den Partner-Start: Firma suchen oder anlegen, dann läuft die Präsentation.',
    punkte:[
     {ic:'\u{1F5C2}',t:'Vier Gruppen',d:'Übersicht, Firmen, Werbeflächen und Verwaltung. Darunter stehen nur die Seiten der gewählten Gruppe. Es fehlt nichts, alles steht nur an einem festen Platz.',r:'team'},

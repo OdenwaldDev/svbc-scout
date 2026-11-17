@@ -193,6 +193,46 @@ footer{align-items:center}
 @keyframes in-puls{0%,100%{box-shadow:0 14px 34px -12px rgba(232,116,31,.9)}50%{box-shadow:0 14px 44px -6px rgba(232,116,31,1)}}
 @keyframes in-weg{to{transform:translateY(-102%);opacity:.6}}
 @keyframes in-flug{to{transform:translateY(-40vh) scale(.3);opacity:0}}
+/* ---------- Durchklicken (0.99.71): eine Frage je Bild, Flutlicht im Hintergrund, Farben wie im Vorspann ----------
+   Gilt nur mit body.sz. In automatischen Tests bleibt die Seite wie vorher (ein Formular), ?szenen=1 schaltet die Szenen ein. */
+body.sz{background:#070b1e;background-image:none}
+body.sz::before{content:"";position:fixed;inset:0;z-index:-2;background:#070b1e url('partner/r-nachthoch.webp') center/cover no-repeat}
+body.sz::after{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,11,30,.8) 0%,rgba(7,11,30,.66) 30%,rgba(7,11,30,.93) 72%,#070b1e 100%)}
+body.sz .shell{min-height:100vh;min-height:100dvh}
+body.sz main{flex:1;align-content:center}
+body.sz[data-sicht="start"] main{align-content:start;padding-top:4vh}
+body.sz:not([data-sicht="start"]) main>section.karte,body.sz:not([data-sicht="start"]) footer{display:none}
+body.sz .chip{display:none}
+body.sz #tonB{margin-left:auto}
+body.sz h1,body.sz h2{font-style:italic}
+body.sz h1 em,body.sz h2 em{color:#ff8a3c}
+body.sz #anm h2,body.sz #weg h2{font-size:clamp(40px,12vw,56px);line-height:.95}
+body.sz .auge{color:#a9c4ff}
+body.sz .intro{color:#d7def5}
+body.sz .geraet,body.sz .karte,body.sz .feld input,body.sz .rolle{background:rgba(12,18,44,.74);border-color:rgba(169,196,255,.26);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+body.sz .geraet{padding:22px 16px;min-height:104px;align-content:center}
+body.sz .geraet strong{font-size:30px;font-style:italic}
+body.sz .geraet.vor{border-color:#ff8a3c;background:linear-gradient(180deg,rgba(232,116,31,.26),rgba(232,116,31,.08))}
+body.sz .prim{background:#e8741f;color:#1a1206;font:800 21px/1 'BarlowC',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em;min-height:58px;box-shadow:0 14px 34px -12px rgba(232,116,31,.9)}
+body.sz .schiene i.an{background:#ff8a3c}
+body.sz .feld input{min-height:62px;font-size:19px;font-weight:600;border-radius:16px;border-width:1.5px}
+body.sz .feld input:focus{outline:0;border-color:#8fb8ff;box-shadow:0 0 0 4px rgba(91,155,255,.22)}
+body.sz .feld label{font-size:14px;color:#c9d4f2}
+body.sz #anm .feld:not(#f-team-z) label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+body.sz .ja{font-size:16px;color:#e6ebfb;padding:16px;border-radius:16px;border:1.5px solid rgba(169,196,255,.26);background:rgba(12,18,44,.74)}
+body.sz .ja input{width:28px;height:28px;accent-color:#e8741f}
+.sz-zu{display:none!important}
+.rollen{display:grid;gap:8px}
+.rolle{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:58px;padding:10px 18px;border-radius:16px;border:1.5px solid var(--line);color:var(--ink);font-weight:650;font-size:17.5px;text-align:left;transition:transform .12s,border-color .12s,background .12s}
+.rolle:active{transform:scale(.985)}
+.rolle[aria-pressed="true"]{border-color:#ff8a3c;background:linear-gradient(180deg,rgba(232,116,31,.3),rgba(232,116,31,.1))}
+.rolle[aria-pressed="true"]::after{content:'\2713';color:#ff8a3c;font-weight:800}
+.szr{animation:szr .34s cubic-bezier(.2,.8,.2,1) both}.szl{animation:szl .34s cubic-bezier(.2,.8,.2,1) both}
+.wackel{animation:wackel .32s}
+@keyframes szr{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
+@keyframes szl{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+@keyframes wackel{20%{transform:translateX(-7px)}50%{transform:translateX(6px)}80%{transform:translateX(-3px)}}
+@media (prefers-reduced-motion:reduce){.szr,.szl,.wackel{animation:none!important}}
 @media (prefers-reduced-motion:reduce){#intro *,#intro{animation:none!important}#intro .in-h b{transform:none}#intro .in-strahl{opacity:.8;transform:rotate(var(--w))}}
 </style>
 </head>
@@ -233,6 +273,7 @@ footer{align-items:center}
 </section>
 
 <section id="anm" class="weg" hidden aria-labelledby="t-anm">
+  <div class="schiene" id="sz-schiene" hidden aria-hidden="true"></div>
   <p class="auge" id="a-auge">DEIN TESTZUGANG</p>
   <h2 id="t-anm" tabindex="-1">Kurz eintragen. <em>Dann geht es los.</em></h2>
   <p class="intro" id="a-text"></p>
@@ -249,6 +290,7 @@ footer{align-items:center}
     <div class="falle" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"></label></div>
     <label class="ja"><input type="checkbox" name="ok" required><span>Ich möchte die App testen und einen Zugang bekommen. Ihr dürft mir dazu Mails schicken. <a href="datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></span></label>
     <p class="fehler" id="f-fehler" role="alert"></p>
+    <button class="prim" id="f-weiter" type="button" hidden>Weiter</button>
     <button class="prim" id="f-los" type="submit">Eintragen und weiter</button>
     <p class="hinweis">Du nutzt die App schon im Browser? Trag dieselbe E-Mail ein. Dein Zugang bleibt, wie er ist.</p>
   </form>
@@ -395,9 +437,10 @@ F.elements.geraet.forEach(function(r){r.onchange=anmText});
 F.addEventListener('input',function(){$('#f-fehler').textContent=''});
 F.elements.art.onchange=function(){var a=F.elements.art.value;$('#f-team-z').hidden=!(a==='spieler'||a==='trainer'||a==='eltern')};
 F.onsubmit=function(e){e.preventDefault();if(busy)return;
+  if(SZ&&fs<FR.length-1){szWeiter();return}
   var name=F.elements.name.value.trim(),mail=F.elements.email.value.trim().toLowerCase(),art=F.elements.art.value,g=F.elements.geraet.value,tel=F.elements.tel.value.trim(),fe=$('#f-fehler');
   var f=name.length<3||name.indexOf(' ')<1?['name','Bitte Vor- und Nachnamen eintragen.']:!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(mail)?['email','Bitte eine gültige E-Mail-Adresse eintragen.']:!/^\+?[0-9][0-9 \/()\-]{5,24}$/.test(tel)?['tel','Bitte deine Handynummer eintragen.']:!art?['art','Bitte auswählen, wer du im Verein bist.']:!F.elements.ok.checked?['ok','Bitte das Häkchen setzen.']:null;
-  if(f){fe.textContent=f[1];F.elements[f[0]].focus();return}
+  if(f){if(SZ)for(var j=0;j<FR.length;j++)if(FR[j][0]===f[0]&&j!==fs)frage(j,true);fe.textContent=f[1];try{F.elements[f[0]].focus()}catch(x){}return}
   if(!CFG||!CFG.url){fe.textContent='Die Anmeldung ist gerade nicht erreichbar. Bitte später noch einmal versuchen.';return}
   busy=true;fe.textContent='';var B=$('#f-los');B.disabled=true;B.textContent='Wird eingetragen …';
   var ctl=new AbortController(),tm=setTimeout(function(){ctl.abort()},25000);
@@ -418,6 +461,56 @@ function stand(nurZahl){
   $('#stand').hidden=n===null;
   if(n!==null){$('#stand-t').textContent=n>=z?'Geschafft: '+n+' Tester sind angemeldet':'Noch '+(z-n)+' bis zum Ziel';$('#stand-z').textContent=n+' von '+z+' Android-Testern';setTimeout(function(){$('#stand-b').style.width=Math.min(100,Math.round(n/z*100))+'%'},60)}
   if(!nurZahl&&!$('#weg').hidden)zeig();
+}
+/* ---------- Durchklicken (0.99.71) ----------
+   Albert, 17.11.2026: „Mach den Funnel eher wie die Partnerreise zum Durchklicken. Einfach geiles Onboarding.“
+   Das Formular bleibt dasselbe (gleiche Felder, gleiche Prüfung, derselbe Aufruf), es zeigt nur eine Frage je Bild.
+   In automatischen Tests bleibt es ein Formular auf einer Seite, außer mit ?szenen=1. */
+var SZ=!(navigator.webdriver&&!/[?&]szenen=1/.test(location.search)), fs=0;
+var FR=[['name','Wie <em>heißt du?</em>','Vor- und Nachname, so wie man dich im Verein kennt.'],
+  ['email','Deine <em>E-Mail.</em>',''],
+  ['tel','Deine <em>Handynummer.</em>','Für Rückfragen zur Freigabe. Die Nummer sieht nur die Abteilungsleitung.'],
+  ['art','Wer bist du <em>im Verein?</em>','Tipp an, was am besten passt.'],
+  ['ok','Fast <em>geschafft.</em>','Ein Haken noch, dann legen wir deinen Zugang an.']];
+function szPruef(k){var v=F.elements,n;
+  if(k==='name'){n=v.name.value.trim();return n.length<3||n.indexOf(' ')<1?'Bitte Vor- und Nachnamen eintragen.':''}
+  if(k==='email')return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.email.value.trim())?'':'Bitte eine gültige E-Mail-Adresse eintragen.';
+  if(k==='tel')return /^\+?[0-9][0-9 \/()\-]{5,24}$/.test(v.tel.value.trim())?'':'Bitte deine Handynummer eintragen.';
+  if(k==='art')return v.art.value?'':'Bitte antippen, wer du im Verein bist.';
+  return ''}
+function szTeam(){var a=F.elements.art.value;return a==='spieler'||a==='trainer'||a==='eltern'}
+function szTeile(k){return k==='ok'?[F.querySelector('label.ja'),$('#f-los'),F.querySelector('#f-los+.hinweis')]:k==='art'?[$('#rollen'),$('#f-team-z')]:[F.elements[k].closest('.feld')]}
+function frage(i,zur){fs=Math.max(0,Math.min(FR.length-1,i));var k=FR[fs][0],A=$('#anm'),x=$('#a-text');
+  [].forEach.call(F.querySelectorAll('.feld,label.ja,#f-los,#f-los+.hinweis,#rollen'),function(e){e.classList.add('sz-zu')});
+  szTeile(k).forEach(function(e){if(e)e.classList.remove('sz-zu')});
+  $('#f-fehler').textContent='';$('#a-auge').textContent='FRAGE '+(fs+1)+' VON '+FR.length;$('#t-anm').innerHTML=FR[fs][1];
+  x.textContent=FR[fs][2];x.hidden=!FR[fs][2];
+  $('#f-weiter').hidden=k==='ok'||(k==='art'&&!szTeam());
+  $('#sz-schiene').innerHTML=FR.map(function(_,j){return '<i class="'+(j<fs?'fertig':j===fs?'an':'')+'"></i>'}).join('');
+  A.classList.remove('rein','szl','szr');void A.offsetWidth;A.classList.add(zur?'szl':'szr');
+  window.scrollTo(0,0);
+  if(k!=='ok'&&k!=='art')setTimeout(function(){try{F.elements[k].focus({preventScroll:true})}catch(e){}},40);
+  else $('#t-anm').focus({preventScroll:true});
+}
+function szWeiter(){var k=FR[fs][0],f=szPruef(k),fe=$('#f-fehler');
+  if(f){fe.textContent=f;var z=szTeile(k)[0];if(z){z.classList.remove('wackel');void z.offsetWidth;z.classList.add('wackel')}try{if(F.elements[k]&&k!=='art')F.elements[k].focus()}catch(e){}return}
+  fx('wisch');frage(fs+1)}
+if(SZ){
+  document.body.classList.add('sz');$('#sz-schiene').hidden=false;
+  // Rollen als große Knöpfe, das Auswahlfeld bleibt als Speicher im Formular
+  var RO=document.createElement('div');RO.id='rollen';RO.className='rollen sz-zu';RO.setAttribute('role','group');RO.setAttribute('aria-label','Wer bist du im Verein?');
+  [].forEach.call(F.elements.art.options,function(o){if(!o.value)return;var b=document.createElement('button');b.type='button';b.className='rolle';b.dataset.rolle=o.value;b.setAttribute('aria-pressed','false');b.textContent=o.textContent;
+    b.onclick=function(){F.elements.art.value=o.value;F.elements.art.onchange();[].forEach.call(RO.children,function(c){c.setAttribute('aria-pressed',c===b)});$('#f-fehler').textContent='';
+      if(szTeam()){$('#f-weiter').hidden=false;setTimeout(function(){try{F.elements.team.focus({preventScroll:true})}catch(e){}},40)}else{$('#f-weiter').hidden=true;setTimeout(function(){if(FR[fs][0]==='art'){fx('wisch');frage(fs+1)}},260)}};
+    RO.appendChild(b)});
+  F.insertBefore(RO,F.elements.art.closest('.feld'));
+  $('#f-weiter').onclick=szWeiter;
+  F.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.tagName==='INPUT'&&e.target.type!=='checkbox'&&fs<FR.length-1){e.preventDefault();szWeiter()}});
+  $('#a-zurueck').onclick=function(){if(fs>0)frage(fs-1,true);else zeigStart(true)};
+  var _za=zeigAnm;zeigAnm=function(){var r=_za.apply(this,arguments);frage(0);return r};
+  var _ns=nur;nur=function(id){document.body.dataset.sicht=id;return _ns.apply(this,arguments)};
+  // Start: die Überschrift stand eben schon im Vorspann, hier gleich die Frage
+  $('#t-start').innerHTML='Welches Handy<br><em>hast du?</em>';$('#f-geraet').hidden=true;$('#s-intro').textContent='Tipp es an. Wir führen dich Schritt für Schritt zur App.';
 }
 var ua=navigator.userAgent, vor=/iPhone|iPad|iPod/.test(ua)?'ios':/Android/.test(ua)?'android':null;
 if(vor)document.querySelector('[data-geraet="'+vor+'"]').classList.add('vor');
