@@ -588,7 +588,7 @@ function pzWechsel(v){ spoWechsel(v); try{ document.getElementById('panel-sponso
 
 function pzZeile(x,gross){
   const s=pzSchritt(x), w=pzWert(x), i=PZ_WEG.findIndex(z=>z[0]===x.status), naechst=PZ_WEG[i+1];
-  const unter=[x.branche,pzOrt(x)].filter(Boolean).join(' · ');
+  const unter=[x.branche,pzOrt(x),x.pate?'Pate: '+x.pate:''].filter(Boolean).join(' · ');
   const gz=s.k==='gegen'||s.k==='gz-ab';   // wartet auf eure Unterschrift: statt Nachfassen und Wiedervorlage den Grund zeigen
   const tipp=gz?s.h:x.status==='idee'&&x.naechster&&!/^Erstansprache planen$/i.test(x.naechster)?x.naechster:(x.naechster&&x.status!=='idee'?x.naechster:'');
   const spur=PZ_WEG.slice(0,5).map((z,j)=>`<i class="${j<i?'d':j===i?'a':''}"></i>`).join('');

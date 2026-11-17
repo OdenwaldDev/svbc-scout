@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.80',v:'0.99.80',datum:'2026-11-17',titel:'Firmen: Pate eintragen, Formular gerade',kurz:'Bei jeder Firma lässt sich eintragen, wer von uns den besten persönlichen Kontakt hat. Die Haken im Formular stehen wieder neben ihrem Text.',
+   punkte:[
+    {ic:'\u{1F91D}',t:'Pate je Firma',d:'Im Formular der Firma gibt es das Feld Pate: wer aus unserem Team die Firma am besten kennt. Der Name steht in der Akte, in der Liste, in der Excel-Datei, und die Suche findet ihn.',r:'team'},
+    {ic:'\u{2611}\u{FE0F}',t:'Haken im Formular',d:'Bestandspartner und VIP-Firma: Das Kästchen steht wieder direkt vor dem Text. Vorher stand der Text am rechten Rand.',r:'team'}
+   ]},
   {id:'0.99.79',v:'0.99.79',datum:'2026-11-17',titel:'Im Vertrag stehen die Leistungen vollständig',kurz:'Die Beschreibung der Leistung im Partnervertrag brach bei langen Paketen ab. Jetzt steht sie ganz drin.',
    punkte:[
     {ic:'\u{1F4C4}',t:'Leistungen vollständig',d:'Im Partnervertrag stehen alle Leistungen eines Pakets. Vorher endete der Text bei den großen Paketen mitten im Satz.',r:'team'},

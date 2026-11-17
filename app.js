@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.79', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.80', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -15661,7 +15661,7 @@ function spoListe(B){
 function spoListeZeilen(B){
   const H=B.querySelector('.spo-l'); if(!H)return; const q=SPO.q.trim().toLowerCase(), weg=['idee','angeschrieben','gespraech','angebot'];
   const L=SPO.S.filter(x=>SPO.flt==='alle'||(SPO.flt==='termin'?spoTermin(x):SPO.flt==='ohneges'?spoOhneGes(x):SPO.flt==='mitges'?spoMitGes(x):SPO.flt==='vip'?spoVip(x):SPO.flt==='alt'?spoAlt(x):SPO.flt==='neu'?spoNeuK(x):SPO.flt==='offen'?weg.includes(x.status):x.status===SPO.flt))
-    .filter(x=>!q||(x.firma+' '+(x.ansprechpartner||'')+' '+(x.branche||'')+' '+(x.ort||'')+' '+(x.notiz||'')).toLowerCase().includes(q))
+    .filter(x=>!q||(x.firma+' '+(x.ansprechpartner||'')+' '+(x.branche||'')+' '+(x.ort||'')+' '+(x.pate||'')+' '+(x.notiz||'')).toLowerCase().includes(q))
     .sort((a,b)=>{ const i=weg.indexOf(a.status), j=weg.indexOf(b.status); if(j-i)return j-i;
       if(a.status==='idee'&&typeof pzWert==='function'){ const d=pzWert(b).rang-pzWert(a).rang; if(d)return d; }   // Ideen wie in der Zentrale nach Kriterienmatrix
       return String(a.firma).localeCompare(String(b.firma),'de'); });
@@ -15669,11 +15669,16 @@ function spoListeZeilen(B){
   H.innerHTML=L.map(x=>`<div class="spo-zr" data-spor="${svEsc(x.id)}">${pzZeile(x,false)}</div>`).join('')||'<p class="pz-leer">Keine Firmen in dieser Auswahl.</p>';
   if(typeof pzVerdrahten==='function')pzVerdrahten(H);
 }
+// Seit 0.99.80: Pate = wer aus unserem Team den besten persönlichen Kontakt zur Firma hat (freier Name, weil nicht jeder ein Konto hat).
+// Vorschläge: Namen, die schon als Pate stehen, und wer im Partner-Team Einträge schreibt (svm118).
+function spoPaten(){ const s=new Set(); (SPO.S||[]).forEach(x=>{ if(x.pate)s.add(String(x.pate).trim()); });
+  try{ if(typeof S118!=='undefined'&&S118.namen)Object.values(S118.namen).forEach(n=>{ if(n)s.add(String(n).trim()); }); }catch(e){}
+  return [...s].filter(Boolean).sort((a,b)=>a.localeCompare(b,'de')); }
 // Abzug der gerade gezeigten Auswahl für Excel (Semikolon, UTF-8 mit Kennung). Kein Datenabgleich zurück: gepflegt wird nur in der App.
 function spoCsv(){ const L=SPO.zeigt||[]; const z=v=>'"'+String(v==null?'':v).replace(/"/g,'""').replace(/\r?\n/g,' ')+'"';
-  const kopf=['Firma','Ansprechpartner','Funktion','E-Mail','Telefon','Straße','Ort','Branche','Stand','Bestandspartner','VIP','Konzept','Letzter Anruf oder Treffen','Nächster Schritt','Notiz'];
+  const kopf=['Firma','Ansprechpartner','Funktion','E-Mail','Telefon','Straße','Ort','Branche','Stand','Bestandspartner','VIP','Konzept','Letzter Anruf oder Treffen','Nächster Schritt','Notiz','Pate'];
   const letzt=x=>{ const k=SPO.K.filter(k=>k.sponsor===x.id&&(k.art==='anruf'||k.art==='treffen')&&!spoGeplant(k)).map(k=>String(k.am||'')).sort().pop(); return k?k.slice(8,10)+'.'+k.slice(5,7)+'.'+k.slice(0,4):''; };
-  const zeilen=L.map(x=>[x.firma,x.ansprechpartner,x.funktion,x.email,x.telefon,x.strasse,x.ort,x.branche,SPO_STL[x.status]||x.status,x.bestand?'ja':'nein',x.vip?'ja':'nein',x.status!=='partner'?'':spoNeuK(x)?'neu':'alt',letzt(x),x.naechster,x.notiz].map(z).join(';'));
+  const zeilen=L.map(x=>[x.firma,x.ansprechpartner,x.funktion,x.email,x.telefon,x.strasse,x.ort,x.branche,SPO_STL[x.status]||x.status,x.bestand?'ja':'nein',x.vip?'ja':'nein',x.status!=='partner'?'':spoNeuK(x)?'neu':'alt',letzt(x),x.naechster,x.notiz,x.pate].map(z).join(';'));
   const txt='\ufeff'+[kopf.map(z).join(';')].concat(zeilen).join('\r\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'})); const d=new Date(); a.download='partner-'+d.toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); }
 // Stand ändern. Mit log entsteht ein Verlaufseintrag; zurück kommt dessen id, damit Rückgängig genau diesen Eintrag wieder löscht.
@@ -15702,7 +15707,7 @@ function spoSponsor(id){
   // Akte in den Vereinsfarben (Navy, Orange, Creme), Avatar wie in der Zentrale
   const kz=typeof pzKurz==='function'?pzKurz(x.firma):x.firma.slice(0,2).toUpperCase(), kf=typeof pzFarbe==='function'?pzFarbe(x.firma):'#1d2760';
   const M=svModal(`<div class="spo-akte"><div class="mhead"><div class="spo-av pz-lg" style="--lc:${kf}">${svEsc(kz)}</div><div><h2 style="margin:0">${svEsc(x.firma)}${x.vip?' <span class="pz-vip" title="VIP-Firma">★</span>':''}</h2>
-      <div class="msub">${[x.ansprechpartner&&(x.ansprechpartner+(x.funktion?' ('+x.funktion+')':'')),x.branche,x.bestand?'Bestandspartner':''].filter(Boolean).map(svEsc).join(' · ')}</div></div></div>
+      <div class="msub">${[x.ansprechpartner&&(x.ansprechpartner+(x.funktion?' ('+x.funktion+')':'')),x.branche,x.bestand?'Bestandspartner':''].filter(Boolean).map(svEsc).join(' · ')}</div>${x.pate?`<div class="msub spo-pate">Pate bei uns: <b>${svEsc(x.pate)}</b></div>`:''}</div></div>
     <p class="spo-vipz"><button type="button" class="spo-link" id="spoVip" aria-pressed="${x.vip?'true':'false'}">${x.vip?'★ VIP-Firma, Kennzeichen entfernen':'☆ Als VIP-Firma kennzeichnen'}</button></p>
     ${spoAkteSchritt(x)}
     <p class="spo-stand">Stand: <b>${svEsc(SPO_STL[x.status]||x.status)}</b> · <button type="button" class="spo-link" id="spoStA" aria-expanded="false">ändern</button></p>
@@ -15819,13 +15824,16 @@ function spoForm(x){
         <small class="note">Nur der Firmenname, nur auf unseren eigenen Seiten. Mit „Ja“ steht die Firma in der Infobox „Aktuelle Partner“ in der Partner-Präsentation.</small></div>
       <div class="field"><label>Nächster Schritt</label><input name="naechster" maxlength="200" placeholder="z.B. Präsentation schicken" value="${svEsc(x.naechster||'')}"></div>
       <div class="field"><label>Bis wann</label><input name="faellig" type="date" value="${svEsc(x.faellig||'')}"></div>
+      <div class="field"><label>Pate</label><input name="pate" maxlength="80" list="spoPateL" placeholder="Vor- und Nachname" value="${svEsc(x.pate||'')}">
+        <datalist id="spoPateL">${spoPaten().map(n=>`<option value="${svEsc(n)}"></option>`).join('')}</datalist>
+        <small class="note">Wer aus unserem Team hat den besten persönlichen Kontakt zur Firma.</small></div>
       <div class="field" style="grid-column:1/-1"><label>Notiz</label><textarea name="notiz" rows="3" maxlength="2000">${svEsc(x.notiz||'')}</textarea></div>
       <div class="btnrow sbact" style="grid-column:1/-1"><button class="btn" type="submit">Speichern</button>${x.id?'<button class="btn ghost" type="button" id="spoDel">Löschen</button>':''}<button class="btn ghost" type="button" id="spoX">Abbrechen</button></div></form>`);
   M.querySelector('#spoX').onclick=()=>x.id?spoSponsor(x.id):closeOverlay();
   const del=M.querySelector('#spoDel'); if(del)del.onclick=async()=>{ if(del.dataset.sure!=='1'){ del.dataset.sure='1'; del.textContent='Wirklich löschen?'; return; }
     const {error}=await SVB.sb.from('sponsoren').delete().eq('id',x.id); if(error)return kToast('⚠️ '+(/foreign|violates/.test(error.message)?'Mit Vertrag nicht löschbar. Stand auf „Pausiert“ setzen.':error.message)); closeOverlay(); spoReload(); };
   M.querySelector('#spoF').onsubmit=async e=>{ e.preventDefault(); const fd=new FormData(e.target), r={};
-    ['firma','anrede','ansprechpartner','funktion','email','telefon','strasse','ort','web','branche','status','naechster','faellig','notiz'].forEach(k=>{ const v=String(fd.get(k)||'').trim(); r[k]=v||null; });
+    ['firma','anrede','ansprechpartner','funktion','email','telefon','strasse','ort','web','branche','status','naechster','faellig','pate','notiz'].forEach(k=>{ const v=String(fd.get(k)||'').trim(); r[k]=v||null; });
     r.firma=r.firma||''; r.status=r.status||'idee'; r.bestand=fd.has('bestand'); r.vip=fd.has('vip'); r.geaendert_am=new Date().toISOString();
     { const nn=String(fd.get('nennung')||'offen'); if(['offen','ja','nein'].includes(nn)){ r.nennung=nn; if(nn!==(x.nennung||'offen'))r.nennung_am=new Date().toISOString(); } }
     const q=x.id?SVB.sb.from('sponsoren').update(r).eq('id',x.id).select().single():SVB.sb.from('sponsoren').insert(r).select().single();
@@ -18638,6 +18646,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.80',v:'0.99.80',datum:'2026-11-17',titel:'Firmen: Pate eintragen, Formular gerade',kurz:'Bei jeder Firma lässt sich eintragen, wer von uns den besten persönlichen Kontakt hat. Die Haken im Formular stehen wieder neben ihrem Text.',
+   punkte:[
+    {ic:'\u{1F91D}',t:'Pate je Firma',d:'Im Formular der Firma gibt es das Feld Pate: wer aus unserem Team die Firma am besten kennt. Der Name steht in der Akte, in der Liste, in der Excel-Datei, und die Suche findet ihn.',r:'team'},
+    {ic:'\u{2611}\u{FE0F}',t:'Haken im Formular',d:'Bestandspartner und VIP-Firma: Das Kästchen steht wieder direkt vor dem Text. Vorher stand der Text am rechten Rand.',r:'team'}
+   ]},
   {id:'0.99.79',v:'0.99.79',datum:'2026-11-17',titel:'Im Vertrag stehen die Leistungen vollständig',kurz:'Die Beschreibung der Leistung im Partnervertrag brach bei langen Paketen ab. Jetzt steht sie ganz drin.',
    punkte:[
     {ic:'\u{1F4C4}',t:'Leistungen vollständig',d:'Im Partnervertrag stehen alle Leistungen eines Pakets. Vorher endete der Text bei den großen Paketen mitten im Satz.',r:'team'},
@@ -40598,7 +40611,7 @@ function pzWechsel(v){ spoWechsel(v); try{ document.getElementById('panel-sponso
 
 function pzZeile(x,gross){
   const s=pzSchritt(x), w=pzWert(x), i=PZ_WEG.findIndex(z=>z[0]===x.status), naechst=PZ_WEG[i+1];
-  const unter=[x.branche,pzOrt(x)].filter(Boolean).join(' · ');
+  const unter=[x.branche,pzOrt(x),x.pate?'Pate: '+x.pate:''].filter(Boolean).join(' · ');
   const gz=s.k==='gegen'||s.k==='gz-ab';   // wartet auf eure Unterschrift: statt Nachfassen und Wiedervorlage den Grund zeigen
   const tipp=gz?s.h:x.status==='idee'&&x.naechster&&!/^Erstansprache planen$/i.test(x.naechster)?x.naechster:(x.naechster&&x.status!=='idee'?x.naechster:'');
   const spur=PZ_WEG.slice(0,5).map((z,j)=>`<i class="${j<i?'d':j===i?'a':''}"></i>`).join('');

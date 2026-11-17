@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon-64.png">
-<meta name="app-build" content="beta-0.99.79">
+<meta name="app-build" content="beta-0.99.80">
 <title>SV/BSC Sportzentrale</title>
 <script src="vendor/chart.umd.min.js?v=81ffafe13c37" async></script>
 <style>
@@ -3299,6 +3299,9 @@ h2 .svm-i{vertical-align:3px;margin-left:8px}
 .svt-form{grid-template-columns:1fr 1fr;}
 .svt-form textarea,.svt-form input,.svt-form select{width:100%;}
 .svt-cb{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:13.5px;}
+/* Seit 0.99.80: Das Kästchen bleibt ein Kästchen. Vorher zog .svt-form input{width:100%} es über die ganze Zeile, der Text stand am rechten Rand. */
+.svt-form .svt-cb input,.svt-cb input[type=checkbox]{width:18px;height:18px;flex:none;margin:0;accent-color:#3b78ff;}
+.svt-cb{cursor:pointer;min-height:28px;}
 .svt-pick{display:flex;flex-direction:column;gap:2px;max-height:50vh;overflow:auto;margin:10px 0;border:1px solid var(--line);border-radius:12px;padding:6px;}
 .svt-pick label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px;border-radius:9px;cursor:pointer;font-size:14px;} .svt-pick label:hover{background:rgba(148,163,196,.06);}
 .svt-pick label span{font-size:12px;color:var(--ink3);} .svt-pick input{width:18px;height:18px;accent-color:#3b78ff;}
@@ -4410,7 +4413,7 @@ a.kbtn{text-decoration:none;display:inline-block}
 
 
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
-<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.79", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
+<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.80", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
 <script src="vendor/supabase.js?v=dff1e545f4f3"></script>
 <script src="icons.js?v=2b264497e7cf"></script>
 <script src="boot.js?v=baea0a4d50c5"></script>
