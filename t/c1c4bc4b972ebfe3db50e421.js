@@ -588,7 +588,7 @@ function sw45NoList(refresh){
   const M=document.getElementById('modal');
   if(refresh&&!(M&&M.querySelector('.sw45nol')))return;
   const L=players.filter(p=>!p.own&&crmOf(p).s==='no').sort((a,b)=>String(a.name).localeCompare(String(b.name),'de'));
-  const row=p=>{ const c=(p.cur&&p.cur.club)||p.club||''; return `<div class="sw45no" data-id="${svEsc(p.id)}"><span class="tra-av">${avaHtml(p)}</span><div class="sw45no-b"><b>${svEsc(p.name)}</b><span>${svEsc(c)}${p.pos?' · '+svEsc(p.pos):''}${p.alter!=null?' · '+p.alter+' J.':''}</span></div><button type="button" class="btn ghost sm" data-back45="${svEsc(p.id)}">↩️ Zurück</button></div>`; };
+  const row=p=>{ const c=(p.cur&&p.cur.club)||p.club||''; return `<div class="sw45no" data-id="${svEsc(p.id)}"><span class="tra-av">${avaHtml(p)}</span><div class="sw45no-b"><b>${svEsc(p.name)}</b><span>${svEsc(c)}${p.pos?' · '+svEsc(svPosTxt(p)):''}${p.alter!=null?' · '+p.alter+' J.':''}</span></div><button type="button" class="btn ghost sm" data-back45="${svEsc(p.id)}">↩️ Zurück</button></div>`; };
   const html=`<div class="sw45nol"><div class="mhead"><div><h2>🚫 Kein Interesse</h2><div class="note">${L.length?`${L.length} Spieler. Nach rechts wischen holt einen Spieler zurück, nach links kommt er direkt auf die Merkliste.`:'Niemand auf dieser Liste. Wer hier landet, taucht in Radar und Vorschlägen nicht mehr auf.'}</div></div></div>
     <div class="sw45no-l">${L.map(row).join('')}</div></div>`;
   const box=refresh&&M.querySelector('.sw45nol');

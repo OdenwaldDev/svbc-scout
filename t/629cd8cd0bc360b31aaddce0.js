@@ -485,7 +485,7 @@ function k1SlotWahl(slot,saison,team,feld,kandidaten,again){
   if(!slot||!k1Schreib())return;
   const L=kandidaten.map(s=>({s,pa:V1K.passung(s,slot.pos)})).filter(x=>x.pa>=.5).sort((a,b)=>(b.pa>=.8)-(a.pa>=.8)||(b.s.ca||0)-(a.s.ca||0)).slice(0,20);
   const M=svModal(`<h2 style="margin:0 0 4px">${k1E(V1K.POSL[slot.pos])}</h2><p class="note">Wer soll hier spielen? Das ist eine Planungsentscheidung, die Stärke ändert sich nicht.</p>
-    <div class="k1-wahl">${L.map(x=>`<button type="button" class="k1-w${x.s.id===slot.id?' on':''}" data-w="${k1E(x.s.id)}"><b>${x.s.ca??'?'}</b><span>${k1E(x.s.name)}</span><small>${k1E(x.s.pos||'')}${x.pa<.8?' · Aushilfe':''}</small></button>`).join('')||'<p class="note">Kein passender Spieler.</p>'}</div>
+    <div class="k1-wahl">${L.map(x=>`<button type="button" class="k1-w${x.s.id===slot.id?' on':''}" data-w="${k1E(x.s.id)}"><b>${x.s.ca??'?'}</b><span>${k1E(x.s.name)}</span><small>${k1E(svPosVon(x.s)||'')}${x.pa<.8?' · Aushilfe':''}</small></button>`).join('')||'<p class="note">Kein passender Spieler.</p>'}</div>
     <div class="btnrow"><button class="btn ghost" type="button" data-w="">Automatisch</button><button class="btn ghost" type="button" data-x>Schließen</button></div>`);
   M.querySelector('[data-x]').onclick=()=>closeOverlay();
   M.querySelectorAll('[data-w]').forEach(b=>b.onclick=async()=>{ const pl=k1Plan(saison,team), slots=Object.assign({},pl[feld]||{});
@@ -722,7 +722,7 @@ function s1Bereit(P,again){
   return true;
 }
 function s1Ca(sp){ return `<span class="s1-ca s-${k1E(sp.sicherheit||'niedrig')}" title="Stärke, Sicherheit ${k1E(sp.sicherheit||'?')}">${sp.ca??'?'}</span>`; }
-function s1Unter(sp){ return [sp.pos,sp.club,sp.liga,sp.alter?sp.alter+' J.':''].filter(Boolean).map(k1E).join(' · '); }
+function s1Unter(sp){ return [svPosVon(sp),sp.club,sp.liga,sp.alter?sp.alter+' J.':''].filter(Boolean).map(k1E).join(' · '); }
 
 /* ---------- Bedarfe ---------- */
 function s1Bedarfe(){
@@ -828,7 +828,7 @@ function s1Kandidaten(){
     <div class="k1-leiste"><label>Bedarf <select data-s1kb><option value="">alle</option>${(SV4.bed||[]).filter(b=>S1_AKTIV.includes(b.status)||b.id===S1.kb).map(b=>`<option value="${k1E(b.id)}"${b.id===S1.kb?' selected':''}>${k1E(b.titel)}</option>`).join('')}</select></label></div>
     <div class="s1-pipe">${Object.entries(S1_STUFE).map(([st,l])=>{ const L=akt.filter(k=>(k.stufe||'kandidat')===st); return `<div class="s1-sp"><h4><span>${l}</span><span>${L.length}</span></h4>${L.map(card).join('')}</div>`; }).join('')}</div>
     ${ohne.length&&offenB.length?`<div class="card"><h3 class="trh">${SVI('users')} Kandidaten ohne Bedarf <small>${ohne.length}</small></h3><p class="note small">Aus der bisherigen Kandidatenliste. Einem Bedarf zuordnen, damit Fit und Empfehlung greifen.</p>
-      ${ohne.map(p=>`<div class="k1-oe"><span class="lnk" data-svp="${k1E(p.id)}">${k1E(p.name)}</span><small>${k1E(p.pos||'')}</small><select data-s1zu="${k1E(p.id)}">${bOpt(p)}</select><button class="btn sm ghost" type="button" data-s1zuok="${k1E(p.id)}">Zuordnen</button></div>`).join('')}</div>`:''}
+      ${ohne.map(p=>`<div class="k1-oe"><span class="lnk" data-svp="${k1E(p.id)}">${k1E(p.name)}</span><small>${k1E(svPosTxt(p)||'')}</small><select data-s1zu="${k1E(p.id)}">${bOpt(p)}</select><button class="btn sm ghost" type="button" data-s1zuok="${k1E(p.id)}">Zuordnen</button></div>`).join('')}</div>`:''}
     ${abg.length?`<details class="card"${S1.kAbg?' open':''} data-s1abg><summary><h3 class="trh">${SVI('check')} Abgeschlossen <small>${abg.length}</small></h3></summary>${abg.map(card).join('')}</details>`:''}`;
   P.querySelectorAll('[data-svp]').forEach(x=>x.onclick=()=>openModal(x.dataset.svp));
   P.querySelector('[data-s1kb]').onchange=e=>{ S1.kb=e.target.value; s1Kandidaten(); };

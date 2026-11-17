@@ -579,6 +579,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.63',v:'0.99.63',datum:'2026-11-17',titel:'Nur noch die Stärke, Position nicht geraten, Verein laut FuPa',kurz:'Überall zählt die Stärke, auch auf der Karte, dort mit der Form. Unbestätigte Positionen stehen als Abwehr, Mittelfeld oder Sturm da. Wer laut FuPa diese Saison woanders spielt, wird dort geführt.',
+   punkte:[
+    {ic:'\u{1F7E2}',t:'Die Stärke ist der eine Wert',d:'Karte, Listen, Tabellen, Aufstellungsvorschlag und Suche zeigen und sortieren nach der Stärke. Der frühere MScore wird nicht mehr gezeigt.',r:'scout',go:'kueber'},
+    {ic:'\u{1F0CF}',t:'Karte mit Stärke und Form',d:'Die große Zahl ist die Stärke, der Pfeil daneben die Form. Darunter stehen Form, die Erwartung in 24 Monaten und wie sicher die Zahl ist.',r:'scout'},
+    {ic:'\u{1F9ED}',t:'Position wird nicht mehr geraten',d:'Kennen wir von einem externen Spieler nur den Mannschaftsteil, steht Abwehr, Mittelfeld oder Sturm da. Mit „Position eintragen“ im Profil legst du die genaue Position fest, ab dann gilt sie.',r:'scout'},
+    {ic:'\u{1F501}',t:'Verein laut FuPa',d:'Steht ein Spieler diese Saison bei einem anderen Verein im Kader oder hat dort gespielt, zeigt die App diesen Verein, mit Hinweis im Profil. Wer bei uns noch im Kader steht, bleibt dort und erscheint in der Datenprüfung unter Vereinswechsel.',r:'scout'}
+   ]},
   {id:'0.99.62',v:'0.99.62',datum:'2026-11-16',titel:'Partner: Partner des Tages wie im Flyer',kurz:'Der Preis für „Partner des Tages“ richtet sich nach dem Paket: Supporter 189 €, Club 169 €, Premium 149 €.',
    punkte:[
     {ic:'\u{1F4B6}',t:'Partner des Tages nach Paket',d:'Mit dem Supporter kostet ein Heimspiel 189 €, mit dem Club Partner 169 €, mit dem Premium Partner 149 €. Beim 1896 Partner ist ein Heimspiel inklusive, jedes weitere kostet 149 €. Die Präsentation und der Vertrag rechnen so.',r:'team'}
@@ -1535,10 +1542,3 @@ const SV_PATCHES=[
    punkte:[
     {ic:'⚡',t:'Ohne Neuladen aktuell',d:'Korrekturen im Datenbestand und neue FuPa-Werte erscheinen von selbst, auch in einem gerade offenen Profil. War das Handy kurz offline, holt die App Verpasstes beim Wiederverbinden nach.',r:'team',go:'home'},
     {ic:'📍',t:'Liga immer aus der richtigen Saison',d:'Aktuelle Liga, Ligaabstand und Wechselbegründung kommen aus der laufenden Saison. Die Verbandsliga ist jetzt eine eigene Liga. Gründe aus der Vorsaison sind mit 25/26 gekennzeichnet.',r:'scout'},
-   ]},
-  {id:'0.15',v:'0.15',datum:'2026-09-26',titel:'Spieler-Abgleich zum Wischen',kurz:'Wo die App nicht sicher ist, welcher FuPa-Spieler zu welchem Spieler gehört, entscheidest du jetzt mit einem Wisch. Einmal, dann gilt es dauerhaft.',
-   punkte:[
-    {ic:'👈',t:'Nach links: bestätigen',d:'Stimmt der Vorschlag, nach links wischen oder „Bestätigen“ tippen. Die Werte stehen sofort im Profil, im MScore und in der Bestenliste und bleiben so, auch nach jedem neuen Abgleich.',r:'scout',go:'radar'},
-    {ic:'👉',t:'Nach rechts: ignorieren',d:'Ist es ein anderer Spieler, nach rechts wischen. Das Paar kommt nie wieder. Findet die App gar nichts, suchst du den Spieler selbst oder blendest ihn für FuPa aus. Alles lässt sich zurücknehmen.',r:'scout'},
-    {ic:'📍',t:'Aktuelle Liga statt Vorjahr',d:'Startseite, Profil und Wechselchance zeigen jetzt die Liga der laufenden Saison. Wo es noch keine aktuellen Daten gibt, steht „Stand 25/26“ dran, bei Platz 1 oder 2 mit „vermutlich aufgestiegen“.',r:'scout'},
-    {ic:'🗓️',t:'Neue Saison stellt sich selbst um',d:'Nach der Sommerpause erkennt die App die neue Saison am Spielplan, sobald das erste Spiel höchstens 14 Tage entfernt ist. Radar, Beobachtungen und Spieltag zählen dann automatisch die neue Saison.',r:'scout'},

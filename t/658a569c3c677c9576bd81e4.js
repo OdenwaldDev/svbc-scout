@@ -1,5 +1,5 @@
     sel=Math.min(sel,Math.max(0,list.length-1));
-    res.innerHTML=list.length?'<div class="gh">Spieler</div>'+list.map((x,i)=>`<div class="gi${i===sel?' sel':''}" data-i="${i}">${avaHtml(x.p)}<div style="min-width:0"><b>${svEsc(x.p.name)}</b><span>${svEsc(x.p.club||'')} · ${svEsc((typeof LIGA_NAME!=='undefined'&&LIGA_NAME[x.p.liga])||x.p.liga||'')}${x.p.pos?' · '+svEsc(x.p.pos):''}</span></div><div class="sc">${Math.round(x.s)}</div></div>`).join('')
+    res.innerHTML=list.length?'<div class="gh">Spieler</div>'+list.map((x,i)=>`<div class="gi${i===sel?' sel':''}" data-i="${i}">${avaHtml(x.p)}<div style="min-width:0"><b>${svEsc(x.p.name)}</b><span>${svEsc(x.p.club||'')} · ${svEsc((typeof LIGA_NAME!=='undefined'&&LIGA_NAME[x.p.liga])||x.p.liga||'')}${x.p.pos?' · '+svEsc(svPosTxt(x.p)):''}</span></div><div class="sc">${Math.round(x.s)}</div></div>`).join('')
       :'<div class="ge">Kein Spieler gefunden</div>';
     res.classList.add('open');
     res.querySelectorAll('.gi').forEach(g=>g.onmousedown=e=>{ e.preventDefault(); go(+g.dataset.i); });

@@ -169,7 +169,7 @@ const SV50_PRESETS={
   tw:{t:'Torhüter',cols:['alter','bet','note','ein','min','last','status'],only:p=>p.pos==='TW'}
 };
 const SV50_COLS={
-  pos:{t:'Pos',v:(p)=>TR_POS.indexOf(p.pos)<0?99:TR_POS.indexOf(p.pos),h:(p)=>svEsc(p.pos||'–')},
+  pos:{t:'Pos',v:(p)=>TR_POS.indexOf(p.pos)<0?99:TR_POS.indexOf(p.pos),h:(p)=>svEsc(svPosTxt(p)||'?')},
   pos2:{t:'Auch',v:(p)=>(p.pos2||[]).length?0:1,h:(p)=>svEsc((p.pos2||[]).join(', ')||'–')},
   alter:{t:'Alter',v:(p)=>p.alter==null?999:p.alter,h:(p)=>p.alter!=null?p.alter+(p.alterCa||!p.geb?'~':''):'<i class="miss50">?</i>'},
   fuss:{t:'Fuß',v:(p)=>p.fuss||'~',h:(p)=>p.fuss?svEsc(p.fuss):'<i class="miss50">?</i>'},
@@ -181,7 +181,7 @@ const SV50_COLS={
   tore:{t:'T / V',v:(p,s)=>-(s.tore*10+s.vor),h:(p,s)=>s.tore||s.vor?`${s.tore} / ${s.vor}`:'–'},
   last:{t:'Zuletzt da',v:(p,s)=>s.last?-Number(s.last.replace(/-/g,'')):0,h:(p,s)=>s.last?TRC.fmt(s.last):'–'},
   status:{t:'Status',v:(p,s)=>s.inj?0:1,h:(p,s)=>s.inj?`<span class="trpill bad">🩹 ${svEsc(s.inj.dg)}</span>`:(p.kader===2&&SV50.team==='alle'?'<small>II</small>':'<span class="ok50">verfügbar</span>')},
-  mscore:{t:'MScore',v:(p)=>{ try{ return -scores(p).total; }catch(e){ return 0; } },h:(p)=>{ try{ const t=Math.round(scores(p).total); return `<b style="color:${tierColor(t)}">${t}</b>`; }catch(e){ return '–'; } }},
+  mscore:{t:'Stärke',v:(p)=>{ try{ return -scores(p).total; }catch(e){ return 0; } },h:(p)=>{ try{ const t=Math.round(scores(p).total); return `<b style="color:${tierColor(t)}">${t}</b>`; }catch(e){ return '–'; } }},
   zuk:{t:'Nächste Saison',v:(p)=>{ const z=sv50Zuk(p); return z?z[0]:'~'; },h:(p)=>{ const z=sv50Zuk(p); return z?`<span class="z50 ${z[1]}">${svEsc(z[0])}</span>`:'<small>offen</small>'; }},
   tel:{t:'Handy',v:(p)=>(kxOf(p.id).tel?0:1),h:(p)=>{ const k=kxOf(p.id); return k.tel?`<a href="${svEsc(kxWa(k.tel))}" target="_blank" rel="noopener" data-stop50>${svEsc(kxTelFmt(k.tel))}</a>${k.optout?' <small>abgemeldet</small>':''}`:'<i class="miss50">fehlt</i>'; }},
   mail:{t:'E-Mail',v:(p)=>(kxOf(p.id).email?0:1),h:(p)=>{ const k=kxOf(p.id); return k.email?`<a href="mailto:${svEsc(k.email)}" data-stop50>${svEsc(k.email)}</a>`:'<i class="miss50">fehlt</i>'; }},
@@ -968,7 +968,7 @@ kd4AddPicker=function(){
   M.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{ mode=b.dataset.am; M.querySelectorAll('[data-am]').forEach(x=>x.classList.toggle('on',x===b)); draw(); });
   const hatG=p=>SV4.gs.some(x=>x.player_id===p.id);
   const draw=()=>{ const t=svNorm?svNorm(q.value):q.value.toLowerCase(); const L=players.filter(p=>sv4Team(p,s)!==team&&(!t||(svNorm?svNorm(p.name+' '+p.club):(p.name+' '+p.club).toLowerCase()).includes(t))).sort((a,b)=>kd4Ovr(b)-kd4Ovr(a)).slice(0,30);
-    R.innerHTML=L.map(p=>`<button type="button" data-pick="${svEsc(p.id)}"><b>${svEsc(p.name)}</b><span>${svEsc(p.club)} · ${svEsc(p.pos||'')} · ${kd4Ovr(p)}</span><i>${svEsc(sv4Bez(p).t)}${mode==='neu'&&!p.own?(hatG(p)?' · Gespräch ✓':' · noch kein Gespräch'):''}</i></button>`).join('')||'<p class="note">Niemand gefunden.</p>';
+    R.innerHTML=L.map(p=>`<button type="button" data-pick="${svEsc(p.id)}"><b>${svEsc(p.name)}</b><span>${svEsc(p.club)} · ${svEsc(svPosTxt(p)||'')} · ${kd4Ovr(p)}</span><i>${svEsc(sv4Bez(p).t)}${mode==='neu'&&!p.own?(hatG(p)?' · Gespräch ✓':' · noch kein Gespräch'):''}</i></button>`).join('')||'<p class="note">Niemand gefunden.</p>';
     R.querySelectorAll('[data-pick]').forEach(b=>b.onclick=async()=>{ const p=sv4P(b.dataset.pick);
       if(mode==='neu'&&!p.own&&!hatG(p)){
         R.innerHTML=`<div class="gate60"><b>${svEsc(p.name)}: erst das Gespräch</b><p>Als Neuzugang zählt nur, mit wem schon gesprochen wurde. Halte kurz fest, was besprochen ist, dann kommt er in den Kaderplan. Bis dahin kannst du ihn als Wunschspieler in der Traumelf planen.</p>
@@ -1127,8 +1127,8 @@ function sv70MarktFilter(){
   const f=SV70.f, row=document.createElement('div'); row.className='frow f70';
   row.innerHTML=`<span class="lbl">Fuß</span><select id="f70fuss"><option value="">egal</option><option value="Links"${f.fuss==='Links'?' selected':''}>Links</option><option value="Rechts"${f.fuss==='Rechts'?' selected':''}>Rechts</option></select>
     <span class="chip${f.stamm?' on':''}" data-f70="stamm" title="Mindestens 60 % der Spiele">Stammspieler</span>
-    <span class="chip${f.basis?' on':''}" data-f70="basis" title="MScore beruht zu mindestens 50 % auf echten Daten">Gute Datenbasis</span>
-    <span class="lbl">MScore ab</span><input class="numin" id="f70min" type="number" min="0" max="100" placeholder="0" value="${f.min||''}">`;
+    <span class="chip${f.basis?' on':''}" data-f70="basis" title="Mindestens 50 % echte Daten">Gute Datenbasis</span>
+    <span class="lbl">Stärke ab</span><input class="numin" id="f70min" type="number" min="0" max="100" placeholder="0" value="${f.min||''}">`;
   bar.appendChild(row);
   row.querySelector('#f70fuss').onchange=e=>{ f.fuss=e.target.value; renderList(); };
   row.querySelector('#f70min').oninput=e=>{ f.min=+e.target.value||0; renderList(); };

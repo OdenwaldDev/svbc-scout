@@ -84,9 +84,9 @@ if(typeof renderMvpCard==='function'){ const _rm94=renderMvpCard; renderMvpCard=
 /* ---------- Startseite: groß steht die Stärke, die Wechselchance daneben ---------- */
 { const _rh94=renderHome; renderHome=function(){ const r=_rh94.apply(this,arguments);
   try{ document.querySelectorAll('#homeCrm .rankrow[data-id], #homeWechsel .rankrow[data-id]').forEach(row=>{ const p=players.find(x=>x.id===row.dataset.id); if(!p)return; const s=scores(p), W=typeof wscoreSafe==='function'?wscoreSafe(p):null;
-      const rk=row.querySelector('.rk'); if(rk){ rk.textContent=Math.round(s.total); rk.style.color=tierColor(s.total); rk.title='Spielstärke (MScore)'; }
+      const rk=row.querySelector('.rk'); if(rk){ rk.textContent=Math.round(s.total); rk.style.color=tierColor(s.total); rk.title='Stärke'; }
       row.querySelectorAll('.rn i').forEach(i=>{ i.innerHTML=i.innerHTML.replace(/Stärke \d+ · /,'').replace(/Transfer-Chance [\d.]+/g,W?`Wechsel-Index ${W.w} (Heuristik)`:'').replace(/ · Wechsel-Index \d+/,'').replace(/^ · /,''); }); });
-    const n=document.querySelector('#homeWechsel .note'); if(n)n.innerHTML='Große Zahl = <b>Spielstärke</b> (MScore). Sortiert nach Wechsel-Index (Heuristik aus öffentlichen Signalen, keine Wahrscheinlichkeit), nur Spieler ab Stärke 45. Zeile antippen öffnet das Profil mit Begründung.';
+    const n=document.querySelector('#homeWechsel .note'); if(n)n.innerHTML='Große Zahl = <b>Stärke</b>. Sortiert nach Wechsel-Index (Heuristik aus öffentlichen Signalen, keine Wahrscheinlichkeit), nur Spieler ab Stärke 45. Zeile antippen öffnet das Profil mit Begründung.';
   }catch(e){ console.warn('Home 0.9',e); }
   return r; }; }
 
@@ -267,7 +267,11 @@ function svSpielerAntwort(text){
   const own=hits.filter(p=>p.own); if(own.length)hits=own;
   if(hits.length>1){ const L=hits.slice(0,5).map(p=>`${p.name} (${(p.cur&&p.cur.club)||p.club||'?'})`); return `Meinst du ${L.slice(0,-1).join(', ')} oder ${L[L.length-1]}? Schreib bitte den vollen Namen.`; }
   const p=hits[0], s=scores(p), S=s&&s.m4; if(!s)return null;
-  const n=v=>sv4Num(v,1), club=(p.cur&&p.cur.club)||p.club||'', kopf=[p.pos,p.alter!=null?p.alter+' J.':null,club].filter(Boolean).join(', ');
+  const n=v=>sv4Num(v,1), club=(p.cur&&p.cur.club)||p.club||'', kopf=[svPosTxt(p),p.alter!=null?p.alter+' J.':null,club].filter(Boolean).join(', ');
+  if(s.v1){ const w=v1Wert(p.id)||{}, si=(V1_SICH[w.sicherheit]||[])[0], fo=V1_FORM[w.form];   // seit 0.99.63 zählt nur noch die Stärke
+    const zz=[`${p.name}${kopf?' ('+kopf+')':''}: Stärke ${Math.round(s.total)}, ${v1Einordnung(s.total)}.`];
+    if(si)zz.push(`Sicherheit ${si}.`); if(fo&&w.form&&w.form!=='unbekannt')zz.push(fo[1]+'.'); if(w.p24!=null)zz.push(`In 24 Monaten erwartet: ${w.p24}.`);
+    zz.push('Die Gründe stehen im Profil unter „Warum diese Stärke?“.'); return zz.join(' '); }
   const z=[`${p.name}${kopf?' ('+kopf+')':''}: Spielstärke ${n(s.total)}, ${sv93Niveau(s.total)}.`];
   if(S&&S.pot!=null&&S.pot-s.total>=1)z.push(`Potenzial ${n(S.pot)}.`);
   if(S&&S.prog!=null&&Math.abs(S.prog-s.total)>=0.5&&S.man==null)z.push(`Prognose ${sv94Next()}: ${n(S.prog)}${S.rate<0?', das Alter kostet langsam Tempo':''}.`);

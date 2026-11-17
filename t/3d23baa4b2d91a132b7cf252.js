@@ -751,7 +751,7 @@ function scSil(p){ return `<svg class="fut-sil" viewBox="0 0 100 100" aria-hidde
 function scSeason(p){ const c=p.cur||{}; const t=p.isJugend?p.tore:c.tore, sp=p.isJugend?p.teamSp:c.spiele; return t!=null?`${t} Tore${sp?' in '+sp+' Sp.':''}`:'–'; }
 /* opts: size ('lg'|'sm'|'xs'), tier (Sonderkarte, z. B. 'totw'), badge (Text oben), sub (Zeile unter Namen), flip:false */
 function fcCard(p,o){
-  o=o||{}; const R=scRate(p), src=p.photo||p.photoUrl, pos=p.isJugend?'U19':(p.pos||'–'), club=(p.cur&&p.cur.club)||p.club||'';
+  o=o||{}; const R=scRate(p), src=p.photo||p.photoUrl, pos=p.isJugend?'U19':(svPosTxt(p,1)||'?'), club=(p.cur&&p.cur.club)||p.club||'';
   const nm=String(p.name||'').split(' '), last=nm.slice(-1)[0]||'', first=nm.slice(0,-1).join(' ');
   const ai=o.ai||null, W=!p.own&&typeof wscoreSafe==='function'?wscoreSafe(p):null;
   let sb=null; try{ sb=typeof sbOf==='function'&&!p.isJugend?sbOf(p):null; }catch(e){}
@@ -759,11 +759,11 @@ function fcCard(p,o){
   if(!o.sub&&role)o=Object.assign({},o,{sub:svEsc(role)});
   return `<div class="fut ${o.tier||R.tier} ${o.size||''}${o.anim?' fut-anim':''}" data-fut="${svEsc(p.id)}" style="${o.delay!=null?'--d:'+o.delay+'ms':''}" tabindex="0" role="button" aria-label="${svEsc(p.name)}, ${R.ovr}">
     <div class="fut-in"><div class="fut-f"><div class="fut-sh"></div>
-      <div class="fut-ov"><b>${R.ovr}</b><span>${svEsc(pos)}</span>${sb&&sb.foot&&typeof SB_FOOT!=='undefined'&&SB_FOOT[sb.foot]?`<span class="fut-foot" title="Starker Fuß: ${svEsc(sb.foot)}">${svEsc(SB_FOOT[sb.foot])}</span>`:''}${scCrest(club)}</div>
+      <div class="fut-ov"><b>${R.ovr}</b><span${pos.length>3?' class="fut-teil"':''}>${svEsc(pos)}</span>${R.v1&&R.v1.form&&R.v1.form!=='unbekannt'?`<span class="fut-form f-${svEsc(R.v1.form)}" title="${svEsc(V1_FORM[R.v1.form][1])}">${V1_FORM[R.v1.form][0]}</span>`:''}${sb&&sb.foot&&typeof SB_FOOT!=='undefined'&&SB_FOOT[sb.foot]?`<span class="fut-foot" title="Starker Fuß: ${svEsc(sb.foot)}">${svEsc(SB_FOOT[sb.foot])}</span>`:''}${scCrest(club)}</div>
       ${o.badge?`<div class="fut-badge">${o.badge}</div>`:''}
       <div class="fut-pic">${scSil(p)}${src?`<img src="${src}" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.remove()">`:''}</div>
       <div class="fut-nm">${first?`<small>${svEsc(first)}</small>`:''}<b>${svEsc(last)}</b>${o.sub?`<i>${o.sub}</i>`:''}</div>
-      <div class="fut-st">${R.st.map(([k,v])=>`<span><b>${v==null?'–':v}</b>${k}</span>`).join('')}</div></div>
+      <div class="fut-st${R.v1?' v1':''}">${R.st.map(([k,v])=>`<span><b>${v==null?'-':v}</b>${k}</span>`).join('')}</div></div>
     <div class="fut-b"><b>${svEsc(p.name)}</b><small>${svEsc(club)}${p.isJugend?' · '+svEsc(p.sub||p.staffel||''):''}</small>
       <dl><dt>Saison</dt><dd>${svEsc(scSeason(p))}</dd>
       ${p.km!=null?`<dt>Entfernung</dt><dd>${p.km} km</dd>`:''}

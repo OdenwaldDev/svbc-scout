@@ -23,7 +23,7 @@ function s1Vergleich(ids,b){
   const M=svModal(`<h2 style="margin:0 0 4px">Vergleich</h2>${b?`<p class="note">${k1E(b.titel)}, Zielniveau ${s1Ziel(b)}</p>`:''}
     <div class="k1-tw"><table class="s1-vgl"><thead><tr><th></th>${L.map(s=>`<th><span class="lnk" data-svp="${k1E(s.id)}">${k1E(s.name)}</span></th>`).join('')}</tr></thead><tbody>
       <tr><th>Stärke</th>${z('ca',s=>`<b>${s.ca??'?'}</b>`)}</tr><tr><th>Sicherheit</th>${z('sicherheit')}</tr><tr><th>Form</th>${z('form',s=>s.form==null?'?':(s.form>0?'+':'')+s.form)}</tr>
-      <tr><th>24 Monate</th>${z('p24')}</tr><tr><th>Position</th>${z('pos',s=>k1E([s.pos].concat(s.pos2).filter(Boolean).join(', ')))}</tr><tr><th>Alter</th>${z('alter')}</tr>
+      <tr><th>24 Monate</th>${z('p24')}</tr><tr><th>Position</th>${z('pos',s=>k1E([svPosVon(s)].concat(s.pos2).filter(Boolean).join(', ')))}</tr><tr><th>Alter</th>${z('alter')}</tr>
       <tr><th>Verein</th>${z('club',s=>k1E([s.club,s.liga].filter(Boolean).join(', ')||'?'))}</tr>${attr}</tbody></table></div>
     ${saetze.length?`<ul class="s1-satz">${saetze.map(t=>`<li>${k1E(t)}</li>`).join('')}</ul>`:''}
     <div class="btnrow"><button class="btn ghost" type="button" data-x>Schließen</button></div>`);
@@ -64,7 +64,7 @@ function s1Markt(){
       <label>bis Alter <input data-s1mf="alter" type="number" min="16" max="45" value="${k1E(f.alter)}" style="width:70px"></label>
       <button class="btn sm ghost" type="button" data-s1kl="best">Klassischer Markt</button></div>
     <div class="card"><div class="k1-tw"><table class="k1-t"><thead><tr>${th('name','Spieler')}<th>Pos</th><th>Verein</th>${th('ca','Stärke')}${th('p24','24M')}${th('sicherheit','Sicherheit')}${th('alter','Alter')}<th>Bedarf</th></tr></thead><tbody>
-      ${L.map(s=>`<tr><td><span class="lnk" data-svp="${k1E(s.id)}">${k1E(s.name)}</span></td><td>${k1E(s.pos||'?')}</td><td><small>${k1E([s.club,s.liga].filter(Boolean).join(' · '))}</small></td>
+      ${L.map(s=>`<tr><td><span class="lnk" data-svp="${k1E(s.id)}">${k1E(s.name)}</span></td><td>${k1E(svPosVon(s)||'?')}</td><td><small>${k1E([s.club,s.liga].filter(Boolean).join(' · '))}</small></td>
         <td><b>${s.ca}</b></td><td>${s.p24??''}</td><td><span class="v1-c s-${k1E(s.sicherheit)}">${k1E(s.sicherheit||'?')}</span></td><td>${s.alter??''}</td><td>${s1BedarfKnopf(s.p)}</td></tr>`).join('')}</tbody></table></div>
       <p class="note small">${n} Spieler${n>150?', die ersten 150 gezeigt. Filter eingrenzen.':'.'}</p></div>`;
 }

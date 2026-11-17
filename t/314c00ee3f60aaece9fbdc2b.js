@@ -778,8 +778,7 @@ async function v1Profil(id){
 }
 
 /* ---------- 0.99: „Was bedeuten die Zahlen?“ ----------
-   Im Profil stehen zwei Zahlen nebeneinander, die Stärke im Kreis und der MScore auf der Karte. Sie haben
-   verschiedene Skalen und messen nicht dasselbe. Die Erklärung steht deshalb direkt dort, wo beide zu sehen sind. */
+   Die Erklärung steht direkt im Profil. Seit 0.99.63 zeigt auch die Karte die Stärke, der MScore ist aus der Anzeige raus. */
 function v1Erklaerung(){
   const leiter=V1_ANKER.slice(0,6).map(([n,l])=>`<span><b>${n}</b>${v1E(l)}</span>`).join('');
   return `<details class="v1-was"${V1.offen==='was'?' open':''}><summary>${SVI('info')} Was bedeuten die Zahlen?</summary>
@@ -793,17 +792,14 @@ function v1Erklaerung(){
           <li><i class="s-mittel"></i><span><b>Orange</b> heißt mittel: gute Grundlage, aber noch nicht stabil.</span></li>
           <li><i class="s-niedrig"></i><span><b>Grau gestrichelt</b> heißt unsicher: wenig Daten, die Zahl kann sich noch deutlich bewegen.</span></li></ul>
         <p>Die Farbe sagt also nichts darüber, ob ein Spieler gut ist. Ein grüner Kreis mit 55 ist eine sichere 55.</p></div>
-      <div class="v1-was-k"><h5><i class="v1-pk karte"></i>Die Zahl auf der Karte: MScore</h5>
-        <p>Der ältere Wert. Er rechnet Einsätze, Leistung, Potenzial und Eye-Test der laufenden Saison und der drei Jahre davor zusammen.</p>
-        <p>Er hat eine andere Skala: 40 ist ein Stammspieler der Kreisliga C, 55 der Kreisliga B, 70 der Kreisliga A, 85 der Kreisoberliga. Deshalb stehen im Kreis und auf der Karte verschiedene Zahlen, auch wenn beide dasselbe Niveau meinen.</p>
-        <p>Die kleinen Werte darunter: <b>EIN</b> Einsatz, <b>LEI</b> Leistung, <b>POT</b> Potenzial, <b>EYE</b> Eye-Test, <b>TRN</b> Training, <b>SPL</b> Spiel.</p></div>
+      <div class="v1-was-k"><h5><i class="v1-pk karte"></i>Die Zahl auf der Karte: dieselbe Stärke</h5>
+        <p>Auf der Karte steht dieselbe Zahl wie im Kreis. Der Pfeil daneben ist die Form: steigend, normal oder fallend. Ohne Pfeil kennen wir die Form noch nicht.</p>
+        <p>Die kleinen Werte darunter: <b>FORM</b> die Form der letzten Spiele, <b>24 M</b> die vorsichtige Erwartung in 24 Monaten, <b>SICHER</b> wie belastbar die Zahl ist.</p>
+        <p>Der frühere MScore wird nicht mehr gezeigt. Überall in der App zählt die Stärke.</p></div>
     </div>
-    <p class="v1-was-f">Für Kaderplanung und Top-Elf zählt die Stärke im Kreis. Passt eine Zahl nicht, sag es über „Bewertung prüfen“.</p></details>`; }
-// Unter der Karte ein Weg zur Erklärung, damit niemand raten muss, was die große Zahl ist
-function v1KartenHinweis(M,box,id){ const c=M.querySelector('.pf4-card'); if(!c||c.querySelector('.v1-kh'))return;
-  const d=document.createElement('button'); d.type='button'; d.className='v1-kh'; d.innerHTML=`Große Zahl auf der Karte: MScore. ${SVI('info')} <u>Was bedeutet das?</u>`;
-  d.onclick=()=>{ V1.offen='was'; v1Zeichnen(box,id); const w=box.querySelector('.v1-was'); if(w)w.scrollIntoView({block:'start',behavior:'smooth'}); };
-  c.appendChild(d); }
+    <p class="v1-was-f">Für Kaderplanung, Top-Elf, Listen und Karte zählt die Stärke. Passt eine Zahl nicht, sag es über „Bewertung prüfen“.</p></details>`; }
+// Seit 0.99.63 steht auf der Karte die Stärke selbst, der Hinweis auf den MScore entfällt
+function v1KartenHinweis(M,box,id){ const c=M.querySelector('.pf4-card .v1-kh'); if(c)c.remove(); }
 
 function v1Zeichnen(box,id){
   const D=V1.profil[id]||{}, S=D.stand, p=typeof sv4P==='function'?sv4P(id):null;

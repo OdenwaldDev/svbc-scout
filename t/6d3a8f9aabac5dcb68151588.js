@@ -932,7 +932,7 @@ function suRecent(){ if(SU.recent)return SU.recent; try{ SU.recent=JSON.parse(lo
 function suLiga(p){ try{ return typeof svLigaText==='function'?svLigaText(p):((LIGA_NAME&&LIGA_NAME[p.liga])||p.liga||''); }catch(e){ return p.liga||''; } }
 function suItem(p,q,i,sel,fz){
   const club=(p.cur&&p.cur.club)||p.club||'', m=suScore(p);
-  return `<div class="gi${i===sel?' sel':''}" role="option" aria-selected="${i===sel}" data-i="${i}">${avaHtml(p)}<div style="min-width:0"><b>${q&&!fz?suMark(p.name,q):svEsc(p.name)}${p.own?' <i class="su-own">eigener</i>':''}${p.star?' <i class="su-star">★</i>':''}</b><span>${svEsc(club)}${club?' · ':''}${svEsc(suLiga(p))}${p.pos?' · '+svEsc(p.pos):''}${p.alter!=null?' · '+p.alter:''}</span></div><div class="sc">${Math.round(m)}</div></div>`;
+  return `<div class="gi${i===sel?' sel':''}" role="option" aria-selected="${i===sel}" data-i="${i}">${avaHtml(p)}<div style="min-width:0"><b>${q&&!fz?suMark(p.name,q):svEsc(p.name)}${p.own?' <i class="su-own">eigener</i>':''}${p.star?' <i class="su-star">★</i>':''}</b><span>${svEsc(club)}${club?' · ':''}${svEsc(suLiga(p))}${p.pos?' · '+svEsc(svPosTxt(p)):''}${p.alter!=null?' · '+p.alter:''}</span></div><div class="sc">${Math.round(m)}</div></div>`;
 }
 // Bereiche der App, die die Person öffnen darf, nach Titel, Untertitel und Stichworten
 const SU_STICH={kalender:'termine kalender aufgaben planung geburtstag',sponsoring:'partner firmen vertrag rechnung präsentation',helfer:'helfer ehrenamt whatsapp gruppe',

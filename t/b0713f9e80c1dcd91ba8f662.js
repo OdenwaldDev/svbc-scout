@@ -229,7 +229,7 @@ function sv90Traum(){
     <div class="kd4-main">
       <div class="card"><div class="pitch4 fut-noflip"><div class="pl4"></div>${F.map(([role],i)=>card(L.slots[i],role,i)).join('')}</div></div>
       <div class="card sx90-side">
-        <div class="sx90-cmp"><div><span>Traumelf</span><b style="color:${tierColor(avg(ps)||0)}">${avg(ps)??'–'}</b><small>Ø MScore · ${ps.length}/11</small></div>
+        <div class="sx90-cmp"><div><span>Traumelf</span><b style="color:${tierColor(avg(ps)||0)}">${avg(ps)??'–'}</b><small>Ø Stärke · ${ps.length}/11</small></div>
           <div><span>Kaderplan</span><b style="color:${tierColor(avg(kIds.map(sv4P))||0)}">${avg(kIds.map(sv4P))??'–'}</b><small>${kp?'Startelf im Kaderplan':'noch keine Aufstellung im Kaderplan'}</small></div></div>
         <h4 class="sec60">Wunschspieler in dieser Elf <small>${ext.length}</small></h4>
         ${ext.map(p=>{ const g=SV4.gs.some(x=>x.player_id===p.id); return `<div class="sx90-w"><button type="button" class="kr4-n" data-svp="${svEsc(p.id)}"><b>${svEsc(p.name)}</b><small>${svEsc((p.cur&&p.cur.club)||p.club||'')} · ${svEsc(sv90TStat(p).t)}</small></button>
@@ -263,7 +263,7 @@ function sv90TPick(slot){
     const Lp=players.filter(p=>!p.isJugend||p.own).filter(p=>!t||(svNorm?svNorm(p.name+' '+(p.club||'')):(p.name+' '+(p.club||'')).toLowerCase()).includes(t))
       .sort((a,b)=>(t?0:fit(b)-fit(a))||kd4Ovr(b)-kd4Ovr(a)).slice(0,40);
     R.innerHTML=(cur?`<button type="button" data-tp90="" class="rm"><b>Platz leeren</b></button>`:'')+Lp.map(p=>{ const st=sv90TStat(p);
-      return `<button type="button" data-tp90="${svEsc(p.id)}" class="${p.id===cur?'on':''}"><b>${svEsc(p.name)}</b><span>${svEsc((p.cur&&p.cur.club)||p.club||'')} · ${svEsc(p.pos||'')} · ${kd4Ovr(p)}</span><i>${svEsc(st.t)}</i></button>`; }).join('')||'<p class="note">Niemand gefunden.</p>';
+      return `<button type="button" data-tp90="${svEsc(p.id)}" class="${p.id===cur?'on':''}"><b>${svEsc(p.name)}</b><span>${svEsc((p.cur&&p.cur.club)||p.club||'')} · ${svEsc(svPosTxt(p)||'')} · ${kd4Ovr(p)}</span><i>${svEsc(st.t)}</i></button>`; }).join('')||'<p class="note">Niemand gefunden.</p>';
     R.querySelectorAll('[data-tp90]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.tp90||null, N={formation:L.formation,slots:Object.assign({},L.slots)};
       if(id){ const from=Object.keys(N.slots).find(k=>N.slots[k]===id); if(from!=null){ if(cur)N.slots[from]=cur; else delete N.slots[from]; } N.slots[slot]=id; } else delete N.slots[slot];
       try{ await sv90TSave(N); closeOverlay(); sv90Traum(); }catch(x){ kToast('⚠️ '+x.message); } }); };
