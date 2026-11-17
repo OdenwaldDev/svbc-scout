@@ -489,6 +489,133 @@ html.bereit .foto-karte{opacity:1}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   #intro{display:none}
 }
+
+/* ---------- Bewegung (0.99.75) ----------
+   Albert, 17.11.2026: Überfahren und Antippen sollen Farbe und Bewegung zeigen, die Übergänge zwischen den Szenen sollen Kraft haben.
+   Alles hier ist Zugabe: Ohne Maus bleibt die Welle beim Tippen, bei „weniger Bewegung“ bleibt nur der Farbwechsel. */
+.szene{overflow-x:hidden}
+/* Übergänge: Die alte Szene zieht in Laufrichtung ab, die neue kommt von der anderen Seite, die Überschrift klappt auf. */
+.szene.raus>.in{transition:transform .32s cubic-bezier(.5,0,.8,.4),opacity .26s,filter .32s;transform:translateX(-7%) scale(.97);opacity:0;filter:blur(6px)}
+#film[data-r="z"] .szene.raus>.in{transform:translateX(7%) scale(.97)}
+#film[data-r="v"] .szene:not(.los) .auf:not(h2){transform:translate(38px,14px)}
+#film[data-r="z"] .szene:not(.los) .auf:not(h2){transform:translate(-38px,14px)}
+.szene h2.auf{opacity:1;clip-path:inset(0 0 100% 0);transform:translateY(36%) skewY(3deg)}
+.szene.los h2.auf{clip-path:inset(-14% -8% -18% -8%);transform:none;transition:clip-path .75s cubic-bezier(.16,1,.3,1),transform .75s cubic-bezier(.16,1,.3,1);transition-delay:calc(.1s + var(--v,0)*90ms)}
+.wisch{background:linear-gradient(90deg,var(--hb) 0 1.2%,var(--nacht) 1.2% 90%,var(--or) 90%)}
+#film[data-r="z"].wischt .wisch{animation-name:wischZ}
+@keyframes wischZ{0%{transform:translateX(112%) skewX(-14deg)}45%,55%{transform:translateX(0) skewX(-14deg)}100%{transform:translateX(-112%) skewX(-14deg)}}
+/* Lichtkegel am Zeiger */
+.spot{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .8s;background:radial-gradient(circle 30vmax at var(--mx,50%) var(--my,30%),rgba(190,228,255,.14),transparent 72%)}
+html.zeiger .spot{opacity:1}
+/* Welle beim Tippen */
+.stf,.lz button,.zettel .zwei-k button{position:relative;overflow:hidden}
+.anstoss button{overflow:hidden}
+.tw{position:absolute;width:26%;aspect-ratio:1;border-radius:50%;background:currentColor;opacity:.3;pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:tw .6s ease-out forwards}
+@keyframes tw{to{transform:translate(-50%,-50%) scale(9);opacity:0}}
+/* Woher: Der Satz füllt sich von links, daneben wächst ein Strich */
+.sa{position:relative;background:linear-gradient(90deg,var(--kreide) 0 50%,transparent 50%) 100% 0/200% 100% no-repeat;-webkit-background-clip:text;background-clip:text;transition:color .35s,opacity .35s,transform .5s cubic-bezier(.2,.9,.3,1.2),background-position .5s cubic-bezier(.3,0,.2,1)}
+.sa::before{content:"";position:absolute;left:-.3em;top:.16em;bottom:.16em;width:.1em;background:var(--or);transform:scaleY(0) skewX(-12deg);transform-origin:50% 100%;transition:transform .35s cubic-bezier(.2,.9,.3,1.3)}
+.sa:active{background-position:0 0;transform:translateX(.14em) scale(.985)}
+.sa:active em{color:var(--or)}
+.sa[aria-pressed="true"]{transform:translateX(.22em) scale(1.03)}
+.sa[aria-pressed="true"]::before,.sa:active::before{transform:scaleY(1) skewX(-12deg)}
+/* Bildkarten: Strich unten, beim Wählen ein kurzer Stoß */
+.bk::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--or);transform:scaleX(0);transform-origin:0 50%;transition:transform .4s cubic-bezier(.3,0,.2,1)}
+.bk[aria-pressed="true"]::after{transform:scaleX(1)}
+.bk[aria-pressed="true"]{animation:stoss .42s cubic-bezier(.2,1.4,.4,1)}
+@keyframes stoss{0%{transform:scale(1.05)}100%{transform:scale(.97)}}
+.bk:active{transform:scale(.96)}
+/* Stufen */
+.stf{transition:background .3s,color .3s,margin .4s cubic-bezier(.2,.9,.3,1.2),transform .35s cubic-bezier(.2,.9,.3,1.3)}
+.stf::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--or);transform:scaleY(0);transform-origin:50% 100%;transition:transform .3s cubic-bezier(.3,0,.2,1)}
+.stf.s3::before{background:var(--gold)}
+.stf:active{transform:translateX(6px)}
+/* Knöpfe und Zeilen */
+.knopf{overflow:hidden}
+.knopf::after{content:"";position:absolute;top:0;bottom:0;left:0;width:34%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-140%) skewX(-20deg);pointer-events:none}
+.knopf svg{transition:transform .3s cubic-bezier(.2,.9,.3,1.4)}
+.zeile{transition:color .25s,border-color .25s}
+.zt .bild img{transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.lz button,.br{transition:background .25s,color .25s}
+/* Ticket: Hinweis zum Hochstufen im weißen Kasten */
+.tk-in .rat{animation:hoch .6s .45s cubic-bezier(.16,1,.3,1) both}
+.tk-in .rat p{margin:0;font-weight:500;color:var(--tinte)}
+.tk-in .rat button{display:inline-flex;align-items:center;gap:8px;margin-top:9px;min-height:40px;padding:0 18px;background:var(--navy);color:#fff;font:800 16px/1 var(--d);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);transition:background .25s,transform .25s cubic-bezier(.2,.9,.3,1.4)}
+.tk-in .rat button svg{width:16px;height:16px;transition:transform .3s cubic-bezier(.2,.9,.3,1.4)}
+.tk-in .rat button:active{transform:scale(.96)}
+.gehoert small{font:700 12.5px/1.3 var(--t);letter-spacing:.14em;text-transform:uppercase;color:var(--hb);margin-top:5px}
+/* Anpfiff: eine Frage, ein Knopf, und der pulsiert */
+.ja-in .eyebrow{margin-bottom:4px}
+.anstoss{width:min(62vw,250px,32vh);margin-top:16px}
+.anstoss .ring{position:absolute;inset:18%;border-radius:50%;border:2px solid var(--or);opacity:0;pointer-events:none;animation:ringe 2.4s cubic-bezier(.2,.6,.3,1) infinite}
+.anstoss .ring.r2{animation-delay:1.2s}
+@keyframes ringe{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.8);opacity:0}}
+.anstoss button{font-size:clamp(21px,5.6vw,27px);animation:ruf 2.4s infinite,puls 1.2s ease-in-out infinite alternate}
+@keyframes puls{from{transform:scale(1)}to{transform:scale(1.07)}}
+.anstoss button:active{animation-play-state:paused}
+.ja-wege{gap:2px 30px;margin-top:18px}
+.ja-wege .zeile.leise{font-size:14.5px;opacity:.8}
+.final.fest h2{font-size:clamp(46px,min(13vw,10vh),120px)}
+.final.fest .hand{max-width:15em}
+.final.fest .knopf{margin-top:8px}
+@media(hover:hover){
+  .sa:hover{background-position:0 0;transform:translateX(.22em)}
+  .sa:hover em{color:var(--or)}
+  .sa:hover::before{transform:scaleY(1) skewX(-12deg)}
+  .sa[aria-pressed="true"]:hover{transform:translateX(.22em) scale(1.03)}
+  .saetze.gewaehlt .sa:not([aria-pressed="true"]):hover{opacity:.9;transform:translateX(.18em) scale(.88)}
+  .bk:hover{transform:translateY(-6px) perspective(700px) rotateX(calc(var(--ry,0)*-8deg)) rotateY(calc(var(--rx,0)*10deg));box-shadow:0 24px 34px -18px #000,0 0 0 2px var(--hb)}
+  .bk:hover img{filter:none;transform:scale(1.1)}
+  .bk:hover::after{transform:scaleX(1)}
+  .bk[aria-pressed="true"]:hover{box-shadow:0 24px 34px -18px #000,0 0 0 3px var(--or)}
+  .stf:hover{background:#151d52;transform:translateX(10px)}
+  .stf:hover::before{transform:scaleY(1)}
+  .stf[aria-pressed="true"]:hover{background:var(--or)}
+  .stf.s3[aria-pressed="true"]:hover{background:#14110a}
+  .knopf:not([disabled]):hover{background:var(--or2)}
+  .knopf.hell:not([disabled]):hover{background:#fff}
+  .knopf.dunkel:not([disabled]):hover{background:#000}
+  .knopf:not([disabled]):hover::after{transform:translateX(420%) skewX(-20deg);transition:transform .7s cubic-bezier(.3,0,.2,1)}
+  .knopf:not([disabled]):hover svg{transform:translateX(5px)}
+  .zeile:not([disabled]):hover{color:var(--or2);border-bottom-color:var(--or)}
+  .zeile.leise:hover{color:#fff;border-bottom-color:var(--kreide);opacity:1}
+  .zettel .zeile:hover,.zettel .wk .zeile:hover{color:var(--rot);border-bottom-color:var(--rot)}
+  .zt[data-k]:hover{transform:rotate(0deg) translateY(-8px) scale(1.02)}
+  .zt[data-k]:hover .bild img{transform:scale(1.07)}
+  .zt[data-k]:hover .pr span{color:var(--rot)}
+  .lz button:not([aria-pressed="true"]):hover{background:rgba(243,245,250,.12)}
+  .br:hover{color:var(--hb)}
+  .sw:hover i{background:rgba(243,245,250,.4)}
+  .sw[aria-checked="true"]:hover i{background:var(--or2)}
+  .tk-in .rat button:hover{background:var(--rot)}
+  .tk-in .rat button:hover svg{transform:translateX(4px)}
+  .anstoss button:hover{background:var(--or2)}
+  .zettel .zwei-k button{transition:background .25s,color .25s,transform .3s cubic-bezier(.2,.9,.3,1.3)}
+  .zettel .zwei-k button:hover{background:var(--tinte);color:var(--papier);transform:translateX(6px)}
+  #tonB:hover{opacity:1}
+  .route .zur:hover{opacity:1}
+}
+
+/* ---------- Mehr dazu: kleiner Info-Knopf und Blatt von unten (0.99.75) ---------- */
+.ib{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:1.6px solid currentColor;font:700 italic 15px/1 Georgia,'Times New Roman',serif;text-transform:none;letter-spacing:0;cursor:pointer;position:relative;opacity:.8;transition:opacity .2s,background .2s,color .2s,transform .25s cubic-bezier(.2,.9,.3,1.4);flex:none;-webkit-text-stroke:0}
+.ib::after{content:"";position:absolute;inset:-10px}
+.ib:active{transform:scale(.9)}
+.stf{padding-right:54px}
+.stf .ib{position:absolute;right:14px;top:50%;margin-top:-13px}
+.tk h3 .ib{vertical-align:middle;margin-left:10px;margin-top:-6px}
+.zt .ib{position:absolute;right:8px;top:8px;z-index:3;color:#fff;background:rgba(6,10,28,.55);border-color:#fff;opacity:1}
+.info{z-index:59;max-height:82%}
+.info h4,.info .info-in{max-width:640px;margin-inline:auto}
+.info h4 span{min-width:0;overflow-wrap:anywhere}
+.info-in{display:grid;gap:10px;margin-top:12px;font-size:16px;line-height:1.45;color:#eef1fa}
+.info-in .i-l{font:700 clamp(24px,6vw,30px)/1.1 var(--h);color:#fff}
+.info-in h5{margin:6px 0 0;font:700 13px/1 var(--t);letter-spacing:.14em;text-transform:uppercase;color:var(--hb)}
+.info-in ul{border-top:1.5px solid var(--kreide)}
+.info-in li{padding:8px 0 8px 22px;border-bottom:1px solid var(--linie);position:relative;font-size:15.5px;line-height:1.35}
+.info-in li::before{content:"";position:absolute;left:2px;top:15px;width:9px;height:9px;background:var(--or);transform:skewX(-14deg)}
+.info-in .i-p{font:900 italic 24px/1 var(--d);text-transform:uppercase;color:var(--or2)}
+.info-in .i-g{font-size:13.5px;color:var(--grau)}
+@media(hover:hover){.ib:hover{opacity:1;background:var(--kreide);color:var(--navy);border-color:var(--kreide)}.zt .ib:hover{background:#fff;color:var(--navy)}.tk h3 .ib:hover{background:var(--navy);color:#fff;border-color:var(--navy)}}
 </style></head><body><div id="film" data-s="start" data-licht="1">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture><video muted loop playsinline preload="none" data-quer="partner/r-nacht.mp4" data-hoch="partner/r-nachthoch.mp4"></video></div>
@@ -498,6 +625,7 @@ html.bereit .foto-karte{opacity:1}
   </div>
   <div class="schleier"></div>
   <div class="strahl s1"></div><div class="strahl s2"></div>
+  <div class="spot" aria-hidden="true"></div>
 
   <header class="top">
     <img class="wappen" id="wappen" src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach" width="480" height="273" draggable="false">
@@ -559,7 +687,7 @@ html.bereit .foto-karte{opacity:1}
   <!-- 2 Grund -->
   <section class="szene" data-s="antrieb" data-hg="rasen" data-dicht="1">
     <div class="in">
-      <p class="eyebrow auf">Mal angenommen, ihr wärt dabei · bis zu zwei</p>
+      <p class="eyebrow auf">Mal angenommen, ihr wärt dabei · das Wichtigste zuerst</p>
       <h2 class="auf" style="--v:1">Was wäre euch dabei <em>wichtig?</em></h2>
       <div class="karten auf" style="--v:2" data-frage="antrieb">
         <button class="bk" type="button" data-w="kinder" aria-pressed="false"><img src="partner/r-jugend.webp" alt=""><span class="st"></span><b>Kindern etwas ermöglichen<small>Dass hier jedes Kind kicken kann.</small></b></button>
@@ -634,7 +762,6 @@ html.bereit .foto-karte{opacity:1}
         <div style="margin-top:10px" id="tkBox"></div>
         <div class="platz-k">
           <button class="knopf" type="button" id="nehmB">Das passt. Weiter.</button>
-          <div class="reihe"><button class="zeile" type="button" id="kleinB">Eine Nummer kleiner</button><button class="zeile" type="button" id="grossB">Eine Nummer größer</button></div>
         </div>
       </div>
     </div>
@@ -674,17 +801,13 @@ html.bereit .foto-karte{opacity:1}
   <section class="szene" data-s="ja" data-hg="rauch" data-licht="1">
     <div class="in">
       <div class="ja-in" id="jaVor">
-        <h2 class="auf">An&shy;pfiff<em>?</em></h2>
-        <p class="unter auf" style="--v:1">Jetzt seid ihr dran<span data-name data-vor=", " data-leer=""></span>.</p>
-        <p class="ja-was auf" style="--v:1" id="jaWas"></p>
-        <p class="ja-offen" id="jaOffen" hidden></p>
-        <div class="anstoss auf" style="--v:2"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48"/></svg><button type="button" data-ja="dabei">Wir sind dabei</button></div>
-        <div class="ja-wege auf" style="--v:4">
-          <button class="zeile" type="button" data-ja="schrift">Erst schriftlich</button>
-          <button class="zeile" type="button" data-ja="klein">Klein anfangen</button>
-          <button class="zeile" type="button" data-ja="spiel">Erst zum Heimspiel</button>
-          <button class="zeile leise" type="button" data-ja="nein">Heute nicht</button>
+        <p class="eyebrow auf">Jetzt seid ihr dran<span data-name data-vor=", " data-leer=""></span></p>
+        <h2 class="auf" style="--v:1">Seid ihr <em>dabei?</em></h2>
+        <p class="ja-was auf" style="--v:2" id="jaWas"></p>
+        <div class="anstoss auf" style="--v:3"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48"/></svg><i class="ring" aria-hidden="true"></i><i class="ring r2" aria-hidden="true"></i><button type="button" data-ja="dabei">Wir sind<br>dabei</button></div>
+        <div class="ja-wege auf" style="--v:5">
           <button class="zeile leise" type="button" id="fragB">Noch eine Frage?</button>
+          <button class="zeile leise" type="button" data-ja="nein">Heute nicht</button>
         </div>
       </div>
       <div class="final" id="jaNach" hidden></div>
@@ -698,6 +821,8 @@ html.bereit .foto-karte{opacity:1}
   </footer>
 
   <aside class="fragen" id="fragen" aria-label="Fragen und Antworten"><h4>Gute Fragen<button type="button" id="fragX" aria-label="Schließen">×</button></h4><div class="bremsen" id="bremsen"></div></aside>
+
+  <aside class="fragen info" id="info" role="dialog" aria-label="Mehr dazu"><h4><span id="infoT"></span><button type="button" id="infoX" aria-label="Schließen">×</button></h4><div class="info-in" id="infoIn"></div></aside>
 
   <aside class="regie" id="regie" aria-label="Notizen fürs Gespräch">
     <h4>Notizen fürs Gespräch<button type="button" id="regieX" aria-label="Notizen schließen">×</button></h4>
@@ -782,6 +907,7 @@ const LOB={
 };
 const KURZ={kinder:'Kinder',sehen:'Sichtbarkeit',leute:'Gute Leute',netz:'Kontakte',zurueck:'Etwas zurückgeben',vorn:'Vorne dabei sein'};
 const ERST={kinder:'Erst die Kinder',sehen:'Erst gesehen werden',leute:'Erst gute Leute finden',netz:'Erst die anderen Betriebe treffen',zurueck:'Erst etwas zurückgeben',vorn:'Erst vorne dabei sein'};
+const GEWICHT=[4,4,3,3,2,2], ZAHLWORT=['','eine','zwei','drei','vier','fünf'];
 const DANN={kinder:'dann die Kinder',sehen:'dann gesehen werden',leute:'dann gute Leute',netz:'dann die Kontakte',zurueck:'dann etwas zurückgeben',vorn:'dann vorne dabei sein'};
 const BREMSE=[
   ['nutzen','Bringt uns das überhaupt was?','Neue Kunden können wir nicht versprechen. Was wir versprechen können: Euer Name steht dort, wo der Ort zusammenkommt. Und ihr gehört zu denen, die das möglich machen.'],
@@ -803,7 +929,7 @@ const SATZ={
   platz:'Wimpel zeigen, dann still sein. Danach: Stimmt das so?',
   extras:'Höchstens einen Zettel ansprechen. Wenn nichts passt: weiter.',
   bon:'Einmal vorlesen. Eine Saison ist völlig in Ordnung. Läuft von selbst weiter, kündbar bis 31. März.',
-  ja:'Frag offen: Wie machen wir weiter? Jede Antwort ist gut, wenn ein Datum dranhängt.'
+  ja:'Die Frage steht. Jetzt still sein und warten. Wie es weitergeht, kommt erst nach dem Ja.'
 };
 const EINWAND={
   herz:'Falls es zu viel ist: Nur für die Jugend gibt es die Ballpatenschaft für 150 €.',
@@ -819,13 +945,14 @@ const DNAME={herz:'Kinder',buehne:'Sichtbarkeit',team:'Mitarbeiter',netz:'Netzwe
 /* ---------- Zustand ---------- */
 const ORD=['start','worum','verb','antrieb','buehne','groesse','platz','extras','bon','ja'];
 const AKT={verb:['1','Erster Teil','Ihr'],platz:['2','Zweiter Teil','Euer Platz'],ja:['3','Letzter Teil','Anpfiff']};
-const neu=()=>({i:0,name:'',verb:null,antrieb:[],skeptisch:false,platz:null,groesse:null,auto:false,pi:null,extras:new Set(),laufzeit:1,jahr:'',bremse:new Map(),ja:null,eigen:'',wann:'',verl:true});
+const neu=()=>({i:0,name:'',verb:null,antrieb:[],skeptisch:false,platz:null,groesse:null,auto:false,pi:null,extras:new Set(),laufzeit:1,jahr:'',bremse:new Map(),ja:null,weg:null,eigen:'',wann:'',verl:true});
 let S=neu(), laeuft=false, ton=false, sperrBis=0, wFertig=false;
 
 function punkte(){
   const p={herz:0,buehne:0,team:0,netz:0,ehre:0,heimat:0}, add=o=>{ for(const k in o)p[k]+=o[k]; };
   add({hier:{heimat:3},familie:{herz:2,heimat:2},ehemalig:{heimat:3,herz:1},partner:{heimat:2},neu:{}}[S.verb]||{});
-  S.antrieb.forEach((a,i)=>{ add({kinder:{herz:4},sehen:{buehne:4},leute:{team:4},netz:{netz:4},zurueck:{heimat:4,herz:1},vorn:{ehre:4}}[a]); if(i===0)add({[HAUPT[a]]:1}); });
+  // 0.99.75: bis zu sechs Antworten. Die Reihenfolge des Antippens zählt: die ersten beiden voll, danach weniger (GEWICHT).
+  S.antrieb.forEach((a,i)=>{ add({[HAUPT[a]]:GEWICHT[i]||2}); if(a==='zurueck')add({herz:1}); if(i===0)add({[HAUPT[a]]:1}); });
   add({bande:{buehne:2},trikot:{herz:2,buehne:1},tag:{buehne:1,ehre:2},wand:{}}[S.platz]||{});
   return p;
 }
@@ -833,7 +960,7 @@ function punkte(){
 function reihe(){ const p=punkte(); return Object.keys(p).filter(k=>p[k]>=3).sort((a,b)=>p[b]-p[a]||(a==='heimat')-(b==='heimat')); }
 const leise=()=>S.platz==='wand';
 // Regel für den Vorschlag: nie von selbst das größte Paket, wer uns kaum kennt höchstens Club, leise heißt Partnerwand.
-function regel(){ const a=S.antrieb; let b=1;
+function regel(){ const a=S.antrieb.slice(0,3); let b=1;   // für den Vorschlag zählen die ersten drei Antworten
   if(leise()&&!a.includes('netz')&&!a.includes('sehen'))b=0;
   if(a.includes('netz'))b=2;
   if(a.includes('leute')&&(a.includes('sehen')||a.includes('netz')))b=2;
@@ -884,8 +1011,20 @@ function tonSetz(an){ ton=an; $('#tonB').setAttribute('aria-pressed',an); const 
   if(an){ ac(); m.play().catch(()=>{}); } else Object.values(A).forEach(a=>a.pause()); }
 $('#tonB').onclick=()=>{ tonSetz(!ton); tonMerken(ton); if(ton)fx('wahl'); };
 // Jeder Tipp auf etwas Bedienbares klingt: Auswahl hell, alles andere dumpf. Der Wechsel der Szene klingt in geh().
-F.addEventListener('pointerdown',e=>{ const b=e.target.closest('button, .sa, .zt, .br, [role="button"]'); if(!b||b.disabled||b.id==='tonB')return;
-  fx(b.hasAttribute('data-w')||b.hasAttribute('data-k')||b.hasAttribute('data-ja')?'wahl':'tipp'); },{passive:true});
+F.addEventListener('pointerdown',e=>{ const b=e.target.closest('button, .sa, .zt, .br, [role="button"]'); if(!b||b.disabled||b.id==='tonB')return; if(b.classList.contains('ib')){ fx('tipp'); return; }
+  fx(b.hasAttribute('data-w')||b.hasAttribute('data-k')||b.hasAttribute('data-ja')?'wahl':'tipp'); welle(b,e); },{passive:true});
+
+/* ---------- Bewegung (0.99.75, Albert: „Hover, Animationen, Interaktion, dass es Spaß macht“) ----------
+   Am Zeiger: ein Lichtkegel folgt der Maus, Bildkarten kippen leicht, Antworten zeigen ihr Bild schon beim Überfahren.
+   Am Finger: jeder Tipp auf eine Fläche schlägt eine Welle. Alles aus bei „weniger Bewegung“. */
+function welle(b,e){ if(ruhig||!b.matches('.bk, .stf, .knopf, .lz button, .anstoss button, .zwei-k button'))return; const r=b.getBoundingClientRect(); if(!r.width||!r.height)return;
+  const w=document.createElement('span'); w.className='tw'; w.style.left=((e.clientX-r.left)/r.width*100).toFixed(1)+'%'; w.style.top=((e.clientY-r.top)/r.height*100).toFixed(1)+'%';
+  b.appendChild(w); w.addEventListener('animationend',()=>w.remove()); setTimeout(()=>w.remove(),900); }
+let zx=0, zy=0, zr=0;
+addEventListener('pointermove',e=>{ if(e.pointerType!=='mouse'||ruhig)return; zx=e.clientX; zy=e.clientY; if(zr)return;
+  zr=requestAnimationFrame(()=>{ zr=0; html.classList.add('zeiger'); F.style.setProperty('--mx',zx+'px'); F.style.setProperty('--my',zy+'px');
+    const k=document.elementFromPoint(zx,zy), b=k&&k.closest?k.closest('.bk'):null; if(b){ const r=b.getBoundingClientRect(); b.style.setProperty('--rx',((zx-r.left)/r.width-.5).toFixed(2)); b.style.setProperty('--ry',((zy-r.top)/r.height-.5).toFixed(2)); } }); },{passive:true});
+const maus=(b,rein,raus)=>{ b.addEventListener('pointerenter',e=>{ if(e.pointerType==='mouse')rein(); }); b.addEventListener('pointerleave',e=>{ if(e.pointerType==='mouse')raus(); }); };
 
 /* ---------- Hintergrund ---------- */
 function hgSetz(name){ const hoch=innerHeight>innerWidth;
@@ -897,10 +1036,10 @@ function hgSetz(name){ const hoch=innerHeight>innerWidth;
 const szene=id=>$('.szene[data-s="'+id+'"]');
 function exLeer(){ const p=pk(); return !exWahl().length&&!(p==='supporter'&&(S.platz==='bande'||S.antrieb.includes('sehen'))); }
 function geh(n){ if(n<0||n>=ORD.length||laeuft||n===S.i)return; if(ORD[n]==='extras'&&exLeer()){ exPutzen(); n+=n>S.i?1:-1; } laeuft=true; sperrBis=Date.now()+(n>S.i&&AKT[ORD[n]]?1700:900);
-  const vor=n>S.i, id=ORD[n], akt=vor&&AKT[id]&&!ruhig, tk=$('#titelkarte'); S.rueck=!vor; fx(vor?'wisch':'zurueck');
+  const vor=n>S.i, id=ORD[n], akt=vor&&AKT[id]&&!ruhig, tk=$('#titelkarte'); S.rueck=!vor; fx(vor?'wisch':'zurueck'); F.dataset.r=vor?'v':'z'; if(!ruhig)szene(ORD[S.i]).classList.add('raus');
   if(akt){ tk.dataset.nr=AKT[id][0]; $('small',tk).textContent=AKT[id][1]; $('b',tk).textContent=AKT[id][2]; F.classList.add('schnitt'); }
   else if(!ruhig){ F.classList.remove('wischt'); void F.offsetWidth; F.classList.add('wischt'); }
-  setTimeout(()=>{ $$('.szene').forEach(s=>s.classList.remove('an','los')); const s=szene(id); s.classList.add('an'); s.scrollTop=0;
+  setTimeout(()=>{ $$('.szene').forEach(s=>s.classList.remove('an','los','raus')); const s=szene(id); s.classList.add('an'); s.scrollTop=0;
     S.i=n; F.dataset.s=id; F.dataset.dicht=s.dataset.dicht||'0'; F.dataset.licht=s.dataset.licht||'0'; hgSetz(s.dataset.hg);
     if(REIN[id])REIN[id](); routeZeig(); regieZeig(); passe(); },ruhig?0:(akt?430:300));
   setTimeout(()=>{ F.classList.remove('schnitt'); laeuft=false; const s=szene(id); requestAnimationFrame(()=>s.classList.add('los')); if(AUF[id])AUF[id](); setTimeout(()=>F.classList.remove('wischt'),400); },ruhig?30:(akt?1500:340));
@@ -923,13 +1062,16 @@ $$('[data-frage="verb"] [data-w]').forEach(b=>b.onclick=()=>{ S.verb=b.dataset.w
   $$('.szene[data-s="verb"] .sz-bild').forEach(i=>i.classList.toggle('an',i.dataset.fuer===S.verb));
   $('#und').hidden=false; lob('verb',LOB.verb[S.verb]); routeZeig(); regieZeig(); });
 
+const verbBild=w=>$$('.szene[data-s="verb"] .sz-bild').forEach(i=>i.classList.toggle('an',i.dataset.fuer===w));
+$$('[data-frage="verb"] [data-w]').forEach(b=>maus(b,()=>verbBild(b.dataset.w),()=>verbBild(S.verb)));
+
 /* ---------- Station 2: Grund ---------- */
 function antriebZeig(){ $$('[data-frage="antrieb"] [data-w]').forEach(x=>{ const i=S.antrieb.indexOf(x.dataset.w); x.setAttribute('aria-pressed',i>=0); $('.st',x).textContent=i>=0?i+1:''; });
   $('#skepB').setAttribute('aria-pressed',S.skeptisch); const a=S.antrieb;
-  if(S.skeptisch)lob('antrieb',LOB.antrieb.skep); else if(a.length===2)lob('antrieb',ERST[a[0]]+', '+DANN[a[1]]+'. Verstanden.'); else if(a.length===1)lob('antrieb',LOB.antrieb[a[0]]); else lob('antrieb','');
+  if(S.skeptisch)lob('antrieb',LOB.antrieb.skep); else if(a.length>=4)lob('antrieb',ERST[a[0]]+'. Die anderen '+ZAHLWORT[a.length-1]+' merken wir uns in eurer Reihenfolge.'); else if(a.length===3)lob('antrieb',ERST[a[0]]+', '+DANN[a[1]]+', '+DANN[a[2]]+'. Verstanden.'); else if(a.length===2)lob('antrieb',ERST[a[0]]+', '+DANN[a[1]]+'. Verstanden.'); else if(a.length===1)lob('antrieb',LOB.antrieb[a[0]]); else lob('antrieb','');
   routeZeig(); regieZeig(); }
 $$('[data-frage="antrieb"] [data-w]').forEach(b=>b.onclick=()=>{ const w=b.dataset.w, i=S.antrieb.indexOf(w);
-  if(i>=0)S.antrieb.splice(i,1); else { if(S.antrieb.length>=2)S.antrieb.pop(); S.antrieb.push(w); }
+  if(i>=0)S.antrieb.splice(i,1); else S.antrieb.push(w);
   S.skeptisch=false; neuRechnen(); antriebZeig(); });
 $('#skepB').onclick=()=>{ S.skeptisch=!S.skeptisch; if(S.skeptisch)S.antrieb=[]; neuRechnen(); antriebZeig(); };
 
@@ -939,6 +1081,8 @@ function zeigSz(w,wie){ $$('#rahmen .sz').forEach(s=>{ const an=s.dataset.sz===w
 function szAuto(){ clearInterval(szUhr); if(S.platz||ruhig)return; const f=['bande','trikot','tag','wand']; let k=0; szUhr=setInterval(()=>{ if(ORD[S.i]!=='buehne'||S.platz){ clearInterval(szUhr); return; } k=(k+1)%4; zeigSz(f[k],'kommt'); },4200); }
 $$('[data-frage="platz"] [data-w]').forEach(b=>b.onclick=()=>{ S.platz=b.dataset.w; neuRechnen(); clearInterval(szUhr);
   $$('[data-frage="platz"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x===b)); zeigSz(S.platz,'kommt'); lob('platz',LOB.platz[S.platz]); routeZeig(); regieZeig(); });
+
+$$('[data-frage="platz"] [data-w]').forEach(b=>maus(b,()=>{ if(S.platz===b.dataset.w)return; clearInterval(szUhr); zeigSz(b.dataset.w,'kommt'); },()=>{ if(S.platz&&S.platz!==b.dataset.w)zeigSz(S.platz); }));
 
 /* ---------- Worum es geht: sechs Sätze, sechs Bilder ---------- */
 let wK=-1, wUhr=null;
@@ -957,46 +1101,50 @@ $$('[data-frage="groesse"] [data-w]').forEach(b=>b.onclick=()=>{ S.groesse=+b.da
 $('#kleinstB').onclick=()=>{ S.groesse=-1; S.auto=false; neuRechnen(); $$('[data-frage="groesse"] [data-w]').forEach(x=>x.setAttribute('aria-pressed','false')); $('#autoB').setAttribute('aria-pressed','false'); $('#kleinstB').setAttribute('aria-pressed','true'); lob('groesse',LOB.groesse[-1]); grBild(); routeZeig(); regieZeig(); };
 $('#autoB').onclick=()=>{ $('#kleinstB').setAttribute('aria-pressed','false'); S.auto=true; S.groesse=null; neuRechnen(); $$('[data-frage="groesse"] [data-w]').forEach(x=>x.setAttribute('aria-pressed','false')); $('#autoB').setAttribute('aria-pressed','true'); lob('groesse',LOB.groesse.auto); grBild(); routeZeig(); regieZeig(); };
 
+const grVor=w=>$$('.szene[data-s="groesse"] .sz-bild').forEach(i=>i.classList.toggle('an',i.dataset.fuer===w));
+$$('[data-frage="groesse"] [data-w]').forEach(b=>maus(b,()=>grVor(+b.dataset.w>=1?'bande':'wand'),grBild));
+maus($('#kleinstB'),()=>grVor('klein'),grBild);
+
 /* ---------- Station 6: Euer Platz ---------- */
-function gehoertZeig(){ const z=[]; if(S.verb)z.push(ZITAT[S.verb]); S.antrieb.forEach(a=>z.push(ZITAT[a])); if(S.skeptisch)z.push('Wir wissen noch nicht, ob uns das etwas bringt'); if(S.platz)z.push(ZITAT[S.platz]);
-  $('#gehoert').innerHTML=z.map(x=>'<q>'+x+'</q>').join(''); }
+function gehoertZeig(){ const z=[]; if(S.verb)z.push(ZITAT[S.verb]); S.antrieb.slice(0,3).forEach(a=>z.push(ZITAT[a])); const mehr=S.antrieb.length-3; if(S.skeptisch)z.push('Wir wissen noch nicht, ob uns das etwas bringt'); if(S.platz)z.push(ZITAT[S.platz]);
+  $('#gehoert').innerHTML=z.map(x=>'<q>'+x+'</q>').join('')+(mehr>0?'<small>und '+(mehr===1?'ein weiterer Grund':ZAHLWORT[mehr]+' weitere Gründe')+'</small>':''); }
 function wimpelZeig(){ const r=ROLLE[reihe()[0]||'gast']; $('#wTitel').textContent=r[0]; $('#wText').textContent=S.eigen||r[1]; $('#wJahr').textContent=S.jahr?'Betrieb seit '+S.jahr:'Saison 2027/28'; $('#wimpel').classList.toggle('gold',pk()==='p1896'); }
 const HAUPT={kinder:'herz',sehen:'buehne',leute:'team',netz:'netz',zurueck:'heimat',vorn:'ehre'};
 const STICH=['Bande','Partnerwand','Partnerkarte','Partnerabend','Instagram','Partnertreffen','Stellenanzeige','Heimspiel','Aufkleber'];
-const FEHLT={netz:['der Partnerabend','alle vier Partnertreffen'],buehne:['die eigene Bande'],team:['die Stellenanzeige','die Stellenanzeige']};
+// Was ab welchem Paket dazugehört (Index wie ST): Grundlage für den Hinweis zum Hochstufen.
+const FEHLT={netz:[[1,'fehlt hier der Partnerabend'],[2,'fehlen hier alle vier Partnertreffen']],buehne:[[1,'fehlt hier die eigene Bande']],team:[[2,'fehlt hier die Stellenanzeige']]};
 // Nur was der Partner wörtlich gesagt hat: erst seine Gründe, dann sein Woher, dann sein Platz.
 function gruende(){ const p=pk(), a=[]; let hin=null;
-  if(S.platz==='wand')hin=[ZITAT.wand,p==='supporter'?'Euer Name steht an der Partnerwand. Mehr Aufsehen gibt es nicht.':'Die Bande gehört zu diesem Paket. Wenn ihr sie nicht wollt, passt der SVM Supporter besser.'];
+  if(S.platz==='wand')hin=[ZITAT.wand,p==='supporter'?'Euer Name steht an der Partnerwand. Mehr Aufsehen gibt es nicht.':'Wo eure Bande hängt, stimmen wir vorher mit euch ab.'];
   else if(S.platz==='trikot')hin=[ZITAT.trikot,'Das geht über eine Jugendmannschaft. Zeigen wir euch gleich.'];
   else if(S.platz==='tag'&&p!=='p1896')hin=[ZITAT.tag,'Den Partner des Tages zeigen wir euch gleich.'];
-  else if(S.platz==='bande'&&p==='supporter')hin=[ZITAT.bande,'Eine eigene Bande gibt es ab dem Club Partner.'];
+  else if(S.platz==='bande'&&p==='supporter'&&!(eigeneWahl()&&S.pi==null&&pIndex()<regel()))hin=[ZITAT.bande,'Eine eigene Bande gibt es ab dem Club Partner.'];
   S.antrieb.slice(0,2).forEach(k=>{ const d=HAUPT[k]; if(d==='buehne'&&leise())return; a.push([ZITAT[k],GRUND[d][p]]); });
   const vz={ehemalig:p==='supporter'?'Euer Name hängt an dem Platz, auf dem ihr selbst gespielt habt.':'Eure Bande steht an dem Platz, auf dem ihr selbst gespielt habt.',familie:'Wenn einer von euch spielt, steht euer Name am selben Platz.',hier:GRUND.heimat[p],partner:GRUND.heimat[p]}[S.verb];
   if(vz&&!a.some(x=>x[1]===vz))a.push([ZITAT[S.verb],vz]);
   const r=a.slice(0,hin?2:3); if(hin)r.push(hin); return r; }
-function ratText(p,i,rg){ const P=PAK[p];
-  if(!eigeneWahl()||S.pi!=null||S.groesse<0||S.groesse===rg)return '';
-  const R=PAK[ST[rg]];
-  if(S.groesse>rg)return '<div class="rat">Zu euren Antworten würde auch der '+R.t+' passen. Größer ist eure Entscheidung, und wir freuen uns darüber. <button type="button" id="ratB">Den '+R.t+' zeigen</button></div>';
-  const k=S.antrieb.find(x=>FEHLT[HAUPT[x]]&&FEHLT[HAUPT[x]][i]); if(!k)return '';
-  return '<div class="rat">Für „'+ZITAT[k]+'“ fehlt hier '+FEHLT[HAUPT[k]][i]+'. Im '+R.t+' gehört das dazu. <button type="button" id="ratB">Den '+R.t+' zeigen</button></div>'; }
+// 0.99.75 (Albert, 17.11.2026): Nie zeigen, dass die Wahl über dem Vorschlag liegt, und nie von selbst etwas Kleineres anbieten.
+// Nur wenn nach den Antworten mehr passen würde, steht im weißen Kasten ein Hinweis mit Knopf zum Hochstufen.
+function ratText(i,rg){ if(S.pi!=null||i>=rg||!(eigeneWahl()||i<0))return '';
+  const R=PAK[ST[rg]]; let satz='';
+  for(const k of S.antrieb){ const f=(FEHLT[HAUPT[k]]||[]).find(x=>x[0]>i&&x[0]<=rg); if(f){ satz='Für „'+ZITAT[k]+'“ '+f[1]+'. Im '+R.t+' gehört das dazu.'; break; } }
+  if(!satz)satz='Nach euren Antworten passt auch der '+R.t+'. '+R.auch[0];
+  return '<div class="rat"><p>'+satz+'</p><button type="button" id="ratB">Jetzt upgraden<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>'; }
 function tkZeig(wechsel){ const p=pk(), box=$('#tkBox'), i=pIndex(), rg=regel(); let h, ueber;
   if(p==='keins'){ const k=kleinstBaustein(), x=EX[k]; S.extras=new Set([k]); S.warKeins=true; ueber='Unser Vorschlag für etwas Kleines';
-    h='<article class="tk tk-keins'+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">Ohne Paket · ein einzelner Baustein</p><h3>'+x.t+'</h3></div><p class="tk-preis">'+(x.ca?'ca. ':'')+eur(exPreis(k))+'<small>'+x.e+', netto</small></p></div><div class="tk-in"><ul><li>'+x.k+'</li><li>Größer werden könnt ihr jederzeit.</li></ul></div></article>'; }
+    h='<article class="tk tk-keins'+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">Ohne Paket · ein einzelner Baustein</p><h3>'+x.t+ib(k,x.t).replace('data-i=','data-preis="1" data-i=')+'</h3></div><p class="tk-preis">'+(x.ca?'ca. ':'')+eur(exPreis(k))+'<small>'+x.e+', netto</small></p></div><div class="tk-in"><ul><li>'+x.k+'</li><li>Größer werden könnt ihr jederzeit.</li></ul>'+ratText(i,rg)+'</div></article>'; }
   else { if(S.warKeins){ S.extras.clear(); S.warKeins=false; }
-    const P=PAK[p], g=gruende(), txt=g.map(x=>x[1]).join(' '), rat=ratText(p,i,rg), auch=P.auch.filter(x=>!STICH.some(s=>x.includes(s)&&txt.includes(s))).slice(0,g.length<2?3:1);
-    const selbst=(eigeneWahl()&&S.pi==null)||(S.pi!=null&&S.pi!==rg); ueber=selbst?(i===rg?'Eure Wahl. Wir hätten dasselbe vorgeschlagen.':'Eure Wahl'):'Unser Vorschlag';
+    const P=PAK[p], g=gruende(), txt=g.map(x=>x[1]).join(' '), rat=ratText(i,rg), auch=P.auch.filter(x=>!STICH.some(s=>x.includes(s)&&txt.includes(s))).slice(0,g.length<2?3:1);
+    const selbst=(eigeneWahl()&&S.pi==null)||(S.pi!=null&&S.pi!==rg); ueber=selbst?'Eure Wahl':'Unser Vorschlag';
     const kind=['club','premium','p1896'].includes(p)?'<p class="klein">Bande: Druck exkl., Montage inkl.</p>':'';
-    h='<article class="tk tk-'+p+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">'+(p==='p1896'?'Acht Plätze, einer je Branche':'Höchstens '+P.pl+' Partner')+'</p><h3>'+P.t+'</h3></div><p class="tk-preis">'+eur(P.p)+'<small>je Saison, netto</small></p></div><div class="tk-in">'
+    h='<article class="tk tk-'+p+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">'+(p==='p1896'?'Acht Plätze, einer je Branche':'Höchstens '+P.pl+' Partner')+'</p><h3>'+P.t+ib(p,P.t).replace('data-i=','data-preis="1" data-i=')+'</h3></div><p class="tk-preis">'+eur(P.p)+'<small>je Saison, netto</small></p></div><div class="tk-in">'
       +(g.length?'<h4>Darum passt das zu euch</h4><ul>'+g.map(x=>'<li>'+(x[0]?'<q>'+x[0]+'</q>':'')+x[1]+'</li>').join('')+'</ul>':'')
       +(auch.length&&!(g.length>=3||(rat&&g.length>=2))?'<h4>'+(g.length?'Außerdem dabei':'Das ist dabei')+'</h4><ul>'+auch.map(x=>'<li>'+x+'</li>').join('')+'</ul>':'')+kind+rat+'</div></article>'; }
   box.innerHTML=h; lochSetz(); $('#tkUeber').textContent=ueber+(S.name?' · '+S.name:'');
-  $('#kleinB').disabled=i<=-1; $('#grossB').disabled=i>=3; wimpelZeig();
+  wimpelZeig();
   const rb=$('#ratB'); if(rb)rb.onclick=()=>{ S.pi=rg; tkZeig(true); regieZeig(); };
   const kb=$('#kindB'); if(kb)kb.onclick=()=>{ if(S.extras.has('baelle_jugend'))S.extras.delete('baelle_jugend'); else S.extras.add('baelle_jugend'); tkZeig(false); }; }
 function lochSetz(){ const tk=$('#tk'); if(tk&&tk.offsetParent)tk.style.setProperty('--loch',$('.tk-in',tk).offsetTop+'px'); }
-$('#kleinB').onclick=()=>{ S.pi=Math.max(-1,pIndex()-1); tkZeig(true); regieZeig(); };
-$('#grossB').onclick=()=>{ S.pi=Math.min(3,pIndex()+1); tkZeig(true); regieZeig(); };
 $('#nehmB').onclick=()=>geh(S.i+1);
 $('#zeigB').onclick=()=>{ const s=szene('platz'); s.dataset.teil='2'; s.scrollTop=0; tkZeig(false); regieZeig(); };
 $('#nichtB').onclick=()=>geh(ORD.indexOf('antrieb'));
@@ -1019,12 +1167,79 @@ function exBild(k){ const x=EX[k], n=esc(S.name||'Euer Name');
   return '<div class="bild schrift">'+x.schrift+'</div>'; }
 function exZeig(hinweis){ exPutzen(); const l=exWahl(), paket=pk(), bandeHinweis=paket==='supporter'&&(S.platz==='bande'||S.antrieb.includes('sehen'));
   let h=l.map(e=>{ const x=EX[e.k], pr=exPreis(e.k), drin=S.extras.has(e.k), weil=e.sagt?'Ihr habt gesagt: '+e.sagt:e.best?WEIL_EX[e.best]:'Auch möglich';
-    return '<button type="button" class="zt'+(drin?' drin':'')+'" data-k="'+e.k+'" aria-pressed="'+drin+'">'+exBild(e.k)+'<span class="tx"><span class="weil-t">'+weil+'</span><b>'+x.t+'</b><p>'+x.k+'</p><span class="pr"><em>'+(x.ca?'ca. ':'')+eur(pr)+'<small>'+x.e+'</small></em><span>'+(drin?'Wieder raus':'Dazunehmen')+'</span></span></span></button>'; }).join('');
+    return '<button type="button" class="zt'+(drin?' drin':'')+'" data-k="'+e.k+'" aria-pressed="'+drin+'">'+exBild(e.k)+ib(e.k,x.t).replace('data-i=','data-preis="1" data-i=')+'<span class="tx"><span class="weil-t">'+weil+'</span><b>'+x.t+'</b><p>'+x.k+'</p><span class="pr"><em>'+(x.ca?'ca. ':'')+eur(pr)+'<small>'+x.e+'</small></em><span>'+(drin?'Wieder raus':'Dazunehmen')+'</span></span></span></button>'; }).join('');
   if(bandeHinweis)h+='<div class="zt hinweis"><span class="tx"><span class="weil-t">Ehrlich gerechnet</span><b>Bande dazu?</b><p>Supporter plus eigene Bande kostet mehr als der Club Partner. Dort ist die Bande schon dabei.</p><button class="knopf dunkel" type="button" id="clubB">Zum Club Partner</button></span></div>';
   $('#exL').innerHTML=h; $('#exL').hidden=!h;
   $('#exUnter').textContent=hinweis||(h?'Passt zu euren Antworten. Muss nicht sein.':'Zu eurem Paket fehlt nichts. Mehr braucht es nicht.');
   $$('#exL .zt[data-k]').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(S.extras.has(k))S.extras.delete(k); else S.extras.add(k); exZeig(); regieZeig(); });
   const cb=$('#clubB'); if(cb)cb.onclick=()=>{ S.pi=1; exZeig('Jetzt Club Partner. Die Bande ist dabei.'); regieZeig(); }; passe(); }
+
+
+/* ---------- Mehr dazu (0.99.75, Albert: kleine Info-Knöpfe an Paketen und Bausteinen, „dass man sich alles durchlesen kann“) ----------
+   Jeder Text steht auf dem, was im Katalog der App steht (partner_leistungen). Nichts versprechen, was dort nicht steht. */
+const GUT='Preise netto, je Saison. Eine Saison ist die kürzeste Laufzeit, kündbar jedes Jahr bis 31. März.', GUT_B=' Bande: Druck exkl., Montage inkl.';
+const KIND='Fotos mit Kindern stellen wir nur ins Netz, wenn die Eltern und ab 14 Jahren auch die Jugendlichen selbst zugestimmt haben.';
+const INFO={
+  supporter:{l:'Der Einstieg. Für alle, die sagen: Wir gehören dazu.',
+    t:['Nicht jeder Betrieb will groß auftreten. Manche wollen einfach, dass es den Verein im Ort auch in zwanzig Jahren noch gibt. Genau dafür ist der Supporter da.','Euer Logo hängt an der Partnerwand am Platz. Wer dort steht, gilt im Ort als einer, der mitträgt.'],
+    d:['Euer Logo auf der Supporter-Tafel der Partnerwand. Sie wird jedes Jahr neu gestaltet.','Logo mit Link auf unserer Partnerseite im Netz.','Das Saison-Zeichen 2027/28 als Aufkleber und als Bild für eure Internetseite.','Partner des Tages könnt ihr dazubuchen.'],g:GUT},
+  club:{l:'Ab hier steht euer Name am Spielfeld.',
+    t:['Die Bande gehört zum Fußballplatz wie das Tor. Wer dort steht, ist Teil des Bildes, bei jedem Heimspiel. Eltern, Nachbarn und Kunden sehen euren Namen immer am selben Ort.','Und ihr bleibt nicht unter euch: Beim Partnerabend lernt ihr die anderen Betriebe kennen, die den Verein tragen.'],
+    d:['Eure Bande am Platz, nach Verfügbarkeit. Wo sie hängt, stimmen wir vorher mit euch ab.','Größere Darstellung im Club-Bereich der Partnerwand.','Logo, Kurzeintrag und Link auf unserer Partnerseite im Netz.','Eine Partnerkarte für die Heimspiele, die ihr weitergeben könnt.','Die Einladung zum Partnerabend.','Eine Begrüßung auf Instagram und Facebook.','Stellenanzeige und Partner des Tages könnt ihr dazubuchen.'],g:GUT+GUT_B},
+  premium:{l:'Für Betriebe, die mehr wollen als ein Schild.',
+    t:['Eure Bande bekommt einen bevorzugten Platz. Wichtiger ist aber, was daneben passiert: Ihr seid bei allen vier Partnertreffen im Jahr dabei. Dort lernt man sich kennen, lange bevor man sich braucht.','Einmal in der Saison stellen wir euren Betrieb eigens heraus. Und wenn ihr Leute sucht: Eine Stellenanzeige ist schon dabei.'],
+    d:['Bevorzugter Platz für eure Bande.','Hervorgehobene Darstellung an der Partnerwand, mit ausführlichem Profil eures Betriebs.','Zwei Partnerkarten für die Heimspiele, zum Weitergeben.','Der Partnerabend und alle vier Partnertreffen im Jahr.','Einmal je Saison stellen wir euren Betrieb besonders heraus.','Eine Stellenanzeige je Saison.','Das Begrüßungspaket mit Saison-Zeichen, Partnerkarten und Saisonübersicht.','Partner des Tages könnt ihr dazubuchen.'],g:GUT+GUT_B},
+  p1896:{l:'Acht Plätze. Einer je Branche.',
+    t:['Seit 1896 wird hier Fußball gespielt. Acht Betriebe tragen diese Zahl, mehr werden es nicht. Aus jeder Branche ist nur einer dabei.','Wer hier steht, zeigt dem Ort, dass er vorangeht. Ihr bekommt einen der besten Plätze für eure Bande, ein Heimspiel in eurem Namen und bei den Partnertreffen den Vorrang als Gastgeber.'],
+    d:['Bande an einem der besten Plätze, nach Verfügbarkeit.','Kein zweiter Betrieb aus eurer Branche unter den acht.','Ein Heimspiel je Saison als Partner des Tages. Das Spiel sucht ihr vor den anderen aus.','Vier Partnerkarten für die Heimspiele, zum Weitergeben.','Der Partnerabend, alle Partnertreffen und der Vorrang als Gastgeber.','Ein Porträt eures Betriebs oder ein kurzer Film je Saison.','Zwei Stellenanzeigen je Saison.','Das nummerierte Schild: einer von acht.'],g:GUT+GUT_B},
+  sotd:{l:'Ein Heimspiel lang gehört der Platz euch.',
+    t:['Euer Name fällt in mehreren Durchsagen, und danach berichten wir auf Instagram und Facebook. Das passt zu einem Jubiläum, zu einer Neueröffnung oder wenn ihr euren Leuten einfach einmal etwas Besonderes zeigen wollt.'],
+    d:['Mehrere Durchsagen mit eurem Namen.','Bericht nach dem Spiel auf Instagram und Facebook.','Der Preis richtet sich nach dem Paket: Supporter 189 €, Club Partner 169 €, Premium Partner 149 €.','Beim 1896 Partner ist ein Heimspiel je Saison schon dabei.']},
+  bande_erste:{l:'Euer Name am Platz, auch ohne Paket.',
+    t:['Eine eigene Bande an unserem Sportplatz. Man sieht sie bei jedem Heimspiel, und sie bleibt die ganze Saison.'],
+    d:['Eine Bande am Sportplatz für eine Saison.','Druck exkl., Montage inkl.','Im Club Partner ist die Bande schon dabei.']},
+  baelle_jugend:{l:'Ohne Bälle kein Training.',
+    t:['Mit eurer Patenschaft hat eine Jugendmannschaft eine Saison lang gutes Material. Die Mannschaft bedankt sich bei euch mit einem Foto.'],
+    d:['Zehn Bälle für eine Jugendmannschaft.','Ein Mannschaftsfoto als Dankeschön.',KIND]},
+  trikot_jugend:{l:'Das erste richtige Trikot vergisst kein Kind.',
+    t:['Mit eurer Patenschaft läuft eine ganze Mannschaft in neuen Trikots auf, mit eurem Logo. Die Kinder tragen es bei jedem Spiel, und die Eltern am Rand sehen, wer dahintersteht.'],
+    d:['Ein Trikotsatz für eine Jugendmannschaft, mit eurem Logo.','Einmalige Kosten, je nach Größe der Mannschaft etwa 500 bis 700 €.','Ein Satz hält meist zwei bis drei Saisons.']},
+  team_jugend:{l:'Eine Mannschaft, eine Saison, ihr mittendrin.',
+    t:['Ihr begleitet eine Jugendmannschaft durch die ganze Saison. Euer Logo steht auf dem Mannschaftsfoto, und bei unseren Turnieren nennen wir euren Namen. Die Eltern wissen, wer hinter der Mannschaft ihrer Kinder steht.'],
+    d:['Eine Saison lang Partner einer Jugendmannschaft.','Euer Logo auf dem Mannschaftsfoto.','Euer Name bei unseren Turnieren.',KIND]},
+  trainer_jugend:{l:'Gute Trainer prägen Kinder über Jahre.',
+    t:['Eine Trainerlizenz kostet Zeit und Geld. Die Zeit bringen unsere Trainer mit. Die Kosten übernehmt ihr. Davon haben die Kinder viele Jahre etwas, auch die, die erst in ein paar Jahren anfangen.'],
+    d:['Die Kosten für eine Trainerlizenz.','Einmalig, keine Laufzeit.']},
+  zeltlager:{l:'Die Tage, von denen Kinder später erzählen.',
+    t:['Im Sommer fährt die Jugend zusammen ins Zeltlager. Euer Banner hängt am Lager, und die Familien erfahren, wer das möglich macht.'],
+    d:['Euer Banner am Zeltlager.','Fotos, die wir freigeben, dürft ihr für eure eigenen Kanäle nutzen.',KIND]},
+  ferienspiele:{l:'Fußball in den Ferien.',
+    t:['Für Kinder aus Mörlenbach und Umgebung. Eltern sind froh über jeden Ferientag, an dem die Kinder draußen sind und sich bewegen. Wir nennen euch dort als Partner.'],
+    d:['Ihr seid Partner der Ferienspiele und werdet dort genannt.','Einmalig, keine Laufzeit.']},
+  jobpost:{l:'Eure Stelle dort, wo die Leute von hier sind.',
+    t:['Eure Stellenanzeige erreicht Spieler, Eltern und Fans aus dem Weschnitztal. Bewerbungen können wir nicht versprechen. Aber wer bei uns am Platz steht, kommt aus der Gegend und will meistens auch hier bleiben.'],
+    d:['Eine Stellenanzeige bei uns im Netz.','Im Premium Partner ist eine Anzeige je Saison dabei, im 1896 Partner sind es zwei.']},
+  business_treff:{l:'Die Partner kommen zu euch.',
+    t:['Ein Abend in eurem Betrieb. Ihr zeigt, was ihr macht, und man kommt ins Gespräch. So lernt man sich anders kennen als über eine Visitenkarte.'],
+    d:['Ein Partnertreffen bei euch im Betrieb.','Die anderen Partner sind eingeladen.']},
+  matchball:{l:'Ihr bringt den Spielball.',
+    t:['Vor dem Anpfiff übergebt ihr den Ball. In der Durchsage nennen wir euren Namen, und die Übergabe zeigen wir auf Instagram und Facebook. Ein kleiner Auftritt, den man sich merkt.'],
+    d:['Ballübergabe vor dem Anpfiff.','Durchsage mit eurem Namen.','Foto der Übergabe auf Instagram und Facebook.']},
+  tor_monat:{l:'Jeden Monat das schönste Tor, mit eurem Namen.',
+    t:['Über Tore reden die Leute. Zum Tor des Monats gibt es ein Video und einen Beitrag auf Instagram und Facebook, mit eurem Logo. Diesen Platz gibt es nur einmal.'],
+    d:['Video und Beitrag zum Tor des Monats, jeden Monat.','Euer Logo im Beitrag.','Nur ein Partner je Saison.']}
+};
+const ib=(k,name)=>'<span class="ib" role="button" tabindex="0" data-i="'+k+'" aria-label="Mehr zu '+esc(name)+'">i</span>';
+function infoZeig(k,mitPreis){ const x=INFO[k]; if(!x)return; const P=PAK[k], E=EX[k], name=P?P.t:E.t, preis=P?eur(P.p)+' je Saison, netto':(E.ca?'ca. ':'')+eur(exPreis(k))+' '+E.e+', netto';
+  $('#infoT').textContent=name;
+  $('#infoIn').innerHTML='<p class="i-l">'+x.l+'</p>'+x.t.map(a=>'<p>'+a+'</p>').join('')+'<h5>Das gehört dazu</h5><ul>'+x.d.map(a=>'<li>'+a+'</li>').join('')+'</ul>'+(mitPreis?'<p class="i-p">'+preis+'</p>':'')+(x.g?'<p class="i-g">'+x.g+'</p>':'');
+  const a=$('#info'); a.scrollTop=0; a.classList.add('da'); a.dataset.k=k; S.info=S.info||[]; if(!S.info.includes(k))S.info.push(k); }
+const infoZu=()=>$('#info').classList.remove('da');
+$('#infoX').onclick=infoZu;
+F.addEventListener('click',e=>{ const i=e.target.closest('.ib'); if(i){ e.preventDefault(); e.stopPropagation(); infoZeig(i.dataset.i,i.dataset.preis==='1'); return; }
+  if($('#info').classList.contains('da')&&!e.target.closest('#info'))infoZu(); },true);
+F.addEventListener('keydown',e=>{ if(e.key==='Escape')infoZu(); const i=e.target.closest&&e.target.closest('.ib'); if(i&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); e.stopPropagation(); infoZeig(i.dataset.i,i.dataset.preis==='1'); } },true);
+$$('[data-frage="groesse"] [data-w]').forEach(b=>{ const k=ST[+b.dataset.w]; b.insertAdjacentHTML('beforeend',ib(k,PAK[k].t)); });
 
 /* ---------- Station 8: Zettel mit der echten Summe ---------- */
 const USTP=19;   // Umsatzsteuer in Prozent (mit dem Verein abgleichen)
@@ -1055,37 +1270,39 @@ $('#fragB').onclick=()=>$('#fragen').classList.add('da'); $('#fragX').onclick=()
 const tag=n=>{ const d=new Date(); d.setDate(d.getDate()+n); return d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'}); };
 const LEUTE='<div class="leute"><div><img src="partner/r-ansprech-sven.jpg" alt=""><img src="partner/r-ansprech-tobias.jpg" alt=""><img src="partner/r-ansprech-albert.jpg" alt=""></div><p><b>Sven Schill, Tobias Jäger, Albert Klee</b>Eure drei Ansprechpartner. Büro SV Mörlenbach: <span style="white-space:nowrap;user-select:all">06209 5290</span></p></div>';
 const chips=(id,l)=>'<div class="wk" id="'+id+'">'+l.map(x=>'<button class="zeile" type="button" data-t="'+esc(x[1])+'">'+x[0]+'</button>').join('')+'</div>';
-const zettel=(e,h,zeile,schritte,extra)=>'<div class="zettel"><p class="eyebrow">'+e+'</p><h3>'+h+'</h3>'+(zeile?'<p class="wahl-z">'+zeile+'</p>':'')+(extra||'')+(schritte?'<ol>'+schritte.map(x=>Array.isArray(x)?'<li><span id="'+x[0]+'">'+x[1]+'</span></li>':'<li><span>'+x+'</span></li>').join('')+'</ol>':'')+(zeile?'<button class="zeile" type="button" id="mitB">Zettel mitnehmen</button>':'')+LEUTE+'</div><button class="zeile leise" type="button" id="nochmalB">Noch einmal von vorn</button>';
+const zettel=(e,h,zeile,schritte,extra,ohneMit)=>'<div class="zettel"><p class="eyebrow">'+e+'</p><h3>'+h+'</h3>'+(zeile?'<p class="wahl-z">'+zeile+'</p>':'')+(extra||'')+(schritte?'<ol>'+schritte.map(x=>Array.isArray(x)?'<li><span id="'+x[0]+'">'+x[1]+'</span></li>':'<li><span>'+x+'</span></li>').join('')+'</ol>':'')+(zeile&&!ohneMit?'<button class="zeile" type="button" id="mitB">Zettel mitnehmen</button>':'')+LEUTE+'</div><button class="zeile leise" type="button" id="nochmalB">Noch einmal von vorn</button>';
 function mitgeben(b){ const t='SV/BSC Mörlenbach\n'+(S.name?S.name+'\n':'')+wahlText()+(S.wann?'\n'+S.wann:'')+'\nBüro SV Mörlenbach: 06209 5290', kopier=()=>{ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{ b.textContent='Kopiert. Fügt es ein, wo ihr wollt.'; }).catch(()=>{ b.textContent='Am besten den Zettel abfotografieren.'; }); };
   if(navigator.share)navigator.share({text:t}).catch(kopier); else kopier(); }
-function finalZeig(h){ $('#jaVor').hidden=true; const n=$('#jaNach'); n.hidden=false; n.innerHTML=h+(IM_RAHMEN?'<button class="knopf" type="button" id="weiterAppB">Zu Paketen und Vertrag</button>':''); n.classList.toggle('zwei',!!$('.zettel',n)); const k=document.createElement('div'); k.className='f-k'; [...n.children].forEach(x=>{ if(!x.classList.contains('zettel')&&x.id!=='nochmalB')k.appendChild(x); }); n.insertBefore(k,n.firstChild);
+function finalZeig(h,ohneApp){ $('#jaVor').hidden=true; const n=$('#jaNach'); n.hidden=false; n.innerHTML=h+(IM_RAHMEN&&!ohneApp?'<button class="knopf" type="button" id="weiterAppB">Zu Paketen und Vertrag</button>':''); n.classList.toggle('zwei',!!$('.zettel',n)); const k=document.createElement('div'); k.className='f-k'; [...n.children].forEach(x=>{ if(!x.classList.contains('zettel')&&x.id!=='nochmalB')k.appendChild(x); }); n.insertBefore(k,n.firstChild);
   szene('ja').scrollTop=0; passe(); const nb=$('#nochmalB'); if(nb)nb.onclick=vonVorn; const wa=$('#weiterAppB'); if(wa)wa.onclick=reiseFertig; const mb=$('#mitB'); if(mb)mb.onclick=()=>mitgeben(mb); regieZeig(); }
 function wannBinden(id,ziel){ $$('#'+id+' button').forEach(b=>b.onclick=()=>{ $$('#'+id+' button').forEach(x=>x.setAttribute('aria-pressed',x===b)); S.wann=b.dataset.t; const z=$('#'+ziel); if(z)z.textContent=b.dataset.t; regieZeig(); }); }
-const VERTRAG=()=>chips('wannK',[['Bis '+tag(3),'Bis '+tag(3)+' bringen wir euch den Vertrag.'],['Bis '+tag(7),'Bis '+tag(7)+' bringen wir euch den Vertrag.']]);
 function schlussBild(n){ const p=pk();
   if(p==='supporter')return '<div class="finalbild wandbild"><div class="sz sz-wand"><h4>Unsere Partnerwand <small>SAISON 2027/28</small></h4><div class="kacheln"><i></i><i></i><i></i><i></i><i></i><div class="ich"><span class="passt">'+(n||'Euer Name')+'</span></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>';
   if(p==='keins'){ const x=EX[[...S.extras][0]||kleinstBaustein()]; return x.bild&&x.bild.indexOf('partner/r-')===0?'<div class="finalbild"><div class="sz"><img src="'+x.bild+'" alt=""></div></div>':''; }
   return '<div class="finalbild"><div class="sz sz-bande"><img src="partner/r-bande.webp" alt=""><div class="bande-name"><span class="passt">'+(n||'Euer Name')+'</span></div></div></div>'; }
-function jaDabei(){ const n=esc(S.name), kopf='<p class="eyebrow">Willkommen bei uns</p><h2>Stark.</h2><p class="hand">'+(n?n+' ist dabei.':'Ihr seid dabei.')+'</p>';
-  const takt2=()=>{ finalZeig(kopf+zettel('So geht es weiter','Drei Schritte',wahlText(),[['wannLi','Ihr bekommt den Vertrag zum Lesen.'],'Ihr unterschreibt, dann der Verein. Erst dann gilt es.','Wir holen euer Logo ab und kümmern uns um den Rest.'],'<p class="z-frage">Bis wann bringen wir euch den Vertrag?</p>'+VERTRAG())); wannBinden('wannK','wannLi'); };
-  spiel('pfiff',1); if(ruhig){ takt2(); return; }
+// 0.99.75 (Albert, 17.11.2026): Am Ende steht eine einzige Frage, „Seid ihr dabei?“, mit einem Knopf. Kein Ausweichen auf
+// „erst schriftlich“, „klein anfangen“ oder „erst zum Heimspiel“. Nach dem Ja kommt zuerst der Abbinder (Bande mit Namen,
+// Willkommen, Stolz), erst dann die Frage, wie es weitergeht: gleich unterschreiben oder Angebot und Antrag per Mail.
+function jaDabei(){ const n=esc(S.name), kopf='<p class="eyebrow">SV/BSC Mörlenbach · seit 1896</p><h2>Willkommen <em>bei uns.</em></h2><p class="hand">'+(n?n+', wir':'Wir')+' sind stolz, dass ihr Partner seid.</p>';
+  spiel('pfiff',1); if(ruhig){ finalZeig(schlussBild(n)+kopf+'<button class="knopf" type="button" id="weiterF">So geht es weiter</button>',true); $('#weiterF').onclick=jaWie; return; }
   F.classList.add('abpfiff'); setTimeout(()=>{ F.classList.remove('abpfiff');
-    finalZeig(schlussBild(n)+kopf+'<button class="knopf" type="button" id="weiterF">So geht es weiter</button>'); konfetti(); $('#weiterF').onclick=takt2; },140); }
-function jaSchrift(){ finalZeig('<p class="eyebrow">In Ruhe</p><h2>Gern.</h2><p class="hand">Ihr bekommt alles schwarz auf weiß.</p>'+zettel('So geht es weiter','Drei Schritte',wahlText(),['Das Angebot kommt per Mail, genau wie hier gezeigt.','In Ruhe ansehen, mit wem ihr wollt.',['wannLi','Sagt uns, bis wann wir uns melden sollen.']],'<p class="z-frage">Bis wann sollen wir uns melden?</p>'+chips('wannK',[['Bis '+tag(7),'Am '+tag(7)+' melden wir uns. Einmal. Ein Nein ist dann auch in Ordnung.'],['Bis '+tag(14),'Am '+tag(14)+' melden wir uns. Einmal. Ein Nein ist dann auch in Ordnung.'],['Wir melden uns','Ihr meldet euch, wenn ihr so weit seid. Hören wir bis zum Saisonstart nichts, fragen wir ein einziges Mal nach.']]))); wannBinden('wannK','wannLi'); }
-function jaKlein(){ const k=kleinstBaustein(), x=EX[k], hat=S.extras.size>0;
-  const fertig=was=>{ S.vorKlein={pi:S.pi,extras:new Set(S.extras),laufzeit:S.laufzeit}; if(was==='sup'){ S.pi=0; S.warKeins=false; S.extras.clear(); } else { S.pi=-1; S.extras=new Set([k]); S.warKeins=true; } S.laufzeit=1;
-    finalZeig('<p class="eyebrow">Willkommen bei uns</p><h2>Schön.</h2><p class="hand">Ihr seid dabei.</p>'+zettel('So geht es weiter','Drei Schritte',wahlText(),[['wannLi','Ihr bekommt den Vertrag zum Lesen.'],'Ihr unterschreibt, dann der Verein. Erst dann gilt es.','Größer werden könnt ihr jederzeit.'],'<p class="z-frage">Bis wann bringen wir euch den Vertrag?</p>'+VERTRAG())); wannBinden('wannK','wannLi'); konfetti(60); };
-  finalZeig('<p class="eyebrow">Auch gut</p><h2>Klein anfangen.</h2><p class="hand">Was davon passt besser?</p>'+zettel('Zwei Möglichkeiten','Was davon?',null,null,'<div class="zwei-k"><button type="button" data-k="sup"><b>'+(pIndex()===0&&hat?'Nur der SVM Supporter':'SVM Supporter')+'</b><span>Euer Logo an der Partnerwand am Platz.</span></button><button type="button" data-k="bau"><b>Nur: '+x.t+'</b><span>'+x.k+' Ohne Paket.</span></button></div>'));
-  $$('.zwei-k button').forEach(b=>b.onclick=()=>fertig(b.dataset.k)); }
-function jaSpiel(){ finalZeig('<p class="eyebrow">Ohne Geld, ohne Unterschrift</p><h2>Kommt vorbei.</h2><p class="hand">Schaut euch erst ein Heimspiel an.</p>'+zettel('So geht es weiter','Drei Schritte',null,['Ihr sagt uns, wann ihr kommen wollt.','Einer von uns dreien ist dann für euch da und zeigt euch alles.','Danach reden wir. Oder auch nicht. Beides ist in Ordnung.'])); }
+    finalZeig(schlussBild(n)+kopf+'<button class="knopf" type="button" id="weiterF">So geht es weiter</button>',true); $('#jaNach').classList.add('fest'); konfetti(); $('#weiterF').onclick=jaWie; },140); }
+function jaWie(){ $('#jaNach').classList.remove('fest'); S.weg=null; S.wann='';
+  finalZeig('<p class="eyebrow">Ihr seid dabei</p><h2>Wie machen wir <em>weiter?</em></h2>'+zettel('Zwei Wege','Was ist euch lieber?',wahlText(),null,
+    '<div class="zwei-k"><button type="button" data-k="gleich"><b>Gleich unterschreiben</b><span>'+(IM_RAHMEN?'Wir gehen jetzt zusammen zu Paketen und Vertrag. Unterschreiben geht dort mit dem Finger.':'Wir gehen den Vertrag jetzt zusammen durch.')+'</span></button><button type="button" data-k="angebot"><b>Angebot und Antrag per Mail</b><span>Ihr bekommt alles schriftlich und unterschreibt in Ruhe.</span></button></div>',true),true);
+  $$('.zwei-k button').forEach(b=>b.onclick=()=>jaWeg(b.dataset.k)); }
+function jaWeg(w){ S.weg=w; S.wann=''; const kopf='<p class="eyebrow">Willkommen bei uns</p><h2>So geht es <em>weiter.</em></h2>';
+  if(w==='gleich'){ regieZeig(); if(IM_RAHMEN){ reiseFertig(); return; }
+    finalZeig(kopf+zettel('Gleich unterschreiben','Drei Schritte',wahlText(),['Wir gehen den Vertrag jetzt zusammen durch.','Ihr unterschreibt, dann der Verein. Erst dann gilt es.','Wir holen euer Logo ab und kümmern uns um den Rest.'])); return; }
+  finalZeig(kopf+zettel('Angebot und Antrag','Drei Schritte',wahlText(),[['wannLi','Angebot und Antrag kommen per Mail, genau wie hier gezeigt.'],'Ihr unterschreibt, dann der Verein. Erst dann gilt es.','Wir holen euer Logo ab und kümmern uns um den Rest.'],
+    '<p class="z-frage">Bis wann sollen Angebot und Antrag bei euch sein?</p>'+chips('wannK',[['Heute noch','Angebot und Antrag kommen heute noch per Mail.'],['Bis '+tag(3),'Bis '+tag(3)+' sind Angebot und Antrag bei euch.']]))); wannBinden('wannK','wannLi'); }
 function jaNein(){ finalZeig('<p class="eyebrow">Danke für eure Zeit</p><h2>In Ordnung.</h2><p class="hand">Und danke für die klare Antwort.</p>'+zettel('Eine Frage noch','Dürfen wir wieder fragen?',null,null,'<p class="z-frage" id="wannLi">Wann dürfen wir noch einmal anklopfen?</p>'+chips('wannK',[['In einem Monat','Danke. Am '+tag(30)+' melden wir uns, einmal und nicht öfter.'],['Vor der nächsten Saison','Danke. Wir melden uns vor der nächsten Saison, einmal und nicht öfter.'],['Lieber nicht','In Ordnung. Wir fragen nicht noch einmal.']])+'<p class="z-frage" style="font-weight:500">Zum Heimspiel könnt ihr trotzdem kommen. Sagt einem von uns dreien Bescheid.</p>')); wannBinden('wannK','wannLi'); }
-$$('[data-ja]').forEach(b=>b.onclick=()=>{ S.ja=b.dataset.ja; S.wann=''; ({dabei:jaDabei,schrift:jaSchrift,klein:jaKlein,spiel:jaSpiel,nein:jaNein})[S.ja](); });
+$$('[data-ja]').forEach(b=>b.onclick=()=>{ S.ja=b.dataset.ja; S.weg=null; S.wann=''; ({dabei:jaDabei,nein:jaNein})[S.ja](); });
 function vonVorn(){ S=neu(); wFertig=false; $('#und').hidden=true; $('#kleinstB').setAttribute('aria-pressed','false'); $$('[aria-pressed]').forEach(x=>{ if(x.id!=='tonB')x.setAttribute('aria-pressed','false'); }); $('[data-frage="laufzeit"] [data-w="1"]').setAttribute('aria-pressed','true');
   $$('.lob').forEach(l=>l.classList.remove('da')); $$('.saetze').forEach(x=>x.classList.remove('gewaehlt')); $$('.sz-bild').forEach(x=>x.classList.remove('an')); $$('.bk .st').forEach(x=>x.textContent=''); $$('#bremsen .br').forEach(x=>{ x.setAttribute('aria-expanded','false'); x.classList.remove('klar','bleibt'); }); $('#jahrIn').value=''; $('#rEigen').value='';
   S.i=ORD.length-1; setzName(''); $('#nameIn').value=''; geh(0); }
 
 /* ---------- Beim Betreten / nach dem Schnitt ---------- */
-const JA_T={dabei:'Wir sind dabei',schrift:'Erst schriftlich',klein:'Klein anfangen',spiel:'Erst zum Heimspiel'}, JA_K={dabei:'Wir sind<br>dabei',schrift:'Erst<br>schriftlich',klein:'Klein<br>anfangen',spiel:'Erst zum<br>Heimspiel'};
 const REIN={
   buehne:()=>{ $$('#rahmen .sz').forEach(s=>s.classList.remove('kommt','fahrt')); zeigSz(S.platz||'bande'); },
   worum:()=>{ if(wFertig)worumZeig($$('#worum .fz').length-1); else { wK=-1; $$('#worum .fz').forEach(z=>z.classList.remove('solo')); } },
@@ -1094,11 +1311,7 @@ const REIN={
   extras:()=>exZeig(),
   bon:()=>{ exPutzen(); const r=rechne(); if(!r.voll)S.laufzeit=1; $$('[data-frage="laufzeit"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.w===S.laufzeit)); $('.lz').hidden=!r.voll; $('#bonH').innerHTML=r.voll?'Eine Saison <em>oder länger?</em>':'Euer <em>Zettel.</em>';
     bonZeig(false); const l=$('#lob-laufzeit'); l.hidden=!r.voll; $('p',l).textContent=LOB.laufzeit[S.laufzeit]; l.classList.add('da'); },
-  ja:()=>{ if(S.vorKlein){ S.pi=S.vorKlein.pi; S.extras=S.vorKlein.extras; S.laufzeit=S.vorKlein.laufzeit; S.warKeins=pk()==='keins'; S.vorKlein=null; }
-    S.ja=null; S.wann=''; $('#jaVor').hidden=false; $('#jaNach').hidden=true; $('#jaNach').innerHTML=''; $('#fragen').classList.remove('da'); const ohneKlein=pIndex()<0, haupt=S.skeptisch?'spiel':'dabei';
-    const kn=$('.anstoss button'); kn.dataset.ja=haupt; kn.innerHTML=JA_K[haupt]; const rest=['dabei','schrift','klein','spiel'].filter(k=>k!==haupt&&!(k==='klein'&&ohneKlein));
-    $$('.ja-wege .zeile[data-ja]:not([data-ja="nein"])').forEach((b,k)=>{ b.hidden=!rest[k]; if(rest[k]){ b.dataset.ja=rest[k]; b.textContent=JA_T[rest[k]]; } });
-    $('#jaWas').textContent=wahlText(); $('#jaOffen').hidden=true; }
+  ja:()=>{ S.ja=null; S.weg=null; S.wann=''; $('#jaVor').hidden=false; const n=$('#jaNach'); n.hidden=true; n.innerHTML=''; n.classList.remove('fest'); $('#fragen').classList.remove('da'); $('#jaWas').textContent=wahlText(); }
 };
 const AUF={
   buehne:()=>{ if(!S.platz&&!ruhig){ zeigSz('bande','fahrt'); setTimeout(szAuto,3800); } },
@@ -1110,10 +1323,9 @@ const AUF={
 function regieZeig(){ const id=ORD[S.i], p=punkte(), r=reihe(), top=r[0]||'gast'; $('#rSatz').textContent=SATZ[id];
   $('#rBal').innerHTML=Object.keys(DNAME).map(k=>'<div class="bal"><span>'+DNAME[k]+'</span><i style="--w:'+Math.min(1,p[k]/7)+'"></i><b>'+p[k]+'</b></div>').join('');
   const hat=S.verb||S.antrieb.length||S.skeptisch, rg=regel(), i=pIndex(); let t='';
-  if(hat){ t='<b>'+(i<0?'Ein Baustein: '+EX[kleinstBaustein()].t:PAK[ST[i]].t)+'</b> · nach den Antworten: '+PAK[ST[rg]].t+'<br>';
-    if(i>rg)t+='Gewählt ist mehr, als zu den Antworten nötig wäre. Sag es von dir aus.<br>';
+  if(hat){ t='<b>'+(i<0?'Ein Baustein: '+EX[kleinstBaustein()].t:PAK[ST[i]].t)+'</b>'+(rg>i?' · nach den Antworten passt auch: '+PAK[ST[rg]].t:'')+'<br>';
     t+=EINWAND[top]; if(S.bremse.size)t+='<br>Gelesen: '+[...S.bremse.keys()].map(k=>BREMSE.find(b=>b[0]===k)[1]).join(' ');
-    if(S.ja)t+='<br>Ergebnis: '+({dabei:'Ja',schrift:'Erst schriftlich',klein:'Klein anfangen',spiel:'Erst zum Heimspiel',nein:'Heute nicht'}[S.ja])+(S.wann?'. '+S.wann:'.')+' Trag es in die Akte ein.'; }
+    if(S.ja)t+='<br>Ergebnis: '+({dabei:'Ja',nein:'Heute nicht'}[S.ja]||S.ja)+(S.weg==='gleich'?', unterschreibt gleich':S.weg==='angebot'?', Angebot und Antrag per Mail':'')+(S.wann?'. '+S.wann:'.')+' Trag es in die Akte ein.'; }
   $('#rEmp').innerHTML=t||'Noch keine Antworten. Das Bild füllt sich mit jeder Station.'; if(S.ja)reiseMelden(); }
 function regieUm(zu){ const r=$('#regie'), an=zu==null?!r.classList.contains('da'):zu; r.classList.toggle('da',an); }
 $('#regieX').onclick=()=>regieUm(false);
@@ -1153,7 +1365,7 @@ function reiseNotiz(){ try{ if(!(S.verb||S.antrieb.length||S.ja))return ''; cons
   if(S.antrieb.length)z.push('Wichtig: '+S.antrieb.map(a=>({kinder:'Kinder und Jugend',sehen:'Sichtbarkeit',leute:'Mitarbeiter finden',netz:'Netzwerk',zurueck:'etwas zurückgeben',vorn:'vorne dabei'}[a]||a)).join(', '));
   z.push('Gewählt: '+(i<0?'ein Baustein ('+EX[kleinstBaustein()].t+')':PAK[ST[i]].t)+(i!==rg?', nach den Antworten: '+PAK[ST[rg]].t:''));
   if(S.extras&&S.extras.size)z.push('Zusätze: '+[...S.extras].map(k=>EX[k]?EX[k].t:k).join(', '));
-  if(S.ja)z.push('Ergebnis: '+({dabei:'Ja',schrift:'erst schriftlich',klein:'klein anfangen',spiel:'erst zum Heimspiel',nein:'heute nicht'}[S.ja]||S.ja)+(S.wann?', '+S.wann:''));
+  if(S.ja)z.push('Ergebnis: '+({dabei:'Ja',nein:'heute nicht'}[S.ja]||S.ja)+(S.weg==='gleich'?', unterschreibt gleich':S.weg==='angebot'?', Angebot und Antrag per Mail':'')+(S.wann?', '+S.wann.replace(/\.$/,''):''));
   return z.join('. ')+'.'; }catch(e){ return ''; } }
 if(navigator.webdriver)window.REISE_PRUEF={notiz:()=>reiseNotiz(),stand:()=>S,zeig:()=>regieZeig()};   // nur für die automatischen Tests
 let notizAlt='';

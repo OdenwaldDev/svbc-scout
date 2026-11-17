@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.75',v:'0.99.75',datum:'2026-11-17',titel:'Präsentation: eine Frage am Ende',kurz:'Die Präsentation für Partner endet mit einer einzigen Frage, zeigt Hinweise nur noch nach oben und erklärt jedes Paket auf Wunsch ausführlich.',
+   punkte:[
+    {ic:'\u{1F4AC}',t:'Seid ihr dabei?',d:'Am Ende steht eine Frage mit einem Knopf. Nach dem Ja kommt das Willkommen mit dem Namen an der Bande, erst danach die Frage, wie es weitergeht: gleich unterschreiben oder Angebot und Antrag per Mail.',r:'team'},
+    {ic:'\u{1F3AB}',t:'Ticket ohne Abstufen',d:'„Eine Nummer kleiner“ gibt es nicht mehr. Passt nach den Antworten mehr, steht im weißen Kasten ein Knopf zum Upgrade. Bei „Was wäre euch wichtig?“ lassen sich alle sechs Antworten wählen, die Reihenfolge zählt.',r:'team'},
+    {ic:'\u{2139}\u{FE0F}',t:'Mehr dazu',d:'An jedem Paket und jedem Baustein sitzt ein kleiner Info-Knopf mit einem ausführlichen Text. Dazu mehr Bewegung beim Überfahren und Antippen und neue Übergänge zwischen den Szenen.',r:'team'}
+   ]},
   {id:'0.99.74',v:'0.99.74',datum:'2026-11-17',titel:'Kandidaten und System 5-1-2-2',kurz:'Die Liste aus der Kaderplanung-App steht jetzt im Scouting unter Kandidaten. Im Kaderplan gibt es das System 5-1-2-2.',
    punkte:[
     {ic:'\u{1F50E}',t:'Kandidaten an einem Ort',d:'Die Karte „Aus der Kaderplanung-App“ steht nicht mehr im Kader, sondern im Scouting auf der Seite Kandidaten. Am Handy stehen die Marken unter dem Namen, nichts bricht mehr um.',r:'team'},
