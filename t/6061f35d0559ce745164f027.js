@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.76',v:'0.99.76',datum:'2026-11-17',titel:'Präsentation merkt sich den Stand',kurz:'Die Präsentation für Partner speichert jeden Schritt und zeigt dem Partner-Team eine Auswertung. Spielminuten bleiben offen, wenn im Spielbericht fehlt, wer ausgewechselt wurde.',
+   punkte:[
+    {ic:'\u{1F4BE}',t:'Weitermachen, wo ihr wart',d:'Jede Antwort wird gespeichert. Beim nächsten Öffnen gibt es drei Möglichkeiten: weitermachen, von vorn mit den Antworten oder ganz neu. Öffnet eine Firma ihren Link allein, sieht sie keine Notizen fürs Gespräch.',r:'team'},
+    {ic:'\u{1F4CA}',t:'Auswertung je Firma',d:'Unter Partner, Präsentationen: was geantwortet wurde, wie lange jede Szene offen war und wohin getippt wurde. Unter „Wen ansprechen“ steht, was welcher Firma wichtig war und wo dazu noch nichts gebucht ist.',r:'team'},
+    {ic:'\u{23F1}\u{FE0F}',t:'Minuten nur, wenn sie stimmen',d:'Fehlt im Spielbericht, wer für einen Einwechsler rausging, stehen die Startspieler nicht mehr mit 90 Minuten da. Die Minuten bleiben offen, bis FuPa vollständig ist oder das Trainerteam sie einträgt.',r:'team'}
+   ]},
   {id:'0.99.75',v:'0.99.75',datum:'2026-11-17',titel:'Präsentation: eine Frage am Ende',kurz:'Die Präsentation für Partner endet mit einer einzigen Frage, zeigt Hinweise nur noch nach oben und erklärt jedes Paket auf Wunsch ausführlich.',
    punkte:[
     {ic:'\u{1F4AC}',t:'Seid ihr dabei?',d:'Am Ende steht eine Frage mit einem Knopf. Nach dem Ja kommt das Willkommen mit dem Namen an der Bande, erst danach die Frage, wie es weitergeht: gleich unterschreiben oder Angebot und Antrag per Mail.',r:'team'},

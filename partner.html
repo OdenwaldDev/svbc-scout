@@ -748,9 +748,9 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
   <p class="start-t">Eure Übersicht wird geladen …</p>
   <div class="start-b" aria-hidden="true"><i></i><i></i><i></i></div>
 </div></div>
-<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.75", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
-<script src="partner-lib.js?v=beta-0.99.75"></script>
-<script src="partner.js?v=beta-0.99.75"></script>
+<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.76", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
+<script src="partner-lib.js?v=beta-0.99.76"></script>
+<script src="partner.js?v=beta-0.99.76"></script>
 <script>(function(){ try{
   var q=new URLSearchParams(location.search), hp=new URLSearchParams(location.hash.slice(1));
   if(q.get('reise')==='0')return;
@@ -768,10 +768,18 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
     fetch('https://lvaukuzgcwgqipxwzabo.supabase.co/rest/v1/sponsor_kontakte?id=eq.'+encodeURIComponent(k.id),{method:'PATCH',headers:{'Content-Type':'application/json',apikey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo',Authorization:'Bearer '+tk,Prefer:'return=minimal'},
       body:JSON.stringify({notiz:('Präsentation im Termin gezeigt (Partner-Start). '+n).slice(0,1000)})}).catch(function(){}); }catch(e){} };
   var name=function(){ var m=/^Partner werden · (.+) · SV\/BSC/.exec(document.title||''); return m?m[1]:''; };
+  // 0.99.76: Stand und Spur der Reise. Mit Anmeldung (Partner-Team) gilt die Sitzung als Termin, sonst als allein geöffnet.
+  var tok=function(){ try{ for(var i=0;i<localStorage.length;i++){ var sk=localStorage.key(i); if(sk!=='svbc-auth'&&!/^sb-.+-auth-token$/.test(sk))continue; var j=JSON.parse(localStorage.getItem(sk)||'null'), s=j&&(j.currentSession||j); if(s&&s.access_token)return s.access_token; } }catch(e){} return null; };
+  var ruf=function(fn,body,t){ return fetch('https://lvaukuzgcwgqipxwzabo.supabase.co/rest/v1/rpc/'+fn,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo',Authorization:'Bearer '+(t||'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo')},body:JSON.stringify(body)}); };
+  // Abgelaufene Anmeldung auf dem Gerät: dann ohne Anmeldung noch einmal, damit trotzdem gespeichert wird
+  var rpc=function(fn,body){ var t=tok(); return ruf(fn,body,t).then(function(r){ return (r.status===401||r.status===403)&&t?ruf(fn,body,null):r; }); };
+  var codeOk=/^[a-f0-9]{32}$/.test(code), standP=codeOk?rpc('partner_reise_stand',{p_code:code}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }):Promise.resolve(null);
   window.addEventListener('message',function(e){ if(e.origin!==location.origin||!e.data)return;
     if(e.data.notiz)merk(e.data.notiz);
     if(e.data.reise==='fertig')zu();
-    if(e.data.reise==='bereit'){ var n=0, t=setInterval(function(){ var x=name(); if(x||++n>40){ clearInterval(t); if(x&&f.contentWindow)f.contentWindow.postMessage({reise:'name',name:x},location.origin); } },250); } });
+    if(e.data.reise==='merken'&&codeOk&&/^[0-9a-f-]{36}$/.test(String(e.data.sitzung||''))&&e.data.daten){ try{ rpc('partner_reise_merken',{p_code:code,p_sitzung:e.data.sitzung,p:e.data.daten}).catch(function(){}); }catch(x){} }
+    if(e.data.reise==='bereit'){ var n=0, t=setInterval(function(){ var x=name(); if(x||++n>40){ clearInterval(t);
+      standP.then(function(st){ if(f.contentWindow)f.contentWindow.postMessage({reise:'name',name:x||'',merken:codeOk&&!!st,termin:!!(st&&st.termin),stand:st&&st.stand||null,am:st&&st.am||null},location.origin); }); } },250); } });
   var rein=function(){ document.documentElement.style.overflow='hidden'; document.body.appendChild(f); };
   if(document.body)rein(); else document.addEventListener('DOMContentLoaded',rein);
 }catch(e){} })();</script></body></html>
