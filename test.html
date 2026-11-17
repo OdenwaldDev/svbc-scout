@@ -151,11 +151,66 @@ footer{align-items:center}
   #start .nutzen{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:18px;border-top:0}
   #anm,#weg{width:min(100%,660px);justify-self:center}
 }
+
+/* ---------- Vorspann (0.99.70): Flutlicht, bewegtes Wappen, Ton. Liegt über der Seite und fährt nach dem ersten Tipp weg ---------- */
+#intro{position:fixed;inset:0;z-index:50;background:#070b1e;color:#fff;display:grid;place-items:center;overflow:hidden;padding:max(24px,env(safe-area-inset-top)) 24px max(28px,env(safe-area-inset-bottom))}
+#intro[hidden]{display:none}
+#intro .in-hg{position:absolute;inset:0}
+#intro .in-hg img{width:100%;height:100%;object-fit:cover;animation:in-zoom 16s ease-out both}
+#intro .in-hg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,11,30,.55) 0%,rgba(7,11,30,.2) 32%,rgba(7,11,30,.82) 70%,#070b1e 100%)}
+#intro .in-strahl{position:absolute;top:-12%;width:70%;height:95%;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 72%);filter:blur(14px);transform-origin:50% 0;opacity:0;animation:in-strahl 1.6s .25s ease-out forwards;pointer-events:none}
+#intro .in-strahl.a{left:-22%;--w:24deg}#intro .in-strahl.b{right:-22%;--w:-24deg;animation-delay:.5s}
+#intro .in-mitte{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;width:min(100%,420px)}
+#intro .in-logo{position:relative;width:176px;height:176px;display:grid;place-items:center;margin-bottom:6px;animation:in-logo 1s .15s cubic-bezier(.2,1.5,.35,1) both}
+#intro .in-logo img{width:118px;height:auto;position:relative;filter:drop-shadow(0 10px 26px rgba(0,0,0,.55));animation:in-atem 4.2s 1.3s ease-in-out infinite}
+#intro .in-logo i{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(91,155,255,.14);border-top-color:#5b9bff;border-right-color:rgba(91,155,255,.45);animation:in-dreh 1.5s cubic-bezier(.5,.2,.5,.8) infinite}
+#intro .in-logo i.b{inset:16px;border-width:2px;border-top-color:transparent;border-right-color:transparent;border-bottom-color:rgba(232,116,31,.8);border-left-color:rgba(232,116,31,.3);animation-duration:2.2s;animation-direction:reverse}
+#intro .in-auge{margin:0;font:700 12px/1.2 'InterV',system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#a9c4ff;animation:in-auf .6s .7s both}
+#intro .in-h{font-size:clamp(40px,12.5vw,58px);line-height:.94;font-style:italic}
+#intro .in-h span{display:block;overflow:hidden;padding:.04em .08em}
+#intro .in-h b{display:block;font-weight:800;transform:translateY(105%);animation:in-zeile .7s cubic-bezier(.2,.8,.2,1) forwards}
+#intro .in-h span:nth-child(1) b{animation-delay:.85s}#intro .in-h span:nth-child(2) b{animation-delay:1.05s}
+#intro .in-h em{font-style:inherit;color:#ff8a3c}
+#intro .in-t{margin:0;font-size:16px;line-height:1.45;color:#d7def5;max-width:30ch;animation:in-auf .6s 1.35s both}
+#in-los{margin-top:10px;display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 30px;border:0;border-radius:14px;background:#e8741f;color:#16100a;font:800 21px/1 'BarlowC',system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;box-shadow:0 14px 34px -12px rgba(232,116,31,.9);animation:in-auf .6s 1.6s both,in-puls 2.4s 2.6s ease-in-out infinite}
+#in-los svg{width:22px;height:22px}
+#in-los:active{transform:scale(.97)}
+#in-still{min-height:44px;padding:0 14px;border:0;background:none;color:#b9c3e6;font:600 14px/1 'InterV',system-ui,sans-serif;text-decoration:underline;text-underline-offset:4px;cursor:pointer;animation:in-auf .6s 1.85s both}
+#intro.weg{animation:in-weg .62s cubic-bezier(.7,0,.25,1) forwards;pointer-events:none}
+#intro.weg .in-logo{animation:in-flug .5s ease-in forwards}
+#tonB{margin-left:8px;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:12px;background:rgba(255,255,255,.08);color:inherit;cursor:pointer;flex:none}
+#tonB svg{width:22px;height:22px}
+#tonB .w1,#tonB .w2{opacity:0;transition:opacity .2s}
+#tonB[aria-pressed="true"]{color:#ff8a3c}
+#tonB[aria-pressed="true"] .w1,#tonB[aria-pressed="true"] .w2{opacity:1}
+@keyframes in-zoom{from{transform:scale(1.16)}to{transform:scale(1)}}
+@keyframes in-strahl{from{opacity:0;transform:rotate(0deg) scaleY(.6)}to{opacity:1;transform:rotate(var(--w)) scaleY(1)}}
+@keyframes in-logo{from{opacity:0;transform:scale(.4) translateY(30px)}to{opacity:1;transform:none}}
+@keyframes in-atem{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.03)}}
+@keyframes in-dreh{to{transform:rotate(360deg)}}
+@keyframes in-auf{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes in-zeile{to{transform:none}}
+@keyframes in-puls{0%,100%{box-shadow:0 14px 34px -12px rgba(232,116,31,.9)}50%{box-shadow:0 14px 44px -6px rgba(232,116,31,1)}}
+@keyframes in-weg{to{transform:translateY(-102%);opacity:.6}}
+@keyframes in-flug{to{transform:translateY(-40vh) scale(.3);opacity:0}}
+@media (prefers-reduced-motion:reduce){#intro *,#intro{animation:none!important}#intro .in-h b{transform:none}#intro .in-strahl{opacity:.8;transform:rotate(var(--w))}}
 </style>
 </head>
 <body>
+<div id="intro" hidden>
+  <div class="in-hg" aria-hidden="true"><img src="partner/r-nachthoch.webp" alt=""></div>
+  <div class="in-strahl a" aria-hidden="true"></div><div class="in-strahl b" aria-hidden="true"></div>
+  <div class="in-mitte">
+    <div class="in-logo"><i aria-hidden="true"></i><i class="b" aria-hidden="true"></i><img src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach" width="480" height="273"></div>
+    <p class="in-auge">SV/BSC Mörlenbach · Fußball</p>
+    <h1 class="in-h"><span><b>Unser Verein.</b></span><span><b><em>Auf deinem Handy.</em></b></span></h1>
+    <p class="in-t">Training, Termine und alles, was im Verein ansteht. In zwei Minuten bist du drin.</p>
+    <button type="button" id="in-los">Los geht's<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <button type="button" id="in-still">Ohne Ton starten</button>
+  </div>
+</div>
 <div class="shell">
-<header><img src="kit/wappen.png" alt="" width="44" height="44"><div><b>SVBSC</b><small>SV/BSC Mörlenbach · Fußball</small></div><span class="chip">TESTPHASE</span></header>
+<header><img src="kit/wappen.png" alt="" width="44" height="44"><div><b>SVBSC</b><small>SV/BSC Mörlenbach · Fußball</small></div><span class="chip">TESTPHASE</span><button id="tonB" type="button" aria-pressed="false" aria-label="Ton an oder aus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16.5 9a4 4 0 0 1 0 6"/><path class="w2" d="M19 6.5a8 8 0 0 1 0 11"/></svg></button></header>
 
 <main id="main">
 <section id="start" class="weg rein" aria-labelledby="t-start">
@@ -387,6 +442,35 @@ if(kq&&/^[0-9a-f]{20,80}$/.test(kq)){
     $('#weiter').hidden=true;zeigStart(true);$('#weiter').hidden=true;
   });
 }
+
+/* ---------- Vorspann und Ton (0.99.70) ----------
+   Albert, 17.11.2026: der Weg zur App soll sich anfühlen wie die Partnerreise, mit bewegtem Wappen wie in der App und einer Melodie.
+   Effekte beim Tippen entstehen im Browser (Web Audio), die Melodie ist partner/r-musik.mp3, der Pfiff am Ende partner/r-pfiff.mp3.
+   Der Vorspann kommt einmal je Sitzung, nie in automatischen Tests (außer mit ?intro=1). Ton geht erst mit dem ersten Tipp an. */
+var ton=false,AC=null,AUS=null,A={},vorbei=false;
+function ac(){if(!AC){try{var K=window.AudioContext||window.webkitAudioContext;AC=new K();AUS=AC.createGain();AUS.gain.value=.5;AUS.connect(AC.destination)}catch(e){AC=null}}if(AC&&AC.state==='suspended')AC.resume().catch(function(){});return AC}
+function rausch(c,d){var n=Math.max(1,Math.floor(c.sampleRate*d)),b=c.createBuffer(1,n,c.sampleRate),x=b.getChannelData(0);for(var i=0;i<n;i++)x[i]=Math.random()*2-1;var q=c.createBufferSource();q.buffer=b;return q}
+function ton1(c,typ,f0,f1,d,l,ab){var t=c.currentTime+(ab||0),o=c.createOscillator(),g=c.createGain();o.type=typ;o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+d*.7);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(l,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AUS);o.start(t);o.stop(t+d+.02)}
+function luft(c,f0,f1,d,l){var t=c.currentTime,q=rausch(c,d),f=c.createBiquadFilter(),g=c.createGain();f.type='bandpass';f.Q.value=.9;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(f1,t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(l,t+d*.35);g.gain.exponentialRampToValueAtTime(.0001,t+d);q.connect(f);f.connect(g);g.connect(AUS);q.start(t)}
+var FX={tipp:function(c){ton1(c,'sine',185,68,.15,.5)},wahl:function(c){ton1(c,'triangle',523,0,.11,.16);ton1(c,'triangle',784,0,.16,.14,.07)},wisch:function(c){luft(c,380,2600,.3,.2)},fertig:function(c){ton1(c,'triangle',523,0,.14,.16);ton1(c,'triangle',659,0,.14,.16,.1);ton1(c,'triangle',784,0,.3,.18,.2)}};
+function fx(k){if(!ton||!FX[k])return;var c=ac();if(!c)return;try{FX[k](c)}catch(e){}}
+function klang(k,vol,loop){if(!A[k]){A[k]=new Audio('partner/r-'+k+'.mp3');A[k].preload='auto'}A[k].volume=vol;A[k].loop=!!loop;return A[k]}
+function tonSetz(an){ton=an;$('#tonB').setAttribute('aria-pressed',an);var m=klang('musik',.16,true);if(an){ac();m.play().catch(function(){})}else Object.keys(A).forEach(function(k){A[k].pause()})}
+function tonMerk(an){try{localStorage.setItem('svbsc-ton',an?'1':'0')}catch(e){}}
+function tonAus(){try{return localStorage.getItem('svbsc-ton')==='0'}catch(e){return false}}
+$('#tonB').onclick=function(){tonSetz(!ton);tonMerk(ton);if(ton)fx('wahl')};
+document.addEventListener('pointerdown',function(e){var b=e.target.closest&&e.target.closest('button,a.prim,summary,label.ja,.umschalt label');if(!b||b.disabled||b.id==='tonB'||b.id==='in-los'||b.id==='in-still')return;fx(b.hasAttribute('data-geraet')||b.id==='w-ok'?'wahl':'tipp')},{passive:true});
+// Jeder Wechsel der Ansicht klingt, der letzte Schritt mit drei Tönen und dem Pfiff
+var _nur=nur;nur=function(id){var r=_nur.apply(this,arguments);if(vorbei)fx('wisch');return r};
+var _zeig=zeig,gepfiffen=false;zeig=function(){var r=_zeig.apply(this,arguments);if($('#weg').dataset.phase==='fertig'&&!gepfiffen&&ton){gepfiffen=true;fx('fertig');try{var p=klang('pfiff',.5);p.currentTime=0;p.play().catch(function(){})}catch(e){}}return r};
+(function(){var I=$('#intro'),auto=navigator.webdriver&&!/[?&]intro=1/.test(location.search),gesehen=false;try{gesehen=sessionStorage.getItem('svbsc-intro')==='1'}catch(e){}
+  if(auto||gesehen){vorbei=true;return}
+  I.hidden=false;document.documentElement.style.overflow='hidden';
+  function los(mit){if(vorbei)return;vorbei=true;try{sessionStorage.setItem('svbsc-intro','1')}catch(e){}
+    if(mit&&!tonAus()){tonSetz(true);fx('wisch')}else if(!mit)tonMerk(false);
+    I.classList.add('weg');document.documentElement.style.overflow='';setTimeout(function(){I.hidden=true},700)}
+  $('#in-los').onclick=function(){los(true)};$('#in-still').onclick=function(){los(false)};
+})();
 ruf('app_test_stand').then(function(d){if(d&&typeof d==='object'){Object.keys(S).forEach(function(k){if(d[k]!==undefined&&d[k]!==null&&d[k]!=='')S[k]=d[k]});if(d.dabei===null)S.dabei=null;stand()}});
 })();
 </script>

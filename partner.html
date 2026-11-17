@@ -748,9 +748,9 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
   <p class="start-t">Eure Übersicht wird geladen …</p>
   <div class="start-b" aria-hidden="true"><i></i><i></i><i></i></div>
 </div></div>
-<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.69", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
-<script src="partner-lib.js?v=beta-0.99.69"></script>
-<script src="partner.js?v=beta-0.99.69"></script>
+<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.70", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
+<script src="partner-lib.js?v=beta-0.99.70"></script>
+<script src="partner.js?v=beta-0.99.70"></script>
 <script>(function(){ try{
   var q=new URLSearchParams(location.search), hp=new URLSearchParams(location.hash.slice(1));
   if(q.get('reise')==='0')return;
@@ -761,8 +761,15 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
   var f=document.createElement('iframe'); f.id='reiseRahmen'; f.title='Partner werden beim SV/BSC Mörlenbach'; f.src='reise.html'; f.setAttribute('allow','autoplay; fullscreen');
   f.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#0a1020';
   var zu=function(){ try{ st&&st.setItem(key,'1'); }catch(e){} if(f.parentNode)f.parentNode.removeChild(f); document.documentElement.style.overflow=''; try{ var p=document.getElementById('pakete'); if(p&&!p.hidden)p.scrollIntoView(); }catch(e){} };
+  // 0.99.70: Kam der Termin über den Partner-Start (partnerstart.html), steht dort schon ein Eintrag im Verlauf der Firma. Die Antworten der Reise kommen als Notiz dazu.
+  var merk=function(n){ try{ var k=JSON.parse(sessionStorage.getItem('ps-kontakt')||'null'); if(!n||!k||k.code!==code||!k.id)return;
+    var tk=null; for(var i=0;i<localStorage.length;i++){ var sk=localStorage.key(i); if(sk!=='svbc-auth'&&!/^sb-.+-auth-token$/.test(sk))continue; var j=JSON.parse(localStorage.getItem(sk)||'null'), s=j&&(j.currentSession||j); if(s&&s.access_token)tk=s.access_token; }
+    if(!tk)return;
+    fetch('https://lvaukuzgcwgqipxwzabo.supabase.co/rest/v1/sponsor_kontakte?id=eq.'+encodeURIComponent(k.id),{method:'PATCH',headers:{'Content-Type':'application/json',apikey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo',Authorization:'Bearer '+tk,Prefer:'return=minimal'},
+      body:JSON.stringify({notiz:('Präsentation im Termin gezeigt (Partner-Start). '+n).slice(0,1000)})}).catch(function(){}); }catch(e){} };
   var name=function(){ var m=/^Partner werden · (.+) · SV\/BSC/.exec(document.title||''); return m?m[1]:''; };
   window.addEventListener('message',function(e){ if(e.origin!==location.origin||!e.data)return;
+    if(e.data.notiz)merk(e.data.notiz);
     if(e.data.reise==='fertig')zu();
     if(e.data.reise==='bereit'){ var n=0, t=setInterval(function(){ var x=name(); if(x||++n>40){ clearInterval(t); if(x&&f.contentWindow)f.contentWindow.postMessage({reise:'name',name:x},location.origin); } },250); } });
   var rein=function(){ document.documentElement.style.overflow='hidden'; document.body.appendChild(f); };

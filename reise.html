@@ -489,8 +489,7 @@ html.bereit .foto-karte{opacity:1}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   #intro{display:none}
 }
-
-#tonB{display:none!important}</style></head><body><div id="film" data-s="start" data-licht="1">
+</style></head><body><div id="film" data-s="start" data-licht="1">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture><video muted loop playsinline preload="none" data-quer="partner/r-nacht.mp4" data-hoch="partner/r-nachthoch.mp4"></video></div>
     <div data-hg="rasen"><img class="zoom" src="partner/r-rasen.webp" alt=""><video muted loop playsinline preload="none" data-quer="partner/r-rasen.mp4" data-hoch="partner/r-rasen.mp4"></video></div>
@@ -773,11 +772,12 @@ const KLEIN={herz:'baelle_jugend',team:'jobpost',buehne:'matchball',ehre:'matchb
 
 /* ---------- Antworten des Vereins: Tatsachen statt Noten ---------- */
 const LOB={
-  verb:{hier:'Dann wisst ihr ja, wie es hier sonntags klingt.',familie:'Dann kennt ihr uns besser als jeder Prospekt.',ehemalig:'Dann müssen wir euch nichts erklären. Welche Zeit war das?',partner:'Dann zuerst: Danke.',neu:'Macht nichts. Deshalb sind wir ja hier.'},
-  antrieb:{kinder:'Zwölf Jugendmannschaften. Da kommt jede Hilfe an.',sehen:'Verständlich. Am Platz kommt der Ort zusammen.',leute:'Versprechen können wir niemanden. Aber am Platz lernt man sich kennen, lange vor der Bewerbung.',netz:'Dafür gibt es bei uns eigene Abende. Partner treffen Partner.',zurueck:'Das hören wir selten so klar. Danke.',vorn:'Gut. Dann zeigen wir euch auch, was es ganz vorne gibt.',
+  // Albert, 17.11.2026: keine Sprüche. Nach „Woher kennt ihr uns?“ kommt keine Antwortzeile mehr, nur beim bestehenden Partner ein Danke.
+  verb:{hier:'',familie:'',ehemalig:'',partner:'Danke, dass ihr dabei seid.',neu:''},
+  antrieb:{kinder:'Zwölf Jugendmannschaften. Da kommt jede Hilfe an.',sehen:'Verständlich. Am Platz kommt der Ort zusammen.',leute:'Versprechen können wir niemanden. Aber am Platz lernt man sich kennen, lange vor der Bewerbung.',netz:'Dafür gibt es bei uns eigene Abende. Partner treffen Partner.',zurueck:'Danke. Davon lebt der Verein.',vorn:'Gut. Dann zeigen wir euch auch, was es ganz vorne gibt.',
     skep:'Danke für die klare Ansage. Schaut es euch an und sagt am Ende, ob etwas dabei ist.'},
-  platz:{bande:'Die Bande. Die sieht jeder, der am Platz steht.',trikot:'Aufs Trikot geht es bei uns über die Jugend.',tag:'Ein Heimspiel lang gehört der Platz euch.',wand:'Auch gut. Euer Logo hängt an der Partnerwand, ohne Tamtam.'},
-  groesse:{3:'Einer von acht. Das besprechen wir in Ruhe.',2:'Vorne stehen. Dann lernt ihr auch die anderen kennen.',1:'Mit eigener Bande am Platz.',0:'Dabei sein reicht völlig. Jeder Name an der Wand hilft.','-1':'Klein anfangen ist auch anfangen.',auto:'Machen wir. Ihr sagt uns danach, ob wir richtig liegen.'},
+  platz:{bande:'Die Bande. Die sieht jeder, der am Platz steht.',trikot:'Aufs Trikot geht es bei uns über die Jugend.',tag:'Ein Heimspiel lang gehört der Platz euch.',wand:'Euer Logo hängt dann an der Partnerwand.'},
+  groesse:{3:'Einer von acht. Das besprechen wir in Ruhe.',2:'Vorne stehen. Dann lernt ihr auch die anderen kennen.',1:'Mit eigener Bande am Platz.',0:'Jeder Name an der Wand hilft.','-1':'Das geht. Es gibt auch kleine Wege, dabei zu sein.',auto:'Machen wir. Ihr sagt uns danach, ob wir richtig liegen.'},
   laufzeit:{1:'Eine Saison zum Kennenlernen.',2:'Zwei Saisons. Der Preis bleibt so.',3:'Drei Saisons. Preis und Platz bleiben.'}
 };
 const KURZ={kinder:'Kinder',sehen:'Sichtbarkeit',leute:'Gute Leute',netz:'Kontakte',zurueck:'Etwas zurückgeben',vorn:'Vorne dabei sein'};
@@ -858,9 +858,32 @@ function passe(){ $$('.passt').forEach(el=>{ const b=el.parentElement, h=b.clien
 const A={};
 function klang(k,vol,loop){ if(!A[k]){ A[k]=new Audio('partner/r-'+k+'.mp3'); A[k].preload='auto'; } A[k].volume=vol; A[k].loop=!!loop; return A[k]; }
 function spiel(k,vol){ if(!ton)return; try{ const a=klang(k,vol); a.currentTime=0; a.play().catch(()=>{}); }catch(e){} }
-function tonSetz(an){ ton=an; $('#tonB').setAttribute('aria-pressed',an); const m=klang('musik',.3,true);
-  if(an)m.play().catch(()=>{ ton=false; $('#tonB').setAttribute('aria-pressed','false'); }); else Object.values(A).forEach(a=>a.pause()); }
-$('#tonB').onclick=()=>tonSetz(!ton);
+// Effekte beim Tippen und Wischen entstehen im Browser (Web Audio), es wird dafür nichts geladen. Leise, kurz, ohne Melodie:
+// tipp = dumpfer Schlag wie ein Ball am Fuß, wahl = zwei helle Töne, wisch und zurueck = Luftzug, stempel = Stempel aufs Ticket.
+let AC=null, AUS=null;
+function ac(){ if(!AC){ try{ const K=window.AudioContext||window.webkitAudioContext; AC=new K(); AUS=AC.createGain(); AUS.gain.value=.55; AUS.connect(AC.destination); }catch(e){ AC=null; } }
+  if(AC&&AC.state==='suspended')AC.resume().catch(()=>{}); return AC; }
+function rausch(c,dauer){ const n=Math.max(1,Math.floor(c.sampleRate*dauer)), b=c.createBuffer(1,n,c.sampleRate), d=b.getChannelData(0); for(let i=0;i<n;i++)d[i]=Math.random()*2-1; const q=c.createBufferSource(); q.buffer=b; return q; }
+function ton1(c,typ,f0,f1,dauer,laut,ab){ const t=c.currentTime+(ab||0), o=c.createOscillator(), g=c.createGain(); o.type=typ; o.frequency.setValueAtTime(f0,t); if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+dauer*.7);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(laut,t+.008); g.gain.exponentialRampToValueAtTime(.0001,t+dauer); o.connect(g); g.connect(AUS); o.start(t); o.stop(t+dauer+.02); }
+function luft(c,f0,f1,dauer,laut){ const t=c.currentTime, q=rausch(c,dauer), f=c.createBiquadFilter(), g=c.createGain(); f.type='bandpass'; f.Q.value=.9; f.frequency.setValueAtTime(f0,t); f.frequency.exponentialRampToValueAtTime(f1,t+dauer);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(laut,t+dauer*.35); g.gain.exponentialRampToValueAtTime(.0001,t+dauer); q.connect(f); f.connect(g); g.connect(AUS); q.start(t); }
+const FX={
+  tipp:c=>{ ton1(c,'sine',185,68,.15,.5); const t=c.currentTime, q=rausch(c,.03), f=c.createBiquadFilter(), g=c.createGain(); f.type='highpass'; f.frequency.value=1700; g.gain.setValueAtTime(.1,t); g.gain.exponentialRampToValueAtTime(.0001,t+.03); q.connect(f); f.connect(g); g.connect(AUS); q.start(t); },
+  wahl:c=>{ ton1(c,'triangle',523,0,.11,.16); ton1(c,'triangle',784,0,.16,.14,.07); },
+  wisch:c=>luft(c,380,2600,.3,.2),
+  zurueck:c=>luft(c,2200,340,.26,.16),
+  stempel:c=>{ ton1(c,'sine',120,42,.22,.7); luft(c,900,300,.09,.25); }
+};
+function fx(k){ if(!ton||!FX[k])return; const c=ac(); if(!c)return; try{ FX[k](c); }catch(e){} }
+function tonMerken(an){ try{ localStorage.setItem('reise-ton',an?'1':'0'); }catch(e){} }
+function tonGemerkt(){ try{ return localStorage.getItem('reise-ton'); }catch(e){ return null; } }
+function tonSetz(an){ ton=an; $('#tonB').setAttribute('aria-pressed',an); const m=klang('musik',.2,true);
+  if(an){ ac(); m.play().catch(()=>{}); } else Object.values(A).forEach(a=>a.pause()); }
+$('#tonB').onclick=()=>{ tonSetz(!ton); tonMerken(ton); if(ton)fx('wahl'); };
+// Jeder Tipp auf etwas Bedienbares klingt: Auswahl hell, alles andere dumpf. Der Wechsel der Szene klingt in geh().
+F.addEventListener('pointerdown',e=>{ const b=e.target.closest('button, .sa, .zt, .br, [role="button"]'); if(!b||b.disabled||b.id==='tonB')return;
+  fx(b.hasAttribute('data-w')||b.hasAttribute('data-k')||b.hasAttribute('data-ja')?'wahl':'tipp'); },{passive:true});
 
 /* ---------- Hintergrund ---------- */
 function hgSetz(name){ const hoch=innerHeight>innerWidth;
@@ -872,7 +895,7 @@ function hgSetz(name){ const hoch=innerHeight>innerWidth;
 const szene=id=>$('.szene[data-s="'+id+'"]');
 function exLeer(){ const p=pk(); return !exWahl().length&&!(p==='supporter'&&(S.platz==='bande'||S.antrieb.includes('sehen'))); }
 function geh(n){ if(n<0||n>=ORD.length||laeuft||n===S.i)return; if(ORD[n]==='extras'&&exLeer()){ exPutzen(); n+=n>S.i?1:-1; } laeuft=true; sperrBis=Date.now()+(n>S.i&&AKT[ORD[n]]?1700:900);
-  const vor=n>S.i, id=ORD[n], akt=vor&&AKT[id]&&!ruhig, tk=$('#titelkarte'); S.rueck=!vor;
+  const vor=n>S.i, id=ORD[n], akt=vor&&AKT[id]&&!ruhig, tk=$('#titelkarte'); S.rueck=!vor; fx(vor?'wisch':'zurueck');
   if(akt){ tk.dataset.nr=AKT[id][0]; $('small',tk).textContent=AKT[id][1]; $('b',tk).textContent=AKT[id][2]; F.classList.add('schnitt'); }
   else if(!ruhig){ F.classList.remove('wischt'); void F.offsetWidth; F.classList.add('wischt'); }
   setTimeout(()=>{ $$('.szene').forEach(s=>s.classList.remove('an','los')); const s=szene(id); s.classList.add('an'); s.scrollTop=0;
@@ -1049,7 +1072,7 @@ function jaDabei(){ const n=esc(S.name), kopf='<p class="eyebrow">Willkommen bei
 function jaSchrift(){ finalZeig('<p class="eyebrow">In Ruhe</p><h2>Gern.</h2><p class="hand">Ihr bekommt alles schwarz auf weiß.</p>'+zettel('So geht es weiter','Drei Schritte',wahlText(),['Das Angebot kommt per Mail, genau wie hier gezeigt.','In Ruhe ansehen, mit wem ihr wollt.',['wannLi','Sagt uns, bis wann wir uns melden sollen.']],'<p class="z-frage">Bis wann sollen wir uns melden?</p>'+chips('wannK',[['Bis '+tag(7),'Am '+tag(7)+' melden wir uns. Einmal. Ein Nein ist dann auch in Ordnung.'],['Bis '+tag(14),'Am '+tag(14)+' melden wir uns. Einmal. Ein Nein ist dann auch in Ordnung.'],['Wir melden uns','Ihr meldet euch, wenn ihr so weit seid. Hören wir bis zum Saisonstart nichts, fragen wir ein einziges Mal nach.']]))); wannBinden('wannK','wannLi'); }
 function jaKlein(){ const k=kleinstBaustein(), x=EX[k], hat=S.extras.size>0;
   const fertig=was=>{ S.vorKlein={pi:S.pi,extras:new Set(S.extras),laufzeit:S.laufzeit}; if(was==='sup'){ S.pi=0; S.warKeins=false; S.extras.clear(); } else { S.pi=-1; S.extras=new Set([k]); S.warKeins=true; } S.laufzeit=1;
-    finalZeig('<p class="eyebrow">Willkommen bei uns</p><h2>Schön.</h2><p class="hand">Klein anfangen ist auch anfangen.</p>'+zettel('So geht es weiter','Drei Schritte',wahlText(),[['wannLi','Ihr bekommt den Vertrag zum Lesen.'],'Ihr unterschreibt, dann der Verein. Erst dann gilt es.','Größer werden könnt ihr jederzeit.'],'<p class="z-frage">Bis wann bringen wir euch den Vertrag?</p>'+VERTRAG())); wannBinden('wannK','wannLi'); konfetti(60); };
+    finalZeig('<p class="eyebrow">Willkommen bei uns</p><h2>Schön.</h2><p class="hand">Ihr seid dabei.</p>'+zettel('So geht es weiter','Drei Schritte',wahlText(),[['wannLi','Ihr bekommt den Vertrag zum Lesen.'],'Ihr unterschreibt, dann der Verein. Erst dann gilt es.','Größer werden könnt ihr jederzeit.'],'<p class="z-frage">Bis wann bringen wir euch den Vertrag?</p>'+VERTRAG())); wannBinden('wannK','wannLi'); konfetti(60); };
   finalZeig('<p class="eyebrow">Auch gut</p><h2>Klein anfangen.</h2><p class="hand">Was davon passt besser?</p>'+zettel('Zwei Möglichkeiten','Was davon?',null,null,'<div class="zwei-k"><button type="button" data-k="sup"><b>'+(pIndex()===0&&hat?'Nur der SVM Supporter':'SVM Supporter')+'</b><span>Euer Logo an der Partnerwand am Platz.</span></button><button type="button" data-k="bau"><b>Nur: '+x.t+'</b><span>'+x.k+' Ohne Paket.</span></button></div>'));
   $$('.zwei-k button').forEach(b=>b.onclick=()=>fertig(b.dataset.k)); }
 function jaSpiel(){ finalZeig('<p class="eyebrow">Ohne Geld, ohne Unterschrift</p><h2>Kommt vorbei.</h2><p class="hand">Schaut euch erst ein Heimspiel an.</p>'+zettel('So geht es weiter','Drei Schritte',null,['Ihr sagt uns, wann ihr kommen wollt.','Einer von uns dreien ist dann für euch da und zeigt euch alles.','Danach reden wir. Oder auch nicht. Beides ist in Ordnung.'])); }
@@ -1078,7 +1101,7 @@ const REIN={
 const AUF={
   buehne:()=>{ if(!S.platz&&!ruhig){ zeigSz('bande','fahrt'); setTimeout(szAuto,3800); } },
   worum:()=>{ if(!wFertig)worumZeig(0); },
-  platz:()=>spiel('licht',.5)
+  platz:()=>{ spiel('licht',.4); setTimeout(()=>fx('stempel'),650); }
 };
 
 /* ---------- Notizen ---------- */
@@ -1089,7 +1112,7 @@ function regieZeig(){ const id=ORD[S.i], p=punkte(), r=reihe(), top=r[0]||'gast'
     if(i>rg)t+='Gewählt ist mehr, als zu den Antworten nötig wäre. Sag es von dir aus.<br>';
     t+=EINWAND[top]; if(S.bremse.size)t+='<br>Gelesen: '+[...S.bremse.keys()].map(k=>BREMSE.find(b=>b[0]===k)[1]).join(' ');
     if(S.ja)t+='<br>Ergebnis: '+({dabei:'Ja',schrift:'Erst schriftlich',klein:'Klein anfangen',spiel:'Erst zum Heimspiel',nein:'Heute nicht'}[S.ja])+(S.wann?'. '+S.wann:'.')+' Trag es in die Akte ein.'; }
-  $('#rEmp').innerHTML=t||'Noch keine Antworten. Das Bild füllt sich mit jeder Station.'; }
+  $('#rEmp').innerHTML=t||'Noch keine Antworten. Das Bild füllt sich mit jeder Station.'; if(S.ja)reiseMelden(); }
 function regieUm(zu){ const r=$('#regie'), an=zu==null?!r.classList.contains('da'):zu; r.classList.toggle('da',an); }
 $('#regieX').onclick=()=>regieUm(false);
 $('#rEigen').addEventListener('input',e=>{ S.eigen=e.target.value.trim(); wimpelZeig(); });
@@ -1109,7 +1132,7 @@ $$('.szene').forEach(s=>{ const b=$$(':scope > .sz-bild',s); if(!b.length)return
 
 /* ---------- Start ---------- */
 $('#nameIn').addEventListener('input',e=>setzName(e.target.value));
-$('#startF').addEventListener('submit',e=>{ e.preventDefault(); $('#nameIn').blur(); geh(1); });
+$('#startF').addEventListener('submit',e=>{ e.preventDefault(); $('#nameIn').blur(); if(!ton&&tonGemerkt()!=='0')tonSetz(true); geh(1); });
 const fk=$('.foto-karte'); addEventListener('pointermove',e=>{ if(ORD[S.i]!=='start')return; fk.style.setProperty('--kx',(e.clientX/innerWidth-.5).toFixed(3)); fk.style.setProperty('--ky',(e.clientY/innerHeight-.5).toFixed(3)); },{passive:true});
 function zoomSetz(){ const W=innerWidth, H=innerHeight; html.style.setProperty('--z',W<860?1:Math.max(1,Math.min(1.9,W/980,H/700)).toFixed(3)); }
 addEventListener('resize',()=>{ zoomSetz(); kGroesse(); passe(); lochSetz(); }); zoomSetz(); kGroesse();
@@ -1122,7 +1145,18 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(passe);
    Der Rahmen schickt den Namen der Firma aus dem persönlichen Link. Am Ende und über „Direkt zu Paketen und Vertrag“ geht es
    in die Auswahl mit Vertrag (bisheriger Ablauf). Ohne Rahmen läuft die Reise für sich. */
 const IM_RAHMEN=(()=>{ try{ return window.parent!==window; }catch(e){ return true; } })();
-function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null)},location.origin); }catch(e){} }
+/* Kurze Zusammenfassung für die Akte der Firma (nur wenn die Reise im Termin über den Partner-Start geöffnet wurde, speichert der Rahmen sie im Verlauf) */
+function reiseNotiz(){ try{ if(!(S.verb||S.antrieb.length||S.ja))return ''; const i=pIndex(), rg=regel(), z=[];
+  if(S.verb)z.push('Kennt uns: '+({hier:'von hier',familie:'einer spielt bei uns',ehemalig:'hat selbst hier gespielt',partner:'ist schon Partner',neu:'noch kaum'}[S.verb]||S.verb));
+  if(S.antrieb.length)z.push('Wichtig: '+S.antrieb.map(a=>({kinder:'Kinder und Jugend',sehen:'Sichtbarkeit',leute:'Mitarbeiter finden',netz:'Netzwerk',zurueck:'etwas zurückgeben',vorn:'vorne dabei'}[a]||a)).join(', '));
+  z.push('Gewählt: '+(i<0?'ein Baustein ('+EX[kleinstBaustein()].t+')':PAK[ST[i]].t)+(i!==rg?', nach den Antworten: '+PAK[ST[rg]].t:''));
+  if(S.extras&&S.extras.size)z.push('Zusätze: '+[...S.extras].map(k=>EX[k]?EX[k].t:k).join(', '));
+  if(S.ja)z.push('Ergebnis: '+({dabei:'Ja',schrift:'erst schriftlich',klein:'klein anfangen',spiel:'erst zum Heimspiel',nein:'heute nicht'}[S.ja]||S.ja)+(S.wann?', '+S.wann:''));
+  return z.join('. ')+'.'; }catch(e){ return ''; } }
+if(navigator.webdriver)window.REISE_PRUEF={notiz:()=>reiseNotiz(),stand:()=>S,zeig:()=>regieZeig()};   // nur für die automatischen Tests
+let notizAlt='';
+function reiseMelden(){ try{ const n=reiseNotiz(); if(!n||n===notizAlt||window.parent===window)return; notizAlt=n; window.parent.postMessage({reise:'notiz',notiz:n},location.origin); }catch(e){} }
+function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz()},location.origin); }catch(e){} }
 window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='name')return; const i=$('#nameIn'), n=String(e.data.name||'').slice(0,40);
   if(i&&n&&!i.value&&S.i===0){ i.value=n; } }catch(x){} });
 if(IM_RAHMEN){ try{ const f=$('#startF'); if(f&&!$('#direktB')){ const b=document.createElement('button'); b.type='button'; b.className='zeile'; b.id='direktB'; b.textContent='Direkt zu Paketen und Vertrag'; b.style.cssText='margin-top:18px;font-size:14px;opacity:.85';

@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.70',v:'0.99.70',datum:'2026-11-17',titel:'Partner: aufgeräumt, mit Partner-Start',kurz:'Der Partner-Bereich hat vier Gruppen statt zwölf Reitern. Für den Termin vor Ort gibt es den Partner-Start: Firma suchen oder anlegen, dann läuft die Präsentation.',
+   punkte:[
+    {ic:'\u{1F5C2}',t:'Vier Gruppen',d:'Übersicht, Firmen, Werbeflächen und Verwaltung. Darunter stehen nur die Seiten der gewählten Gruppe. Es fehlt nichts, alles steht nur an einem festen Platz.',r:'team'},
+    {ic:'\u{1F91D}',t:'Partner-Start',d:'Der Knopf oben rechts im Partner-Bereich öffnet eine eigene Seite ohne die App drumherum. Firma eintippen oder neu anlegen, ein Tipp startet die Präsentation. Die Firma, der Termin und die Antworten aus der Präsentation stehen danach im Verlauf der Firma.',r:'team'},
+    {ic:'\u{1F50A}',t:'Präsentation und App-Einstieg mit Ton',d:'Die Reise für Partner hat Klänge beim Tippen und Wischen und Musik, abschaltbar oben rechts. Die Seite zum Einstieg in die App beginnt mit einem kurzen Vorspann.',r:'team'}
+   ]},
   {id:'0.99.69',v:'0.99.69',datum:'2026-11-17',titel:'Menü aufgeräumt',kurz:'Der Bereich „Spieltag“ ist aus dem Menü. Das Spieltagsstudio steht jetzt unter Kommunikation.',
    punkte:[
     {ic:'\u{1F9F9}',t:'Weniger Knöpfe',d:'Gegneranalyse und Elf der Woche haben keinen eigenen Knopf mehr. Die Gegneranalyse öffnet sich weiter aus „Mein Spieltag“ und aus dem Spiel in der Mannschaft. Das Spieltagsstudio findest du unter Kommunikation.',r:'team'}

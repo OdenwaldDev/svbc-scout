@@ -6,6 +6,9 @@
 // Öffentliche Adresse der App: in der Store-App (Capacitor) immer die echte Webadresse, sonst der aktuelle Ort
 function svBasis(){ try{ const C=window.Capacitor; if(C&&C.isNativePlatform&&C.isNativePlatform())return 'https://svbsc.kaderwerk.pro/'; }catch(e){} return location.origin+location.pathname.replace(/[^/]*$/,''); }
 
+// 0.99.70: partner.kaderwerk.pro zeigt nur den Partner-Start (partnerstart.html). Der Weg zur Anmeldung trägt #partnerstart und bleibt auf dieser Seite.
+try{ if(/^partner\./.test(location.hostname)&&location.hash!=='#partnerstart')location.replace('partnerstart.html'); }catch(e){}
+
 // Installieren (Android/Chrome): das Angebot des Browsers früh aufheben, die App fragt später dezent (svm50.js)
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); window.__svBip=e; });
 (function(){
@@ -505,6 +508,8 @@ async function fetchDataset(token){
 }
 function SV_LEER(){ return {version:'leer',body:{generated:'',players:[],jugend:[],clubs:{},ligaGA:{},startelf:{formation:'4-4-2',slots:{}},startelfLast:{formation:'4-4-2',slots:{}},startelfNow:{formation:'4-4-2',slots:{}}}}; }
 async function loadAndStart(){
+  // 0.99.70: Partner-Start. Auf partner.kaderwerk.pro und mit #partnerstart führt die Anmeldung zur Seite für den Termin (partnerstart.html), nicht in die App.
+  if(/^partner\./.test(location.hostname)||location.hash==='#partnerstart'){ location.replace('partnerstart.html'); return; }
   loading('Daten werden vorbereitet …');
   const {data:{session}}=await sb.auth.getSession();
   let cached=await IDB.get('dataset'), ver=null, ds=null;
