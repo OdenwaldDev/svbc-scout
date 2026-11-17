@@ -579,6 +579,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.81',v:'0.99.81',datum:'2026-11-17',titel:'Rechnungsmonat im Vertrag',kurz:'Im Vertrag steht jetzt, in welchem Monat die Rechnung kommt (Vorgabe August). Die App erinnert vorher, legt die Rechnung an und schickt sie mit einem Tipp per Mail.',
+   punkte:[
+    {ic:'\u{1F4C5}',t:'Monat steht im Vertrag',d:'Beim Abschluss wählt die Firma den Monat der Rechnung, August ist vorgeschlagen. Die Rechnung kommt dann jede Saison in diesem Monat, nicht mehr mit dem Vertragsschluss.',r:'team'},
+    {ic:'\u{1F514}',t:'Erinnerung und Vorbereitung',d:'14 Tage vorher erinnert die App den Betreuer. Am Ersten des Monats liegt die Rechnung fertig bereit.',r:'team'},
+    {ic:'\u{2709}\u{FE0F}',t:'Ein Tipp schickt sie',d:'„Per Mail schicken“ auf der Karte oder in der Liste der Rechnungen schickt das PDF an die Firma, eine Kopie geht an den Verein.',r:'team'},
+    {ic:'\u{270F}\u{FE0F}',t:'Monat ändern',d:'In der Akte der Firma lässt sich der Rechnungsmonat eines Vertrags ändern, wenn es mit der Firma abgestimmt ist.',r:'team'}
+   ]},
   {id:'0.99.80',v:'0.99.80',datum:'2026-11-17',titel:'Firmen: Pate eintragen, Formular gerade',kurz:'Bei jeder Firma lässt sich eintragen, wer von uns den besten persönlichen Kontakt hat. Die Haken im Formular stehen wieder neben ihrem Text.',
    punkte:[
     {ic:'\u{1F91D}',t:'Pate je Firma',d:'Im Formular der Firma gibt es das Feld Pate: wer aus unserem Team die Firma am besten kennt. Der Name steht in der Akte, in der Liste, in der Excel-Datei, und die Suche findet ihn.',r:'team'},

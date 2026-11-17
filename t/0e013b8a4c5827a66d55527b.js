@@ -144,13 +144,28 @@ function peLaufzeiten(H){
 function peRechnungen(H){
   const D=PE.d, R=D.rechnungen.slice().sort((a,b)=>(a.status==='offen')===(b.status==='offen')?(a.datum<b.datum?1:-1):a.status==='offen'?-1:1), vd=D.verein||{};
   H.innerHTML=`${vd.iban?'':`<div class="card pe-hin"><b>Bankverbindung fehlt</b><p>Für Girocode und Rechnung bitte unter Vereinsdaten IBAN und Kontoinhaber eintragen.</p></div>`}
-    <div class="pe-liste">${R.map(r=>`<div class="pe-re ${peE(r.status)}"><div><b>${peE(r.empfaenger&&r.empfaenger.firma||peFirma(r.sponsor))}</b><small>${peE(r.nr)} · ${peDat(r.datum)}${r.status==='offen'?` · fällig ${peDat(r.faellig)}`:r.bezahlt_am?` · bezahlt ${peDat(r.bezahlt_am)}`:''}${r.art==='spende'?' · Spende':''}</small></div>
+    <div class="pe-liste">${R.map(r=>`<div class="pe-re ${peE(r.status)}"><div><b>${peE(r.empfaenger&&r.empfaenger.firma||peFirma(r.sponsor))}</b><small>${peE(r.nr)} · ${peDat(r.datum)}${r.status==='offen'?` · fällig ${peDat(r.faellig)}`:r.bezahlt_am?` · bezahlt ${peDat(r.bezahlt_am)}`:''}${r.art==='spende'?' · Spende':''}${r.mail&&r.mail.ok?` · per Mail raus am ${peDat(String(r.mail.at||'').slice(0,10))}`:''}</small></div>
       <div class="pe-re-r"><strong>${peEur(r.brutto,true)}</strong><div class="btnrow"><button type="button" class="btn ghost sm" data-perp="${r.id}">${SVI('download')} PDF</button>
-      ${r.status==='offen'?`<button type="button" class="btn sm" data-perb="${r.id}">Bezahlt</button>`:''}${r.art==='spende'&&r.quittung==='offen'&&r.status==='bezahlt'?(peGem()?`<button type="button" class="btn ghost sm" data-perq="${r.id}">Bestätigung erstellt</button>`:'<small class="pe-hinw">Gemeinnützigkeit noch offen, Bestätigung erst nach Klärung</small>'):''}</div></div></div>`).join('')||'<div class="card"><div class="empty">Noch keine Rechnungen. Sie entstehen beim Abschluss im Termin oder über den Link.</div></div>'}</div>`;
+      ${r.status==='offen'&&r.art==='rechnung'&&peReMail(r)?`<button type="button" class="btn ghost sm" data-perm="${r.id}">${SVI('mail')} ${r.mail&&r.mail.ok?'Erneut schicken':'Per Mail schicken'}</button>`:''}${r.status==='offen'?`<button type="button" class="btn sm" data-perb="${r.id}">Bezahlt</button>`:''}${r.art==='spende'&&r.quittung==='offen'&&r.status==='bezahlt'?(peGem()?`<button type="button" class="btn ghost sm" data-perq="${r.id}">Bestätigung erstellt</button>`:'<small class="pe-hinw">Gemeinnützigkeit noch offen, Bestätigung erst nach Klärung</small>'):''}</div></div></div>`).join('')||'<div class="card"><div class="empty">Noch keine Rechnungen. Sie entstehen beim Abschluss im Termin oder über den Link.</div></div>'}</div>`;
   H.querySelectorAll('[data-perp]').forEach(b=>b.onclick=()=>peRechnungPdf(R.find(x=>x.id===b.dataset.perp)));
+  H.querySelectorAll('[data-perm]').forEach(b=>b.onclick=()=>paEinmal(b,()=>peRechnungMail(b.dataset.perm),'Schickt …'));
   H.querySelectorAll('[data-perb]').forEach(b=>b.onclick=async()=>{ const r=await peDatumFrage('Bezahlt am?','Tag des Zahlungseingangs.'); if(r)await peRpc('partner_rechnung_bezahlt',{p_id:b.dataset.perb,p_datum:r.d,p_bezahlt:true},'✓ Verbucht'); });
   H.querySelectorAll('[data-perq]').forEach(b=>b.onclick=()=>peRpc('partner_quittung_erstellt',{p_id:b.dataset.perq},'✓ Notiert'));
 }
+// ---------- Rechnungsmonat (seit 0.99.81) ----------
+// Adresse, an die eine Rechnung per Mail geht: aus dem Vertrag, sonst von der Firma. Leer heißt: PDF selbst schicken.
+function peReMail(r,v){ if(!r)return ''; v=v||(PE.d.vertraege||[]).find(x=>x.id===r.vertrag)||{};
+  const s=typeof SPO!=='undefined'&&SPO.S?SPO.S.find(x=>x.id===r.sponsor):null, m=String((r.empfaenger&&r.empfaenger.email)||(v.partner_daten&&v.partner_daten.email)||(s&&s.email)||'').trim();
+  return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(m)?m:''; }
+// „im August 2027“, wenn im Vertrag ein Rechnungsmonat steht und der Rechnungstag der ersten Saison noch vor uns liegt, sonst leer
+function peRgWann(v){ const m=+(v&&v.rechnung_monat); if(!(m>=1&&m<=12)||!(+v.netto_jahr>0)||!v.beginn)return ''; const t=PLIB.rechnungTag(m,String(v.beginn).slice(0,10));
+  return t>svtHeute()?'im '+PLIB.MONATE[+t.slice(5,7)-1]+' '+t.slice(0,4):''; }
+function peRgSatz(v){ const w=peRgWann(v); return w?'Danach geht er mit beiden Unterschriften per Mail raus. Die Rechnung legt die App '+w+' an und erinnert euch vorher.':'Danach geht er mit beiden Unterschriften und der ersten Rechnung per Mail raus.'; }
+// Ein Tipp: die Rechnung als PDF per Mail an die Firma (partner-deck), Kopie an den Verein
+async function peRechnungMail(id){ const r=(PE.d.rechnungen||[]).find(x=>x.id===id); if(!r)return;
+  try{ const {data,error}=await SVB.sb.functions.invoke('partner-deck',{body:{rechnung:id}}); if(error)throw error;
+    kToast(data&&data.ok?'✓ Rechnung '+r.nr+' ist per Mail raus'+(data.an?' an '+data.an:''):'⚠️ '+((data&&data.fehler)||'Die Mail ging nicht raus')); await peNeu(); }
+  catch(e){ kToast('⚠️ '+(e.message||e)); } }
 async function peRechnungPdf(R){ if(!R)return;
   try{ await sxScript('vendor/jspdf.umd.min.js',()=>window.jspdf&&window.jspdf.jsPDF); const doc=PLIB.rechnungPdf(window.jspdf.jsPDF,R,PE.d.verein||{});
     spoDownload(doc.output('blob'),R.nr+'.pdf'); }catch(e){ kToast('⚠️ PDF geht gerade nicht: '+(e.message||e)); } }

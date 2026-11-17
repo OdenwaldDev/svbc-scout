@@ -485,6 +485,17 @@ PLIB.rechnen=function(pos,leistungen,saisons){
     netto_gesamt:Math.round((jahr*s+einmal)*100)/100,erste_rechnung:Math.round((jahr+einmal)*100)/100};
 };
 
+// ---------- Rechnungsmonat (seit 0.99.81) ----------
+// Im Vertrag steht, in welchem Monat der Verein die Rechnung je Saison stellt (Vorgabe August, kurz nach dem Saisonstart am 1. Juli).
+// Rechnungstag der Saison: der Erste des Monats innerhalb der Saison. Gleich gerechnet wie private.partner_rechnung_tag und
+// private.partner_rechnung_satz (197_rechnung_monat.sql): Der Server schreibt den Satz beim Anlegen des Vertrags noch einmal selbst.
+PLIB.MONATE=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+PLIB.RECHNUNG_MONAT=8;
+PLIB.rechnungTag=function(monat,beginn){ const b=String(beginn||'').slice(0,10), j=+b.slice(0,4), m=+b.slice(5,7), sj=m>=7?j:j-1, ab=((+monat||PLIB.RECHNUNG_MONAT)+5)%12, mi=6+ab;
+  return (sj+Math.floor(mi/12))+'-'+String(mi%12+1).padStart(2,'0')+'-01'; };
+PLIB.rechnungSatz=function(monat,beginn,heute){ const n=PLIB.MONATE[(+monat||PLIB.RECHNUNG_MONAT)-1], t=PLIB.rechnungTag(monat,beginn);
+  return 'Der Verein stellt die Rechnung für jede Saison jeweils im '+n+'. '+(t>String(heute||'').slice(0,10)?'Die erste Rechnung kommt im '+n+' '+t.slice(0,4)+', frühestens aber, sobald der Vertrag geschlossen ist.':'Die erste Rechnung stellt er, sobald der Vertrag geschlossen ist, weil die Saison schon läuft.'); };
+
 // ---------- Vertragsbausteine ----------
 // [Schlüssel, Überschrift, Text]. {…} wird beim Anzeigen ersetzt.
 PLIB.KLAUSELN={
@@ -493,7 +504,7 @@ PLIB.KLAUSELN={
   laufzeit_auto:['Laufzeit und Verlängerung','Der Vertrag beginnt am {beginn} und läuft bis {ende}. Er verlängert sich um jeweils eine Saison, wenn keine Partei bis zum {frist_datum} in Textform kündigt, zum Beispiel per Mail an {mail}. In den Jahren danach ist jeweils der 31. März der letzte Tag für die Kündigung. Die Verlängerung gilt nur für Leistungen, die je Saison berechnet werden. Einmalige Leistungen werden nicht erneut berechnet. Für die Verlängerung gelten die Preise der letzten Saison ohne Laufzeitvorteil. Möchte der Verein die Preise ändern, sagt er das dem Partner spätestens vier Wochen vor dem letzten Kündigungstag in Textform. Der Partner kann dann bis zu diesem Tag kündigen.'],
   laufzeit_einmal:['Laufzeit','Der Vertrag gilt für die einmaligen Leistungen aus der Leistungsübersicht. Er endet, wenn sie erbracht sind. Eine Kündigung ist nicht nötig.'],
   verguetung_einmal:['Vergütung und Zahlung','Der Partner zahlt die Vergütung aus der Leistungsübersicht. Alle Beträge sind Nettobeträge, dazu kommt die gesetzliche Umsatzsteuer. Die Rechnung stellt der Verein, sobald der Vertrag geschlossen ist. Sie ist innerhalb von 14 Tagen ohne Abzug zahlbar. Der Partner ist einverstanden, dass er Rechnungen als PDF per Mail bekommt. Sobald das Gesetz es verlangt, schickt der Verein sie als E-Rechnung.'],
-  verguetung:['Vergütung und Zahlung','Der Partner zahlt die Vergütung aus der Leistungsübersicht. Alle Beträge sind Nettobeträge, dazu kommt die gesetzliche Umsatzsteuer. Die erste Rechnung stellt der Verein, sobald der Vertrag geschlossen ist. Beginnt die Laufzeit erst danach, ist die erste Rechnung zum Beginn der Laufzeit fällig. Beginnt der Vertrag während einer laufenden Saison, wird der Saisonpreis voll berechnet. Jede weitere Rechnung folgt zu Beginn der nächsten Saison. Rechnungen sind innerhalb von 14 Tagen ohne Abzug zahlbar. Der Partner ist einverstanden, dass er Rechnungen als PDF per Mail bekommt. Sobald das Gesetz es verlangt, schickt der Verein sie als E-Rechnung.'],
+  verguetung:['Vergütung und Zahlung','Der Partner zahlt die Vergütung aus der Leistungsübersicht. Alle Beträge sind Nettobeträge, dazu kommt die gesetzliche Umsatzsteuer. {rechnung} Beginnt der Vertrag während einer laufenden Saison, wird der Saisonpreis voll berechnet. Einmalige Leistungen stehen in der ersten Rechnung. Rechnungen sind innerhalb von 14 Tagen ohne Abzug zahlbar. Der Partner ist einverstanden, dass er Rechnungen als PDF per Mail bekommt. Sobald das Gesetz es verlangt, schickt der Verein sie als E-Rechnung.'],
   werbemittel:['Logo und Werbemittel','Der Partner stellt sein Logo in druckfähiger Form zur Verfügung. Er versichert, dass er die Rechte an Logo und Namen hat. Er stellt den Verein von Ansprüchen Dritter frei, die darauf beruhen, dass diese Zusicherung nicht stimmt. Der Verein darf Namen und Logo für die vereinbarten Leistungen und für Berichte über die Partnerschaft nutzen. Bevor etwas gedruckt oder veröffentlicht wird, zeigt der Verein dem Partner einen Entwurf. Nach Vertragsende nimmt der Verein das Logo innerhalb von vier Wochen aus seinen digitalen Medien. Gedruckte Kleidung und Banden bleiben in Gebrauch, bis sie ersetzt werden. Kommt das Logo später, beginnen Druck und Bestellung entsprechend später. An der Vergütung ändert das nichts. Der Partner darf auf die Partnerschaft mit dem Verein hinweisen und dafür das Wappen des Vereins in der vom Verein freigegebenen Form nutzen, solange der Vertrag läuft, und nur so, dass nicht der Eindruck entsteht, der Verein empfehle bestimmte Produkte.'],
   bande:['Werbebande','Herstellung und Montage der Bande übernimmt der Verein, soweit sie in der gebuchten Leistung enthalten sind. Beschädigungen durch Dritte oder Witterung beseitigt der Verein in angemessener Zeit. Die genaue Platzierung richtet sich nach Paket und Verfügbarkeit.'],
   trikot:['Trikot und Spielkleidung','Der Verein bestellt die Kleidung über seinen Ausrüster. Wo das Logo genau sitzt, stimmen beide Seiten vor der Bestellung ab. Hat der Partner nicht ausdrücklich die Trikotbrust gebucht und ist sie schon an einen anderen Partner vergeben, kommt das Logo an eine andere gut sichtbare Stelle. Es bleibt dort, solange die Kleidung getragen wird.'],
@@ -728,7 +739,12 @@ function peHeute(H){
       else { text=`Die Steuernummer ist eingetragen. Leg jetzt ${welche}${nr?' zu Vertrag '+nr:''} an.`; if(dv)k('re-nach',SVI('file')+' Rechnung anlegen',''); else hin=PE_NUR_LEITUNG; }
       m('spaeter14','In 2 Wochen'); }
     else if(a.art==='zahlung'&&a.rechnung&&/^spende:/.test(a.schluessel||'')){ standard=false; k('bezahlt','Ist eingegangen',''); k('spende-nein','Kommt nicht'); }
-    else if(a.art==='zahlung'&&a.rechnung&&saisonRe){ standard=false; k('re-pdf',SVI('download')+' PDF',''); k('erledigt','Ist raus'); m('spaeter7','In 7 Tagen'); }
+    else if(a.art==='zahlung'&&a.rechnung&&saisonRe){ standard=false;   // seit 0.99.81: ein Tipp schickt die Rechnung per Mail, wenn eine Adresse hinterlegt ist
+      const rr=(D.rechnungen||[]).find(x=>x.id===a.rechnung), an=peReMail(rr,v);
+      if(an&&!(rr&&rr.mail&&rr.mail.ok)){ k('re-mail',SVI('mail')+' Per Mail schicken',''); k('re-pdf',SVI('download')+' PDF'); m('erledigt','Ist raus'); }
+      else { k('re-pdf',SVI('download')+' PDF',''); k('erledigt','Ist raus'); }
+      m('spaeter7','In 7 Tagen'); }
+    else if(a.art==='zahlung'&&/^rechnung-vor:/.test(a.schluessel||'')){ standard=false; k('erledigt','Geprüft, passt',''); m('spaeter7','In 7 Tagen'); }
     else if(a.art==='zahlung'&&a.rechnung){ k('bezahlt','Ist bezahlt',''); k('spaeter7','Nochmal erinnern'); }
     else if(a.art==='quittung'&&a.rechnung){ if(peGem())k('quittung','Bestätigung erstellt',''); else hin='Gemeinnützigkeit noch offen, Bestätigung erst nach Klärung.'; }
     else if(a.art==='warteliste'){ const w=peWarteAus(a);
@@ -741,10 +757,10 @@ function peHeute(H){
       ${text?`<p>${peE(text)}</p>`:''}${hin?`<p class="pe-hinw">${peE(hin)}</p>`:''}<div class="pe-auf-b">${kn.join('')}${mehr.length?`<details class="pd-mehr pe-mehr"><summary aria-label="Weitere Antworten">…</summary><div>${mehr.join('')}</div></details>`:''}</div></article>`; };
   // Gegenzeichnen: eine Karte, bei mehreren Verträgen je Vertrag eine Zeile mit kleinem Knopf. Nur ein Orange auf der Karte.
   const gkarte=()=>{ if(!G.length)return ''; const NICHT=PE_NICHT_GZ;
-    const SATZ='Die Firmen haben schon unterschrieben und warten auf eure Unterschrift. Erst damit ist der Vertrag geschlossen. Danach geht er mit beiden Unterschriften und der ersten Rechnung per Mail raus.';
+    const SATZ='Die Firmen haben schon unterschrieben und warten auf eure Unterschrift. Erst damit ist der Vertrag geschlossen. Danach geht er mit beiden Unterschriften per Mail raus. Die Rechnung kommt gleich mit oder im Monat, der im Vertrag steht.';
     if(G.length===1){ const v=G[0], f=peFirma(v.sponsor);
       return `<article class="pe-auf art-gegen"><div class="pe-auf-k"><span class="pe-ic" aria-hidden="true">${SVI('check')}</span><div><small>Wartet auf eure Unterschrift</small><b>${peE(f)} hat unterschrieben</b></div></div>
-        <p>Vertrag ${peE(v.nr)}${v.unterschrieben_am?', unterschrieben am '+peDat(v.unterschrieben_am):''}${v.erste_unterschrift&&v.erste_unterschrift.name?', erste Unterschrift für den Verein von '+peE(v.erste_unterschrift.name):''}. Erst mit eurer Unterschrift ist der Vertrag geschlossen. Danach geht er mit beiden Unterschriften und der ersten Rechnung per Mail raus.</p>
+        <p>Vertrag ${peE(v.nr)}${v.unterschrieben_am?', unterschrieben am '+peDat(v.unterschrieben_am):''}${v.erste_unterschrift&&v.erste_unterschrift.name?', erste Unterschrift für den Verein von '+peE(v.erste_unterschrift.name):''}. Erst mit eurer Unterschrift ist der Vertrag geschlossen. ${peE(peRgSatz(v))}</p>
         <div class="pe-auf-b">${dg?peGzKnopf(v):`<p class="pe-hinw">${NICHT}</p>`}</div>${peAbgelaufen(v)?`<p class="pe-hinw">${peE(PE_ABGELAUFEN)}</p>`:v.gebunden_bis?`<p class="pe-hinw">An die Unterschrift gebunden bis ${peDat(v.gebunden_bis)}.</p>`:''}</article>`; }
     return `<article class="pe-auf art-gegen pe-buendel"><div class="pe-auf-k"><span class="pe-ic" aria-hidden="true">${SVI('check')}</span><div><small>Wartet auf eure Unterschrift</small><b>${G.length} Verträge zum Gegenzeichnen</b></div></div>
       <p>${SATZ}</p>${dg?'':`<p class="pe-hinw">${NICHT}</p>`}
@@ -819,6 +835,7 @@ async function peAntwort(akt,a,grp){
       const r=await svtRpc(saison?'partner_saisonrechnung_nachholen':'partner_erstrechnung_nachholen',{p_vertrag:a.vertrag}), neu=saison?(+r||0)>0:!!(r&&r.neu);
       kToast(neu?'✓ Rechnung angelegt. Das PDF gibt es unter Rechnungen.':'Es war keine Rechnung offen. Alle Rechnungen zu diesem Vertrag stehen unter Rechnungen.'); await peNeu(); }
     else if(akt==='re-pdf'){ const r=PE.d.rechnungen.find(x=>x.id===a.rechnung); if(r)await peRechnungPdf(r); }
+    else if(akt==='re-mail'){ await peRechnungMail(a.rechnung); }
     else if(akt==='vr-ja'){ // in einem Schritt: belegt bis Saisonende, Frage erledigt. Danach gleich die Laufzeit eintragen.
       const r=await svtRpc('partner_vorrecht_uebernehmen',{p_aufgabe:a.id}); kToast('✓ Übernommen, belegt bis '+peDat(r&&r.bis)); await peNeu();
       if(PE.d.darf_vertrag&&r)peLaufzeitForm(r.sponsor,{key:r.leistung,mannschaft:r.mannschaft}); }
@@ -880,7 +897,7 @@ function peGegenzeichnen(v){ if(!v)return; const f=peFirma(v.sponsor);
 // ---------- Annehmen: Zusage ohne digitale Unterschrift des Partners (Papier, mündlich) für den Verein annehmen ----------
 function peAnnehmen(v){ if(!v)return; const f=peFirma(v.sponsor);
   const M=svModal(`<div class="og-form pe-form pa-blatt"><div class="pa-bk"><h2>Für den Verein annehmen</h2><button type="button" class="pa-bx" onclick="closeOverlay()">Abbrechen</button></div>
-    <p>Vertrag <b>${peE(v.nr)}</b> mit <b>${peE(f)}</b>${v.unterschrieben_am?`, zugesagt am ${peDat(v.unterschrieben_am)}`:''}. Mit „Annehmen“ ist der Vertrag geschlossen, sobald die Firma ihn bekommt. Die erste Rechnung entsteht und die Firma bekommt den Vertrag per Mail.</p>
+    <p>Vertrag <b>${peE(v.nr)}</b> mit <b>${peE(f)}</b>${v.unterschrieben_am?`, zugesagt am ${peDat(v.unterschrieben_am)}`:''}. Mit „Annehmen“ ist der Vertrag geschlossen, sobald die Firma ihn bekommt. ${peE(peRgWann(v)?'Die Firma bekommt den Vertrag per Mail, die Rechnung legt die App '+peRgWann(v)+' an.':'Die erste Rechnung entsteht und die Firma bekommt den Vertrag per Mail.')}</p>
     ${peVertretungFelder(v)}
     <p class="pe-recht" role="note">Mit „Annehmen“ nimmst du das Angebot für den Verein an. Nimm nur an, wenn du den Verein vertreten darfst (Vorstand nach § 26 BGB oder mit Vollmacht).</p>
     <div class="btnrow sbact"><button class="btn" type="button" id="peAok">${SVI('check')} Annehmen</button>${PE.d.darf_vertrag?'<button class="btn ghost" type="button" id="peAab">Nicht annehmen …</button>':''}</div></div>`);

@@ -352,6 +352,7 @@ function spoSponsor(id){
     // Die Annahme muss der Firma zugehen: Vertrag mit beiden Unterschriften erneut schicken
     M.querySelectorAll('[data-spomail]').forEach(b=>b.onclick=()=>paEinmal(b,async()=>{ try{ const {data,error}=await SVB.sb.functions.invoke('partner-deck',{body:{vertrag:b.dataset.spomail,nochmal:true}}); if(error)throw error;
       kToast(data&&data.ok?'✓ Vertrag mit beiden Unterschriften ist raus'+(data.an?' an '+data.an:''):'⚠️ '+((data&&data.fehler)||'Die Mail ging nicht raus')); if(typeof peLaden==='function')await peLaden(true); }catch(e){ kToast('⚠️ '+(e.message||e)); } },'Schickt …'));
+    M.querySelectorAll('[data-sporm]').forEach(b=>b.onclick=()=>spoRgMonat(b.dataset.sporm));
     M.querySelectorAll('[data-spovpdf]').forEach(b=>b.onclick=()=>paEinmal(b,()=>spoVertragPdf(b.dataset.spovpdf))); };
   avDraht();
   if(typeof PE!=='undefined'&&!PE.d&&typeof peLaden==='function')peLaden().then(()=>{ const h=M.querySelector('#spoAV'); if(h&&h.isConnected){ h.innerHTML=spoAkteVertraege(id); avDraht(); } }).catch(()=>{});
@@ -381,9 +382,23 @@ function spoAkteVertraege(id){
   // seit 0.74: „unterschrieben“ heißt, die Firma hat angeboten; geschlossen ist der Vertrag erst mit eurer Unterschrift
   return `<h4 class="svt-h4">Verträge</h4>${V.map(v=>{ const gz=v.status==='unterschrieben'&&!v.hat_unterschrift_verein&&!v.gegengezeichnet_am&&v.art!=='spende';
     return `<div class="spo-v${gz?' spo-wartet':''}"><div><b>${svEsc(v.nr)}${v.art==='spende'?' · Spende':''} · ${gz?'<em class="spo-gz">wartet auf eure Unterschrift</em>':svEsc(st[v.status]||v.status)}</b>
-    <span>${svEsc((v.positionen||[]).map(p=>p.titel).join(', '))}${v.netto_jahr?' · '+spoEur(v.netto_jahr,true)+' netto je Saison':v.netto_gesamt?' · '+spoEur(v.netto_gesamt,true):''}${v.ende?' · bis '+spoDat(v.ende):''}${v.gegengezeichnet_am?' · geschlossen '+spoDat(v.gegengezeichnet_am):gz?' · noch nicht geschlossen':''}</span></div>
-    <div class="btnrow">${gz&&PE.d.darf_gegenzeichnen&&typeof peGegenzeichnen==='function'?(v.hat_unterschrift_partner?`<button class="btn sm" type="button" data-spogz="${svEsc(v.id)}">${SVI('check')} Gegenzeichnen</button>`:`<button class="btn sm" type="button" data-spoann="${svEsc(v.id)}">${SVI('check')} Annehmen</button>`):''}${gz&&dv&&typeof peAblehnen==='function'?`<button class="btn sm ghost" type="button" data-spoab="${svEsc(v.id)}">Nicht annehmen</button>`:''}${v.status==='angebot'&&dv?`<button class="btn sm ghost" type="button" data-spozz="${svEsc(v.id)}">Angebot zurückziehen</button>`:''}${v.status==='aktiv'&&v.gegengezeichnet_am&&v.art!=='spende'?`<button class="btn sm ghost" type="button" data-spomail="${svEsc(v.id)}">${SVI('mail')} Vertrag erneut schicken</button>`:''}<button class="btn sm ghost" type="button" data-spovpdf="${svEsc(v.id)}">${SVI('download')} PDF</button></div></div>`; }).join('')}`;
+    <span>${svEsc((v.positionen||[]).map(p=>p.titel).join(', '))}${v.netto_jahr?' · '+spoEur(v.netto_jahr,true)+' netto je Saison':v.netto_gesamt?' · '+spoEur(v.netto_gesamt,true):''}${v.ende?' · bis '+spoDat(v.ende):''}${v.gegengezeichnet_am?' · geschlossen '+spoDat(v.gegengezeichnet_am):gz?' · noch nicht geschlossen':''}${spoRgZeile(v)}</span></div>
+    <div class="btnrow">${gz&&PE.d.darf_gegenzeichnen&&typeof peGegenzeichnen==='function'?(v.hat_unterschrift_partner?`<button class="btn sm" type="button" data-spogz="${svEsc(v.id)}">${SVI('check')} Gegenzeichnen</button>`:`<button class="btn sm" type="button" data-spoann="${svEsc(v.id)}">${SVI('check')} Annehmen</button>`):''}${gz&&dv&&typeof peAblehnen==='function'?`<button class="btn sm ghost" type="button" data-spoab="${svEsc(v.id)}">Nicht annehmen</button>`:''}${v.status==='angebot'&&dv?`<button class="btn sm ghost" type="button" data-spozz="${svEsc(v.id)}">Angebot zurückziehen</button>`:''}${dv&&v.art!=='spende'&&+v.netto_jahr>0&&['angebot','unterschrieben','aktiv'].includes(v.status)?`<button class="btn sm ghost" type="button" data-sporm="${svEsc(v.id)}">Rechnungsmonat</button>`:''}${v.status==='aktiv'&&v.gegengezeichnet_am&&v.art!=='spende'?`<button class="btn sm ghost" type="button" data-spomail="${svEsc(v.id)}">${SVI('mail')} Vertrag erneut schicken</button>`:''}<button class="btn sm ghost" type="button" data-spovpdf="${svEsc(v.id)}">${SVI('download')} PDF</button></div></div>`; }).join('')}`;
 }
+// Seit 0.99.81: In welchem Monat der Verein die Rechnung je Saison stellt, steht im Vertrag (Vorgabe August).
+function spoRgZeile(v){ if(v.art==='spende'||!(+v.netto_jahr>0))return ''; const m=+v.rechnung_monat;
+  return ' · Rechnung '+(m>=1&&m<=12?'jeweils im '+PLIB.MONATE[m-1]:'mit Vertragsschluss, danach zum 1. Juli'); }
+function spoRgMonat(id){ const v=(PE.d.vertraege||[]).find(x=>x.id===id); if(!v)return; const m0=+v.rechnung_monat||PLIB.RECHNUNG_MONAT, zu=()=>spoSponsor(v.sponsor);
+  const M=svModal(`<div class="mhead"><div><h2 style="margin:0">Rechnungsmonat</h2><div class="msub">Vertrag ${svEsc(v.nr)}</div></div></div>
+    <form id="spoRmF" class="editgrid svt-form" autocomplete="off">
+      <div class="field" style="grid-column:1/-1"><label for="spoRmS">Der Verein stellt die Rechnung je Saison im</label><select id="spoRmS">${PLIB.MONATE.map((n,i)=>`<option value="${i+1}"${i+1===m0?' selected':''}>${n}</option>`).join('')}</select>
+        <small class="note">Vorgabe ist August, kurz nach dem Saisonstart. Der Monat steht im Vertrag unter „Vergütung und Zahlung“. Ändere ihn nur, wenn es mit der Firma abgestimmt ist. ${v.rechnung_monat?'':'Bisher gilt: erste Rechnung mit Vertragsschluss, jede weitere zum 1. Juli.'}</small></div>
+      <div class="btnrow sbact" style="grid-column:1/-1"><button class="btn" type="submit">Speichern</button><button class="btn ghost" type="button" id="spoRmX">Abbrechen</button></div></form>`);
+  M.querySelector('#spoRmX').onclick=zu;
+  M.querySelector('#spoRmF').onsubmit=async e=>{ e.preventDefault(); const b=e.target.querySelector('button[type=submit]'); b.disabled=true;
+    try{ const r=await svtRpc('partner_rechnung_monat_setzen',{p_vertrag:v.id,p_monat:+M.querySelector('#spoRmS').value});
+      kToast('✓ Rechnung jeweils im '+(r&&r.monat||'')+(r&&r.naechste?', die nächste am '+spoDat(r.naechste):'')); await peLaden(true); zu(); }
+    catch(er){ b.disabled=false; kToast('⚠️ '+(er.message||er)); } }; }
 // PDF eines Vertrags (mit Rechnung) aus partner-deck, ohne Mail
 async function spoVertragPdf(id){
   try{ const {data,error}=await SVB.sb.functions.invoke('partner-deck',{body:{vertrag:id,nurPdf:true}}); if(error)throw error; if(!data||!data.pdf)throw new Error('Kein PDF');
