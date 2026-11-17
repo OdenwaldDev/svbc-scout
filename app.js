@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.64', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.65', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18635,6 +18635,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.65',v:'0.99.65',datum:'2026-11-17',titel:'Wer angemeldet ist, ist bekannt',kurz:'Ein Konto mit dem Namen eines eigenen Spielers gehört von selbst zu ihm. Die Frage zum Training kommt dann direkt in die App, ohne den Namen noch einmal zu wählen.',
+   punkte:[
+    {ic:'\u{1F464}',t:'Konto und Spieler finden sich von selbst',d:'Bisher musste die Leitung jedes Konto von Hand mit dem Spieler verbinden. Jetzt reicht der gleiche Name. Hat jemand zwei Konten, zählt das, das er benutzt.',r:'team'}
+   ]},
   {id:'0.99.64',v:'0.99.64',datum:'2026-11-17',titel:'Vereinswechsel laut FuPa von selbst',kurz:'Steht ein eigener Spieler laut FuPa bei einem anderen Verein im Kader und bei uns nicht mehr, führt ihn die App von selbst als extern.',
    punkte:[
     {ic:'\u{1F501}',t:'FuPa gilt',d:'Wechselt ein Spieler den Verein, zeigt die App den neuen Verein, sobald FuPa ihn dort führt. Eigene Spieler stehen dann von selbst unter Extern und tauchen in Training und Listen nicht mehr auf. Wer ihn von Hand wieder intern setzt, bleibt intern.',r:'team'}

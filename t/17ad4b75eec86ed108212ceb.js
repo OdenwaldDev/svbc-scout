@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.65',v:'0.99.65',datum:'2026-11-17',titel:'Wer angemeldet ist, ist bekannt',kurz:'Ein Konto mit dem Namen eines eigenen Spielers gehört von selbst zu ihm. Die Frage zum Training kommt dann direkt in die App, ohne den Namen noch einmal zu wählen.',
+   punkte:[
+    {ic:'\u{1F464}',t:'Konto und Spieler finden sich von selbst',d:'Bisher musste die Leitung jedes Konto von Hand mit dem Spieler verbinden. Jetzt reicht der gleiche Name. Hat jemand zwei Konten, zählt das, das er benutzt.',r:'team'}
+   ]},
   {id:'0.99.64',v:'0.99.64',datum:'2026-11-17',titel:'Vereinswechsel laut FuPa von selbst',kurz:'Steht ein eigener Spieler laut FuPa bei einem anderen Verein im Kader und bei uns nicht mehr, führt ihn die App von selbst als extern.',
    punkte:[
     {ic:'\u{1F501}',t:'FuPa gilt',d:'Wechselt ein Spieler den Verein, zeigt die App den neuen Verein, sobald FuPa ihn dort führt. Eigene Spieler stehen dann von selbst unter Extern und tauchen in Training und Listen nicht mehr auf. Wer ihn von Hand wieder intern setzt, bleibt intern.',r:'team'}
@@ -1539,5 +1543,3 @@ const SV_PATCHES=[
     {ic:'🗂️',t:'Massenpflege',d:'Fuß, Eye-Test, Position, Mannschaft, Kontaktdaten, Geburtsdatum, Skills, Größe und Gewicht: alle internen Spieler untereinander bearbeiten und mit einem Tipp speichern. Profile zeigen die Daten nur noch an, „Spielerdaten pflegen“ springt direkt hierher.',r:'team',go:'pflege'},
     {ic:'👥',t:'Eine Spielerliste, eigene Ansichten',d:'Statt fester Ansichten wie Trainer oder Kontakte stellst du Spalten, Filter und Sortierung selbst ein und speicherst sie als eigene Ansicht, auf jedem Gerät.',r:'team',go:'spieler'},
     {ic:'✅',t:'Training: Da oder Fehlt',d:'Die Einheiten zeigen nur noch Trainings. Wer zu spät kam, ist da und bekommt die Notiz „zu spät“. Die Notiz zur Einheit steht direkt unter der Trainingsnote, die Statistik ist reine Auswertung.',r:'team'},
-    {ic:'⚽',t:'Spiele mit Statistik',d:'Die Spiele der laufenden Saison und daneben die Auswertung: Bilanz, Form, Einsätze, Minuten, Tore und Vorlagen je Spieler.',r:'team',go:'gstat'},
-    {ic:'🌴',t:'Abwesenheiten und Materialdienst',d:'Beide haben jetzt einen eigenen Reiter. Neu ist die Mannschaft „Umfeld“ für Spieler mit Pass, die nicht regelmäßig spielen.',r:'team',go:'abwesend'},

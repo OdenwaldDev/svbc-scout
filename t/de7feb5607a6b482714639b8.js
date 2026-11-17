@@ -1,3 +1,5 @@
+    {ic:'⚽',t:'Spiele mit Statistik',d:'Die Spiele der laufenden Saison und daneben die Auswertung: Bilanz, Form, Einsätze, Minuten, Tore und Vorlagen je Spieler.',r:'team',go:'gstat'},
+    {ic:'🌴',t:'Abwesenheiten und Materialdienst',d:'Beide haben jetzt einen eigenen Reiter. Neu ist die Mannschaft „Umfeld“ für Spieler mit Pass, die nicht regelmäßig spielen.',r:'team',go:'abwesend'},
    ]},
   {id:'0.16',v:'0.16',datum:'2026-09-26',titel:'Daten live aktuell',kurz:'Ändern sich Daten oder kommen neue FuPa-Werte, sieht die App das sofort. Kein Neuladen nötig.',
    punkte:[
