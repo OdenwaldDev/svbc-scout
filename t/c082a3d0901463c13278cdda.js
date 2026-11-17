@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.72',v:'0.99.72',datum:'2026-11-17',titel:'Menü: Planung & Termine',kurz:'Im Menü „Mehr“ am Handy hat der Bereich mit Planung, Terminen, Aufgaben und Vorstand & Ziele jetzt einen eigenen Ordner.',
+   punkte:[
+    {ic:'\u{1F4C2}',t:'Ein Ordner für den ganzen Bereich',d:'Bisher stand dort nur die Kachel „Termine“. Jetzt heißt der Ordner „Planung & Termine“ und zeigt alle vier Seiten. Wer nur Termine öffnen darf, sieht weiter die eine Kachel.',r:'team'}
+   ]},
   {id:'0.99.71',v:'0.99.71',datum:'2026-11-17',titel:'Weg zur App zum Durchklicken',kurz:'Die Seite zum Einstieg in die App fragt jetzt eine Sache je Bild, statt ein langes Formular zu zeigen.',
    punkte:[
     {ic:'\u{1F449}',t:'Eine Frage je Bild',d:'Handy wählen, Name, E-Mail, Handynummer, Rolle im Verein: jede Frage steht allein im Bild, mit Fortschritt oben. Die Rolle tippt man an, statt sie aus einer Liste zu wählen. Dahinter passiert dasselbe wie vorher.',r:'team'}

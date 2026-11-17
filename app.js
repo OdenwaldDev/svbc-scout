@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.71', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.72', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18638,6 +18638,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.72',v:'0.99.72',datum:'2026-11-17',titel:'Menü: Planung & Termine',kurz:'Im Menü „Mehr“ am Handy hat der Bereich mit Planung, Terminen, Aufgaben und Vorstand & Ziele jetzt einen eigenen Ordner.',
+   punkte:[
+    {ic:'\u{1F4C2}',t:'Ein Ordner für den ganzen Bereich',d:'Bisher stand dort nur die Kachel „Termine“. Jetzt heißt der Ordner „Planung & Termine“ und zeigt alle vier Seiten. Wer nur Termine öffnen darf, sieht weiter die eine Kachel.',r:'team'}
+   ]},
   {id:'0.99.71',v:'0.99.71',datum:'2026-11-17',titel:'Weg zur App zum Durchklicken',kurz:'Die Seite zum Einstieg in die App fragt jetzt eine Sache je Bild, statt ein langes Formular zu zeigen.',
    punkte:[
     {ic:'\u{1F449}',t:'Eine Frage je Bild',d:'Handy wählen, Name, E-Mail, Handynummer, Rolle im Verein: jede Frage steht allein im Bild, mit Fortschritt oben. Die Rolle tippt man an, statt sie aus einer Liste zu wählen. Dahinter passiert dasselbe wie vorher.',r:'team'}
@@ -36789,6 +36793,51 @@ if(s120An()) try{ s120Ordnen(); }catch(e){ console.warn('Partner-Reiter', e); }
 if(typeof spoRender === 'function'){ const _r = spoRender; spoRender = function(){ const p = _r.apply(this, arguments); try{ s120Bau(); }catch(e){ console.warn('Partner-Reiter', e); } return p; }; }
 if(typeof spoReiterAn === 'function'){ const _a = spoReiterAn; spoReiterAn = function(){ const r = _a.apply(this, arguments); try{ s120Zeig(); }catch(e){} return r; }; }
 if(typeof spoBody === 'function'){ const _b = spoBody; spoBody = function(){ const r = _b.apply(this, arguments); try{ s120Zeig(); }catch(e){} return r; }; }
+
+/* ===== Beta 0.99.72 · Menü am Handy: „Planung & Termine“ als eigener Ordner =====
+   Sportliche Leitung, 17.11.2026: „Dieser Bereich hat noch keinen Überbereich in der Navigation, zumindest nicht auf dem Smartphone.
+   Da steht nur Termine, aber da ist ja viel mehr dahinter, wie man an den Tabs sieht.“
+   Ursache: Im Menü „Mehr“ stand oben die Gruppe „Übersicht“ ohne Ordner, und was die untere Leiste schon zeigt (Heute, Planung),
+   fehlt dort. Übrig blieb eine einzelne Kachel „Termine“, hinter der Planung, Termine, Aufgaben und Vorstand & Ziele liegen.
+   Jetzt: ein Ordner „Planung & Termine“ wie die anderen Bereiche, mit allen Seiten des Bereichs, die die Person öffnen darf.
+   Diese Seiten stehen dort auch dann, wenn die untere Leiste eine davon schon zeigt, sonst wäre der Ordner unvollständig.
+   Wer nur eine Seite öffnen darf (Spieler, Helfer: Termine), sieht wie bisher die eine Kachel ohne Ordner.
+   Seitenleiste am Rechner und Rechte ändern sich nicht. In automatischen Tests aus, window.S115_TEST schaltet es ein (wie die Ordner aus svm115). */
+const S121_NAME = 'Planung & Termine';
+const S121_SEITEN = ['planung', 'kalender', 'orga', 'vorstand'];
+(function(){
+  try{
+    Object.assign(N77_MENUE_NAME, { orga:'Aufgaben', vorstand:'Vorstand & Ziele' }); Object.assign(N77_ICON, { orga:'check', vorstand:'target' });
+    const L = N77_GRP['Übersicht']; if(L) S121_SEITEN.forEach((t, i) => { if(!L.includes(t)) L.splice(Math.min(L.length, L.indexOf(S121_SEITEN[i - 1]) + 1), 0, t); });
+  }catch(e){ console.warn('Menü Planung', e); }
+})();
+const s121An = () => !(navigator.webdriver && !window.S115_TEST);
+function s121Kopf(){ const sh = document.getElementById('moreSheet'), h = sh && sh.querySelector(':scope > h4[data-n77g="Übersicht"]'), g = h && h.nextElementSibling; return g && g.classList.contains('sgrid') ? { sh, h, g } : null; }
+// Die Seiten des Bereichs als Knöpfe in den Ordner holen (Aufgaben und Vorstand & Ziele gab es im Menü bisher nicht)
+function s121Ordner(){
+  if(!s121An()) return; const K = s121Kopf(); if(!K) return;
+  let vor = null;
+  S121_SEITEN.forEach(t => { let b = K.sh.querySelector('.sgrid [data-sheet="' + t + '"]'); if(!b) b = n77Knopf('menue', t);
+    b.dataset.s121 = '1'; if(N77_MENUE_NAME[t]) n77Beschriften(b, N77_MENUE_NAME[t]);
+    K.g.insertBefore(b, vor ? vor.nextSibling : K.g.firstChild); vor = b; });
+  if(!K.h.dataset.s121h){ K.h.dataset.s121h = '1';
+    K.h.addEventListener('click', () => { if(K.h.dataset.s115) s115Klick(K.h); });
+    K.h.addEventListener('keydown', e => { if(K.h.dataset.s115 && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); s115Klick(K.h); } }); }
+  s121Stand();
+}
+// Sichtbar ist, was die Person öffnen darf. Mit mehr als einer Seite wird die Gruppe zum Ordner, sonst bleibt die eine Kachel.
+function s121Stand(){
+  if(!s121An()) return; const K = s121Kopf(); if(!K) return;
+  K.g.querySelectorAll('[data-s121]').forEach(b => { let darf = true; try{ darf = svTabAllowed(b.dataset.sheet); }catch(e){} b.style.display = darf ? '' : 'none'; });
+  const n = [...K.g.children].filter(b => b.style.display !== 'none').length, ordner = n > 1;
+  K.h.style.display = n ? '' : 'none'; K.g.style.display = n ? '' : 'none';
+  if(ordner){ if(K.h.textContent !== S121_NAME) K.h.textContent = S121_NAME; K.h.dataset.s115 = '1'; K.h.setAttribute('role', 'button'); K.h.tabIndex = 0; }
+  else { if(K.h.textContent !== 'Übersicht') K.h.textContent = 'Übersicht'; delete K.h.dataset.s115; K.h.removeAttribute('role'); K.h.removeAttribute('tabindex'); K.h.removeAttribute('aria-expanded'); K.g.classList.remove('s115-zu'); }
+  try{ s115Zu(K.sh); }catch(e){}
+}
+if(typeof n77Menue === 'function'){ const _m = n77Menue; n77Menue = function(){ const r = _m.apply(this, arguments); try{ s121Ordner(); }catch(e){ console.warn('Menü Planung', e); } return r; }; }
+if(typeof n77Koepfe === 'function'){ const _k = n77Koepfe; n77Koepfe = function(){ const r = _k.apply(this, arguments); try{ s121Stand(); }catch(e){} return r; }; }
+if(typeof sv4NavVis === 'function'){ const _v = sv4NavVis; sv4NavVis = function(){ const r = _v.apply(this, arguments); try{ s121Stand(); }catch(e){} return r; }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm120css'; s.textContent="/* Beta 0.99.70 · Partner: Reiter in vier Gruppen, darunter die Seiten der Gruppe */\n#panel-sponsoring .s120-grp{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;min-width:0;}\n#panel-sponsoring .s120-tabs{display:flex;gap:6px;flex:1 1 0;min-width:0;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;padding-right:26px!important;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);overflow-x:auto;scrollbar-width:none;padding:2px 0;}\n#panel-sponsoring .s120-tabs::-webkit-scrollbar{display:none;}\n#panel-sponsoring .s120-tabs button{flex:none;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:rgba(148,163,196,.07);color:var(--ink2);font:inherit;font-weight:800;font-size:15px;white-space:nowrap;cursor:pointer;}\n#panel-sponsoring .s120-tabs button.on{background:var(--s120a,#8fc9ec);border-color:var(--s120a,#8fc9ec);color:var(--s120t,#141b47);}\nhtml[data-theme=\"hell\"] #panel-sponsoring .s120-tabs button.on{background:var(--s120ah,#1d2760);border-color:var(--s120ah,#1d2760);color:var(--s120th,#fff);}\n#panel-sponsoring .s120-tabs button:focus-visible,#panel-sponsoring .s120-start:focus-visible{outline:3px solid var(--pa-or,#e8741f);outline-offset:2px;}\n#panel-sponsoring .s120-tabs button[hidden],#panel-sponsoring .spo-seg button[hidden],#panel-sponsoring .spo-seg[hidden]{display:none!important;}\n#panel-sponsoring .s120-start{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px;border-radius:999px;background:var(--pa-knopf,#b8540c);color:var(--s120w,#fff);font-weight:800;font-size:14.5px;text-decoration:none;white-space:nowrap;}\n#panel-sponsoring .s120-start svg{width:17px;height:17px;}\n/* zweite Reihe: ruhige Textreiter mit Strich, damit die Ebenen klar sind */\n#panel-sponsoring .spo-top.s120 .svt-seg.spo-seg{gap:2px;padding:0;border-bottom:1px solid var(--line);}\n#panel-sponsoring .spo-top.s120 .spo-seg button{min-height:42px;padding:0 13px!important;border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--ink3);font-size:14.5px!important;margin-bottom:-1px;}\n#panel-sponsoring .spo-top.s120 .spo-seg button.on{background:none!important;border-color:transparent!important;border-bottom-color:var(--pa-or,#e8741f)!important;color:var(--ink)!important;}\n@media (max-width:560px){ #panel-sponsoring .s120-start span{display:none;} #panel-sponsoring .s120-start{padding:0 13px;} #panel-sponsoring .s120-tabs button{padding:0 13px;font-size:14px;} #panel-sponsoring .s120-grp{gap:8px;} #panel-sponsoring .s120-tabs button[data-kurz]{font-size:0;} #panel-sponsoring .s120-tabs button[data-kurz]::after{content:attr(data-kurz);font-size:14px;} }\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm107css'; s.textContent="/* 0.99.33: Startseite nach dringend und wichtig (svm107.js) */\n#panel-home > [data-hz-weg]{display:none!important;}\n.hz-k{margin:20px 2px 8px;font-size:12.5px;line-height:1.3;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);}\n.hz-k.ruhig{text-transform:none;letter-spacing:0;font-weight:500;font-size:14.5px;margin:8px 2px 14px;}\n#svHello + .hz-k{margin-top:10px;}\n.hz-anp{display:block;width:100%;min-height:46px;margin:14px 0 18px;padding:10px 14px;border-radius:var(--r-lg,14px);border:1px dashed var(--line);background:none;color:var(--ink2);font:inherit;font-size:14px;text-align:center;cursor:pointer;}\n.hz-anp:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}\n/* Der Wisch-Tipp schiebt die Karte „Neue Meldungen“ kurz zur Seite: Das darf die Seite nicht breiter machen */\n#panel-home > #sc2Home{overflow-x:clip;overflow-clip-margin:14px;}\n/* Die Leitung braucht das Lagebild aus Kader, Training und Radar nicht auf der Startseite */\n#panel-home[data-hz=\"leitung\"] #svBriefBtn{display:none!important;}\n\n/* Beta 0.99.38: Startseite kürzer. Ablage in der To-do-Karte als eine Zeile zum Wischen, erledigte erste Schritte eingeklappt. */\n#panel-home #prioHeute .abl{flex-direction:row;align-items:center;gap:10px;min-width:0;}\n#panel-home #prioHeute .abl-k{margin:0;flex:none;}\n#panel-home #prioHeute .abl-l{display:flex;gap:8px;overflow-x:auto;min-width:0;flex:1;scrollbar-width:none;padding:2px;}\n#panel-home #prioHeute .abl-l::-webkit-scrollbar{display:none;}\n#panel-home #prioHeute .abl-o{flex:none;min-height:44px;max-width:230px;padding:6px 14px;border-radius:999px;}\n#panel-home #prioHeute .abl-o small,#panel-home #prioHeute .abl-o .abl-ic{display:none;}\n#panel-home #prioHeute .abl-o b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;}\n.o1-liste.o1-kurz li.ok{display:none;}\n.o1-sum{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin:10px 0 0;padding:0 12px;border-radius:12px;border:0;background:transparent;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer;text-align:left;}\n.o1-sum span{font-weight:700;color:var(--ink);}.o1-sum small{margin-left:auto;text-decoration:underline;text-underline-offset:3px;}\n.o1-sum svg{width:18px;height:18px;color:var(--green,#1a8f55);flex:none;}\n"; document.head.appendChild(s); }catch(e){} })();
