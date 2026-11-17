@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.69',v:'0.99.69',datum:'2026-11-17',titel:'Menü aufgeräumt',kurz:'Der Bereich „Spieltag“ ist aus dem Menü. Das Spieltagsstudio steht jetzt unter Kommunikation.',
+   punkte:[
+    {ic:'\u{1F9F9}',t:'Weniger Knöpfe',d:'Gegneranalyse und Elf der Woche haben keinen eigenen Knopf mehr. Die Gegneranalyse öffnet sich weiter aus „Mein Spieltag“ und aus dem Spiel in der Mannschaft. Das Spieltagsstudio findest du unter Kommunikation.',r:'team'}
+   ]},
   {id:'0.99.68',v:'0.99.68',datum:'2026-11-17',titel:'Partner: Termine und Kalender',kurz:'Vereinbarte Termine lassen sich bei der Firma eintragen und stehen im Kalender. Der Partner-Bereich hat einen eigenen Kalender mit Fristen und Vertragsabläufen.',
    punkte:[
     {ic:'\u{1F4C5}',t:'Termin schon eintragen',d:'Ein Treffen oder Anruf mit Datum in der Zukunft steht bei der Firma unter „Geplant“, in der Firmenliste unter „Mit Termin“ und im Kalender der Abteilung, sichtbar für das Partner-Team. Als Gespräch zählt er erst, wenn der Tag da ist.',r:'team'},
