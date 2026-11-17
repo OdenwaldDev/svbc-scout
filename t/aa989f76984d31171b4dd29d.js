@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.78',v:'0.99.78',datum:'2026-11-17',titel:'Von der Präsentation direkt in den Vertrag',kurz:'Sagt eine Firma in der Präsentation Ja, steht ihre Wahl bei Paketen und Vertrag schon in der Auswahl. Trikots stehen auf dem Zettel als eigene Rechnung.',
+   punkte:[
+    {ic:'\u{270D}\u{FE0F}',t:'Auswahl ist schon da',d:'Paket, Zusätze und Laufzeit aus der Präsentation stehen im Abschluss, nichts muss noch einmal angeklickt werden. Bausteine für eine Jugendmannschaft wählt man dort mit der Mannschaft dazu.',r:'team'},
+    {ic:'\u{1F9FE}',t:'Trikots getrennt',d:'Trikotpatenschaften sind Circa-Beträge. Auf dem Zettel stehen sie als eigene Rechnung, darunter die Summe der ersten Saison.',r:'team'}
+   ]},
   {id:'0.99.77',v:'0.99.77',datum:'2026-11-17',titel:'Leiste unten bleibt, wo sie ist',kurz:'Am Handy schob sich die untere Leiste ins Bild, sobald ein Reiter etwas zu zählen hatte. Die Zahl sitzt jetzt als kleine Marke am Symbol.',
    punkte:[
     {ic:'\u{1F4F1}',t:'Leiste gleich hoch',d:'Die Zahl der Hinweise an „Mannschaft“ stand als eigene Zeile unter dem Namen und machte die ganze Leiste höher. Jetzt ist sie eine rote Marke am Symbol, die Leiste bleibt immer gleich hoch.',r:'team'}

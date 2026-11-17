@@ -781,6 +781,18 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     if(l.art==='paket')S.korb=S.korb.filter(e=>{ const x=lk(e.key); const raus=x&&x.art==='paket'; if(raus&&!still)toast('Es geht immer nur ein Paket. Statt '+x.titel+' habt ihr jetzt '+l.titel+' gewählt.'); return !raus; });
     const m=l.je_mannschaft?(mannschaft||S.team):null; if(imKorb(key,m))return;
     S.korb.push({id:++uid,key,mannschaft:m,menge:1,preis:null,text:'',naechste:!!naechste}); }
+  // 0.99.78 (Albert, 17.11.2026, R14 in docs/PARTNERREISE_AUSBAU.md): „Dann ist es schwach, wenn bei Paketen und Vertrag nichts vorbelegt ist.“
+  // Sagt die Firma in der Präsentation Ja, steht ihre Wahl hier schon in der Auswahl. Überschrieben wird nie etwas: Liegt schon etwas
+  // in der Auswahl oder ist abgeschlossen, bleibt es. Was vergeben ist, kommt nicht hinein. Bausteine für eine Mannschaft werden nicht
+  // geraten, die wählt man hier mit der Mannschaft dazu.
+  function ausReise(w){ if(!w||S.ergebnis||S.korb.length)return null; let n=0; const offen=[];
+    const rein=k=>{ const l=lk(k); if(!l)return; if(l.je_mannschaft){ offen.push(l.titel); return; } if(frei(l,null)===0)return; dazu(k,null,true); n++; };
+    if(w.paket&&w.paket!=='keins')rein(w.paket); (Array.isArray(w.extras)?w.extras:[]).slice(0,12).forEach(k=>rein(String(k)));
+    if(!n&&!offen.length)return null;
+    if(n){ if([1,2,3].includes(+w.saisons))S.saisons=+w.saisons; if(typeof w.auto==='boolean')S.auto=w.auto; nachKorb(true); }
+    return {n,offen}; }
+  window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='fertig'||!e.data.wahl)return; const r=ausReise(e.data.wahl); if(!r)return;
+    setTimeout(()=>{ if(r.n)zu('baukasten'); toast(r.n?'Eure Auswahl aus der Präsentation ist schon eingetragen.'+(r.offen.length?' Für '+r.offen.join(' und ')+' wählt ihr hier noch die Mannschaft.':''):'Für '+r.offen.join(' und ')+' wählt ihr hier noch die Mannschaft.'); },450); }catch(x){} });
   function klickLeistung(key,m,wie){ m=m||null; const l=lk(key)||{};
     if(wie==='weg'){ S.korb=S.korb.filter(e=>!(e.key===key&&(e.mannschaft||null)===m)); if(S.start==='naechste'&&!S.startWahl&&!S.korb.some(e=>e.naechste)){ S.start='jetzt'; } ansage(l.titel+' ist nicht mehr gewählt.'); }
     else if(wie==='wl'){ const i=S.wl.findIndex(e=>e.key===key&&(e.mannschaft||null)===m); if(i>=0)S.wl.splice(i,1); else { S.wl.push({key,mannschaft:m}); tipp(12); toast('Vorgemerkt. Damit wir dich erreichen, brauchen wir unten nur deinen Namen und deine Mail.'); } }

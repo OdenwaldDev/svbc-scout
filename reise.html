@@ -624,6 +624,9 @@ html.zeiger .spot{opacity:1}
 .wieder .knopf small{font:600 13px/1.1 var(--t);letter-spacing:.04em;text-transform:none;opacity:.85}
 .wieder .reihe{display:flex;flex-wrap:wrap;gap:4px 26px;align-items:baseline}
 .wieder .zeile{font-size:16px}
+
+/* 0.99.78: Zettel mit Summe der ersten Saison (Trikots stehen getrennt, die Summe nennt alles) */
+.bon .zl.sum{font-weight:700;border-top:2px solid var(--tinte);margin-top:4px;padding-top:8px}
 </style></head><body><div id="film" data-s="start" data-licht="1">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture><video muted loop playsinline preload="none" data-quer="partner/r-nacht.mp4" data-hoch="partner/r-nachthoch.mp4"></video></div>
@@ -1260,10 +1263,12 @@ $$('[data-frage="groesse"] [data-w]').forEach(b=>{ const k=ST[+b.dataset.w]; b.i
 
 /* ---------- Station 8: Zettel mit der echten Summe ---------- */
 const USTP=19;   // Umsatzsteuer in Prozent (mit dem Verein abgleichen)
-function rechne(){ const p=pk(), P=PAK[p]; let voll=P.p, einmal=0, ca=false; const z=p==='keins'?[]:[[P.t,P.p,'s']];
-  S.extras.forEach(k=>{ const x=EX[k], pr=exPreis(k); if(x.ca)ca=true; if(x.sais){ voll+=pr; z.push([x.t,pr,'s']); } else { einmal+=pr; z.push([x.t+(x.ca?' (ca.)':''),pr,'e']); } });
+// 0.99.78 (R8): Trikots sind Circa-Beträge und bekommen eine eigene Rechnung, sobald die Stückzahl feststeht. Auf dem Zettel stehen sie
+// deshalb getrennt (trikot), die Summe der ersten Saison nennt trotzdem alles zusammen.
+function rechne(){ const p=pk(), P=PAK[p]; let voll=P.p, einmal=0, trikot=0, ca=false; const z=p==='keins'?[]:[[P.t,P.p,'s']];
+  S.extras.forEach(k=>{ const x=EX[k], pr=exPreis(k); if(x.ca)ca=true; if(x.sais){ voll+=pr; z.push([x.t,pr,'s']); } else { einmal+=pr; if(x.ca)trikot+=pr; z.push([x.t+(x.ca?' (ca.)':''),pr,'e']); } });
   const rab=voll?(S.laufzeit>=3?.10:S.laufzeit===2?.05:0):0, ab=Math.round(voll*rab*100)/100, jahr=Math.round((voll-ab)*100)/100, erste=Math.round((jahr+einmal)*100)/100, br=x=>Math.round(Math.round(x*100)*(100+USTP)/100)/100;
-  return {z,rab,ab,jahr,einmal,erste,ca,voll,brutto:br(erste),jahrBrutto:br(jahr)}; }
+  return {z,rab,ab,jahr,einmal,trikot,erste,ca,voll,brutto:br(erste),jahrBrutto:br(jahr)}; }
 const hatBande=()=>['club','premium','p1896'].includes(pk())||S.extras.has('bande_erste');
 function wahlText(){ const r=rechne(), p=pk(), ex=[...S.extras].map(k=>EX[k].t).join(', '); return (p==='keins'?ex:PAK[p].t+(ex?' und '+ex:''))+(r.voll?' · '+(S.laufzeit>1?S.laufzeit+' Saisons':'eine Saison'):''); }
 function bonZeig(schnell){ const r=rechne(), b=$('#bon'), sw=$('#swVerl'); sw.hidden=!r.voll; sw.setAttribute('aria-checked',S.verl); $('small',sw).textContent=S.verl?'Kündbar jedes Jahr bis 31. März.':'Aus. Nach der Laufzeit ist Schluss.';
@@ -1271,8 +1276,10 @@ function bonZeig(schnell){ const r=rechne(), b=$('#bon'), sw=$('#swVerl'); sw.hi
     +r.z.map(x=>'<div class="zl"><span>'+x[0]+'</span><span>'+eur(x[1])+'</span></div>').join('')
     +(r.rab?'<div class="zl rab"><span>'+S.laufzeit+' Saisons, '+Math.round(r.rab*100)+' % weniger</span><span>−'+eur(r.ab,true)+'</span></div>':'')
     +(r.voll?'<div class="zl gr"><span>Je Saison</span><span>'+eur(r.jahr,!Number.isInteger(r.jahr))+'</span></div>':'')
-    +(r.einmal?'<div class="zl'+(r.voll?'':' gr')+'"><span>Einmalig</span><span>'+(r.ca?'ca. ':'')+eur(r.einmal)+'</span></div>':'')
-    +'<p class="fuss">Preise netto.'+(hatBande()?' Bande: Druck exkl., Montage inkl.':'')+'</p>'
+    +(r.einmal-r.trikot?'<div class="zl'+(r.voll?'':' gr')+'"><span>Einmalig</span><span>'+eur(r.einmal-r.trikot)+'</span></div>':'')
+    +(r.trikot?'<div class="zl'+(r.voll||r.einmal-r.trikot?'':' gr')+'"><span>Trikots, eigene Rechnung</span><span>ca. '+eur(r.trikot)+'</span></div>':'')
+    +(r.voll&&r.einmal?'<div class="zl sum"><span>Zusammen in der ersten Saison</span><span>'+(r.ca?'ca. ':'')+eur(r.erste,!Number.isInteger(r.erste))+'</span></div>':'')
+    +'<p class="fuss">Preise netto.'+(hatBande()?' Bande: Druck exkl., Montage inkl.':'')+(r.trikot?' Trikots rechnen wir getrennt ab, sobald die Stückzahl feststeht.':'')+'</p>'
     +'<span class="stempel">Preis fest</span>';
   if(S.laufzeit>1&&r.voll)setTimeout(()=>$('.stempel',b).style.setProperty('--st',1),schnell?200:650); }
 $('#swVerl').onclick=()=>{ S.verl=!S.verl; bonZeig(true); regieZeig(); };
@@ -1384,10 +1391,12 @@ function reiseNotiz(){ try{ if(!(S.verb||S.antrieb.length||S.ja))return ''; cons
   if(S.extras&&S.extras.size)z.push('Zusätze: '+[...S.extras].map(k=>EX[k]?EX[k].t:k).join(', '));
   if(S.ja)z.push('Ergebnis: '+({dabei:'Ja',nein:'heute nicht'}[S.ja]||S.ja)+(S.weg==='gleich'?', unterschreibt gleich':S.weg==='angebot'?', Angebot und Antrag per Mail':'')+(S.wann?', '+S.wann.replace(/\.$/,''):''));
   return z.join('. ')+'.'; }catch(e){ return ''; } }
-if(navigator.webdriver)window.REISE_PRUEF={notiz:()=>reiseNotiz(),stand:()=>S,zeig:()=>regieZeig()};   // nur für die automatischen Tests
+if(navigator.webdriver)window.REISE_PRUEF={notiz:()=>reiseNotiz(),stand:()=>S,zeig:()=>regieZeig(),bon:()=>{ bonZeig(true); return $$('#bon h3, #bon p, #bon .zl > span').map(e=>e.textContent).join(' '); }};   // nur für die automatischen Tests
 let notizAlt='';
 function reiseMelden(){ try{ const n=reiseNotiz(); if(!n||n===notizAlt||window.parent===window)return; notizAlt=n; window.parent.postMessage({reise:'notiz',notiz:n},location.origin); }catch(e){} }
-function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz()},location.origin); }catch(e){} }
+// Die Wahl geht nur mit, wenn die Firma Ja gesagt hat. Vorher ist das Paket nur ein Vorschlag und darf nicht in den Vertrag rutschen.
+function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz(),
+  wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],saisons:S.laufzeit,auto:!!S.verl}:null},location.origin); }catch(e){} }
 /* ---------- Speichern, Spur und Wiederkommen (0.99.76, R12, R15, R17) ----------
    Der Rahmen in partner.html kennt den persönlichen Link und spricht mit dem Server (partner_reise_stand, partner_reise_merken).
    Die Reise selbst kennt weder Schlüssel noch Adresse: Sie schickt nur Nachrichten an den Rahmen. Ohne Rahmen wird nichts gespeichert.
