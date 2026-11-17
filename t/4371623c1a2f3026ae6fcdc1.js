@@ -1,4 +1,9 @@
    ]},
+  {id:'0.16',v:'0.16',datum:'2026-09-26',titel:'Daten live aktuell',kurz:'Ändern sich Daten oder kommen neue FuPa-Werte, sieht die App das sofort. Kein Neuladen nötig.',
+   punkte:[
+    {ic:'⚡',t:'Ohne Neuladen aktuell',d:'Korrekturen im Datenbestand und neue FuPa-Werte erscheinen von selbst, auch in einem gerade offenen Profil. War das Handy kurz offline, holt die App Verpasstes beim Wiederverbinden nach.',r:'team',go:'home'},
+    {ic:'📍',t:'Liga immer aus der richtigen Saison',d:'Aktuelle Liga, Ligaabstand und Wechselbegründung kommen aus der laufenden Saison. Die Verbandsliga ist jetzt eine eigene Liga. Gründe aus der Vorsaison sind mit 25/26 gekennzeichnet.',r:'scout'},
+   ]},
   {id:'0.15',v:'0.15',datum:'2026-09-26',titel:'Spieler-Abgleich zum Wischen',kurz:'Wo die App nicht sicher ist, welcher FuPa-Spieler zu welchem Spieler gehört, entscheidest du jetzt mit einem Wisch. Einmal, dann gilt es dauerhaft.',
    punkte:[
     {ic:'👈',t:'Nach links: bestätigen',d:'Stimmt der Vorschlag, nach links wischen oder „Bestätigen“ tippen. Die Werte stehen sofort im Profil, im MScore und in der Bestenliste und bleiben so, auch nach jedem neuen Abgleich.',r:'scout',go:'radar'},

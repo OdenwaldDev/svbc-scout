@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.64',v:'0.99.64',datum:'2026-11-17',titel:'Vereinswechsel laut FuPa von selbst',kurz:'Steht ein eigener Spieler laut FuPa bei einem anderen Verein im Kader und bei uns nicht mehr, führt ihn die App von selbst als extern.',
+   punkte:[
+    {ic:'\u{1F501}',t:'FuPa gilt',d:'Wechselt ein Spieler den Verein, zeigt die App den neuen Verein, sobald FuPa ihn dort führt. Eigene Spieler stehen dann von selbst unter Extern und tauchen in Training und Listen nicht mehr auf. Wer ihn von Hand wieder intern setzt, bleibt intern.',r:'team'}
+   ]},
   {id:'0.99.63',v:'0.99.63',datum:'2026-11-17',titel:'Nur noch die Stärke, Position nicht geraten, Verein laut FuPa',kurz:'Überall zählt die Stärke, auch auf der Karte, dort mit der Form. Unbestätigte Positionen stehen als Abwehr, Mittelfeld oder Sturm da. Wer laut FuPa diese Saison woanders spielt, wird dort geführt.',
    punkte:[
     {ic:'\u{1F7E2}',t:'Die Stärke ist der eine Wert',d:'Karte, Listen, Tabellen, Aufstellungsvorschlag und Suche zeigen und sortieren nach der Stärke. Der frühere MScore wird nicht mehr gezeigt.',r:'scout',go:'kueber'},
@@ -1537,8 +1541,3 @@ const SV_PATCHES=[
     {ic:'✅',t:'Training: Da oder Fehlt',d:'Die Einheiten zeigen nur noch Trainings. Wer zu spät kam, ist da und bekommt die Notiz „zu spät“. Die Notiz zur Einheit steht direkt unter der Trainingsnote, die Statistik ist reine Auswertung.',r:'team'},
     {ic:'⚽',t:'Spiele mit Statistik',d:'Die Spiele der laufenden Saison und daneben die Auswertung: Bilanz, Form, Einsätze, Minuten, Tore und Vorlagen je Spieler.',r:'team',go:'gstat'},
     {ic:'🌴',t:'Abwesenheiten und Materialdienst',d:'Beide haben jetzt einen eigenen Reiter. Neu ist die Mannschaft „Umfeld“ für Spieler mit Pass, die nicht regelmäßig spielen.',r:'team',go:'abwesend'},
-   ]},
-  {id:'0.16',v:'0.16',datum:'2026-09-26',titel:'Daten live aktuell',kurz:'Ändern sich Daten oder kommen neue FuPa-Werte, sieht die App das sofort. Kein Neuladen nötig.',
-   punkte:[
-    {ic:'⚡',t:'Ohne Neuladen aktuell',d:'Korrekturen im Datenbestand und neue FuPa-Werte erscheinen von selbst, auch in einem gerade offenen Profil. War das Handy kurz offline, holt die App Verpasstes beim Wiederverbinden nach.',r:'team',go:'home'},
-    {ic:'📍',t:'Liga immer aus der richtigen Saison',d:'Aktuelle Liga, Ligaabstand und Wechselbegründung kommen aus der laufenden Saison. Die Verbandsliga ist jetzt eine eigene Liga. Gründe aus der Vorsaison sind mit 25/26 gekennzeichnet.',r:'scout'},

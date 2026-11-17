@@ -1500,8 +1500,8 @@ try{ n77Ordnen(); }catch(e){}
       „Position eintragen“ speichert auch dann, wenn die Vermutung stimmt: ab da gilt sie als bestätigt.
    4. Verein laut FuPa: Der Datenbestand führt Verein und „eigener Spieler“ aus der Stammliste, FuPa liefert bisher nur Einsätze dazu.
       Steht ein Spieler in der laufenden Saison bei einem anderen Verein im Kader oder hat dort gespielt, gilt jetzt dieser Verein
-      (p.cur, p.fupaWechsel). Wer bei uns noch im Kader steht, bleibt unverändert und bekommt nur den Hinweis im Profil: Kein Spieler
-      fällt von selbst aus seiner Mannschaft. Eigene Spieler mit so einem Wechsel stehen in Verwaltung → Datenprüfung.
+      (p.cur, p.fupaWechsel). Seit 0.99.64 gilt das auch für eigene Spieler (Albert: FuPa gilt immer), und der Server führt sie
+      von selbst als extern (185_fupa_wechsel.sql, stündlich). Die Liste steht in Verwaltung → Datenprüfung.
    ===================================================================== */
 const S116={c:new WeakMap(),teil:{T:'Torwart',A:'Abwehr',M:'Mittelfeld',S:'Sturm'},kurz:{T:'TW',A:'Abwehr',M:'Mittelf.',S:'Sturm'}};
 function s116An(){ return typeof V1!=='undefined'&&!!V1.an&&!!V1.werte; }
@@ -1561,10 +1561,7 @@ function s116Wechsel(p){
 function s116VereinAnwenden(){ let n=0;
   try{ players.forEach(p=>{ const W=s116Wechsel(p);
       if(!W){ if(p._cur116){ if(p._cur116.cur)p.cur=p._cur116.cur; else delete p.cur; delete p._cur116; delete p.fupaWechsel; } return; }
-      // Wer bei uns noch im Kader steht, bleibt unverändert: Dort entscheidet ein Mensch (Hinweis im Profil und in der Datenprüfung).
-      let imKader=false; try{ const t=p.own?sv4Team(p):null; imKader=!!t&&t!=='X'; }catch(e){}
-      p.fupaWechsel=Object.assign(W,{imKader}); n++;
-      if(imKader){ if(p._cur116){ if(p._cur116.cur)p.cur=p._cur116.cur; else delete p.cur; delete p._cur116; } return; }
+      p.fupaWechsel=W; n++;
       if(!p._cur116)p._cur116={cur:p.cur||null};
       p.cur={club:W.nach,liga:W.liga||(p._cur116.cur||{}).liga||p.liga,season:typeof svSaisonCur==='function'?svSaisonCur():null,stand:W.stand,fupa:true}; }); }catch(e){ console.warn('Verein laut FuPa',e); }
   return n; }
@@ -1573,7 +1570,7 @@ function s116VereinAnwenden(){ let n=0;
 { const _ka116=klaAnwenden; klaAnwenden=function(){ const r=_ka116.apply(this,arguments); s116VereinAnwenden(); return r; }; }
 // Nach einem neuen Datenbestand sind die Spieler frisch überschrieben: Verein laut FuPa noch einmal anwenden
 { const _da116=svDatasetAnwenden; svDatasetAnwenden=function(){ const r=_da116.apply(this,arguments); try{ players.forEach(p=>{ delete p._cur116; delete p.fupaWechsel; }); s116VereinAnwenden(); }catch(e){} return r; }; }
-{ const _lj116=svLigaJetzt; svLigaJetzt=function(p){ const W=p&&p.fupaWechsel; if(!W||W.imKader)return _lj116.apply(this,arguments);
+{ const _lj116=svLigaJetzt; svLigaJetzt=function(p){ const W=p&&p.fupaWechsel; if(!W)return _lj116.apply(this,arguments);
   const k=KLAW.by[p.id][klaSk('cur')], codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)).filter(Boolean))];
   return {liga:codes.join('/')||W.liga,jetzt:true,quelle:'FuPa '+(W.kader?'Kader':'Einsätze'),club:W.alle||W.nach,mehrere:codes.length>1||(k.basis||[]).length>1}; }; }
 function s116WechselText(p){ const W=p.fupaWechsel; if(!W)return '';
@@ -1582,9 +1579,9 @@ function s116WechselText(p){ const W=p.fupaWechsel; if(!W)return '';
 // Datenprüfung: eigene Spieler, die laut FuPa woanders spielen
 { const _gq116=g1QualHtml; g1QualHtml=function(){ let h=_gq116.apply(this,arguments);
   try{ const L=players.filter(p=>p.fupaWechsel&&p.own&&!p.isJugend), off=G1.dqOffen.wechsel;
-    const z=`<h4 class="s1-gruppe">Vereinswechsel</h4>`+(L.length?`<div class="k1-oe"><span>Bei uns geführt, spielt laut FuPa woanders</span><small>im Profil prüfen, dann aus dem Kader nehmen</small><button class="btn sm ghost" type="button" data-g1dq="wechsel">${L.length}</button></div>
+    const z=`<h4 class="s1-gruppe">Vereinswechsel</h4>`+(L.length?`<div class="k1-oe"><span>Eigene Spieler, die laut FuPa woanders spielen</span><small>FuPa gilt: sie werden von selbst als extern geführt</small><button class="btn sm ghost" type="button" data-g1dq="wechsel">${L.length}</button></div>
       ${off?`<p class="note small">${L.map(p=>`<span class="lnk" data-svp="${g1E(p.id)}">${g1E(p.name)}</span> (${g1E(p.fupaWechsel.nach)})`).join(', ')}</p>`:''}`
-      :`<div class="k1-oe"><span>Bei uns geführt, spielt laut FuPa woanders</span><small>✓ niemand</small></div>`);
+      :`<div class="k1-oe"><span>Eigene Spieler, die laut FuPa woanders spielen</span><small>✓ niemand</small></div>`);
     h=h.replace('<h4 class="s1-gruppe">Doppelte Spieler</h4>',z+'<h4 class="s1-gruppe">Doppelte Spieler</h4>'); }catch(e){ console.warn(e); }
   return h; }; }
 
@@ -1605,7 +1602,7 @@ function s116Profil(id){
     root.querySelectorAll('.pf31-mt').forEach(x=>x.remove()); }
   // Verein laut FuPa
   if(p.fupaWechsel&&!root.querySelector('.s116-wechsel')){ const h=root.querySelector('.pf4-head');
-    if(h)h.insertAdjacentHTML('afterend',`<div class="s116-wechsel">${SVI('info')}<p>${svEsc(s116WechselText(p))}${p.fupaWechsel.imKader?' Bei uns steht er noch im Kader. Bitte prüfen und in der Kaderplanung als Abgang führen.':''}</p></div>`); }
+    if(h)h.insertAdjacentHTML('afterend',`<div class="s116-wechsel">${SVI('info')}<p>${svEsc(s116WechselText(p))}${p.own?' Steht er dort im Kader und bei uns nicht mehr, führt ihn die App von selbst als extern.':''}</p></div>`); }
 }
 { const _om116=openModal; openModal=function(id){ const r=_om116.apply(this,arguments); try{ s116Profil(id); }catch(e){ console.warn('Profil 0.99.63',e); } return r; }; }
 { const _pb116=pf4Build; pf4Build=function(id){ const r=_pb116.apply(this,arguments); try{ s116Profil(id); }catch(e){ console.warn('Profil 0.99.63',e); } return r; }; }
