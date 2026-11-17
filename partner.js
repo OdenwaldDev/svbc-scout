@@ -703,14 +703,16 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     if(f===0&&naechst)return `<button type="button" class="${cls}" data-add="${l.key}" data-m="" data-wie="naechste" aria-label="${t} ab Saison ${saisonTxt(D.naechste_saison)} sichern">Ab ${saisonTxt(D.naechste_saison)} sichern</button>`;
     if(f===0)return `<button type="button" class="${cls}" data-add="${l.key}" data-m="${m}" data-wie="wl" aria-pressed="${wl}" aria-label="${t} vormerken">${wl?'✓ Vorgemerkt':'Vormerken'}</button>`;
     return `<button type="button" class="${cls}" data-add="${l.key}" data-m="${m}" data-wie="dazu" aria-pressed="false" aria-label="${t} ${wort[2]}">${wort[0]}</button>`; }
-  function paketKarte(l,emp){ const f=frei(l,null), drin=imKorb(l.key,null), st=standText(l,f,null), istE=emp&&emp.key===l.key;
+  // Seit 0.99.82: Widmung am Paket (wofür der Beitrag dieser Firma gedacht ist). Sie steht an der Präsentation und kommt beim Abschluss vom Server in den Vertrag.
+  function widmung(){ const P=((D||{}).deck||{}).passung||{}, t=String(P.widmung||'').trim(); return t?{titel:t,text:String(P.widmung_text||'').trim()}:null; }
+  function paketKarte(l,emp){ const f=frei(l,null), drin=imKorb(l.key,null), st=standText(l,f,null), istE=emp&&emp.key===l.key, wd=widmung(), zeigW=wd&&(istE||(!emp&&drin));
     const marke=st?`<span class="max ${st[0]}">${esc(st[1])}</span>`:l.plaetze>1?`<span class="max">Höchstens ${l.plaetze} Partner</span>`:'';
     const tag=istE?`<span class="pk-tag">${l.key==='p1896'?'Ankerpartner · ':''}${emp.aus==='antw'?'Passt zu euch':'Unsere Empfehlung'}</span>`:l.key==='p1896'?'<span class="pk-tag">Ankerpartner</span>':'';
     const punkte=(String(l.text||'').match(/[^.]+\.?/g)||[]).map(s=>s.trim()).filter(Boolean);
     const orange=istE&&!hatPaket()&&f!==0;
     return `<article class="pk-k ${l.key}${drin?' drin':''}${drin&&S.neu===l.key+'|'?' neu':''}${f===0?' voll':''}${istE?' empf':''}" id="pk-${l.key}" role="listitem">
       <div class="pk-o">${tag}</div>
-      <h3 class="pk-n">${esc(l.titel)}</h3>${l.kurz?`<p class="pk-h">${esc(l.kurz)}</p>`:''}
+      <h3 class="pk-n">${esc(l.titel)}</h3>${zeigW?`<p class="pk-wid">${esc(wd.titel)}</p>${wd.text?`<p class="pk-widt">${esc(wd.text)}</p>`:''}`:''}${l.kurz?`<p class="pk-h">${esc(l.kurz)}</p>`:''}
       <div class="pk-p"><b>${eur(l.preis)}</b><span>${esc(PLIB.EINHEIT[l.einheit]||'')}, netto</span></div>
       <ul class="pk-l">${punkte.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
       ${marke||l.key==='p1896'?`<div class="pk-v">${marke}${l.key==='p1896'?'<span class="stp">Branchenexklusiv</span>':''}</div>`:''}
@@ -1079,7 +1081,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       R.netto>0&&rgSpaeter(c)?(eineRg(c)?'Die Rechnung':'Die erste Rechnung')+` über ${eur(R.brutto,true)} kommt im ${rgMonatJahr()} per Mail und ist 14 Tage nach Rechnungsdatum zahlbar.`+(eineRg(c)?' Weitere Rechnungen gibt es nicht.':''):R.netto>0?(eineRg(c)?'Die Rechnung':'Die erste Rechnung')+(VS()&&rgSofort()?` über ${eur(R.brutto,true)} kommt gleich per Mail und ist zahlbar bis zum ${datum(faelligAm())}.`:VS()?` über ${eur(R.brutto,true)} schicken wir in den nächsten Tagen per Mail. Zahlbar ist sie 14 Tage nach Rechnungsdatum.`:` über ${eur(R.brutto,true)} kommt mit dem gegengezeichneten Vertrag per Mail und ist 14 Tage nach Rechnungsdatum zahlbar${spaeterBeginn()?', frühestens zum Beginn':''}.`)+(eineRg(c)?' Weitere Rechnungen gibt es nicht.':''):'',
       'Bevor etwas mit eurem Logo gedruckt wird, zeigen wir es euch.'].filter(Boolean);
     const kurzHtml=kurzP.length?`<div class="vt-kurz"><b>Das Wichtigste in Kürze</b><ul>${kurzP.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>`:'';
-    const tab=c.positionen.map(p=>{ const l=lk(p.key)||{}; return `<div><span>${esc(p.titel)}${p.mannschaft?', '+esc(mname(p.mannschaft)):''}${p.menge>1?', Menge '+p.menge:''}${p.rabatt?', '+Math.round(p.rabatt*100)+' % Vorteil':''}${l.text&&!sp?`<small>${esc(l.text)}</small>`:''}</span><span>${eur(p.summe,true)}${p.einheit==='saison'?' / Saison':p.einheit==='einmalig'?' einmalig':''}</span></div>`; }).join('');
+    const tab=c.positionen.map(p=>{ const l=lk(p.key)||{}; return `<div><span>${esc(p.titel)}${p.mannschaft?', '+esc(mname(p.mannschaft)):''}${p.menge>1?', Menge '+p.menge:''}${p.rabatt?', '+Math.round(p.rabatt*100)+' % Vorteil':''}${l.art==='paket'&&widmung()&&!sp?`<small class="wid"><b>${esc(widmung().titel)}</b>${widmung().text?' '+esc(widmung().text):''}</small>`:''}${l.text&&!sp?`<small>${esc(l.text)}</small>`:''}</span><span>${eur(p.summe,true)}${p.einheit==='saison'?' / Saison':p.einheit==='einmalig'?' einmalig':''}</span></div>`; }).join('');
     W.innerHTML=`<div class="vertrag" id="vertrag"><div class="vt-k"><div><b>${sp?'Spendenzusage':'Partnervertrag'}</b><small>${sp?'':(e?`Laufzeit ${datum(beginn())} bis ${datum(e)}${S.auto?', verlängert sich automatisch':''}`:'Einmalige Leistungen')}</small></div><img src="${WAPPEN}" width="320" height="182" alt=""></div>
       ${warSchon?'<div class="vt-neu" role="status">Du hast das Paket geändert. Bitte sieh dir den Vertrag noch einmal an und unterschreib neu.</div>':''}
       <div class="vt-p" id="vtKopf"></div>

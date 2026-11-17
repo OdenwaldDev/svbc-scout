@@ -83,7 +83,7 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
   const L=D.filter(d=>{ const x=pdStation(d), st=x&&x.status; return (flt==='alle'||(flt==='partner'?st==='partner':st!=='partner'))&&(!q||(d.firma+' '+(d.ansprech||'')+' '+(d.branche||'')).toLowerCase().includes(q)); });
   H.innerHTML=L.map(d=>{ const x=pdStation(d), partner=x&&x.status==='partner', wa=`https://wa.me/?text=${encodeURIComponent(pdText(d))}`;
     return `<div class="card pd-d${d.aktiv?'':' aus'}"><div class="pd-dk"><div><b>${svEsc(d.firma)}</b><small>${[d.ansprech&&((d.anrede?d.anrede+' ':'')+d.ansprech),d.branche].filter(Boolean).map(svEsc).join(' · ')}</small>
-        ${d.empfehlung?`<small class="pd-empf">Empfohlen: ${svEsc(PD_ST[d.empfehlung]||d.empfehlung)}</small>`:''}
+        ${d.empfehlung?`<small class="pd-empf">Empfohlen: ${svEsc(PD_ST[d.empfehlung]||d.empfehlung)}</small>`:''}${d.passung&&d.passung.widmung?`<small class="pd-empf pd-wid">Widmung: ${svEsc(d.passung.widmung)}</small>`:''}
         <small class="pd-schau">${d.aufrufe?`${SVI('eye')} ${d.aufrufe}× angeschaut, zuletzt ${svEsc(pdDatum(d.zuletzt))}`:'Noch nicht angeschaut'}${d.anfragen?` · ${d.anfragen} Anfrage${d.anfragen>1?'n':''}`:''}${d.antrag?' · <b class="pd-ok">Antrag unterschrieben</b>':''}${d.aktiv?'':' · abgeschaltet'}</small></div>
       <div class="pd-tags">${x?`<i class="spo-st s-${svEsc(x.status)}">${svEsc(SPO_STL[x.status]||x.status)}</i>`:'<i class="spo-st pd-ohne">Nicht unter Firmen</i>'}</div></div>
       <div class="pd-akt">${x?'':`<button type="button" class="btn ghost sm" data-pdakteneu="${svEsc(d.id)}">${SVI('plus')} Zu Firmen hinzufügen</button>`}
@@ -91,6 +91,7 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
         ${partner?`<button type="button" class="btn ghost" data-pdakte="${svEsc(x.id)}">${SVI('file')} Akte öffnen</button>`:x?`<button type="button" class="btn ghost" data-pdsend="${svEsc(d.id)}">${SVI('send')} Schicken</button>`:''}
         <details class="pd-mehr"><summary aria-label="Mehr zu ${svEsc(d.firma)}">…</summary><div>
           <button type="button" class="btn ghost sm" data-pdcp="${svEsc(d.code)}">${SVI('copy')} Link kopieren</button>
+          <button type="button" class="btn ghost sm" data-pddeckpdf="${svEsc(d.id)}">${SVI('download')} Als PDF laden</button>
           ${x?'':`<a class="btn ghost sm pd-wa" href="${wa}" target="_blank" rel="noopener">${SVI('chat')} Per WhatsApp schicken</a>`}
           <a class="btn ghost sm" href="${svEsc(pdLink(d.code))}" target="_blank" rel="noopener">So sieht es die Firma</a>
           <button type="button" class="btn ghost sm" data-pded="${svEsc(d.id)}">${SVI('cards')} Bearbeiten</button></div></details></div></div>`; }).join('')||'<div class="card"><div class="empty">Keine Präsentation in dieser Auswahl. Neue entstehen über „Termin vorbereiten“.</div></div>';
@@ -103,6 +104,12 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
   H.querySelectorAll('.pd-wa').forEach(a=>a.addEventListener('click',e=>{ if(!impOk())e.preventDefault(); }));
   H.querySelectorAll('[data-pdcp]').forEach(b=>b.onclick=async()=>{ if(!impOk())return; const u=pdLink(b.dataset.pdcp); try{ await navigator.clipboard.writeText(u); kToast('✓ Link kopiert'); }catch(e){ kToast(u); } });
   H.querySelectorAll('[data-pded]').forEach(b=>b.onclick=()=>pdForm(D.find(x=>x.id===b.dataset.pded)));
+  // Seit 0.99.82: die Präsentation einer Firma als PDF zum Weitergeben (Text zur Firma, Widmung, Pakete und Bausteine mit Preisen, Link). Verschickt wird nichts.
+  H.querySelectorAll('[data-pddeckpdf]').forEach(b=>b.onclick=()=>paEinmal(b,async()=>{
+    try{ const {data,error}=await SVB.sb.functions.invoke('partner-deck',{body:{deck:b.dataset.pddeckpdf,nurPdf:true}}); if(error)throw error; if(!data||!data.pdf)throw new Error('Kein PDF');
+      const bin=atob(data.pdf), u8=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+      spoDownload(new Blob([u8],{type:'application/pdf'}),data.name||'Partnerschaft.pdf'); kToast('✓ PDF ist geladen'); }
+    catch(e){ kToast('⚠️ PDF geht gerade nicht: '+(e.message||e)); } },'Baut PDF …'));
   H.querySelectorAll('[data-pdakte]').forEach(b=>b.onclick=()=>spoSponsor(b.dataset.pdakte));
 }
 function pdText(d){ const g=typeof paAnrede==='function'?paAnrede(d.anrede,d.ansprech):'Hallo,';
@@ -135,6 +142,10 @@ function pdForm(d,vor){
       <label class="og-fl">Website<input id="pdWe" maxlength="200" value="${svEsc(x.web||'')}" placeholder="https://"></label></div>
     <label class="og-fl">Logo<input type="file" id="pdLo" accept="image/*"></label><label class="jutog"><input type="checkbox" id="pdLd"${x.logo_hell===false?' checked':''}> Logo ist weiß oder hell (auf dunklem Grund zeigen)</label><div class="pd-lv" id="pdLv">${d&&d.logo?'Logo ist hinterlegt. Neues Bild ersetzt es.':'Noch kein Logo. Am besten PNG mit transparentem Hintergrund.'}</div>
     <label class="og-fl">Empfehlung<select id="pdEmpf"><option value="">keine</option>${Object.keys(PD_ST).map(k=>`<option value="${k}"${x.empfehlung===k?' selected':''}>${PD_ST[k]}</option>`).join('')}</select></label>
+    <h3 class="pd-h">Widmung am Paket</h3>
+    <label class="og-fl">Unterüberschrift<input id="pdWi" maxlength="90" value="${svEsc(P.widmung||'')}" placeholder="z.B. Für sportliche Wettkämpfe in der Saisonvorbereitung"></label>
+    <label class="og-fl">Absatz dazu<textarea id="pdWt" rows="3" maxlength="600" placeholder="Wofür der Beitrag der Firma gedacht ist, in zwei bis drei Sätzen.">${svEsc(P.widmung_text||'')}</textarea></label>
+    <p class="note small">Steht in der Präsentation am empfohlenen Paket und im Vertrag unter dem Paket. Leer lassen, wenn es keine Widmung gibt.</p>
     <h3 class="pd-h">Warum es passt</h3>
     <label class="og-fl">Überschrift<input id="pdTi" maxlength="80" value="${svEsc(P.titel||'')}" placeholder="z.B. Handwerk mit Heimat."></label>
     <label class="og-fl">Einstieg oben (leer = Standardtext über die 260 Kinder)<textarea id="pdHe" rows="2" maxlength="300">${svEsc(P.hero||'')}</textarea></label>
@@ -150,7 +161,7 @@ function pdForm(d,vor){
   const sv=M.querySelector('#pdSave'); sv.onclick=()=>paEinmal(sv,async()=>{
     const v=id=>(M.querySelector(id)||{}).value||'';
     const p={id:d?d.id:null,firma:v('#pdFi'),kurzname:v('#pdKu'),anrede:v('#pdAn'),ansprech:v('#pdAp'),email:v('#pdEm'),adresse:v('#pdAd'),branche:v('#pdBr'),web:v('#pdWe'),empfehlung:v('#pdEmpf'),notiz:v('#pdNo'),
-      passung:{titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
+      passung:{widmung:v('#pdWi').trim(),widmung_text:v('#pdWt').trim(),titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
         fakten:v('#pdFa').split('\n').map(s=>s.split('|')).filter(a=>a.length>=2&&a[0].trim()).map(a=>({z:a[0].trim().slice(0,12),t:a.slice(1).join('|').trim().slice(0,80)})).slice(0,4)}};
     p.logo_hell=!M.querySelector('#pdLd').checked; if(logo)p.logo=logo; if(d)p.aktiv=M.querySelector('#pdAk').checked;
     if(/[–—]/.test(JSON.stringify(p.passung))){ kToast('Bitte keine Gedankenstriche, lieber Komma oder Doppelpunkt'); return; }

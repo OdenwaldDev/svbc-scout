@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.81', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.82', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -15793,7 +15793,7 @@ function spoAkteVertraege(id){
   // seit 0.74: „unterschrieben“ heißt, die Firma hat angeboten; geschlossen ist der Vertrag erst mit eurer Unterschrift
   return `<h4 class="svt-h4">Verträge</h4>${V.map(v=>{ const gz=v.status==='unterschrieben'&&!v.hat_unterschrift_verein&&!v.gegengezeichnet_am&&v.art!=='spende';
     return `<div class="spo-v${gz?' spo-wartet':''}"><div><b>${svEsc(v.nr)}${v.art==='spende'?' · Spende':''} · ${gz?'<em class="spo-gz">wartet auf eure Unterschrift</em>':svEsc(st[v.status]||v.status)}</b>
-    <span>${svEsc((v.positionen||[]).map(p=>p.titel).join(', '))}${v.netto_jahr?' · '+spoEur(v.netto_jahr,true)+' netto je Saison':v.netto_gesamt?' · '+spoEur(v.netto_gesamt,true):''}${v.ende?' · bis '+spoDat(v.ende):''}${v.gegengezeichnet_am?' · geschlossen '+spoDat(v.gegengezeichnet_am):gz?' · noch nicht geschlossen':''}${spoRgZeile(v)}</span></div>
+    <span>${svEsc((v.positionen||[]).map(p=>p.titel).join(', '))}${v.netto_jahr?' · '+spoEur(v.netto_jahr,true)+' netto je Saison':v.netto_gesamt?' · '+spoEur(v.netto_gesamt,true):''}${v.ende?' · bis '+spoDat(v.ende):''}${v.gegengezeichnet_am?' · geschlossen '+spoDat(v.gegengezeichnet_am):gz?' · noch nicht geschlossen':''}${spoRgZeile(v)}${v.widmung&&v.widmung.titel?' · Widmung: '+svEsc(v.widmung.titel):''}</span></div>
     <div class="btnrow">${gz&&PE.d.darf_gegenzeichnen&&typeof peGegenzeichnen==='function'?(v.hat_unterschrift_partner?`<button class="btn sm" type="button" data-spogz="${svEsc(v.id)}">${SVI('check')} Gegenzeichnen</button>`:`<button class="btn sm" type="button" data-spoann="${svEsc(v.id)}">${SVI('check')} Annehmen</button>`):''}${gz&&dv&&typeof peAblehnen==='function'?`<button class="btn sm ghost" type="button" data-spoab="${svEsc(v.id)}">Nicht annehmen</button>`:''}${v.status==='angebot'&&dv?`<button class="btn sm ghost" type="button" data-spozz="${svEsc(v.id)}">Angebot zurückziehen</button>`:''}${dv&&v.art!=='spende'&&+v.netto_jahr>0&&['angebot','unterschrieben','aktiv'].includes(v.status)?`<button class="btn sm ghost" type="button" data-sporm="${svEsc(v.id)}">Rechnungsmonat</button>`:''}${v.status==='aktiv'&&v.gegengezeichnet_am&&v.art!=='spende'?`<button class="btn sm ghost" type="button" data-spomail="${svEsc(v.id)}">${SVI('mail')} Vertrag erneut schicken</button>`:''}<button class="btn sm ghost" type="button" data-spovpdf="${svEsc(v.id)}">${SVI('download')} PDF</button></div></div>`; }).join('')}`;
 }
 // Seit 0.99.81: In welchem Monat der Verein die Rechnung je Saison stellt, steht im Vertrag (Vorgabe August).
@@ -18661,6 +18661,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.82',v:'0.99.82',datum:'2026-11-17',titel:'Widmung am Paket, Präsentation als PDF',kurz:'Eine Firma kann ihr Paket einem Zweck widmen, das steht in Präsentation und Vertrag. Jede Präsentation lässt sich als PDF laden.',
+   punkte:[
+    {ic:'\u{1F3AF}',t:'Widmung am Paket',d:'In der Präsentation einer Firma gibt es eine Unterüberschrift und einen Absatz zum Paket, zum Beispiel „Für sportliche Wettkämpfe in der Saisonvorbereitung“. Beides steht am empfohlenen Paket, am Ticket und im Vertrag unter dem Paket.',r:'team'},
+    {ic:'\u{1F4C4}',t:'Präsentation als PDF',d:'Unter Präsentationen im Menü mit den drei Punkten: „Als PDF laden“. Drin stehen der Text zur Firma, die Widmung, alle Pakete und Bausteine mit Preisen und der Link zur Präsentation.',r:'team'}
+   ]},
   {id:'0.99.81',v:'0.99.81',datum:'2026-11-17',titel:'Rechnungsmonat im Vertrag',kurz:'Im Vertrag steht jetzt, in welchem Monat die Rechnung kommt (Vorgabe August). Die App erinnert vorher, legt die Rechnung an und schickt sie mit einem Tipp per Mail.',
    punkte:[
     {ic:'\u{1F4C5}',t:'Monat steht im Vertrag',d:'Beim Abschluss wählt die Firma den Monat der Rechnung, August ist vorgeschlagen. Die Rechnung kommt dann jede Saison in diesem Monat, nicht mehr mit dem Vertragsschluss.',r:'team'},
@@ -24051,7 +24056,7 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
   const L=D.filter(d=>{ const x=pdStation(d), st=x&&x.status; return (flt==='alle'||(flt==='partner'?st==='partner':st!=='partner'))&&(!q||(d.firma+' '+(d.ansprech||'')+' '+(d.branche||'')).toLowerCase().includes(q)); });
   H.innerHTML=L.map(d=>{ const x=pdStation(d), partner=x&&x.status==='partner', wa=`https://wa.me/?text=${encodeURIComponent(pdText(d))}`;
     return `<div class="card pd-d${d.aktiv?'':' aus'}"><div class="pd-dk"><div><b>${svEsc(d.firma)}</b><small>${[d.ansprech&&((d.anrede?d.anrede+' ':'')+d.ansprech),d.branche].filter(Boolean).map(svEsc).join(' · ')}</small>
-        ${d.empfehlung?`<small class="pd-empf">Empfohlen: ${svEsc(PD_ST[d.empfehlung]||d.empfehlung)}</small>`:''}
+        ${d.empfehlung?`<small class="pd-empf">Empfohlen: ${svEsc(PD_ST[d.empfehlung]||d.empfehlung)}</small>`:''}${d.passung&&d.passung.widmung?`<small class="pd-empf pd-wid">Widmung: ${svEsc(d.passung.widmung)}</small>`:''}
         <small class="pd-schau">${d.aufrufe?`${SVI('eye')} ${d.aufrufe}× angeschaut, zuletzt ${svEsc(pdDatum(d.zuletzt))}`:'Noch nicht angeschaut'}${d.anfragen?` · ${d.anfragen} Anfrage${d.anfragen>1?'n':''}`:''}${d.antrag?' · <b class="pd-ok">Antrag unterschrieben</b>':''}${d.aktiv?'':' · abgeschaltet'}</small></div>
       <div class="pd-tags">${x?`<i class="spo-st s-${svEsc(x.status)}">${svEsc(SPO_STL[x.status]||x.status)}</i>`:'<i class="spo-st pd-ohne">Nicht unter Firmen</i>'}</div></div>
       <div class="pd-akt">${x?'':`<button type="button" class="btn ghost sm" data-pdakteneu="${svEsc(d.id)}">${SVI('plus')} Zu Firmen hinzufügen</button>`}
@@ -24059,6 +24064,7 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
         ${partner?`<button type="button" class="btn ghost" data-pdakte="${svEsc(x.id)}">${SVI('file')} Akte öffnen</button>`:x?`<button type="button" class="btn ghost" data-pdsend="${svEsc(d.id)}">${SVI('send')} Schicken</button>`:''}
         <details class="pd-mehr"><summary aria-label="Mehr zu ${svEsc(d.firma)}">…</summary><div>
           <button type="button" class="btn ghost sm" data-pdcp="${svEsc(d.code)}">${SVI('copy')} Link kopieren</button>
+          <button type="button" class="btn ghost sm" data-pddeckpdf="${svEsc(d.id)}">${SVI('download')} Als PDF laden</button>
           ${x?'':`<a class="btn ghost sm pd-wa" href="${wa}" target="_blank" rel="noopener">${SVI('chat')} Per WhatsApp schicken</a>`}
           <a class="btn ghost sm" href="${svEsc(pdLink(d.code))}" target="_blank" rel="noopener">So sieht es die Firma</a>
           <button type="button" class="btn ghost sm" data-pded="${svEsc(d.id)}">${SVI('cards')} Bearbeiten</button></div></details></div></div>`; }).join('')||'<div class="card"><div class="empty">Keine Präsentation in dieser Auswahl. Neue entstehen über „Termin vorbereiten“.</div></div>';
@@ -24071,6 +24077,12 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
   H.querySelectorAll('.pd-wa').forEach(a=>a.addEventListener('click',e=>{ if(!impOk())e.preventDefault(); }));
   H.querySelectorAll('[data-pdcp]').forEach(b=>b.onclick=async()=>{ if(!impOk())return; const u=pdLink(b.dataset.pdcp); try{ await navigator.clipboard.writeText(u); kToast('✓ Link kopiert'); }catch(e){ kToast(u); } });
   H.querySelectorAll('[data-pded]').forEach(b=>b.onclick=()=>pdForm(D.find(x=>x.id===b.dataset.pded)));
+  // Seit 0.99.82: die Präsentation einer Firma als PDF zum Weitergeben (Text zur Firma, Widmung, Pakete und Bausteine mit Preisen, Link). Verschickt wird nichts.
+  H.querySelectorAll('[data-pddeckpdf]').forEach(b=>b.onclick=()=>paEinmal(b,async()=>{
+    try{ const {data,error}=await SVB.sb.functions.invoke('partner-deck',{body:{deck:b.dataset.pddeckpdf,nurPdf:true}}); if(error)throw error; if(!data||!data.pdf)throw new Error('Kein PDF');
+      const bin=atob(data.pdf), u8=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+      spoDownload(new Blob([u8],{type:'application/pdf'}),data.name||'Partnerschaft.pdf'); kToast('✓ PDF ist geladen'); }
+    catch(e){ kToast('⚠️ PDF geht gerade nicht: '+(e.message||e)); } },'Baut PDF …'));
   H.querySelectorAll('[data-pdakte]').forEach(b=>b.onclick=()=>spoSponsor(b.dataset.pdakte));
 }
 function pdText(d){ const g=typeof paAnrede==='function'?paAnrede(d.anrede,d.ansprech):'Hallo,';
@@ -24103,6 +24115,10 @@ function pdForm(d,vor){
       <label class="og-fl">Website<input id="pdWe" maxlength="200" value="${svEsc(x.web||'')}" placeholder="https://"></label></div>
     <label class="og-fl">Logo<input type="file" id="pdLo" accept="image/*"></label><label class="jutog"><input type="checkbox" id="pdLd"${x.logo_hell===false?' checked':''}> Logo ist weiß oder hell (auf dunklem Grund zeigen)</label><div class="pd-lv" id="pdLv">${d&&d.logo?'Logo ist hinterlegt. Neues Bild ersetzt es.':'Noch kein Logo. Am besten PNG mit transparentem Hintergrund.'}</div>
     <label class="og-fl">Empfehlung<select id="pdEmpf"><option value="">keine</option>${Object.keys(PD_ST).map(k=>`<option value="${k}"${x.empfehlung===k?' selected':''}>${PD_ST[k]}</option>`).join('')}</select></label>
+    <h3 class="pd-h">Widmung am Paket</h3>
+    <label class="og-fl">Unterüberschrift<input id="pdWi" maxlength="90" value="${svEsc(P.widmung||'')}" placeholder="z.B. Für sportliche Wettkämpfe in der Saisonvorbereitung"></label>
+    <label class="og-fl">Absatz dazu<textarea id="pdWt" rows="3" maxlength="600" placeholder="Wofür der Beitrag der Firma gedacht ist, in zwei bis drei Sätzen.">${svEsc(P.widmung_text||'')}</textarea></label>
+    <p class="note small">Steht in der Präsentation am empfohlenen Paket und im Vertrag unter dem Paket. Leer lassen, wenn es keine Widmung gibt.</p>
     <h3 class="pd-h">Warum es passt</h3>
     <label class="og-fl">Überschrift<input id="pdTi" maxlength="80" value="${svEsc(P.titel||'')}" placeholder="z.B. Handwerk mit Heimat."></label>
     <label class="og-fl">Einstieg oben (leer = Standardtext über die 260 Kinder)<textarea id="pdHe" rows="2" maxlength="300">${svEsc(P.hero||'')}</textarea></label>
@@ -24118,7 +24134,7 @@ function pdForm(d,vor){
   const sv=M.querySelector('#pdSave'); sv.onclick=()=>paEinmal(sv,async()=>{
     const v=id=>(M.querySelector(id)||{}).value||'';
     const p={id:d?d.id:null,firma:v('#pdFi'),kurzname:v('#pdKu'),anrede:v('#pdAn'),ansprech:v('#pdAp'),email:v('#pdEm'),adresse:v('#pdAd'),branche:v('#pdBr'),web:v('#pdWe'),empfehlung:v('#pdEmpf'),notiz:v('#pdNo'),
-      passung:{titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
+      passung:{widmung:v('#pdWi').trim(),widmung_text:v('#pdWt').trim(),titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
         fakten:v('#pdFa').split('\n').map(s=>s.split('|')).filter(a=>a.length>=2&&a[0].trim()).map(a=>({z:a[0].trim().slice(0,12),t:a.slice(1).join('|').trim().slice(0,80)})).slice(0,4)}};
     p.logo_hell=!M.querySelector('#pdLd').checked; if(logo)p.logo=logo; if(d)p.aktiv=M.querySelector('#pdAk').checked;
     if(/[–—]/.test(JSON.stringify(p.passung))){ kToast('Bitte keine Gedankenstriche, lieber Komma oder Doppelpunkt'); return; }

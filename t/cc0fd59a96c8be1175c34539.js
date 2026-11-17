@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.82',v:'0.99.82',datum:'2026-11-17',titel:'Widmung am Paket, Präsentation als PDF',kurz:'Eine Firma kann ihr Paket einem Zweck widmen, das steht in Präsentation und Vertrag. Jede Präsentation lässt sich als PDF laden.',
+   punkte:[
+    {ic:'\u{1F3AF}',t:'Widmung am Paket',d:'In der Präsentation einer Firma gibt es eine Unterüberschrift und einen Absatz zum Paket, zum Beispiel „Für sportliche Wettkämpfe in der Saisonvorbereitung“. Beides steht am empfohlenen Paket, am Ticket und im Vertrag unter dem Paket.',r:'team'},
+    {ic:'\u{1F4C4}',t:'Präsentation als PDF',d:'Unter Präsentationen im Menü mit den drei Punkten: „Als PDF laden“. Drin stehen der Text zur Firma, die Widmung, alle Pakete und Bausteine mit Preisen und der Link zur Präsentation.',r:'team'}
+   ]},
   {id:'0.99.81',v:'0.99.81',datum:'2026-11-17',titel:'Rechnungsmonat im Vertrag',kurz:'Im Vertrag steht jetzt, in welchem Monat die Rechnung kommt (Vorgabe August). Die App erinnert vorher, legt die Rechnung an und schickt sie mit einem Tipp per Mail.',
    punkte:[
     {ic:'\u{1F4C5}',t:'Monat steht im Vertrag',d:'Beim Abschluss wählt die Firma den Monat der Rechnung, August ist vorgeschlagen. Die Rechnung kommt dann jede Saison in diesem Monat, nicht mehr mit dem Vertragsschluss.',r:'team'},

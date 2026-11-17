@@ -308,6 +308,9 @@ html.bereit .foto-karte{opacity:1}
 .tk-keins .tk-kopf{background:var(--tinte)}
 .tk-nr{font:700 13px/1.2 var(--t);letter-spacing:.12em;text-transform:uppercase;opacity:.9}
 .tk h3{font:900 italic clamp(32px,8.6vw,54px)/.86 var(--d);text-transform:uppercase;overflow-wrap:anywhere}
+/* Widmung am Paket (0.99.82): Unterüberschrift unter dem Paketnamen, Absatz im Ticket */
+.tk-wid{margin-top:10px;font:700 clamp(15px,4vw,18px)/1.25 var(--t);letter-spacing:.01em;max-width:28ch}
+.tk-widt{font:500 15.5px/1.5 var(--t);margin:0 0 14px;opacity:.92}
 .tk-kopf>div{min-width:0}
 .tk-in .klein{font-size:13px;color:#5d6072}
 .tk-preis{font:900 italic clamp(24px,6.4vw,34px)/.82 var(--d);text-align:right;flex:none}
@@ -966,7 +969,7 @@ let S=neu(), laeuft=false, ton=false, sperrBis=0, wFertig=false;
 // 0.99.76: Die Reise läuft im Rahmen der Partnerseite (GERAHMT). TERMIN heißt: Ein angemeldetes Konto aus dem Partner-Team hat sie geöffnet.
 // Öffnet die Firma ihren Link allein, gibt es keine Notizen fürs Gespräch und später keinen Nachlass, es wird nur gespeichert (Albert, 17.11.2026).
 const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true; } })();
-let TERMIN=false, MERKT=false;
+let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
 
 function punkte(){
   const p={herz:0,buehne:0,team:0,netz:0,ehre:0,heimat:0}, add=o=>{ for(const k in o)p[k]+=o[k]; };
@@ -1157,7 +1160,8 @@ function tkZeig(wechsel){ const p=pk(), box=$('#tkBox'), i=pIndex(), rg=regel();
     const P=PAK[p], g=gruende(), txt=g.map(x=>x[1]).join(' '), rat=ratText(i,rg), auch=P.auch.filter(x=>!STICH.some(s=>x.includes(s)&&txt.includes(s))).slice(0,g.length<2?3:1);
     const selbst=(eigeneWahl()&&S.pi==null)||(S.pi!=null&&S.pi!==rg); ueber=selbst?'Eure Wahl':'Unser Vorschlag';
     const kind=['club','premium','p1896'].includes(p)?'<p class="klein">Bande: Druck exkl., Montage inkl.</p>':'';
-    h='<article class="tk tk-'+p+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">'+(p==='p1896'?'Acht Plätze, einer je Branche':'Höchstens '+P.pl+' Partner')+'</p><h3>'+P.t+ib(p,P.t).replace('data-i=','data-preis="1" data-i=')+'</h3></div><p class="tk-preis">'+eur(P.p)+'<small>je Saison, netto</small></p></div><div class="tk-in">'
+    h='<article class="tk tk-'+p+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">'+(p==='p1896'?'Acht Plätze, einer je Branche':'Höchstens '+P.pl+' Partner')+'</p><h3>'+P.t+ib(p,P.t).replace('data-i=','data-preis="1" data-i=')+'</h3>'+(WIDMUNG?'<p class="tk-wid">'+esc(WIDMUNG.titel)+'</p>':'')+'</div><p class="tk-preis">'+eur(P.p)+'<small>je Saison, netto</small></p></div><div class="tk-in">'
+      +(WIDMUNG&&WIDMUNG.text?'<p class="tk-widt">'+esc(WIDMUNG.text)+'</p>':'')
       +(g.length?'<h4>Darum passt das zu euch</h4><ul>'+g.map(x=>'<li>'+(x[0]?'<q>'+x[0]+'</q>':'')+x[1]+'</li>').join('')+'</ul>':'')
       +(auch.length&&!(g.length>=3||(rat&&g.length>=2))?'<h4>'+(g.length?'Außerdem dabei':'Das ist dabei')+'</h4><ul>'+auch.map(x=>'<li>'+x+'</li>').join('')+'</ul>':'')+kind+rat+'</div></article>'; }
   box.innerHTML=h; lochSetz(); $('#tkUeber').textContent=ueber+(S.name?' · '+S.name:'');
@@ -1433,9 +1437,10 @@ function wiederZeig(){ const st=GEMERKT, w=$('#wieder'); if(!st||!w||S.i!==0)ret
   $('#wNeu').onclick=()=>{ w.hidden=true; $('#startF').hidden=false; GEMERKT=null; const n=S.name; S=neu(); setzName(n); merken(); $('#nameIn').focus(); }; }
 window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='name')return; const i=$('#nameIn'), n=String(e.data.name||'').slice(0,40);
   if(i&&n&&!i.value&&S.i===0){ i.value=n; setzName(n); }   // setzName: sonst steht der Name im Feld, aber nicht an Bande, Wimpel und im Stand
+  if(e.data.widmung&&typeof e.data.widmung.titel==='string'&&e.data.widmung.titel.trim()){ WIDMUNG={titel:e.data.widmung.titel.trim().slice(0,120),text:String(e.data.widmung.text||'').trim().slice(0,800)}; if(document.getElementById("tk")){ try{ tkZeig(); }catch(_){} } }
   if(e.data.merken)MERKT=true; TERMIN=!!e.data.termin; html.classList.toggle('termin',TERMIN);
   if(e.data.stand&&typeof e.data.stand==='object'){ GEMERKT=Object.assign({},e.data.stand,{_am:e.data.am||null}); wiederZeig(); } }catch(x){} });
-if(navigator.webdriver)Object.assign(window.REISE_PRUEF,{merken:()=>merken(),modus:()=>({termin:TERMIN,merkt:MERKT,sid:SID}),sek:()=>szSek});
+if(navigator.webdriver)Object.assign(window.REISE_PRUEF,{merken:()=>merken(),modus:()=>({termin:TERMIN,merkt:MERKT,sid:SID}),sek:()=>szSek,ticket:pi=>{ S.pi=pi; tkZeig(); return $('#tkBox').innerHTML; }});
 if(IM_RAHMEN){ try{ const f=$('#startF'); if(f&&!$('#direktB')){ const b=document.createElement('button'); b.type='button'; b.className='zeile'; b.id='direktB'; b.textContent='Direkt zu Paketen und Vertrag'; b.style.cssText='margin-top:18px;font-size:14px;opacity:.85';
       ($('#wieder')||f).insertAdjacentElement('afterend',b); b.onclick=reiseFertig; } window.parent.postMessage({reise:'bereit'},location.origin); }catch(e){} }
 
