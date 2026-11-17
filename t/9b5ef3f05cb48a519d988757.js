@@ -59,7 +59,7 @@ SVR_TRV.feste = 'mannschaft';
 /* =====================================================================
    Beta 0.83 · Mini-Apps in der Sportzentrale (nur lesen)
    Helferplan: die nächsten Spieltage mit offenen Aufgaben, im Helfer-Bereich und bei „Mein Spieltag“.
-   Kaderplanung: Kandidaten mit Priorität und Gesprächsstand, im Kader-Bereich.
+   Kaderplanung: Kandidaten mit Priorität und Gesprächsstand, seit 0.99.74 im Scouting auf der Seite Kandidaten (vorher im Kader-Bereich).
    Alles läuft über die Edge Function mini-apps: die Schlüssel kennt nur der Server, er prüft auch die Rechte.
    ===================================================================== */
 const MA = { h:null, hT:0, hErr:null, hErrT:0, hBusy:null, k:null, kT:0, kErr:null, kErrT:0, kBusy:null, kQ:'', kS:'', kMehr:false };
@@ -152,8 +152,19 @@ function maKaderKarte(){
 }
 function maKaderDarf(){ return svRole() === 'admin' || svDarf('kader:planung') === true; }
 function maKaderEinhaengen(P){ if(!P || !maKaderDarf() || P.querySelector('[data-ma="kader"]')) return; const k = maKaderKarte(), erste = P.querySelector(':scope > .card, :scope > div'); if(erste) erste.after(k); else P.appendChild(k); }
-if(typeof k1Planung === 'function'){ const _kp82 = k1Planung; k1Planung = function(){ const r = _kp82.apply(this, arguments); try{ maKaderEinhaengen(document.getElementById('panel-kplan')); }catch(e){ console.warn('Kaderplanung', e); } return r; }; }
-if(typeof kd4Render === 'function'){ const _kd82 = kd4Render; kd4Render = function(){ const r = _kd82.apply(this, arguments); try{ maKaderEinhaengen(document.getElementById('panel-kader')); }catch(e){ console.warn('Kaderplanung', e); } return r; }; }
+// 0.99.74 (Sportliche Leitung, 17.11.2026: „Die Info gehört in Scouting, Kandidaten“): Die Karte stand im Kader und in der Kaderplanung.
+// Dort ist sie raus, sie steht jetzt auf der Seite Kandidaten im Scouting. Rechte wie bisher (maKaderDarf, geprüft vom Server).
+// Die alte Seite (renderKandidaten, #panel-kandidaten) wird nur noch bedient, wenn es die neue nicht gibt.
+if(typeof s1Kandidaten !== 'function' && typeof renderKandidaten === 'function'){ const _rk82 = renderKandidaten; renderKandidaten = function(){ const r = _rk82.apply(this, arguments);
+  try{ const P = document.getElementById('panel-kandidaten'); if(P && maKaderDarf() && !P.querySelector('[data-ma="kader"]')){ const k = maKaderKarte(), erste = P.querySelector(':scope > .card, :scope > div'); if(erste) erste.after(k); else P.appendChild(k); } }catch(e){ console.warn('Kaderplanung', e); }
+  return r; }; }
+// Die sichtbare Seite Kandidaten kommt seit 0.90 aus svm47 (s1Kandidaten, Bereich skand): dort steht die Karte unter der Übersicht der Stufen.
+if(typeof s1Kandidaten === 'function'){ const _sk82 = s1Kandidaten; s1Kandidaten = function(){ const r = _sk82.apply(this, arguments);
+  try{ const P = typeof k1Panel === 'function' ? k1Panel('skand') : null; if(P && maKaderDarf() && !P.querySelector('[data-ma="kader"]')){ const k = maKaderKarte(), pipe = P.querySelector('.s1-pipe'); if(pipe) pipe.after(k); else if(P.children.length) P.appendChild(k); } }catch(e){ console.warn('Kaderplanung', e); }
+  return r; }; }
+// Falls eine Karte aus einer früheren Ansicht noch im Kader steht: wegnehmen
+function maKaderAlt(){ try{ document.querySelectorAll('#panel-kplan [data-ma="kader"], #panel-kader [data-ma="kader"]').forEach(x => x.remove()); }catch(e){} }
+if(typeof goTab === 'function'){ const _gt82k = goTab; goTab = function(){ const r = _gt82k.apply(this, arguments); maKaderAlt(); return r; }; }
 
 /* =====================================================================
    Beta 0.86 · Wünsche aus dem Trainerteam (Julian), Teil Mannschaft

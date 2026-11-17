@@ -548,14 +548,15 @@ function luft(c,f0,f1,d,l){var t=c.currentTime,q=rausch(c,d),f=c.createBiquadFil
 var FX={tipp:function(c){ton1(c,'sine',185,68,.15,.5)},wahl:function(c){ton1(c,'triangle',523,0,.11,.16);ton1(c,'triangle',784,0,.16,.14,.07)},wisch:function(c){luft(c,380,2600,.3,.2)},fertig:function(c){ton1(c,'triangle',523,0,.14,.16);ton1(c,'triangle',659,0,.14,.16,.1);ton1(c,'triangle',784,0,.3,.18,.2)}};
 function fx(k){if(!ton||!FX[k])return;var c=ac();if(!c)return;try{FX[k](c)}catch(e){}}
 function klang(k,vol,loop){if(!A[k]){A[k]=new Audio('partner/r-'+k+'.mp3');A[k].preload='auto'}A[k].volume=vol;A[k].loop=!!loop;return A[k]}
-function tonSetz(an){ton=an;$('#tonB').setAttribute('aria-pressed',an);var m=klang('musik',.16,true);if(an){ac();m.play().catch(function(){})}else Object.keys(A).forEach(function(k){A[k].pause()})}
+// Lautstärke steckt in den Dateien selbst (0.99.73): Das iPhone ignoriert volume an Audio-Elementen.
+function tonSetz(an){ton=an;$('#tonB').setAttribute('aria-pressed',an);var m=klang('musik',1,true);if(an){ac();m.play().catch(function(){})}else Object.keys(A).forEach(function(k){A[k].pause()})}
 function tonMerk(an){try{localStorage.setItem('svbsc-ton',an?'1':'0')}catch(e){}}
 function tonAus(){try{return localStorage.getItem('svbsc-ton')==='0'}catch(e){return false}}
 $('#tonB').onclick=function(){tonSetz(!ton);tonMerk(ton);if(ton)fx('wahl')};
 document.addEventListener('pointerdown',function(e){var b=e.target.closest&&e.target.closest('button,a.prim,summary,label.ja,.umschalt label');if(!b||b.disabled||b.id==='tonB'||b.id==='in-los'||b.id==='in-still')return;fx(b.hasAttribute('data-geraet')||b.id==='w-ok'?'wahl':'tipp')},{passive:true});
 // Jeder Wechsel der Ansicht klingt, der letzte Schritt mit drei Tönen und dem Pfiff
 var _nur=nur;nur=function(id){var r=_nur.apply(this,arguments);if(vorbei)fx('wisch');return r};
-var _zeig=zeig,gepfiffen=false;zeig=function(){var r=_zeig.apply(this,arguments);if($('#weg').dataset.phase==='fertig'&&!gepfiffen&&ton){gepfiffen=true;fx('fertig');try{var p=klang('pfiff',.5);p.currentTime=0;p.play().catch(function(){})}catch(e){}}return r};
+var _zeig=zeig,gepfiffen=false;zeig=function(){var r=_zeig.apply(this,arguments);if($('#weg').dataset.phase==='fertig'&&!gepfiffen&&ton){gepfiffen=true;fx('fertig');try{var p=klang('pfiff',1);p.currentTime=0;p.play().catch(function(){})}catch(e){}}return r};
 (function(){var I=$('#intro'),auto=navigator.webdriver&&!/[?&]intro=1/.test(location.search),gesehen=false;try{gesehen=sessionStorage.getItem('svbsc-intro')==='1'}catch(e){}
   if(auto||gesehen){vorbei=true;return}
   I.hidden=false;document.documentElement.style.overflow='hidden';

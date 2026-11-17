@@ -878,7 +878,9 @@ const FX={
 function fx(k){ if(!ton||!FX[k])return; const c=ac(); if(!c)return; try{ FX[k](c); }catch(e){} }
 function tonMerken(an){ try{ localStorage.setItem('reise-ton',an?'1':'0'); }catch(e){} }
 function tonGemerkt(){ try{ return localStorage.getItem('reise-ton'); }catch(e){ return null; } }
-function tonSetz(an){ ton=an; $('#tonB').setAttribute('aria-pressed',an); const m=klang('musik',.2,true);
+// Lautstärke steckt in den Dateien selbst (0.99.73): Das iPhone ignoriert `volume` an Audio-Elementen und spielte Musik und Pfiff bisher in voller Lautstärke.
+// Die Musik der Präsentation (r-praesi.mp3, von Albert, 17.11.2026: „leise im Hintergrund, darf nicht ablenken“) ist auf rund -32 LUFS gesetzt und blendet in der Datei ein und aus.
+function tonSetz(an){ ton=an; $('#tonB').setAttribute('aria-pressed',an); const m=klang('praesi',1,true);
   if(an){ ac(); m.play().catch(()=>{}); } else Object.values(A).forEach(a=>a.pause()); }
 $('#tonB').onclick=()=>{ tonSetz(!ton); tonMerken(ton); if(ton)fx('wahl'); };
 // Jeder Tipp auf etwas Bedienbares klingt: Auswahl hell, alles andere dumpf. Der Wechsel der Szene klingt in geh().
@@ -1066,7 +1068,7 @@ function schlussBild(n){ const p=pk();
   return '<div class="finalbild"><div class="sz sz-bande"><img src="partner/r-bande.webp" alt=""><div class="bande-name"><span class="passt">'+(n||'Euer Name')+'</span></div></div></div>'; }
 function jaDabei(){ const n=esc(S.name), kopf='<p class="eyebrow">Willkommen bei uns</p><h2>Stark.</h2><p class="hand">'+(n?n+' ist dabei.':'Ihr seid dabei.')+'</p>';
   const takt2=()=>{ finalZeig(kopf+zettel('So geht es weiter','Drei Schritte',wahlText(),[['wannLi','Ihr bekommt den Vertrag zum Lesen.'],'Ihr unterschreibt, dann der Verein. Erst dann gilt es.','Wir holen euer Logo ab und kümmern uns um den Rest.'],'<p class="z-frage">Bis wann bringen wir euch den Vertrag?</p>'+VERTRAG())); wannBinden('wannK','wannLi'); };
-  spiel('pfiff',.7); if(ruhig){ takt2(); return; }
+  spiel('pfiff',1); if(ruhig){ takt2(); return; }
   F.classList.add('abpfiff'); setTimeout(()=>{ F.classList.remove('abpfiff');
     finalZeig(schlussBild(n)+kopf+'<button class="knopf" type="button" id="weiterF">So geht es weiter</button>'); konfetti(); $('#weiterF').onclick=takt2; },140); }
 function jaSchrift(){ finalZeig('<p class="eyebrow">In Ruhe</p><h2>Gern.</h2><p class="hand">Ihr bekommt alles schwarz auf weiß.</p>'+zettel('So geht es weiter','Drei Schritte',wahlText(),['Das Angebot kommt per Mail, genau wie hier gezeigt.','In Ruhe ansehen, mit wem ihr wollt.',['wannLi','Sagt uns, bis wann wir uns melden sollen.']],'<p class="z-frage">Bis wann sollen wir uns melden?</p>'+chips('wannK',[['Bis '+tag(7),'Am '+tag(7)+' melden wir uns. Einmal. Ein Nein ist dann auch in Ordnung.'],['Bis '+tag(14),'Am '+tag(14)+' melden wir uns. Einmal. Ein Nein ist dann auch in Ordnung.'],['Wir melden uns','Ihr meldet euch, wenn ihr so weit seid. Hören wir bis zum Saisonstart nichts, fragen wir ein einziges Mal nach.']]))); wannBinden('wannK','wannLi'); }
@@ -1101,7 +1103,7 @@ const REIN={
 const AUF={
   buehne:()=>{ if(!S.platz&&!ruhig){ zeigSz('bande','fahrt'); setTimeout(szAuto,3800); } },
   worum:()=>{ if(!wFertig)worumZeig(0); },
-  platz:()=>{ spiel('licht',.4); setTimeout(()=>fx('stempel'),650); }
+  platz:()=>{ spiel('licht',1); setTimeout(()=>fx('stempel'),650); }
 };
 
 /* ---------- Notizen ---------- */

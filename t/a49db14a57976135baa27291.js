@@ -46,7 +46,9 @@ const V1K=(function(){
     '4-3-3':[['TW',50,90],['AV',17,72],['IV',39,75],['IV',61,75],['AV',83,72],['OM',30,50],['DM',50,58],['OM',70,50],['FL',18,28],['ST',50,20],['FL',82,28]],
     '3-5-2':[['TW',50,90],['IV',30,75],['IV',50,77],['IV',70,75],['FL',12,52],['OM',35,48],['DM',50,58],['OM',65,48],['FL',88,52],['ST',38,22],['ST',62,22]],
     '4-1-4-1':[['TW',50,90],['AV',17,72],['IV',39,75],['IV',61,75],['AV',83,72],['DM',50,62],['FL',15,44],['OM',37,46],['OM',63,46],['FL',85,44],['ST',50,20]],
-    '5-4-1':[['TW',50,91],['AV',11,64],['IV',31,74],['IV',50,76],['IV',69,74],['AV',89,64],['FL',17,44],['DM',39,50],['OM',61,47],['FL',83,44],['ST',50,21]]
+    '5-4-1':[['TW',50,91],['AV',11,64],['IV',31,74],['IV',50,76],['IV',69,74],['AV',89,64],['FL',17,44],['DM',39,50],['OM',61,47],['FL',83,44],['ST',50,21]],
+    // 0.99.74 (Sportliche Leitung, 17.11.2026: „Unser System 5-1-2-2 fehlt“): Fünferkette, ein Sechser, zwei Achter, zwei Spitzen. In der Aufstellung (FORMATIONS) gab es das System schon, hier fehlte es. Neues System: hier eintragen und in der Prüfung der Tabelle kader_plan_v1 (192_system_5122.sql).
+    '5-1-2-2':[['TW',50,91],['AV',11,62],['IV',31,74],['IV',50,76],['IV',69,74],['AV',89,62],['DM',50,57],['OM',34,42],['OM',66,42],['ST',38,21],['ST',62,21]]
   };
   const NAEHE={IV:{AV:.55,DM:.5},AV:{IV:.55,FL:.55,DM:.35},DM:{IV:.5,OM:.65,AV:.35},OM:{DM:.65,FL:.6,ST:.5},FL:{AV:.55,OM:.6,ST:.55},ST:{OM:.5,FL:.55},TW:{}};
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));

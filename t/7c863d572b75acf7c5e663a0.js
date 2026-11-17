@@ -579,6 +579,15 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.74',v:'0.99.74',datum:'2026-11-17',titel:'Kandidaten und System 5-1-2-2',kurz:'Die Liste aus der Kaderplanung-App steht jetzt im Scouting unter Kandidaten. Im Kaderplan gibt es das System 5-1-2-2.',
+   punkte:[
+    {ic:'\u{1F50E}',t:'Kandidaten an einem Ort',d:'Die Karte „Aus der Kaderplanung-App“ steht nicht mehr im Kader, sondern im Scouting auf der Seite Kandidaten. Am Handy stehen die Marken unter dem Namen, nichts bricht mehr um.',r:'team'},
+    {ic:'\u{1F4CB}',t:'System 5-1-2-2',d:'Im Kaderplan lässt sich 5-1-2-2 als System und als Alternative wählen: Fünferkette, ein Sechser, zwei Achter, zwei Spitzen.',r:'team'}
+   ]},
+  {id:'0.99.73',v:'0.99.73',datum:'2026-11-17',titel:'Präsentation mit ruhiger Musik',kurz:'Die Präsentation für Partner hat eine neue, leise Hintergrundmusik. Musik und Pfiff sind auf allen Handys gleich leise.',
+   punkte:[
+    {ic:'\u{1F3B5}',t:'Leise im Hintergrund',d:'Die neue Musik läuft deutlich leiser als bisher und blendet weich ein. Am iPhone waren Musik und Pfiff vorher lauter als gedacht, das ist behoben. Der Schalter oben rechts stellt den Ton ab.',r:'team'}
+   ]},
   {id:'0.99.72',v:'0.99.72',datum:'2026-11-17',titel:'Menü: Planung & Termine',kurz:'Im Menü „Mehr“ am Handy hat der Bereich mit Planung, Terminen, Aufgaben und Vorstand & Ziele jetzt einen eigenen Ordner.',
    punkte:[
     {ic:'\u{1F4C2}',t:'Ein Ordner für den ganzen Bereich',d:'Bisher stand dort nur die Kachel „Termine“. Jetzt heißt der Ordner „Planung & Termine“ und zeigt alle vier Seiten. Wer nur Termine öffnen darf, sieht weiter die eine Kachel.',r:'team'}
