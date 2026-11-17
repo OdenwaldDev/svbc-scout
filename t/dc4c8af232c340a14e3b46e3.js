@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.77',v:'0.99.77',datum:'2026-11-17',titel:'Leiste unten bleibt, wo sie ist',kurz:'Am Handy schob sich die untere Leiste ins Bild, sobald ein Reiter etwas zu zählen hatte. Die Zahl sitzt jetzt als kleine Marke am Symbol.',
+   punkte:[
+    {ic:'\u{1F4F1}',t:'Leiste gleich hoch',d:'Die Zahl der Hinweise an „Mannschaft“ stand als eigene Zeile unter dem Namen und machte die ganze Leiste höher. Jetzt ist sie eine rote Marke am Symbol, die Leiste bleibt immer gleich hoch.',r:'team'}
+   ]},
   {id:'0.99.76',v:'0.99.76',datum:'2026-11-17',titel:'Präsentation merkt sich den Stand',kurz:'Die Präsentation für Partner speichert jeden Schritt und zeigt dem Partner-Team eine Auswertung. Spielminuten bleiben offen, wenn im Spielbericht fehlt, wer ausgewechselt wurde.',
    punkte:[
     {ic:'\u{1F4BE}',t:'Weitermachen, wo ihr wart',d:'Jede Antwort wird gespeichert. Beim nächsten Öffnen gibt es drei Möglichkeiten: weitermachen, von vorn mit den Antworten oder ganz neu. Öffnet eine Firma ihren Link allein, sieht sie keine Notizen fürs Gespräch.',r:'team'},
