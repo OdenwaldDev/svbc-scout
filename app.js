@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.99', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.100', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18661,6 +18661,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.100',v:'0.99.100',datum:'2026-11-18',titel:'Nachgetragene Spielminuten kommen schneller an',kurz:'Neue FuPa-Aufstellungen zählen jetzt als Änderung am Spiel.',
+   punkte:[{ic:'i',t:'FuPa-Nachträge übernehmen',d:'Wenn FuPa eine eigene Aufstellung ergänzt und der Import sie abholt, verarbeitet die App sie beim nächsten Abgleich. Die bisherige zusätzliche Wartezeit entfällt. Fehlende Minuten bleiben offen, bis belastbare Angaben vorliegen.',r:'team'}]},
   {id:'0.99.99',v:'0.99.99',datum:'2026-11-18',titel:'Die richtige Firma, das richtige Logo',kurz:'Beim Firmenwechsel öffnest du jetzt gezielt die passende Präsentation.',
    punkte:[{ic:'i',t:'Firmen bleiben getrennt',d:'Ein persönlicher Link behält seinen Firmennamen und seine Antworten. Über Andere Firma auswählen wechselst du zur Suche. Dort findest du Firmen auch über hinterlegte Marken und weitere Namen.',r:'team'},
     {ic:'i',t:'Logos zuverlässig ersetzen',d:'Lädst du ein neues Logo hoch, wird die alte Druckfassung entfernt. Änderungen an den übrigen Präsentationsangaben erhalten das vorhandene Logo.',r:'team'}]},
