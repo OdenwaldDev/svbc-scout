@@ -579,6 +579,14 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.93',v:'0.99.93',datum:'2026-11-18',titel:'Spieltagsstudio: der Kommunikationsassistent',kurz:'Unter dem Spieltag steht „Was brauchst du?“: Aus einem Satz, einer Sprachnachricht oder einer Datei werden Steckbrief, drei Vorschläge, ein Plakat im Vereinsdesign und Texte für jeden Kanal.',
+   punkte:[
+    {ic:'\u{1F4AC}',t:'Erzählen, sprechen oder Datei dazulegen',d:'Schreib in einem Satz, was du brauchst, diktiere es oder leg eine Einladung als PDF, Word-Datei oder Foto dazu. Der Assistent zeigt dir, was er verstanden hat, und fragt höchstens dreimal nach.',r:'team'},
+    {ic:'\u{1F4CB}',t:'Steckbrief mit Quelle',d:'An jeder Angabe steht, woher sie stammt: von dir, aus der Datei oder als Vorschlag. Datum, Uhrzeit, Ort und Kontakt werden nie geraten. Was sich nicht belegen lässt, trägt „bitte prüfen“ und sperrt die Freigabe, bis du es bestätigst.',r:'team'},
+    {ic:'\u{1F3AF}',t:'Drei Richtungen, ein Tipp',d:'Du bekommst drei Headlines mit Vorschau. Die gewählte steht sofort als Plakat da: als Beitrag, Story oder Aushang in A4, dunkel mit Foto oder hell. Headline, Foto und Zeilen änderst du direkt.',r:'team'},
+    {ic:'\u{270D}',t:'Texte für Instagram, WhatsApp und das Stadionheft',d:'Zu jedem Plakat gibt es die Begleittexte zum Kopieren. Das Bild trägt die Kernbotschaft, der Text die Einzelheiten aus dem Steckbrief.',r:'team'},
+    {ic:'\u{1F512}',t:'Gespeichert wird das Vorhaben, nicht die Datei',d:'Text und Datei gehen zur Auswertung an den KI-Dienst und werden dort nicht gespeichert. Veröffentlicht und verschickt wird nichts von selbst.',r:'team'}
+   ]},
   {id:'0.99.92',v:'0.99.92',datum:'2026-11-18',titel:'Spieltagsstudio: der Spieltag liegt vorbelegt bereit',kurz:'Neuer erster Bereich „Spieltag“: Heimspiel, Aufstellung, Ergebnis und Spielverlauf im neuen Vereinsdesign, aus den Spieldaten vorbelegt, mit Prüfung und Freigabe.',
    punkte:[
     {ic:'\u{1F4C5}',t:'Ein Spiel, vier Motive',d:'Das Spieltagsstudio öffnet mit dem Spieltag: Heimspiel oder Auswärtsspiel, Aufstellung, Ergebnis und Spielverlauf als Karten. Jede Karte sagt, ob sie fertig ist, auf Daten wartet oder genau eine Entscheidung von dir braucht.',r:'team'},
