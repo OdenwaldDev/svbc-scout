@@ -579,6 +579,14 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.92',v:'0.99.92',datum:'2026-11-18',titel:'Spieltagsstudio: der Spieltag liegt vorbelegt bereit',kurz:'Neuer erster Bereich „Spieltag“: Heimspiel, Aufstellung, Ergebnis und Spielverlauf im neuen Vereinsdesign, aus den Spieldaten vorbelegt, mit Prüfung und Freigabe.',
+   punkte:[
+    {ic:'\u{1F4C5}',t:'Ein Spiel, vier Motive',d:'Das Spieltagsstudio öffnet mit dem Spieltag: Heimspiel oder Auswärtsspiel, Aufstellung, Ergebnis und Spielverlauf als Karten. Jede Karte sagt, ob sie fertig ist, auf Daten wartet oder genau eine Entscheidung von dir braucht.',r:'team'},
+    {ic:'\u{2705}',t:'Vorbelegt aus den Spieldaten',d:'Gegner, Datum, Anstoß, Saisonspiel, Endstand, Tore mit Minute, Startelf, Bank und Einwechslungen kommen von selbst. Was du von Hand änderst, überschreibt kein späterer Abruf. Meldet der Spielbericht später etwas anderes, fragt die Karte, was gilt.',r:'team'},
+    {ic:'\u{1F3A8}',t:'Gezeichnet nach der Designbibel',d:'Format 1080 × 1350, Kopfzeile, Wappen, Farben und Schriften nach dem neuen CI-Handbuch. Namen, Nummern und Ergebnis sind immer Text aus den Daten, Wappen und Porträts die Originaldateien.',r:'team'},
+    {ic:'\u{1F50D}',t:'Prüfen, freigeben, teilen',d:'Vor der Freigabe prüft die App: elf Spieler in der Startelf, die Tore ergeben den Endstand, nichts läuft über, kein Wappen fehlt. „Stimmt so“ gibt frei, danach teilst du das Bild oder lädst es als PNG.',r:'team'},
+    {ic:'\u{23F1}',t:'Ergebnis schon am Spieltag',d:'Rund zwei Stunden nach Abpfiff holt die App Ergebnis und Spielbericht von selbst, auch samstags. Vorlagen stehen nicht im Spielbericht: Die bestätigst du mit einem Tipp.',r:'team'}
+   ]},
   {id:'0.99.91',v:'0.99.91',datum:'2026-11-18',titel:'Bandenplan 2027/28 in 3D, Vereinswechsel in der Datenprüfung',kurz:'Die neue Bandenreihe lässt sich in 3D ablaufen, jeder Platz hat eine Kennung. Die Datenprüfung zeigt Vereinswechsel als eigene Ansicht.',
    punkte:[
     {ic:'\u{1F6B6}',t:'Die neue Reihe in 3D',d:'Unter „Ab Saison 2027/28“ läufst du die Reihe vom Rasen aus ab: vergebene Banden weiß mit Logo und Name, freie Plätze gestrichelt. Der Name steht nie doppelt: Hat das Logo ein Zeichen über dem Schriftzug, steht das Zeichen links und der Schriftzug der Firma rechts daneben.',r:'team'},
