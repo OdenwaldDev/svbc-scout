@@ -579,6 +579,9 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.97',v:'0.99.97',datum:'2026-11-18',titel:'Unsere Vereinsgeschichte in sechs Kapiteln',kurz:'Die Partnerreise erzählt von den Anfängen, dem sportlichen Weg und den Menschen im Verein heute.',
+   punkte:[{ic:'\u{25B6}',t:'Sechs kurze Einblicke',d:'Gründung, SV und BSC, Oberliga und Wiederaufstieg, Gesamtverein, Fußballnachwuchs und Vereinsleben. Jede Seite entfaltet sich kurz und bleibt dann stehen. Du blätterst mit Weiter und Zurück, Pfeiltasten oder Wischen.',r:'team'},
+    {ic:'i',t:'Aktuelle Vereinszahlen und nachvollziehbare Geschichte',d:'Die von der Vereinsleitung bestätigten Größenordnungen für Gesamtverein und Fußball stehen getrennt in der Reise. Hinter Zahlen & Geschichte findest du den Stand der Angaben und die historischen Quellen.',r:'team'}]},
   {id:'0.99.95',v:'0.99.95',datum:'2026-11-18',titel:'Spieltagsstudio meldet sich nach dem Spiel',kurz:'Sobald Ergebnis und Spielverlauf bereitliegen, bekommst du eine Mitteilung.',
    punkte:[
     {ic:'\u{1F514}',t:'„Ergebnis liegt bereit“',d:'Wer das Spieltagsstudio hat, bekommt nach jedem Spiel eine Mitteilung, sobald Ergebnis und Spielverlauf vorbelegt sind. Ein Tipp führt ins Studio. Nachts bleibt es still, die Mitteilung kommt dann um 7 Uhr.',r:'team'}

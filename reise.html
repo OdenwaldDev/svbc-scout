@@ -270,6 +270,134 @@ html.bereit .foto-karte{opacity:1}
 @keyframes takt{from{transform:scaleX(0)}}
 .szene[data-s="worum"] .sz-bild{filter:brightness(.5) saturate(.95)}
 .szene[data-s="worum"]{cursor:pointer}
+
+/* Jede Station hat einen eigenen Satz. Nur das aktive Kapitel nimmt Platz ein. */
+#film:not(.anlass) .szene[data-s="worum"]{cursor:pointer;touch-action:pan-y pinch-zoom;background:#080e25}
+#film:not(.anlass) .szene[data-s="worum"]>.in{max-width:1000px;zoom:1}
+#worum.streifen{min-height:440px;display:grid;align-items:center}
+#worum .fz{display:none;min-width:0;max-width:none;font:inherit;text-transform:none;text-wrap:wrap;overflow-wrap:normal;opacity:1;transform:none;transition:none;pointer-events:auto}
+#worum .fz.solo{display:block}
+.kap-dach{font:700 12px/1.4 var(--t);letter-spacing:.16em;text-transform:uppercase;color:var(--hb);margin-bottom:18px}
+#worum .fz h2{font:800 clamp(30px,5vw,56px)/.98 var(--d);text-transform:uppercase;text-wrap:balance;margin:0;letter-spacing:-.015em}
+.kap-label{display:block;font:600 13px/1.4 var(--t);letter-spacing:.12em;text-transform:uppercase}
+.kap-jahr,.kap-zahl{display:block;font:900 clamp(100px,20vw,180px)/.88 var(--d);letter-spacing:-.025em}
+.kap-text{font:400 clamp(16px,2vw,20px)/1.45 var(--t);max-width:35em;margin-top:18px;color:#d5dbea}
+.gruendungsblatt{background:var(--papier);color:var(--tinte);padding:24px 28px;border-left:6px solid var(--or);transform-origin:center bottom}
+.gruendungsblatt .kap-jahr{color:#253e75;margin:5px 0 15px}
+.gruendungsblatt p{font-size:16px;line-height:1.45;margin-top:14px}
+.kap-nachtrag{display:flex;gap:20px;align-items:center;margin-top:18px;border-top:1px solid var(--linie);padding-top:14px}
+.kap-nachtrag>b{font:800 44px/1 var(--d);color:var(--or2)}
+.kap-nachtrag p{font-size:15px;line-height:1.4}
+.vereinswurzeln{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.vereinswurzeln>div{border-top:3px solid var(--hb);padding-top:12px}
+.vereinswurzeln>div+div{border-color:var(--or)}
+.vereinswurzeln span{font-size:14px}
+.vereinswurzeln b{display:block;font:800 clamp(50px,10vw,80px)/1 var(--d)}
+.vereinsknoten{border-top:1px solid var(--linie);margin-top:20px;padding-top:18px;text-align:center}
+.vereinsknoten img{height:105px;width:auto;margin:14px auto}
+.vereinsknoten h2{font-size:clamp(32px,5vw,50px)}
+.oberliga{display:flex;align-items:center;gap:25px;padding:26px 0;border-block:2px solid var(--or)}
+.oberliga .kap-jahr{color:var(--or2)}
+.sportweg{margin-top:22px;border-left:2px solid var(--hb);padding-left:22px;display:grid;gap:18px}
+.sportweg li{position:relative;display:flex;align-items:baseline;gap:20px}
+.sportweg li::before{content:"";position:absolute;width:10px;height:10px;left:-28px;top:10px;background:var(--hb);border-radius:50%}
+.sportweg b{font:800 30px/1 var(--d);min-width:86px;flex-shrink:0}
+.sportweg p{font-size:16px;line-height:1.4}
+.mitglieder .kap-zahl{color:var(--hb);margin:5px 0 18px;font-size:clamp(110px,24vw,216px)}
+.jugendanteil{display:flex;gap:24px;align-items:center;border-top:1px solid var(--linie);padding-top:18px;margin-top:24px}
+.jugendanteil b{font:900 70px/.9 var(--d);color:var(--or2)}
+.jugendanteil small{display:block;font:600 13px/1.4 var(--t);color:var(--kreide);margin-bottom:5px}
+.jugendanteil p{font-size:18px;line-height:1.35}
+.nachwuchsbild{display:grid;grid-template-columns:1fr 1fr;background:#153663;overflow:hidden}
+.nachwuchsbild img{width:100%;height:300px;object-fit:cover;object-position:center 35%}
+.nachwuchsbild>div{align-self:center;padding:18px}
+.nachwuchsbild .kap-zahl{font-size:clamp(86px,18vw,150px);margin:5px 0 12px}
+.nachwuchsbild h2{font-size:clamp(28px,4vw,45px)}
+.abteilung{font-size:15px;border-top:1px solid var(--linie);padding-top:16px;margin-top:18px;max-width:35em}
+.abteilung b{color:var(--or2)}
+.lagerbild{position:relative;margin-bottom:22px;overflow:hidden}
+.lagerbild img{width:100%;height:clamp(180px,30vh,280px);object-fit:cover;object-position:center 57%}
+.lagerbild figcaption{position:absolute;bottom:10px;left:12px;background:#080e25;padding:5px 10px;font-size:12px}
+.kap-fuss{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:24px}
+#film:not(.anlass) .szene[data-s="worum"] .takte{display:flex;gap:6px;width:130px;margin-top:0}
+#film:not(.anlass) .szene[data-s="worum"] .takte i{flex:1;height:3px;background:#465069;position:relative;overflow:hidden}
+#film:not(.anlass) .szene[data-s="worum"] .takte i.war{background:var(--hb)}
+#film:not(.anlass) .szene[data-s="worum"] .takte i.an{background:var(--or2)}
+#film:not(.anlass) .szene[data-s="worum"] .takte i.an::after{content:none;animation:none}
+#film:not(.anlass) .szene[data-s="worum"] .w-hilfe{margin-top:8px;font-size:12px;line-height:1.4;color:var(--grau)}
+#wQuellenB{font-size:12px;min-height:44px;padding:8px 0 8px 10px;text-decoration:underline;text-underline-offset:4px;color:var(--grau)}
+#wQuellen{background:#111b35;color:var(--kreide);border:1px solid #52617f;width:min(640px,calc(100% - 28px));max-height:80dvh;padding:28px;overflow:auto}
+#wQuellen::backdrop{background:#030713db}
+#wQuellen h2{font:800 30px/1.1 var(--d);margin:8px 50px 20px 0}
+#wQuellen p,#wQuellen li{font-size:15px;line-height:1.5}
+#wQuellen ul{display:grid;gap:12px;margin:20px 0}
+#wQuellen a{display:block;min-height:44px;padding:10px 0;color:var(--hb);text-underline-offset:3px}
+.quellen-zu{float:right;font-size:30px;width:44px;height:44px}
+/* Kurze Eintritte, keine Zeitschaltung. Nach spätestens 1,2 s bleibt alles ruhig. */
+#worum .fz.solo .kap-reveal{animation:kap-auf .65s cubic-bezier(.16,1,.3,1) both}
+#worum .fz.solo .kap-reveal:nth-child(3){animation-delay:.13s}
+#worum .fz.solo .kap-reveal:nth-child(4){animation-delay:.24s}
+#worum .fz.solo .gruendungsblatt{animation-name:kap-blatt;animation-duration:.9s}
+#worum .fz.solo .vereinswurzeln>div:first-child{animation-name:kap-links}
+#worum .fz.solo .vereinswurzeln>div:last-child{animation-name:kap-rechts;animation-delay:.12s}
+#worum .fz.solo .vereinsknoten{animation-delay:.25s}
+#worum .fz.solo .oberliga{animation-name:kap-breit}
+#worum .fz.solo .sportweg li:nth-child(1){animation-delay:.2s}
+#worum .fz.solo .sportweg li:nth-child(2){animation-delay:.35s}
+#worum .fz.solo .mitglieder{animation-name:kap-ziffer}
+#worum .fz.solo .nachwuchsbild,#worum .fz.solo .lagerbild{animation-name:kap-foto;animation-duration:.9s}
+@keyframes kap-auf{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes kap-blatt{from{opacity:0;transform:perspective(900px) rotateX(14deg) translateY(30px)}to{opacity:1;transform:none}}
+@keyframes kap-links{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+@keyframes kap-rechts{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes kap-breit{from{opacity:0;clip-path:inset(0 100% 0 0)}to{opacity:1;clip-path:inset(0)}}
+@keyframes kap-ziffer{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes kap-foto{from{opacity:0;clip-path:inset(100% 0 0 0)}to{opacity:1;clip-path:inset(0)}}
+@media(min-width:860px){
+  #worum .fz.solo{display:grid;grid-template-columns:1.12fr 1fr;gap:0 48px;align-items:center}
+  .kap-dach{grid-column:1/-1}
+  .gruendungsblatt,.vereinswurzeln,.oberliga,.mitglieder,.nachwuchsbild,.lagerbild{grid-column:1;grid-row:2/5}
+  .kap-nachtrag,.vereinsknoten{margin-top:0}
+  .oberliga{display:block}.oberliga h2{margin-top:22px}
+  .sportweg{margin-top:0}.sportweg li{display:block}.sportweg p{margin-top:8px}
+  .jugendanteil{border:0;padding:0;margin:0}
+  .nachwuchsbild{grid-template-columns:1fr}.nachwuchsbild img{height:180px}.nachwuchsbild>div{padding:16px 22px}
+  .nachwuchsbild .kap-zahl{font-size:110px}.nachwuchsbild h2{font-size:30px}
+  .lagerbild{margin:0}.lagerbild img{height:390px}
+}
+@media(max-width:480px){.oberliga{display:block;padding:18px 0}.oberliga h2{margin-top:12px}.nachwuchsbild img{height:260px}.nachwuchsbild>div{padding:12px}.sportweg li{gap:12px}}
+@media(max-height:740px) and (max-width:859px){
+  #worum.streifen{min-height:0}.kap-dach{margin-bottom:12px}.gruendungsblatt{padding:16px 20px}
+  .gruendungsblatt .kap-jahr{font-size:92px;margin-bottom:10px}#worum .fz h2{font-size:30px}
+  .gruendungsblatt p{font-size:14px;margin-top:10px}.kap-nachtrag{margin-top:12px;padding-top:10px}
+  .vereinsknoten{margin-top:12px;padding-top:10px}.vereinsknoten img{height:76px;margin:8px auto}
+  .kap-text{font-size:15px;margin-top:12px}.kap-fuss{margin-top:16px}.nachwuchsbild img{height:218px}
+  .lagerbild img{height:180px}.mitglieder .kap-zahl{font-size:110px}.jugendanteil{margin-top:16px;padding-top:12px}
+}
+/* Unverändertes, von Albert bereitgestelltes Archivblatt; vollständig vergrößerbar. */
+#worum .kap-sport.solo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px 20px}
+.kap-sport .kap-dach{grid-column:1/-1;margin-bottom:0}
+.archivblatt{grid-column:1;grid-row:2;margin:0;min-width:0}
+.archivblatt a{display:block;width:100%;min-height:44px;color:inherit;text-decoration:none}
+.archivblatt img{width:100%;height:250px;object-fit:contain;object-position:left center}
+.archivblatt figcaption{font-size:11px;line-height:1.35;color:var(--grau);margin-top:8px}
+.kap-sport .oberliga{grid-column:2;grid-row:2;align-self:center;display:block;border:0;padding:0}
+.kap-sport .oberliga .kap-jahr{font-size:clamp(66px,19vw,150px)}
+#worum .kap-sport h2{font-size:clamp(26px,4vw,52px);margin-top:14px}
+.kap-sport .sportweg{grid-column:1/-1;grid-row:3;margin-top:0}
+.kap-sport>.kap-text{grid-column:1/-1;grid-row:4;margin-top:0}
+#worum .fz.solo .archivblatt{animation-name:kap-blatt;animation-duration:.9s}
+@media(min-width:860px){
+  #worum .kap-sport.solo{grid-template-columns:1fr 1fr;column-gap:48px}
+  .archivblatt{grid-row:2/5}.archivblatt img{height:390px;object-position:center}
+  .archivblatt figcaption{text-align:center}
+  .kap-sport .sportweg{grid-column:2}.kap-sport>.kap-text{grid-column:2}
+}
+@media(max-height:740px) and (max-width:859px){
+  .archivblatt img{height:200px}#worum .kap-sport.solo{gap:12px 16px}
+  .kap-sport .sportweg{gap:12px}.kap-sport .sportweg p{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){#worum .fz.solo .kap-reveal{animation:none!important;opacity:1;transform:none;clip-path:none}}
 .stf em{font:800 21px/1 var(--d);font-style:normal;grid-column:2;grid-row:1/3;text-align:right;white-space:nowrap;opacity:.72;transition:.3s}
 .stf em small{display:block;font:600 13px/1.2 var(--t);margin-top:3px}
 .stf.s3{--e:3}.stf.s2{--e:2}.stf.s1{--e:1}.stf.s0{--e:0}.stf.sk{--e:0;background:none;border-top-style:dashed}
@@ -679,21 +807,64 @@ html.zeiger .spot{opacity:1}
     </div>
   </section>
 
-  <!-- 1 Worum es geht -->
+  <!-- 1 Vereinsgeschichte: Angaben und Belege in docs/PARTNERREISE_FAKTEN.md -->
   <section class="szene" data-s="worum" data-hg="nacht" data-dicht="1">
-    <img class="sz-bild" data-fuer="0" src="partner/r-nacht.webp" alt=""><img class="sz-bild" data-fuer="1" src="partner/r-jugend.webp" alt=""><img class="sz-bild" data-fuer="2" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="3" src="partner/r-zeltlager.webp" alt=""><img class="sz-bild" data-fuer="4" src="partner/r-rasen.webp" alt=""><img class="sz-bild" data-fuer="5" src="partner/r-ferienspiele.webp" alt="">
-    <div class="in">
-      <div class="streifen" id="worum">
-        <p class="fz">Seit <em>1896</em> wird hier Fußball gespielt.</p>
-        <p class="fz">Heute in <em>zwölf</em> Jugend&shy;mannschaften.</p>
-        <p class="fz">Am Rand stehen Eltern, Nachbarn, <em>Kollegen.</em></p>
-        <p class="fz">Im Sommer geht es zusammen ins <em>Zeltlager.</em></p>
-        <p class="fz">Fußball ist dabei <em>nur der Anlass.</em></p>
-        <p class="fz">Es geht darum, dass Leute <em>zusammen&shy;kommen.</em><span class="hand">Das bauen wir auf. Für viele Jahre, nicht nur für eine Saison.</span></p>
+    <div class="in vereinsreise">
+      <div class="streifen" id="worum" aria-live="polite" aria-atomic="true">
+        <article class="fz kap-wurzeln" aria-labelledby="kap1">
+          <p class="kap-dach">01 / Die Wurzeln</p>
+          <div class="gruendungsblatt kap-reveal"><span class="kap-label">Mörlenbach, seit</span><b class="kap-jahr">1896</b><h2 id="kap1">Alles beginnt<br>mit dem Turnen.</h2><p>Gründung des Turnvereins „Gut Heil“.<br>Aus ihm wird der heutige SV.</p></div>
+          <div class="kap-nachtrag kap-reveal"><b>1933</b><p>Die Fußballabteilung entsteht.<br>Ein neues Kapitel auf dem Platz.</p></div>
+        </article>
+        <article class="fz kap-zusammen" aria-labelledby="kap2">
+          <p class="kap-dach">02 / Zwei Geschichten</p>
+          <div class="vereinswurzeln"><div class="kap-reveal"><span>SV Mörlenbach</span><b>1896</b></div><div class="kap-reveal"><span>BSC Mörlenbach</span><b>1959</b></div></div>
+          <div class="vereinsknoten kap-reveal"><span class="kap-label">Seit 2011 gemeinsam</span><img src="partner/r-svbsc.png" width="480" height="273" alt="Die verbundenen Wappen von SV und BSC"><h2 id="kap2">Unser Fußball<br>heißt SV/BSC.</h2></div>
+          <p class="kap-text kap-reveal">Der SV-Fußball und der BSC gehen zusammen. Aus zwei Wegen wird eine gemeinsame Mannschaftsgeschichte.</p>
+        </article>
+        <article class="fz kap-sport" aria-labelledby="kap3">
+          <p class="kap-dach">03 / Höhen und Tiefen</p>
+          <figure class="archivblatt kap-reveal"><a href="partner/r-oberliga-spitzkick.png" target="_blank" rel="noopener noreferrer" aria-label="Spitzkick-Titelblatt vergrößern, öffnet in neuem Tab"><img src="partner/r-oberliga-spitzkick.png" width="833" height="1200" alt="Spitzkick, offizielle Stadionzeitung des SV Mörlenbach, Oberliga Hessen 1993/94. Titelblatt mit Begrüßung von Borussia Dortmund."></a><figcaption><a href="partner/r-oberliga-spitzkick.png" target="_blank" rel="noopener noreferrer">Spitzkick · 1993/94<br>Original zum Vergrößern antippen</a></figcaption></figure>
+          <div class="oberliga kap-reveal"><b class="kap-jahr">1993</b><h2 id="kap3">Aufstieg in<br>die Oberliga.</h2></div>
+          <ol class="sportweg"><li class="kap-reveal"><b>Danach</b><p>Abstiege bis in die Kreisliga B.</p></li><li class="kap-reveal"><b>2022</b><p>Wiederaufstieg in die Kreisliga A.</p></li></ol>
+          <p class="kap-text kap-reveal">Große Jahre. Schwere Jahre. Und Menschen, die den Fußball hier weitertragen.</p>
+        </article>
+        <article class="fz kap-verein" aria-labelledby="kap4">
+          <p class="kap-dach">04 / Der Gesamtverein heute</p>
+          <div class="mitglieder kap-reveal"><span class="kap-label">Knapp</span><b class="kap-zahl">1.200</b><h2 id="kap4">Mitglieder.<br>Ein Ort zum Mitmachen.</h2></div>
+          <div class="jugendanteil kap-reveal"><b><small>rund</small>500</b><p>davon Kinder<br>und Jugendliche</p></div>
+          <p class="kap-text kap-reveal">Vom Fußball bis zum Turnen. Beim SV Mörlenbach treffen sich Generationen.</p>
+        </article>
+        <article class="fz kap-jugend" aria-labelledby="kap5">
+          <p class="kap-dach">05 / Unsere Fußballabteilung</p>
+          <div class="nachwuchsbild kap-reveal"><img src="partner/r-jugend.webp" alt="Jugendspieler des SV/BSC im Mannschaftskreis" width="800" height="1200"><div><span class="kap-label">Fast</span><b class="kap-zahl">300</b><h2 id="kap5">Kinder im Fußball.</h2></div></div>
+          <p class="kap-text kap-reveal">Erste Pässe. Neue Freunde. Eine Mannschaft, zu der man gehört.</p>
+          <p class="abteilung kap-reveal"><b>Knapp 700</b> Mitglieder zählt die Fußballabteilung insgesamt.</p>
+        </article>
+        <article class="fz kap-leben" aria-labelledby="kap6">
+          <p class="kap-dach">06 / Auch neben dem Platz</p>
+          <figure class="lagerbild kap-reveal"><img src="partner/r-zeltlager.webp" alt="Gemeinsamer Abend am Lagerfeuer im Zeltlager" width="1200" height="900"><figcaption>Zeltlager des SV/BSC</figcaption></figure>
+          <h2 id="kap6" class="kap-reveal">Nach dem Abpfiff<br>geht es weiter.</h2>
+          <p class="kap-text kap-reveal">Zeltlager, Ferienspiele und Menschen, die mit anpacken. Auch das gehört zu unserem Verein.</p>
+        </article>
       </div>
-      <div class="takte" id="takte" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="kap-fuss"><div><div class="takte" id="takte" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><p class="w-hilfe"><span id="wStand">1 von 6</span></p></div><button type="button" id="wQuellenB" aria-haspopup="dialog">Zahlen &amp; Geschichte</button></div>
     </div>
   </section>
+  <dialog id="wQuellen" aria-labelledby="wQuellenTitel">
+    <form method="dialog"><button class="quellen-zu" aria-label="Quellen schließen">×</button></form>
+    <h2 id="wQuellenTitel">Zahlen &amp; Geschichte</h2>
+    <p>Die Mitgliederzahlen sind gerundete Vereinsangaben, bestätigt am 18.11.2026. Gesamtverein und Fußballabteilung werden getrennt betrachtet, die Zahlen nicht addiert.</p>
+    <ul>
+      <li><b>Gesamtverein:</b> knapp 1.200 Mitglieder, rund 500 Kinder und Jugendliche.</li>
+      <li><b>Fußballabteilung:</b> knapp 700 Mitglieder, fast 300 Kinder. Die Vereinswebsite nennt teilweise noch ältere Zahlen.</li>
+      <li><a href="https://sv-moerlenbach.de/verein/" target="_blank" rel="noopener noreferrer">Vereinschronik</a>: Gründung 1896, Fußballabteilung 1933, Oberliga-Aufstieg 1993.</li>
+      <li><a href="https://sv-moerlenbach.de/wp-content/uploads/Heft_08-2025.pdf" target="_blank" rel="noopener noreferrer">Vereinsheft</a>: BSC-Gründungsjahr 1959 im Wappen.</li>
+      <li><a href="https://gemeinde-rundschau.de/media/newspaper/7f7cc027-ff75-4a23-a5f7-de7983343a12/MGR_Ausgabe_15-20.pdf" target="_blank" rel="noopener noreferrer">Vereinsbeitrag in der Gemeinde-Rundschau 15/2020</a>: Zusammenschluss 2011.</li>
+      <li><a href="https://de.wikipedia.org/wiki/SV_M%C3%B6rlenbach" target="_blank" rel="noopener noreferrer">Sportlicher Rückblick (Wikipedia)</a>: Abstieg bis in die Kreisliga B. <a href="https://sv-moerlenbach.de/abteilungen/senioren/" target="_blank" rel="noopener noreferrer">Seniorenseite des Vereins</a>: Aufstieg 2021/22.</li>
+    </ul>
+    <p>Quellen abgerufen am 18.11.2026. Die Fotos stammen aus dem bestehenden Auftritt der Partnerreise. Das historische Spitzkick-Titelblatt zur Oberliga-Saison 1993/94 wurde vom Verein für diese Präsentation bereitgestellt.</p>
+  </dialog>
 
   <!-- 1 Woher -->
   <section class="szene" data-s="verb" data-hg="rasen">
@@ -952,7 +1123,7 @@ const BREMSE=[
 /* ---------- Notizen fürs Gespräch: darf der Partner lesen, ohne sich benutzt zu fühlen ---------- */
 const SATZ={
   start:'Der Partner tippt den Namen selbst. Sag vorher: zehn Minuten, und am Ende ist jede Antwort in Ordnung.',
-  worum:'Nichts dazu sagen. Die sechs Sätze wirken lassen. Danach eine eigene Geschichte vom Platz erzählen, eine reicht.',
+  worum:'Sechs Kapitel vom Turnverein bis zum heutigen Fußballnachwuchs. Ergänze einen persönlichen Moment, wenn er zur Station passt. Die Zahlen sind Vereinsangaben vom November 2026.',
   verb:'Frag nach und hör zwei Minuten nur zu. Merk dir ein Wort für später.',
   antrieb:'Frag: Woran würdet ihr in einem Jahr merken, dass es sich gelohnt hat?',
   buehne:'Gerät rübergeben und durchtippen lassen.',
@@ -977,7 +1148,7 @@ const DNAME={herz:'Kinder',buehne:'Sichtbarkeit',team:'Mitarbeiter',netz:'Netzwe
 const ORD=['start','worum','verb','antrieb','buehne','groesse','platz','extras','bon','ja'];
 const AKT={verb:['1','Erster Teil','Ihr'],platz:['2','Zweiter Teil','Euer Platz'],ja:['3','Letzter Teil','Anpfiff']};
 const neu=()=>({i:0,name:'',verb:null,antrieb:[],skeptisch:false,platz:null,groesse:null,auto:false,pi:null,extras:new Set(),laufzeit:1,jahr:'',bremse:new Map(),ja:null,weg:null,eigen:'',wann:'',verl:true});
-let S=neu(), laeuft=false, ton=false, sperrBis=0, wFertig=false;
+let S=neu(), laeuft=false, ton=false, sperrBis=0;
 // 0.99.76: Die Reise läuft im Rahmen der Partnerseite (GERAHMT). TERMIN heißt: Ein angemeldetes Konto aus dem Partner-Team hat sie geöffnet.
 // Öffnet die Firma ihren Link allein, gibt es keine Notizen fürs Gespräch und später keinen Nachlass, es wird nur gespeichert (Albert, 17.11.2026).
 const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true; } })();
@@ -1092,13 +1263,17 @@ function geh(n){ if(n<0||n>=ORD.length||laeuft||n===S.i)return; if(ORD[n]==='ext
   setTimeout(()=>{ F.classList.remove('schnitt'); laeuft=false; const s=szene(id); requestAnimationFrame(()=>s.classList.add('los')); if(AUF[id])AUF[id](); setTimeout(()=>F.classList.remove('wischt'),400); },ruhig?30:(akt?1500:340));
 }
 function darfWeiter(){ const id=ORD[S.i];
-  return id==='worum'?wFertig:id==='verb'?!!S.verb:id==='antrieb'?(S.antrieb.length>0||S.skeptisch):id==='buehne'?!!S.platz:id==='groesse'?(S.groesse!=null||S.auto):id!=='start'&&id!=='ja'&&id!=='platz'; }
+  return id==='worum'?wK>=0:id==='verb'?!!S.verb:id==='antrieb'?(S.antrieb.length>0||S.skeptisch):id==='buehne'?!!S.platz:id==='groesse'?(S.groesse!=null||S.auto):id!=='start'&&id!=='ja'&&id!=='platz'; }
 function routeZeig(){ const id=ORD[S.i]; $('#route').classList.toggle('da',S.i>0);
   $('#weg').style.setProperty('--p',Math.max(0,S.i/(ORD.length-1)));
-  const w=$('#weiterB'); w.disabled=!darfWeiter(); w.textContent=id==='bon'?'Passt so':'Weiter'; }
-const vorB=()=>{ if(Date.now()>=sperrBis&&darfWeiter())geh(S.i+1); }, zurueckB=()=>{ if(ORD[S.i]==='platz'&&szene('platz').dataset.teil==='2'){ szene('platz').dataset.teil='1'; return; } geh(S.i-1); };
+  const w=$('#weiterB'); w.disabled=!darfWeiter(); w.textContent=id==='bon'?'Passt so':id==='worum'&&wK===$$('#worum .fz').length-1?'Weiter zu euch':'Weiter'; }
+const vorB=()=>{ if(laeuft||Date.now()<sperrBis||!darfWeiter())return;
+  if(ORD[S.i]==='worum'&&wK<$$('#worum .fz').length-1){ worumZeig(wK+1); return; } geh(S.i+1); },
+  zurueckB=()=>{ if(laeuft)return; if(ORD[S.i]==='worum'&&wK>0){ worumZeig(wK-1); return; }
+    if(ORD[S.i]==='platz'&&szene('platz').dataset.teil==='2'){ szene('platz').dataset.teil='1'; return; } geh(S.i-1); };
 $('#weiterB').onclick=vorB; $('#zurB').onclick=zurueckB;
-addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT')return; if(e.key==='ArrowRight')vorB(); if(e.key==='ArrowLeft'&&S.i>0)zurueckB(); if(e.key==='r'||e.key==='R')regieUm(); });
+addEventListener('keydown',e=>{ if($('#wQuellen').open||e.defaultPrevented||e.altKey||e.ctrlKey||e.metaKey||e.target.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+  if(e.key==='ArrowRight'){ e.preventDefault(); if(!e.repeat)vorB(); } if(e.key==='ArrowLeft'&&S.i>0){ e.preventDefault(); if(!e.repeat)zurueckB(); } if(e.key==='r'||e.key==='R')regieUm(); });
 
 function lob(id,text){ const b=$('#lob-'+id); if(!b)return; b.classList.remove('da'); setTimeout(()=>{ $('p',b).textContent=text; if(text){ b.classList.add('da'); setTimeout(()=>b.scrollIntoView({block:'nearest',behavior:ruhig?'auto':'smooth'}),120); } },160); }
 const neuRechnen=()=>{ S.pi=null; };
@@ -1131,12 +1306,32 @@ $$('[data-frage="platz"] [data-w]').forEach(b=>b.onclick=()=>{ S.platz=b.dataset
 
 $$('[data-frage="platz"] [data-w]').forEach(b=>maus(b,()=>{ if(S.platz===b.dataset.w)return; clearInterval(szUhr); zeigSz(b.dataset.w,'kommt'); },()=>{ if(S.platz&&S.platz!==b.dataset.w)zeigSz(S.platz); }));
 
-/* ---------- Worum es geht: sechs Sätze, sechs Bilder ---------- */
-let wK=-1, wUhr=null;
-function worumZeig(k){ wK=k; const fz=$$('#worum .fz'); fz.forEach((z,i)=>z.classList.toggle('solo',i===k)); $$('#takte i').forEach((t,i)=>{ t.classList.toggle('war',i<k); t.classList.toggle('an',i===k); });
-  $$('.szene[data-s="worum"] .sz-bild').forEach(i=>i.classList.toggle('an',+i.dataset.fuer===k)); clearTimeout(wUhr);
-  if(k>=fz.length-1){ wFertig=true; routeZeig(); } else if(!ruhig)wUhr=setTimeout(()=>worumZeig(k+1),2900); }
-szene('worum').addEventListener('click',()=>{ const n=$$('#worum .fz').length; if(wK<n-1)worumZeig(wK+1); });
+/* ---------- Vereinsgeschichte: sechs manuelle Kapitel ---------- */
+let wK=-1, wKlickBis=0;
+function worumZeig(k){ const fz=$$('#worum .fz'); wK=Math.max(0,Math.min(fz.length-1,k));
+  fz.forEach((z,i)=>{ z.classList.toggle('solo',i===wK); z.setAttribute('aria-hidden',i!==wK); z.inert=i!==wK; });
+  $$('#takte i').forEach((t,i)=>{ t.classList.toggle('war',i<wK); t.classList.toggle('an',i===wK); });
+  szene('worum').scrollTop=0;
+  $('#wStand').textContent=(wK+1)+' von '+fz.length; routeZeig(); }
+$('#wQuellenB').onclick=()=>$('#wQuellen').showModal();
+$('#wQuellen').addEventListener('keydown',e=>{
+  if(e.key!=='Tab')return;
+  const links=$$('button,a[href]',$('#wQuellen')), ziel=e.shiftKey?links.at(-1):links[0];
+  if(document.activeElement===(e.shiftKey?links[0]:links.at(-1))){e.preventDefault();ziel.focus();}
+});
+szene('worum').addEventListener('click',e=>{ if(laeuft||Date.now()<sperrBis||Date.now()<wKlickBis||e.target.closest('button,a,input,select,textarea')||getSelection()?.toString())return;
+  if(wK<$$('#worum .fz').length-1)worumZeig(wK+1); });
+/* Nur waagerechtes Wischen in dieser Szene. Senkrechtes Lesen/Scrollen und Pinch-Zoom bleiben frei. */
+(()=>{ const el=szene('worum'); let start=null;
+  el.addEventListener('pointerdown',e=>{ if(!e.isPrimary){ start=null; return; }
+    if(e.pointerType!=='touch'||laeuft||ORD[S.i]!=='worum'||e.target.closest('button,a,input,select,textarea'))return;
+    start={id:e.pointerId,x:e.clientX,y:e.clientY,am:Date.now()}; },{passive:true});
+  el.addEventListener('pointercancel',()=>{ start=null; },{passive:true});
+  el.addEventListener('pointerup',e=>{ const s=start; start=null; if(!s||s.id!==e.pointerId||ORD[S.i]!=='worum')return;
+    const dx=e.clientX-s.x,dy=e.clientY-s.y;
+    if(Date.now()-s.am>1200||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;
+    wKlickBis=Date.now()+600; if(dx<0)vorB(); else zurueckB(); },{passive:true});
+})();
 let dUhr=null; function duell(j){ const d=$('#duell'), heute=new Date().getFullYear(); if(ruhig||!d)return; $('span',d).textContent=j; $('p',d).textContent=j<1896?'Ihr wart zuerst da.':'Zusammen '+((heute-j)+(heute-1896))+' Jahre.'; d.classList.add('an'); clearTimeout(dUhr); dUhr=setTimeout(()=>d.classList.remove('an'),2600); }
 $('#jahrIn').addEventListener('input',e=>{ const v=e.target.value.replace(/\D/g,'').slice(0,4); e.target.value=v; const j=+v, heute=new Date().getFullYear();
   if(v.length===4&&j>=1700&&j<=heute){ S.jahr=v; e.target.blur(); duell(j); lob('verb',j<1896?'Seit '+j+'. Dann seid ihr älter als wir. Hut ab.':heute-j>=10?'Seit '+j+'. Das schafft nur, wer bleibt. Das kennen wir.':'Seit '+j+'. Aufbauen kostet Kraft. Das kennen wir auch.'); } else S.jahr=''; });
@@ -1350,14 +1545,14 @@ function jaWeg(w){ S.weg=w; S.wann=''; const kopf='<p class="eyebrow">Willkommen
     '<p class="z-frage">Bis wann sollen Angebot und Antrag bei euch sein?</p>'+chips('wannK',[['Heute noch','Angebot und Antrag kommen heute noch per Mail.'],['Bis '+tag(3),'Bis '+tag(3)+' sind Angebot und Antrag bei euch.']]))); wannBinden('wannK','wannLi'); }
 function jaNein(){ finalZeig('<p class="eyebrow">Danke für eure Zeit</p><h2>In Ordnung.</h2><p class="hand">Und danke für die klare Antwort.</p>'+zettel('Eine Frage noch','Dürfen wir wieder fragen?',null,null,'<p class="z-frage" id="wannLi">Wann dürfen wir noch einmal anklopfen?</p>'+chips('wannK',[['In einem Monat','Danke. Am '+tag(30)+' melden wir uns, einmal und nicht öfter.'],['Vor der nächsten Saison','Danke. Wir melden uns vor der nächsten Saison, einmal und nicht öfter.'],['Lieber nicht','In Ordnung. Wir fragen nicht noch einmal.']])+'<p class="z-frage" style="font-weight:500">Zum Heimspiel könnt ihr trotzdem kommen. Sagt einem von uns dreien Bescheid.</p>')); wannBinden('wannK','wannLi'); }
 $$('[data-ja]').forEach(b=>b.onclick=()=>{ S.ja=b.dataset.ja; S.weg=null; S.wann=''; ({dabei:jaDabei,nein:jaNein})[S.ja](); });
-function vonVorn(){ S=neu(); wFertig=false; $('#und').hidden=true; $('#kleinstB').setAttribute('aria-pressed','false'); $$('[aria-pressed]').forEach(x=>{ if(x.id!=='tonB')x.setAttribute('aria-pressed','false'); }); $('[data-frage="laufzeit"] [data-w="1"]').setAttribute('aria-pressed','true');
+function vonVorn(){ S=neu(); wK=-1; $('#und').hidden=true; $('#kleinstB').setAttribute('aria-pressed','false'); $$('[aria-pressed]').forEach(x=>{ if(x.id!=='tonB')x.setAttribute('aria-pressed','false'); }); $('[data-frage="laufzeit"] [data-w="1"]').setAttribute('aria-pressed','true');
   $$('.lob').forEach(l=>l.classList.remove('da')); $$('.saetze').forEach(x=>x.classList.remove('gewaehlt')); $$('.sz-bild').forEach(x=>x.classList.remove('an')); $$('.bk .st').forEach(x=>x.textContent=''); $$('#bremsen .br').forEach(x=>{ x.setAttribute('aria-expanded','false'); x.classList.remove('klar','bleibt'); }); $('#jahrIn').value=''; $('#rEigen').value='';
   S.i=ORD.length-1; setzName(''); $('#nameIn').value=''; GEMERKT=null; $('#wieder').hidden=true; $('#startF').hidden=false; geh(0); }
 
 /* ---------- Beim Betreten / nach dem Schnitt ---------- */
 const REIN={
   buehne:()=>{ $$('#rahmen .sz').forEach(s=>s.classList.remove('kommt','fahrt')); zeigSz(S.platz||'bande'); },
-  worum:()=>{ if(wFertig)worumZeig($$('#worum .fz').length-1); else { wK=-1; $$('#worum .fz').forEach(z=>z.classList.remove('solo')); } },
+  worum:()=>worumZeig(S.rueck?$$('#worum .fz').length-1:0),
   groesse:()=>grBild(),
   platz:()=>{ szene('platz').dataset.teil=S.rueck?'2':'1'; gehoertZeig(); tkZeig(false); },
   extras:()=>exZeig(),
@@ -1367,7 +1562,6 @@ const REIN={
 };
 const AUF={
   buehne:()=>{ if(!S.platz&&!ruhig){ zeigSz('bande','fahrt'); setTimeout(szAuto,3800); } },
-  worum:()=>{ if(!wFertig)worumZeig(0); },
   platz:()=>{ spiel('licht',1); setTimeout(()=>fx('stempel'),650); }
 };
 
@@ -1447,7 +1641,7 @@ F.addEventListener('pointerdown',e=>{ if(!MERKT||klZahl>=400)return; const b=e.t
 function standSetz(st){ const n=neu(); S=n; S.name=String(st.name||S.name||''); ['verb','platz','jahr','wann'].forEach(k=>{ if(st[k])S[k]=st[k]; });
   S.antrieb=(st.antrieb||[]).filter(a=>HAUPT[a]); S.skeptisch=!!st.skeptisch&&!S.antrieb.length; S.auto=!!st.auto; if(st.groesse!=null&&!S.auto)S.groesse=+st.groesse; if(st.pi!=null)S.pi=+st.pi;
   S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins';
-  wFertig=true; $('#nameIn').value=S.name; setzName(S.name);
+  $('#nameIn').value=S.name; setzName(S.name);
   $$('[data-frage="verb"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===S.verb)); $('[data-frage="verb"]').classList.toggle('gewaehlt',!!S.verb); verbBild(S.verb); $('#und').hidden=!S.verb; $('#jahrIn').value=S.jahr||'';
   $$('[data-frage="platz"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===S.platz));
   $$('[data-frage="groesse"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',S.groesse!=null&&+x.dataset.w===S.groesse)); $('#autoB').setAttribute('aria-pressed',S.auto); $('#kleinstB').setAttribute('aria-pressed',S.groesse===-1);

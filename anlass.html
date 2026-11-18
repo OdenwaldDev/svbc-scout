@@ -270,6 +270,134 @@ html.bereit .foto-karte{opacity:1}
 @keyframes takt{from{transform:scaleX(0)}}
 .szene[data-s="worum"] .sz-bild{filter:brightness(.5) saturate(.95)}
 .szene[data-s="worum"]{cursor:pointer}
+
+/* Jede Station hat einen eigenen Satz. Nur das aktive Kapitel nimmt Platz ein. */
+#film:not(.anlass) .szene[data-s="worum"]{cursor:pointer;touch-action:pan-y pinch-zoom;background:#080e25}
+#film:not(.anlass) .szene[data-s="worum"]>.in{max-width:1000px;zoom:1}
+#worum.streifen{min-height:440px;display:grid;align-items:center}
+#worum .fz{display:none;min-width:0;max-width:none;font:inherit;text-transform:none;text-wrap:wrap;overflow-wrap:normal;opacity:1;transform:none;transition:none;pointer-events:auto}
+#worum .fz.solo{display:block}
+.kap-dach{font:700 12px/1.4 var(--t);letter-spacing:.16em;text-transform:uppercase;color:var(--hb);margin-bottom:18px}
+#worum .fz h2{font:800 clamp(30px,5vw,56px)/.98 var(--d);text-transform:uppercase;text-wrap:balance;margin:0;letter-spacing:-.015em}
+.kap-label{display:block;font:600 13px/1.4 var(--t);letter-spacing:.12em;text-transform:uppercase}
+.kap-jahr,.kap-zahl{display:block;font:900 clamp(100px,20vw,180px)/.88 var(--d);letter-spacing:-.025em}
+.kap-text{font:400 clamp(16px,2vw,20px)/1.45 var(--t);max-width:35em;margin-top:18px;color:#d5dbea}
+.gruendungsblatt{background:var(--papier);color:var(--tinte);padding:24px 28px;border-left:6px solid var(--or);transform-origin:center bottom}
+.gruendungsblatt .kap-jahr{color:#253e75;margin:5px 0 15px}
+.gruendungsblatt p{font-size:16px;line-height:1.45;margin-top:14px}
+.kap-nachtrag{display:flex;gap:20px;align-items:center;margin-top:18px;border-top:1px solid var(--linie);padding-top:14px}
+.kap-nachtrag>b{font:800 44px/1 var(--d);color:var(--or2)}
+.kap-nachtrag p{font-size:15px;line-height:1.4}
+.vereinswurzeln{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.vereinswurzeln>div{border-top:3px solid var(--hb);padding-top:12px}
+.vereinswurzeln>div+div{border-color:var(--or)}
+.vereinswurzeln span{font-size:14px}
+.vereinswurzeln b{display:block;font:800 clamp(50px,10vw,80px)/1 var(--d)}
+.vereinsknoten{border-top:1px solid var(--linie);margin-top:20px;padding-top:18px;text-align:center}
+.vereinsknoten img{height:105px;width:auto;margin:14px auto}
+.vereinsknoten h2{font-size:clamp(32px,5vw,50px)}
+.oberliga{display:flex;align-items:center;gap:25px;padding:26px 0;border-block:2px solid var(--or)}
+.oberliga .kap-jahr{color:var(--or2)}
+.sportweg{margin-top:22px;border-left:2px solid var(--hb);padding-left:22px;display:grid;gap:18px}
+.sportweg li{position:relative;display:flex;align-items:baseline;gap:20px}
+.sportweg li::before{content:"";position:absolute;width:10px;height:10px;left:-28px;top:10px;background:var(--hb);border-radius:50%}
+.sportweg b{font:800 30px/1 var(--d);min-width:86px;flex-shrink:0}
+.sportweg p{font-size:16px;line-height:1.4}
+.mitglieder .kap-zahl{color:var(--hb);margin:5px 0 18px;font-size:clamp(110px,24vw,216px)}
+.jugendanteil{display:flex;gap:24px;align-items:center;border-top:1px solid var(--linie);padding-top:18px;margin-top:24px}
+.jugendanteil b{font:900 70px/.9 var(--d);color:var(--or2)}
+.jugendanteil small{display:block;font:600 13px/1.4 var(--t);color:var(--kreide);margin-bottom:5px}
+.jugendanteil p{font-size:18px;line-height:1.35}
+.nachwuchsbild{display:grid;grid-template-columns:1fr 1fr;background:#153663;overflow:hidden}
+.nachwuchsbild img{width:100%;height:300px;object-fit:cover;object-position:center 35%}
+.nachwuchsbild>div{align-self:center;padding:18px}
+.nachwuchsbild .kap-zahl{font-size:clamp(86px,18vw,150px);margin:5px 0 12px}
+.nachwuchsbild h2{font-size:clamp(28px,4vw,45px)}
+.abteilung{font-size:15px;border-top:1px solid var(--linie);padding-top:16px;margin-top:18px;max-width:35em}
+.abteilung b{color:var(--or2)}
+.lagerbild{position:relative;margin-bottom:22px;overflow:hidden}
+.lagerbild img{width:100%;height:clamp(180px,30vh,280px);object-fit:cover;object-position:center 57%}
+.lagerbild figcaption{position:absolute;bottom:10px;left:12px;background:#080e25;padding:5px 10px;font-size:12px}
+.kap-fuss{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:24px}
+#film:not(.anlass) .szene[data-s="worum"] .takte{display:flex;gap:6px;width:130px;margin-top:0}
+#film:not(.anlass) .szene[data-s="worum"] .takte i{flex:1;height:3px;background:#465069;position:relative;overflow:hidden}
+#film:not(.anlass) .szene[data-s="worum"] .takte i.war{background:var(--hb)}
+#film:not(.anlass) .szene[data-s="worum"] .takte i.an{background:var(--or2)}
+#film:not(.anlass) .szene[data-s="worum"] .takte i.an::after{content:none;animation:none}
+#film:not(.anlass) .szene[data-s="worum"] .w-hilfe{margin-top:8px;font-size:12px;line-height:1.4;color:var(--grau)}
+#wQuellenB{font-size:12px;min-height:44px;padding:8px 0 8px 10px;text-decoration:underline;text-underline-offset:4px;color:var(--grau)}
+#wQuellen{background:#111b35;color:var(--kreide);border:1px solid #52617f;width:min(640px,calc(100% - 28px));max-height:80dvh;padding:28px;overflow:auto}
+#wQuellen::backdrop{background:#030713db}
+#wQuellen h2{font:800 30px/1.1 var(--d);margin:8px 50px 20px 0}
+#wQuellen p,#wQuellen li{font-size:15px;line-height:1.5}
+#wQuellen ul{display:grid;gap:12px;margin:20px 0}
+#wQuellen a{display:block;min-height:44px;padding:10px 0;color:var(--hb);text-underline-offset:3px}
+.quellen-zu{float:right;font-size:30px;width:44px;height:44px}
+/* Kurze Eintritte, keine Zeitschaltung. Nach spätestens 1,2 s bleibt alles ruhig. */
+#worum .fz.solo .kap-reveal{animation:kap-auf .65s cubic-bezier(.16,1,.3,1) both}
+#worum .fz.solo .kap-reveal:nth-child(3){animation-delay:.13s}
+#worum .fz.solo .kap-reveal:nth-child(4){animation-delay:.24s}
+#worum .fz.solo .gruendungsblatt{animation-name:kap-blatt;animation-duration:.9s}
+#worum .fz.solo .vereinswurzeln>div:first-child{animation-name:kap-links}
+#worum .fz.solo .vereinswurzeln>div:last-child{animation-name:kap-rechts;animation-delay:.12s}
+#worum .fz.solo .vereinsknoten{animation-delay:.25s}
+#worum .fz.solo .oberliga{animation-name:kap-breit}
+#worum .fz.solo .sportweg li:nth-child(1){animation-delay:.2s}
+#worum .fz.solo .sportweg li:nth-child(2){animation-delay:.35s}
+#worum .fz.solo .mitglieder{animation-name:kap-ziffer}
+#worum .fz.solo .nachwuchsbild,#worum .fz.solo .lagerbild{animation-name:kap-foto;animation-duration:.9s}
+@keyframes kap-auf{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes kap-blatt{from{opacity:0;transform:perspective(900px) rotateX(14deg) translateY(30px)}to{opacity:1;transform:none}}
+@keyframes kap-links{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+@keyframes kap-rechts{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes kap-breit{from{opacity:0;clip-path:inset(0 100% 0 0)}to{opacity:1;clip-path:inset(0)}}
+@keyframes kap-ziffer{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes kap-foto{from{opacity:0;clip-path:inset(100% 0 0 0)}to{opacity:1;clip-path:inset(0)}}
+@media(min-width:860px){
+  #worum .fz.solo{display:grid;grid-template-columns:1.12fr 1fr;gap:0 48px;align-items:center}
+  .kap-dach{grid-column:1/-1}
+  .gruendungsblatt,.vereinswurzeln,.oberliga,.mitglieder,.nachwuchsbild,.lagerbild{grid-column:1;grid-row:2/5}
+  .kap-nachtrag,.vereinsknoten{margin-top:0}
+  .oberliga{display:block}.oberliga h2{margin-top:22px}
+  .sportweg{margin-top:0}.sportweg li{display:block}.sportweg p{margin-top:8px}
+  .jugendanteil{border:0;padding:0;margin:0}
+  .nachwuchsbild{grid-template-columns:1fr}.nachwuchsbild img{height:180px}.nachwuchsbild>div{padding:16px 22px}
+  .nachwuchsbild .kap-zahl{font-size:110px}.nachwuchsbild h2{font-size:30px}
+  .lagerbild{margin:0}.lagerbild img{height:390px}
+}
+@media(max-width:480px){.oberliga{display:block;padding:18px 0}.oberliga h2{margin-top:12px}.nachwuchsbild img{height:260px}.nachwuchsbild>div{padding:12px}.sportweg li{gap:12px}}
+@media(max-height:740px) and (max-width:859px){
+  #worum.streifen{min-height:0}.kap-dach{margin-bottom:12px}.gruendungsblatt{padding:16px 20px}
+  .gruendungsblatt .kap-jahr{font-size:92px;margin-bottom:10px}#worum .fz h2{font-size:30px}
+  .gruendungsblatt p{font-size:14px;margin-top:10px}.kap-nachtrag{margin-top:12px;padding-top:10px}
+  .vereinsknoten{margin-top:12px;padding-top:10px}.vereinsknoten img{height:76px;margin:8px auto}
+  .kap-text{font-size:15px;margin-top:12px}.kap-fuss{margin-top:16px}.nachwuchsbild img{height:218px}
+  .lagerbild img{height:180px}.mitglieder .kap-zahl{font-size:110px}.jugendanteil{margin-top:16px;padding-top:12px}
+}
+/* Unverändertes, von Albert bereitgestelltes Archivblatt; vollständig vergrößerbar. */
+#worum .kap-sport.solo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px 20px}
+.kap-sport .kap-dach{grid-column:1/-1;margin-bottom:0}
+.archivblatt{grid-column:1;grid-row:2;margin:0;min-width:0}
+.archivblatt a{display:block;width:100%;min-height:44px;color:inherit;text-decoration:none}
+.archivblatt img{width:100%;height:250px;object-fit:contain;object-position:left center}
+.archivblatt figcaption{font-size:11px;line-height:1.35;color:var(--grau);margin-top:8px}
+.kap-sport .oberliga{grid-column:2;grid-row:2;align-self:center;display:block;border:0;padding:0}
+.kap-sport .oberliga .kap-jahr{font-size:clamp(66px,19vw,150px)}
+#worum .kap-sport h2{font-size:clamp(26px,4vw,52px);margin-top:14px}
+.kap-sport .sportweg{grid-column:1/-1;grid-row:3;margin-top:0}
+.kap-sport>.kap-text{grid-column:1/-1;grid-row:4;margin-top:0}
+#worum .fz.solo .archivblatt{animation-name:kap-blatt;animation-duration:.9s}
+@media(min-width:860px){
+  #worum .kap-sport.solo{grid-template-columns:1fr 1fr;column-gap:48px}
+  .archivblatt{grid-row:2/5}.archivblatt img{height:390px;object-position:center}
+  .archivblatt figcaption{text-align:center}
+  .kap-sport .sportweg{grid-column:2}.kap-sport>.kap-text{grid-column:2}
+}
+@media(max-height:740px) and (max-width:859px){
+  .archivblatt img{height:200px}#worum .kap-sport.solo{gap:12px 16px}
+  .kap-sport .sportweg{gap:12px}.kap-sport .sportweg p{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){#worum .fz.solo .kap-reveal{animation:none!important;opacity:1;transform:none;clip-path:none}}
 .stf em{font:800 21px/1 var(--d);font-style:normal;grid-column:2;grid-row:1/3;text-align:right;white-space:nowrap;opacity:.72;transition:.3s}
 .stf em small{display:block;font:600 13px/1.2 var(--t);margin-top:3px}
 .stf.s3{--e:3}.stf.s2{--e:2}.stf.s1{--e:1}.stf.s0{--e:0}.stf.sk{--e:0;background:none;border-top-style:dashed}
