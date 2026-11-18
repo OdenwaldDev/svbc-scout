@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.90',v:'0.99.90',datum:'2026-11-18',titel:'Bandenplan ab Saison 2027/28',kurz:'Im Bandencreator zeigt der Plan jetzt auch die Reihe für die neue Saison: Doppelbande an der Mittellinie, je vier Doppelbanden links und rechts, daneben Einzelbanden.',
+   punkte:[
+    {ic:'\u{1F3DF}\u{FE0F}',t:'Schalter über dem Plan',d:'„Aktuell“ zeigt, was heute hängt. „Ab Saison 2027/28“ zeigt die geplante Reihe gegenüber vom Clubhaus mit 9 Doppelbanden und 24 Einzelbanden als Platzhalter.',r:'team'},
+    {ic:'\u{1F4CC}',t:'Plätze nach und nach besetzen',d:'Antippen zeigt den Platz mit einer Vorschau: weiße Bande, Marine, nur Logo und Name. Die Leitung im Bereich Partner merkt eine Firma vor, vergibt den Platz fest oder macht ihn wieder frei.',r:'team'}
+   ]},
   {id:'0.99.89',v:'0.99.89',datum:'2026-11-18',titel:'Präsentation zu einem Anlass',kurz:'Für Firmen, die kein Paket buchen, sondern Partner einer Aktion werden, gibt es jetzt eine eigene Präsentation mit eigenem kurzem Link.',
    punkte:[
     {ic:'\u{1F3C3}',t:'Eigene Präsentation für eine Aktion',d:'Die Firma sieht die Aktion, ihren Auftritt mit eigenem Logo, den Beitrag und mögliche Zusätze, und antwortet mit einem Tipp. Die Antwort steht danach im Verlauf der Firma. Angelegt wird eine solche Präsentation vorerst über Albert.',r:'team'}

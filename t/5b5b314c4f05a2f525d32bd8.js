@@ -1,3 +1,18 @@
+  x=x.replace(/^[–—]\s/,'').replace(/\s[–—]$/,'');
+  if(x!==v)n.nodeValue=x;
+}
+function sv68Lauf(root){
+  if(!root||root.nodeType!==1)return;
+  try{ if(root.matches&&root.matches(SV68_ZIEL))sv68Emoji(root); root.querySelectorAll(SV68_ZIEL).forEach(sv68Emoji); }catch(e){}
+  try{ const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>(n.nodeValue.indexOf('–')>=0||n.nodeValue.indexOf('—')>=0)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP});
+    const L=[]; let n; while((n=w.nextNode()))L.push(n); L.forEach(sv68Strich); }catch(e){}
+}
+{ let offen=new Set(), plan=0;
+  const los=()=>{ plan=0; const L=[...offen]; offen.clear(); L.forEach(el=>{ if(el.isConnected)sv68Lauf(el); }); };
+  const mo=new MutationObserver(ms=>{ ms.forEach(m=>{ if(m.type==='characterData'){ const p=m.target.parentNode; if(p)offen.add(p); return; }
+      m.addedNodes.forEach(x=>{ if(x.nodeType===1)offen.add(x); else if(x.nodeType===3&&x.parentNode)offen.add(x.parentNode); }); });
+    if(offen.size&&!plan)plan=requestAnimationFrame(los); });
+  const start=()=>{ try{ sv68Lauf(document.body); mo.observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(e){ console.warn('Ruhige Texte',e); } };
   if(document.body)start(); else document.addEventListener('DOMContentLoaded',start);
 }
 
