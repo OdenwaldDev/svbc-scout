@@ -38,10 +38,12 @@ function rnZeigen(titel,text){
    - Logo hochladen: wird verkleinert, Ränder abgeschnitten, als PNG gespeichert
    ===================================================================== */
 const PD={d:null,laedt:null,q:'',flt:'alle'};
-const PD_URL='https://svbsc.albertklee.de/partner.html#d=';
+// 0.99.86 (Albert, 18.11.2026): Links an Firmen laufen über Kaderwerk, kurz und nicht zu erraten: https://partner.kaderwerk.pro/#firma-k7m2xq9d.
+// Der kurze Schlüssel kommt vom Server (partner_decks.kurz, 203). Fehlt er einmal, gilt der lange Link auf derselben Adresse.
+const PD_HOST='https://partner.kaderwerk.pro/';
 const PD_ST={supporter:'SVM Supporter',club:'Club Partner',premium:'Premium Partner',p1896:'1896 Partner'};
 const PD_AST={neu:'neu',versendet:'per Mail raus',fehler:'Mail fehlgeschlagen',uebernommen:'übernommen',storniert:'storniert'};
-function pdLink(code){ return PD_URL+code; }
+function pdLink(code,kurz){ const d=!kurz&&typeof PD!=='undefined'&&PD.d?(PD.d.decks||[]).find(x=>x.code===code):null, k=kurz||(d&&d.kurz)||''; return k?PD_HOST+'#'+k:PD_HOST+'partner.html#d='+code; }
 function pdDatum(ts){ try{ return new Date(ts).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
 async function pdLaden(){ if(PD.laedt)return PD.laedt; PD.laedt=svtRpc('partner_decks_liste',{}).then(d=>{ PD.d=d; return d; }).finally(()=>{ PD.laedt=null; }); return PD.laedt; }
 
@@ -166,7 +168,7 @@ function pdForm(d,vor){
     p.logo_hell=!M.querySelector('#pdLd').checked; if(logo)p.logo=logo; if(d)p.aktiv=M.querySelector('#pdAk').checked;
     if(/[–—]/.test(JSON.stringify(p.passung))){ kToast('Bitte keine Gedankenstriche, lieber Komma oder Doppelpunkt'); return; }
     try{ const r=await svtRpc('partner_deck_speichern',{p}); PD.d=null; closeOverlay(); kToast('✓ Präsentation gespeichert');
-      if(!d){ try{ await navigator.clipboard.writeText(pdLink(r.code)); kToast('✓ Gespeichert, Link ist kopiert'); }catch(e){} }
+      if(!d){ try{ await navigator.clipboard.writeText(pdLink(r.code,r.kurz)); kToast('✓ Gespeichert, Link ist kopiert'); }catch(e){} }
       SPO.view='decks'; if(svCurTab()!=='sponsoring')goTab('sponsoring'); else spoRender(); }
     catch(e){ kToast('⚠️ '+e.message); } },'Speichert …');
 }

@@ -130,6 +130,13 @@
 
   try{ if('scrollRestoration' in history)history.scrollRestoration='manual'; }catch(e){}   // die Stelle stellen wir selbst wieder her
   async function laden(){
+    // 0.99.86: kurzer Link (…/#firma-k7m2xq9d). Der Server nennt den Code der Präsentation, dann lädt die Seite mit ihm neu.
+    { let kz=''; try{ kz=decodeURIComponent(location.hash.slice(1)).toLowerCase(); }catch(e){}
+      if(!/^[a-f0-9]{32}$/.test(code)&&/^([a-z0-9]+-)*[a-hjkmnp-z2-9]{8}$/.test(kz)&&kz.length<=40){
+        app.innerHTML='<div class="leer-hinweis">Einen Moment …</div>';
+        try{ const k=await rpc('partner_link',{p_kurz:kz}); if(typeof k==='string'&&/^[a-f0-9]{32}$/.test(k)){ history.replaceState(null,'',location.pathname+location.search+'#d='+k); location.reload(); return; } }
+        catch(e){ if(e.netz){ app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Gerade keine Verbindung</h2><p>Dein persönlicher Link gilt weiter. Prüf bitte die Verbindung und versuch es noch einmal.</p><button type="button" class="knopf-w" id="nochmal" style="max-width:320px;margin-top:22px">Noch einmal versuchen</button></div>`; $('#nochmal').onclick=laden; return; } }
+        app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Link nicht mehr aktiv</h2><p>Dieser Link ist nicht mehr aktiv.</p>${kontaktHtml('Melde dich kurz, dann schicken wir dir einen neuen Link.')}</div>`; return; } }
     if(!/^[a-f0-9]{32}$/.test(code)){ app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Link fehlt</h2><p>Bitte den persönlichen Link aus der Nachricht öffnen.</p>${kontaktHtml('Du findest ihn nicht mehr? Melde dich, dann schicken wir ihn dir gleich noch einmal.')}</div>`; return; }
     // Die Hülle aus dem HTML bleibt stehen, bis die Daten da sind: kein weißes Nichts im ersten Moment
     if(!$('#startHuelle'))app.innerHTML='<div class="leer-hinweis">Einen Moment …</div>';

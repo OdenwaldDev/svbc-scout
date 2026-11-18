@@ -428,7 +428,7 @@ function ptFertig(r,p,aktualisiert){ const x=(SPO.S||[]).find(s=>s.id===r.sponso
     if(x&&typeof pzNachricht==='function'){ pzNachricht(x,'praesentation'); return; }   // dort prüft das Blatt Impressum und Zustimmung
     const fehlt=typeof paImpressumFehlt==='function'?paImpressumFehlt():[];
     if(fehlt.length){ closeOverlay(); kToast('Bevor ihr Links verschickt: Im Impressum fehlen noch '+fehlt.join(', ')+'. Bitte in den Vereinsdaten eintragen.'); if(typeof PE!=='undefined')PE.v='verein'; spoWechsel('steuerung'); return; }
-    const t=`Hallo, hier ist eure Übersicht zur Partnerschaft mit dem SV/BSC Mörlenbach: ${pdLink(r.code)}`;
+    const t=`Hallo, hier ist eure Übersicht zur Partnerschaft mit dem SV/BSC Mörlenbach: ${pdLink(r.code,r.kurz)}`;
     if(w==='wa')window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank'); else location.href='mailto:'+encodeURIComponent(p.email||'')+'?body='+encodeURIComponent(t);
     closeOverlay(); }); }
 

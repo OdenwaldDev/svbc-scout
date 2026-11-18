@@ -7,7 +7,8 @@
 function svBasis(){ try{ const C=window.Capacitor; if(C&&C.isNativePlatform&&C.isNativePlatform())return 'https://svbsc.kaderwerk.pro/'; }catch(e){} return location.origin+location.pathname.replace(/[^/]*$/,''); }
 
 // 0.99.70: partner.kaderwerk.pro zeigt nur den Partner-Start (partnerstart.html). Der Weg zur Anmeldung trägt #partnerstart und bleibt auf dieser Seite.
-try{ if(/^partner\./.test(location.hostname)&&location.hash!=='#partnerstart')location.replace('partnerstart.html'); }catch(e){}
+// 0.99.86: Ein kurzer Link zur Präsentation (#firma-k7m2xq9d) gehört zur Partnerseite, nicht zum Partner-Start (die Weiterleitung steht schon im Kopf der Seite).
+try{ if(/^partner\./.test(location.hostname)&&location.hash!=='#partnerstart'){ if(/^#([a-z0-9]+-)*[a-hjkmnp-z2-9]{8}$/.test(location.hash))location.replace('partner.html'+location.hash); else location.replace('partnerstart.html'); } }catch(e){}
 
 // Installieren (Android/Chrome): das Angebot des Browsers früh aufheben, die App fragt später dezent (svm50.js)
 window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); window.__svBip=e; });

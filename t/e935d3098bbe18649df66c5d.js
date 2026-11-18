@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.86',v:'0.99.86',datum:'2026-11-18',titel:'Menü am Rechner wie am Handy, kurze Links für Firmen',kurz:'Die Seitenleiste am Rechner hat dieselben Ordner wie das Menü am Handy. Links zur Präsentation sind kurz und laufen über partner.kaderwerk.pro.',
+   punkte:[
+    {ic:'\u{1F4C2}',t:'Seitenleiste mit Ordnern',d:'Am Rechner stehen dieselben Bereiche wie am Handy als Ordner zum Aufklappen: Planung & Termine, Senioren, Jugend, Veranstaltungen, Partner, Verein, Kommunikation, Verwaltung. Offen ist der Bereich, in dem du gerade bist.'},
+    {ic:'\u{1F517}',t:'Kurze Links für Firmen',d:'Der Link zur Präsentation heißt jetzt partner.kaderwerk.pro, dahinter der Name der Firma und acht zufällige Zeichen. Der Name allein führt nirgends hin. Die bisherigen langen Links gelten weiter.',r:'team'},
+    {ic:'\u{1F4C7}',t:'Eine Firma, eine Präsentation',d:'Wer für eine Firma noch einmal eine Präsentation anlegt, schreibt die vorhandene fort. Der Link bleibt gleich, doppelte Einträge entstehen nicht mehr.',r:'team'}
+   ]},
   {id:'0.99.85',v:'0.99.85',datum:'2026-11-18',titel:'Vorstand unterschreibt auf Papier, Logo der Firma in der Präsentation',kurz:'Verträge zeichnet der Vorstand auf Papier gegen, der Scan schließt den Vertrag. In der Präsentation steht das Logo der Firma an Bande, Trikot und Partnerwand.',
    punkte:[
     {ic:'\u{1F58A}\u{FE0F}',t:'Vorstand unterschreibt auf Papier',d:'Unter Partner, Verträge: die Fassung der Firma drucken, vom Vorstand unterschreiben lassen, Scan hochladen und eintragen, wer wann unterschrieben hat. Damit ist der Vertrag geschlossen.',r:'team'},
