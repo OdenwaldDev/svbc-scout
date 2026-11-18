@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.83',v:'0.99.83',datum:'2026-11-18',titel:'Mail nach der Gegenzeichnung passt zum Vertrag',kurz:'Die Mail mit beiden Unterschriften beruft sich beim Monat der Rechnung nur noch auf den Vertrag, wenn der Monat dort steht.',
+   punkte:[
+    {ic:'\u{2709}\u{FE0F}',t:'Mail nach der Gegenzeichnung',d:'Bei Verträgen der früheren Fassung nennt die Mail den Monat der Rechnung, ohne den Zusatz „wie im Vertrag vereinbart“. Bei neuen Verträgen steht der Monat im Vertrag, dort bleibt der Zusatz.',r:'team'}
+   ]},
   {id:'0.99.82',v:'0.99.82',datum:'2026-11-17',titel:'Widmung am Paket, Präsentation als PDF',kurz:'Eine Firma kann ihr Paket einem Zweck widmen, das steht in Präsentation und Vertrag. Jede Präsentation lässt sich als PDF laden.',
    punkte:[
     {ic:'\u{1F3AF}',t:'Widmung am Paket',d:'In der Präsentation einer Firma gibt es eine Unterüberschrift und einen Absatz zum Paket, zum Beispiel „Für sportliche Wettkämpfe in der Saisonvorbereitung“. Beides steht am empfohlenen Paket, am Ticket und im Vertrag unter dem Paket.',r:'team'},
