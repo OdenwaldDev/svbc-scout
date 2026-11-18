@@ -579,6 +579,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.84',v:'0.99.84',datum:'2026-11-18',titel:'Alle Verträge an einem Ort',kurz:'Im Partner-Bereich gibt es den Reiter Verträge: wer wann unterschrieben hat, die PDFs wie unterschrieben, bezahlt oder offen, und ob sich der Vertrag von selbst verlängert.',
+   punkte:[
+    {ic:'\u{1F4C1}',t:'Reiter Verträge',d:'Unter Partner, Verwaltung: alle Verträge mit Datum der Firma, Datum des Vereins, Laufzeit und Betrag. Sehen dürfen ihn die Leitung im Bereich Partner, Finanzen und Admins.',r:'team'},
+    {ic:'\u{1F4C4}',t:'PDF wie unterschrieben',d:'Die Fassung der Firma und die Fassung mit beiden Unterschriften liegen fest in der Ablage und lassen sich laden. Ein Scan lässt sich dazu hochladen.',r:'team'},
+    {ic:'\u{2705}',t:'Bezahlt mit einem Tipp',d:'Jede Rechnung und jede Saison eines alten Vertrags lässt sich als bezahlt abhaken und wieder zurücknehmen.',r:'team'},
+    {ic:'\u{1F501}',t:'Verlängerung im Blick',d:'Bei jedem Vertrag steht, ob er sich von selbst verlängert und bis wann er kündbar ist. Bestehende Verträge der alten Struktur trägt man dort ein.',r:'team'}
+   ]},
   {id:'0.99.83',v:'0.99.83',datum:'2026-11-18',titel:'Mail nach der Gegenzeichnung passt zum Vertrag',kurz:'Die Mail mit beiden Unterschriften beruft sich beim Monat der Rechnung nur noch auf den Vertrag, wenn der Monat dort steht.',
    punkte:[
     {ic:'\u{2709}\u{FE0F}',t:'Mail nach der Gegenzeichnung',d:'Bei Verträgen der früheren Fassung nennt die Mail den Monat der Rechnung, ohne den Zusatz „wie im Vertrag vereinbart“. Bei neuen Verträgen steht der Monat im Vertrag, dort bleibt der Zusatz.',r:'team'}
