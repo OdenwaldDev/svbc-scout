@@ -579,6 +579,11 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.94',v:'0.99.94',datum:'2026-11-18',titel:'Spieltag auch als Story',kurz:'Heimspiel, Aufstellung, Ergebnis und Spielverlauf gibt es jetzt auch im Format 9:16 für Storys. Der Assistent schlägt keine geschätzten Zahlen mehr vor.',
+   punkte:[
+    {ic:'\u{1F4F1}',t:'Story 9:16 für alle vier Motive',d:'In der Einzelansicht wählst du zwischen „Beitrag 4:5“ und „Story 9:16“. Die Story ist dasselbe Motiv, so gesetzt, dass oben und unten frei bleibt, was Instagram überdeckt. Freigabe und Angaben gelten für beide Formate.',r:'team'},
+    {ic:'\u{1F6AB}',t:'Assistent: keine geschätzten Zahlen',d:'Eine Headline wie „Zwei Stunden für den Verein“ erscheint nur noch, wenn die Dauer im Steckbrief steht. Vorschläge mit einer Zahl ohne Beleg sortiert die App aus.',r:'team'}
+   ]},
   {id:'0.99.93',v:'0.99.93',datum:'2026-11-18',titel:'Spieltagsstudio: der Kommunikationsassistent',kurz:'Unter dem Spieltag steht „Was brauchst du?“: Aus einem Satz, einer Sprachnachricht oder einer Datei werden Steckbrief, drei Vorschläge, ein Plakat im Vereinsdesign und Texte für jeden Kanal.',
    punkte:[
     {ic:'\u{1F4AC}',t:'Erzählen, sprechen oder Datei dazulegen',d:'Schreib in einem Satz, was du brauchst, diktiere es oder leg eine Einladung als PDF, Word-Datei oder Foto dazu. Der Assistent zeigt dir, was er verstanden hat, und fragt höchstens dreimal nach.',r:'team'},

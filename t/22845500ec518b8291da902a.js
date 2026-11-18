@@ -523,6 +523,8 @@ if(typeof dpRender === 'function'){ const _dp126 = dpRender; dpRender = function
    ===================================================================== */
 const CI = { navy:'#041127', navy2:'#0B1A31', blau:'#2F8BEF', orange:'#FF8731', papier:'#F6F6F2', weiss:'#F6F6F2', grau:'#AAB5C8', grau2:'#7C8799', linie:'#22345A', hell:'#D5DCE8' };
 const SG_W = 1080, SG_H = 1350, SG_X = 72, SG_R = 1008;
+/* Story 9:16: dasselbe Motiv, 285 Pixel tiefer gesetzt, damit oben und unten frei bleibt, was Instagram mit Bedienung überdeckt; der Grund läuft weiter */
+const SG_STORY_H = 1920, SG_OY = 285;
 const SG_VERSION = { H:'H 1.0', A:'A 1.0', E:'E 1.0', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
@@ -616,8 +618,8 @@ function sgZweiZeilen(name){ const t = String(name || '').toUpperCase().trim(); 
 /* ---------- Motiv H: Heimspiel (Schwester: Auswärtsspiel) ---------- */
 function sgH(ctx, D, A){
   ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_W, SG_H);
-  sgCover(ctx, A.fotoH, 0, 0, SG_W, D.wirHeim ? 1000 : 940, .3);
-  let g = ctx.createLinearGradient(0, 0, 0, 260); g.addColorStop(0, 'rgba(4,17,39,.82)'); g.addColorStop(1, 'rgba(4,17,39,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SG_W, 260);
+  const oy = SG.oy || 0; sgCover(ctx, A.fotoH, 0, -oy, SG_W, (D.wirHeim ? 1000 : 940) + oy, .3);
+  let g = ctx.createLinearGradient(0, -oy, 0, 260); g.addColorStop(0, 'rgba(4,17,39,.82)'); g.addColorStop(1, 'rgba(4,17,39,0)'); ctx.fillStyle = g; ctx.fillRect(0, -oy, SG_W, 260 + oy);
   const oben = D.wirHeim ? 560 : 470;
   g = ctx.createLinearGradient(0, oben, 0, oben + 440); g.addColorStop(0, 'rgba(4,17,39,0)'); g.addColorStop(.5, 'rgba(4,17,39,.72)'); g.addColorStop(1, 'rgba(4,17,39,1)'); ctx.fillStyle = g; ctx.fillRect(0, oben, SG_W, SG_H - oben);
   sgKopf(ctx, D, true); sgWappen(ctx, A);
@@ -710,10 +712,12 @@ function sgA(ctx, D, A){
   if(D.trainer){ const t = D.trainer.toUpperCase(); ctx.font = '700 22px SGB'; const w = sgBreite(ctx, t, .8); sgT(ctx, t, SG_R - 18, 1291, { fam:'SGB', w:700, s:22, c:tinte, sp:.8, a:'r', k:'trainer' });
     ctx.font = '700 14.5px SGB'; const mw = sgBreite(ctx, 'TRAINER', .6) + 16; marke('TRAINER', SG_R - 18 - w - 10 - mw, 1283); } }
 
-function sgMalen(cv, motiv, D, A, seite){ cv.width = SG_W; cv.height = SG_H; const ctx = cv.getContext('2d'); SG.ueber = {}; SG.reg._an = []; SG.reg[motiv] = SG.reg._an;
+function sgMalen(cv, motiv, D, A, seite, fmt){ const story = fmt === 'story', oy = story ? SG_OY : 0; cv.width = SG_W; cv.height = story ? SG_STORY_H : SG_H;
+  const ctx = cv.getContext('2d'); SG.ueber = {}; SG.reg._an = []; SG.reg[motiv] = SG.reg._an; SG.oy = oy; ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if(story){ ctx.fillStyle = motiv === 'A' ? CI.papier : CI.navy; ctx.fillRect(0, 0, SG_W, SG_STORY_H); ctx.translate(0, oy); }
   try{ if(motiv === 'H') sgH(ctx, D, A); else if(motiv === 'E') sgEMalen(ctx, D, A); else if(motiv === 'S') sgS(ctx, D, A, seite); else sgA(ctx, D, A); }
   catch(e){ console.warn('Spieltag zeichnen', motiv, e); }
-  SG.reg._an = null; return Object.assign({}, SG.ueber); }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); SG.reg._an.forEach(g => { g.y += oy; }); SG.reg._an = null; SG.oy = 0; return Object.assign({}, SG.ueber); }
 
 /* ---------- Daten: Quelle, Kader, von Hand Geändertes ---------- */
 function sgKaderListe(sub){ try{ return ((TKR.kader || {})[sub === 'D2' ? 'D2' : 'A'] || []).filter(p => p.aktiv !== false); }catch(e){ return []; } }
