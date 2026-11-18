@@ -579,6 +579,12 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.91',v:'0.99.91',datum:'2026-11-18',titel:'Bandenplan 2027/28 in 3D, Vereinswechsel in der Datenprüfung',kurz:'Die neue Bandenreihe lässt sich in 3D ablaufen, jeder Platz hat eine Kennung. Die Datenprüfung zeigt Vereinswechsel als eigene Ansicht.',
+   punkte:[
+    {ic:'\u{1F6B6}',t:'Die neue Reihe in 3D',d:'Unter „Ab Saison 2027/28“ läufst du die Reihe vom Rasen aus ab: vergebene Banden weiß mit Logo und Name, freie Plätze gestrichelt. Der Name steht nie doppelt: Hat das Logo ein Zeichen über dem Schriftzug, steht das Zeichen links und der Schriftzug der Firma rechts daneben.',r:'team'},
+    {ic:'\u{1F522}',t:'Kennung je Platz und Belegungsplan',d:'D1 bis D9 sind die Doppelbanden, E1 bis E24 die Einzelbanden, von links nach rechts. Die Liste darunter nennt je Platz Lage, Firma und Stand.',r:'team'},
+    {ic:'\u{1F501}',t:'Datenprüfung: Vereinswechsel als eigene Ansicht',d:'Neben Doppelte Spieler, Namensvarianten und Spieldaten steht jetzt „Vereinswechsel“: eigene Spieler, die laut FuPa woanders spielen, mit ihrem Stand bei uns, dazu die Spieler anderer Vereine. Die Seite füllt sich von selbst, auch wenn sie gleich nach dem Start geöffnet wird.',r:'admin'}
+   ]},
   {id:'0.99.90',v:'0.99.90',datum:'2026-11-18',titel:'Bandenplan ab Saison 2027/28',kurz:'Im Bandencreator zeigt der Plan jetzt auch die Reihe für die neue Saison: Doppelbande an der Mittellinie, je vier Doppelbanden links und rechts, daneben Einzelbanden.',
    punkte:[
     {ic:'\u{1F3DF}\u{FE0F}',t:'Schalter über dem Plan',d:'„Aktuell“ zeigt, was heute hängt. „Ab Saison 2027/28“ zeigt die geplante Reihe gegenüber vom Clubhaus mit 9 Doppelbanden und 24 Einzelbanden als Platzhalter.',r:'team'},
