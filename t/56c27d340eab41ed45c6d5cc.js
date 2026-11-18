@@ -142,6 +142,7 @@ function pdForm(d,vor){
       <label class="og-fl">Adresse<input id="pdAd" maxlength="160" value="${svEsc(x.adresse||'')}" placeholder="Straße, PLZ Ort"></label>
       <label class="og-fl">Branche<input id="pdBr" maxlength="80" value="${svEsc(x.branche||'')}"></label>
       <label class="og-fl">Website<input id="pdWe" maxlength="200" value="${svEsc(x.web||'')}" placeholder="https://"></label></div>
+    <label class="og-fl">Weitere Namen für die Suche<input id="pdSu" maxlength="240" value="${svEsc(P.suchnamen||'')}" placeholder="Marken, Abkürzungen oder frühere Namen"></label>
     <label class="og-fl">Logo<input type="file" id="pdLo" accept="image/*"></label><label class="jutog"><input type="checkbox" id="pdLd"${x.logo_hell===false?' checked':''}> Logo ist weiß oder hell (auf dunklem Grund zeigen)</label><div class="pd-lv" id="pdLv">${d&&d.logo?'Logo ist hinterlegt. Neues Bild ersetzt es.':'Noch kein Logo. Am besten PNG mit transparentem Hintergrund.'}</div>
     <label class="og-fl">Empfehlung<select id="pdEmpf"><option value="">keine</option>${Object.keys(PD_ST).map(k=>`<option value="${k}"${x.empfehlung===k?' selected':''}>${PD_ST[k]}</option>`).join('')}</select></label>
     <h3 class="pd-h">Widmung am Paket</h3>
@@ -163,9 +164,9 @@ function pdForm(d,vor){
   const sv=M.querySelector('#pdSave'); sv.onclick=()=>paEinmal(sv,async()=>{
     const v=id=>(M.querySelector(id)||{}).value||'';
     const p={id:d?d.id:null,firma:v('#pdFi'),kurzname:v('#pdKu'),anrede:v('#pdAn'),ansprech:v('#pdAp'),email:v('#pdEm'),adresse:v('#pdAd'),branche:v('#pdBr'),web:v('#pdWe'),empfehlung:v('#pdEmpf'),notiz:v('#pdNo'),
-      passung:{widmung:v('#pdWi').trim(),widmung_text:v('#pdWt').trim(),titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
+      passung:{suchnamen:v('#pdSu').trim(),widmung:v('#pdWi').trim(),widmung_text:v('#pdWt').trim(),titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
         fakten:v('#pdFa').split('\n').map(s=>s.split('|')).filter(a=>a.length>=2&&a[0].trim()).map(a=>({z:a[0].trim().slice(0,12),t:a.slice(1).join('|').trim().slice(0,80)})).slice(0,4)}};
-    p.logo_hell=!M.querySelector('#pdLd').checked; if(logo)p.logo=logo; if(d)p.aktiv=M.querySelector('#pdAk').checked;
+    p.logo_hell=!M.querySelector('#pdLd').checked; if(logo){ p.logo=logo; p.passung.marke=null; } if(d)p.aktiv=M.querySelector('#pdAk').checked;
     if(/[–—]/.test(JSON.stringify(p.passung))){ kToast('Bitte keine Gedankenstriche, lieber Komma oder Doppelpunkt'); return; }
     try{ const r=await svtRpc('partner_deck_speichern',{p}); PD.d=null; closeOverlay(); kToast('✓ Präsentation gespeichert');
       if(!d){ try{ await navigator.clipboard.writeText(pdLink(r.code,r.kurz)); kToast('✓ Gespeichert, Link ist kopiert'); }catch(e){} }

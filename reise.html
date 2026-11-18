@@ -672,6 +672,7 @@ html.zeiger .spot{opacity:1}
           <input id="nameIn" maxlength="40" placeholder="Wie heißt euer Betrieb?" aria-label="Wie heißt euer Betrieb?" enterkeyhint="go">
           <button class="knopf" type="submit">Los<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         </form>
+        <a id="firmaWechsel" class="zeile" href="partnerstart.html" target="_top" hidden style="min-height:44px;align-items:center;justify-content:center;font-size:14px">Andere Firma auswählen</a>
         <div class="wieder" id="wieder" hidden>
           <p class="eyebrow">Ihr wart schon einmal hier<span id="wWann"></span></p>
           <button class="knopf" type="button" id="wWeiter"><span>Weitermachen<small id="wWo"></small></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
@@ -984,6 +985,7 @@ let S=neu(), laeuft=false, ton=false, sperrBis=0;
 // 0.99.76: Die Reise läuft im Rahmen der Partnerseite (GERAHMT). TERMIN heißt: Ein angemeldetes Konto aus dem Partner-Team hat sie geöffnet.
 // Öffnet die Firma ihren Link allein, gibt es keine Notizen fürs Gespräch und später keinen Nachlass, es wird nur gespeichert (Albert, 17.11.2026).
 const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true; } })();
+let FIRMA=null, KONTEXT_BEREIT=!GERAHMT;
 let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
 
 function punkte(){
@@ -1024,7 +1026,7 @@ function markeSetz(){ if(!MARKE)return; const bild=u=>'<img src="'+u+'" alt="">'
     const zeilen=MARKE.name.split('\n').length; let fs=h*(zeilen>1?.4:.52); t.style.fontSize=fs+'px';
     const frei=w*.94-(im?im.getBoundingClientRect().width:0)-w*.035, tw=t.scrollWidth; if(frei>0&&tw>frei){ fs=Math.max(8,fs*frei/tw); t.style.fontSize=fs+'px'; } }); }
 /* ---------- Name überall ---------- */
-function setzName(v){ S.name=v.trim().slice(0,28);
+function setzName(v){ S.name=(FIRMA!==null?FIRMA:v).trim().slice(0,40);
   $$('[data-name]').forEach(e=>{ e.textContent=S.name?(e.dataset.vor||'')+S.name:(e.dataset.leer||''); });
   $$('[data-name-gross]').forEach(e=>{ e.textContent=S.name||'Euer Name'; });
   passe(); }
@@ -1373,7 +1375,7 @@ function jaNein(){ finalZeig('<p class="eyebrow">Danke für eure Zeit</p><h2>In 
 $$('[data-ja]').forEach(b=>b.onclick=()=>{ S.ja=b.dataset.ja; S.weg=null; S.wann=''; ({dabei:jaDabei,nein:jaNein})[S.ja](); });
 function vonVorn(){ S=neu(); wK=-1; $('#und').hidden=true; $('#kleinstB').setAttribute('aria-pressed','false'); $$('[aria-pressed]').forEach(x=>{ if(x.id!=='tonB')x.setAttribute('aria-pressed','false'); }); $('[data-frage="laufzeit"] [data-w="1"]').setAttribute('aria-pressed','true');
   $$('.lob').forEach(l=>l.classList.remove('da')); $$('.saetze').forEach(x=>x.classList.remove('gewaehlt')); $$('.sz-bild').forEach(x=>x.classList.remove('an')); $$('.bk .st').forEach(x=>x.textContent=''); $$('#bremsen .br').forEach(x=>{ x.setAttribute('aria-expanded','false'); x.classList.remove('klar','bleibt'); }); $('#jahrIn').value=''; $('#rEigen').value='';
-  S.i=ORD.length-1; setzName(''); $('#nameIn').value=''; GEMERKT=null; $('#wieder').hidden=true; $('#startF').hidden=false; geh(0); }
+  S.i=ORD.length-1; setzName(''); $('#nameIn').value=S.name; GEMERKT=null; $('#wieder').hidden=true; $('#startF').hidden=false; geh(0); }
 
 /* ---------- Beim Betreten / nach dem Schnitt ---------- */
 const REIN={
@@ -1417,8 +1419,11 @@ function konfetti(n){ n=n||150; schuss(innerWidth*.5,innerHeight*.55,n,13); if(n
 $$('.szene').forEach(s=>{ const b=$$(':scope > .sz-bild',s); if(!b.length)return; const w=document.createElement('div'); w.className='sz-b'; s.insertBefore(w,s.firstChild); b.forEach(i=>w.appendChild(i)); });
 
 /* ---------- Start ---------- */
-$('#nameIn').addEventListener('input',e=>setzName(e.target.value));
-$('#startF').addEventListener('submit',e=>{ e.preventDefault(); $('#nameIn').blur(); if(!ton&&tonGemerkt()!=='0')tonSetz(true); geh(1); });
+$('#nameIn').readOnly=GERAHMT;
+if(GERAHMT)$('#nameIn').placeholder='Firma wird geladen …';
+$('#startF .knopf').disabled=GERAHMT;
+$('#nameIn').addEventListener('input',e=>{ setzName(e.target.value); e.target.value=S.name; });
+$('#startF').addEventListener('submit',e=>{ e.preventDefault(); if(!KONTEXT_BEREIT)return; $('#nameIn').blur(); if(!ton&&tonGemerkt()!=='0')tonSetz(true); geh(1); });
 const fk=$('.foto-karte'); addEventListener('pointermove',e=>{ if(ORD[S.i]!=='start')return; fk.style.setProperty('--kx',(e.clientX/innerWidth-.5).toFixed(3)); fk.style.setProperty('--ky',(e.clientY/innerHeight-.5).toFixed(3)); },{passive:true});
 function zoomSetz(){ const W=innerWidth, H=innerHeight; html.style.setProperty('--z',W<860?1:Math.max(1,Math.min(1.9,W/980,H/700)).toFixed(3)); }
 addEventListener('resize',()=>{ zoomSetz(); kGroesse(); passe(); lochSetz(); }); zoomSetz(); kGroesse();
@@ -1464,7 +1469,7 @@ addEventListener('pagehide',merken); document.addEventListener('visibilitychange
 F.addEventListener('pointerdown',e=>{ if(!MERKT||klZahl>=400)return; const b=e.target.closest('.ib, button, .sa, .zt, .br, [role="button"]'), z=b?(b.dataset.i||b.dataset.w||b.dataset.k||b.dataset.ja||b.dataset.b||b.id||''):'';
   klNeu.push([ORD[S.i],Math.max(0,Math.min(1000,Math.round(e.clientX/innerWidth*1000))),Math.max(0,Math.min(1000,Math.round(e.clientY/innerHeight*1000))),String(z).replace(/[^A-Za-z0-9_:.-]/g,'').slice(0,40)]); klZahl++; merkBald(); },{passive:true});
 // Stand aus dem Speicher in die Reise legen: Antworten, Auswahl und alle gedrückten Knöpfe
-function standSetz(st){ const n=neu(); S=n; S.name=String(st.name||S.name||''); ['verb','platz','jahr','wann'].forEach(k=>{ if(st[k])S[k]=st[k]; });
+function standSetz(st){ const n=neu(); S=n; S.name=String(FIRMA!==null?FIRMA:(st.name||'')); ['verb','platz','jahr','wann'].forEach(k=>{ if(st[k])S[k]=st[k]; });
   S.antrieb=(st.antrieb||[]).filter(a=>HAUPT[a]); S.skeptisch=!!st.skeptisch&&!S.antrieb.length; S.auto=!!st.auto; if(st.groesse!=null&&!S.auto)S.groesse=+st.groesse; if(st.pi!=null)S.pi=+st.pi;
   S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins';
   $('#nameIn').value=S.name; setzName(S.name);
@@ -1479,15 +1484,22 @@ function wiederZeig(){ const st=GEMERKT, w=$('#wieder'); if(!st||!w||S.i!==0)ret
   $('#wWeiter').onclick=()=>{ los(); standSetz(st); geh(ziel); };
   $('#wVorn').onclick=()=>{ los(); standSetz(st); geh(1); };
   $('#wNeu').onclick=()=>{ w.hidden=true; $('#startF').hidden=false; GEMERKT=null; const n=S.name; S=neu(); setzName(n); merken(); $('#nameIn').focus(); }; }
-window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='marke')return;
+window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origin!==location.origin||!e.data||e.data.reise!=='marke')return;
   const ok=u=>typeof u==='string'&&u.length<900000&&/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(u);
   if(!ok(e.data.bande)||!ok(e.data.trikot)||typeof e.data.original!=='string'||e.data.original.length>900000||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(e.data.original))return;
+  $$('.mk').forEach(b=>{ b.classList.remove('mk','nur'); });
   MARKE={bande:e.data.bande,trikot:e.data.trikot,original:e.data.original,name:String(e.data.name||'').replace(/[^\S\n]+/g,' ').trim().slice(0,40)};
   const fertig=()=>{ try{ passe(); }catch(_){} }; let n=0; const im=new Image(); im.onload=fertig; im.src=MARKE.bande; fertig(); }catch(x){} });
-window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='name')return; const i=$('#nameIn'), n=String(e.data.name||'').slice(0,40);
-  if(i&&n&&!i.value&&S.i===0){ i.value=n; setzName(n); }   // setzName: sonst steht der Name im Feld, aber nicht an Bande, Wimpel und im Stand
+window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origin!==location.origin||!e.data||e.data.reise!=='name')return; const i=$('#nameIn'), n=String(e.data.name||'').slice(0,40);
+  FIRMA=e.data.gebunden?n:null; KONTEXT_BEREIT=!e.data.gebunden||!!n;
+  i.readOnly=!!e.data.gebunden; $('#startF .knopf').disabled=!KONTEXT_BEREIT;
+  $('#firmaWechsel').hidden=!e.data.gebunden;
+  if(i&&n&&S.i===0){ setzName(n); i.value=S.name; }   // setzName: sonst steht der Name im Feld, aber nicht an Bande, Wimpel und im Stand
+  if(e.data.identitaet)return;
+  WIDMUNG=null;
   if(e.data.widmung&&typeof e.data.widmung.titel==='string'&&e.data.widmung.titel.trim()){ WIDMUNG={titel:e.data.widmung.titel.trim().slice(0,120),text:String(e.data.widmung.text||'').trim().slice(0,800)}; if(document.getElementById("tk")){ try{ tkZeig(); }catch(_){} } }
-  if(e.data.merken)MERKT=true; TERMIN=!!e.data.termin; html.classList.toggle('termin',TERMIN);
+  MERKT=!!e.data.merken; TERMIN=!!e.data.termin; html.classList.toggle('termin',TERMIN);
+  GEMERKT=null;
   if(e.data.stand&&typeof e.data.stand==='object'){ GEMERKT=Object.assign({},e.data.stand,{_am:e.data.am||null}); wiederZeig(); } }catch(x){} });
 if(navigator.webdriver)Object.assign(window.REISE_PRUEF,{marke:()=>MARKE,merken:()=>merken(),modus:()=>({termin:TERMIN,merkt:MERKT,sid:SID}),sek:()=>szSek,ticket:pi=>{ S.pi=pi; tkZeig(); return $('#tkBox').innerHTML; }});
 if(IM_RAHMEN){ try{ const f=$('#startF'); if(f&&!$('#direktB')){ const b=document.createElement('button'); b.type='button'; b.className='zeile'; b.id='direktB'; b.textContent='Direkt zu Paketen und Vertrag'; b.style.cssText='margin-top:18px;font-size:14px;opacity:.85';

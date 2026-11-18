@@ -116,7 +116,7 @@ h1 em{font-style:inherit;color:#ff8a3c}
 
 <div id="los" hidden role="status"><div><div class="logo"><i aria-hidden="true"></i><i class="b" aria-hidden="true"></i><img src="partner/r-svbsc.png" alt="" width="480" height="273"></div><p>Präsentation für</p><b id="losF"></b></div></div>
 
-<script src="vendor/supabase.js?v=beta-0.99.98"></script>
+<script src="vendor/supabase.js?v=beta-0.99.99"></script>
 <script>
 (function(){
 'use strict';
@@ -134,7 +134,7 @@ function zeig(v){ ['vSuche','vNeu','vInfo'].forEach(id=>{ $('#'+id).hidden=id!==
 function info(h,t,knopf,ziel){ $('#iH').textContent=h; $('#iT').textContent=t; const k=$('#iK'); k.textContent=knopf||''; k.hidden=!knopf; if(ziel)k.href=ziel; zeig('vInfo'); }
 
 async function laden(){ const {data,error}=await sb.rpc('partner_decks_liste'); if(error)throw error;
-  DECKS=((data&&data.decks)||[]).filter(d=>d.aktiv!==false&&d.code&&d.firma).map(d=>Object.assign({n:norm(d.firma+' '+(d.kurzname||''))},d)); }
+  DECKS=((data&&data.decks)||[]).filter(d=>d.aktiv!==false&&d.code&&d.firma).map(d=>Object.assign({n:norm([d.firma,d.kurzname,d.branche,d.passung&&d.passung.suchnamen,d.passung&&d.passung.marke&&d.passung.marke.name].filter(Boolean).join(' '))},d)); }
 
 async function start(){
   if(!window.supabase||!C.url){ info('Gerade nicht erreichbar','Bitte die Seite neu laden.','Neu laden',location.href); return; }

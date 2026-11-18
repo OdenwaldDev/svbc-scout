@@ -579,6 +579,9 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.99',v:'0.99.99',datum:'2026-11-18',titel:'Die richtige Firma, das richtige Logo',kurz:'Beim Firmenwechsel öffnest du jetzt gezielt die passende Präsentation.',
+   punkte:[{ic:'i',t:'Firmen bleiben getrennt',d:'Ein persönlicher Link behält seinen Firmennamen und seine Antworten. Über Andere Firma auswählen wechselst du zur Suche. Dort findest du Firmen auch über hinterlegte Marken und weitere Namen.',r:'team'},
+    {ic:'i',t:'Logos zuverlässig ersetzen',d:'Lädst du ein neues Logo hoch, wird die alte Druckfassung entfernt. Änderungen an den übrigen Präsentationsangaben erhalten das vorhandene Logo.',r:'team'}]},
   {id:'0.99.98',v:'0.99.98',datum:'2026-11-18',titel:'Der ursprüngliche Einstieg ist zurück',kurz:'Sechs große Bilder und kurze Sätze. Jede Folie wartet auf Weiter.',
    punkte:[{ic:'i',t:'Bilder wirken lassen',d:'Der frühere Auftritt der Partnerreise ist wieder da. Weiter, Zurück, Pfeiltasten und Wischen ersetzen den automatischen Wechsel. Keine zusätzlichen Zahlenblöcke oder Quellenansichten.',r:'team'}]},
   {id:'0.99.97',v:'0.99.97',datum:'2026-11-18',titel:'Unsere Vereinsgeschichte in sechs Kapiteln',kurz:'Die Partnerreise erzählt von den Anfängen, dem sportlichen Weg und den Menschen im Verein heute.',
