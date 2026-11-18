@@ -579,6 +579,13 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.85',v:'0.99.85',datum:'2026-11-18',titel:'Vorstand unterschreibt auf Papier, Logo der Firma in der Präsentation',kurz:'Verträge zeichnet der Vorstand auf Papier gegen, der Scan schließt den Vertrag. In der Präsentation steht das Logo der Firma an Bande, Trikot und Partnerwand.',
+   punkte:[
+    {ic:'\u{1F58A}\u{FE0F}',t:'Vorstand unterschreibt auf Papier',d:'Unter Partner, Verträge: die Fassung der Firma drucken, vom Vorstand unterschreiben lassen, Scan hochladen und eintragen, wer wann unterschrieben hat. Damit ist der Vertrag geschlossen.',r:'team'},
+    {ic:'\u{2709}\u{FE0F}',t:'Ein Tipp schickt die Fassung an die Firma',d:'Nach dem Abschluss fragt die App, ob die Firma den Scan mit beiden Unterschriften per Mail bekommen soll. Von selbst geht nichts raus.',r:'team'},
+    {ic:'\u{1F3DF}\u{FE0F}',t:'Die Firma sieht sich selbst',d:'Hat eine Präsentation ein Logo, steht es in der Präsentation zum Durchklicken an der Bande, auf dem Trikot und an der Partnerwand, nicht mehr nur der Name als Schrift.',r:'team'},
+    {ic:'\u{1F170}\u{FE0F}',t:'Logo links, Schriftzug rechts',d:'Trägt ein Logo den Namen der Firma nicht selbst, steht der Schriftzug rechts daneben, auch in der Station mit der Bande am Spielfeldrand.',r:'team'}
+   ]},
   {id:'0.99.84',v:'0.99.84',datum:'2026-11-18',titel:'Alle Verträge an einem Ort',kurz:'Im Partner-Bereich gibt es den Reiter Verträge: wer wann unterschrieben hat, die PDFs wie unterschrieben, bezahlt oder offen, und ob sich der Vertrag von selbst verlängert.',
    punkte:[
     {ic:'\u{1F4C1}',t:'Reiter Verträge',d:'Unter Partner, Verwaltung: alle Verträge mit Datum der Firma, Datum des Vereins, Laufzeit und Betrag. Sehen dürfen ihn die Leitung im Bereich Partner, Finanzen und Admins.',r:'team'},

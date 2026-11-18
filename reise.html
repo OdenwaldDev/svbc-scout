@@ -192,6 +192,15 @@ html.bereit .foto-karte{opacity:1}
 .bande-name{position:absolute;left:4.5%;width:91.3%;top:38.6%;height:25.9%;display:grid;place-items:center;overflow:hidden}
 .passt{transition:none!important;white-space:nowrap;font:800 40px/1 var(--d);text-transform:uppercase;letter-spacing:.01em}
 .bande-name .passt{color:#1d2760;mix-blend-mode:multiply;opacity:.94}
+/* 0.99.85: Logo der Firma statt des getippten Namens. Bande im Partner-CI (Marine auf Weiß), Logo links, Schriftzug rechts */
+.bande-name.mk{display:flex;align-items:center;justify-content:center;gap:3.5%;padding:0 3%}
+.bande-name.mk img{flex:0 1 auto;min-width:0;height:86%;width:auto;max-width:46%;object-fit:contain;mix-blend-mode:multiply;opacity:.94}
+.bande-name.mk.nur img{height:auto;max-height:88%;max-width:90%}
+.bande-name.mk .mk-n{flex:0 1 auto;min-width:0;white-space:pre;font:800 40px/.92 var(--d);text-transform:uppercase;letter-spacing:.01em;color:#1d2760;mix-blend-mode:multiply;opacity:.94}
+.trikot-name.mk{left:29%;width:42%;top:33%;height:23%}
+.trikot-name.mk img{width:100%;height:100%;object-fit:contain;opacity:.93;filter:drop-shadow(0 1px 1px rgba(0,0,20,.5))}
+.kacheln .ich.mk{position:relative;padding:0}
+.kacheln .ich.mk img{position:absolute;left:8%;top:13%;width:84%;height:74%;object-fit:contain}
 .sz-trikot>img{object-position:50% 46%}
 .trikot-name{position:absolute;left:33%;width:34%;top:35%;height:20%;display:grid;place-items:center;transform:perspective(600px) rotateY(-3deg) rotate(-1deg)}
 .trikot-name .passt{color:#eef6ff;opacity:.93;text-shadow:0 1px 1px rgba(0,0,20,.5)}
@@ -996,13 +1005,25 @@ const pIndex=()=>S.pi!=null?S.pi:(eigeneWahl()?S.groesse:regel());
 const pk=()=>{ const i=pIndex(); return i<0?'keins':ST[i]; };
 const kleinstBaustein=()=>KLEIN[reihe()[0]]||'baelle_jugend';
 
+/* ---------- Marke (seit 0.99.85): das Logo der Firma an Bande, Trikot und Partnerwand ----------
+   Albert, 18.11.2026: Die Firma soll sich selbst sehen, mit Logo, nicht nur mit getipptem Namen. „Logo nach links, rechts daneben
+   die Typo.“ Der Rahmen in partner.html schickt die fertigen Fassungen (Marine für die Bande, Weiß fürs Trikot, Original für die
+   Partnerwand). name steht nur dabei, wenn das Logo den Namen nicht selbst trägt. Ohne Rahmen oder ohne Logo bleibt der Name als Schrift. */
+var MARKE=null;
+function markeSetz(){ if(!MARKE)return; const bild=u=>'<img src="'+u+'" alt="">';
+  $$('.bande-name:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.classList.toggle('nur',!MARKE.name); b.innerHTML=bild(MARKE.bande)+(MARKE.name?'<span class="mk-n">'+esc(MARKE.name)+'</span>':''); });
+  $$('.trikot-name:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.innerHTML=bild(MARKE.trikot); });
+  $$('.kacheln .ich:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.innerHTML=bild(MARKE.original); });
+  $$('.bande-name.mk:not(.nur)').forEach(b=>{ const t=$('.mk-n',b), im=$('img',b), h=b.clientHeight, w=b.clientWidth; if(!t||!h||!w)return;
+    const zeilen=MARKE.name.split('\n').length; let fs=h*(zeilen>1?.4:.52); t.style.fontSize=fs+'px';
+    const frei=w*.94-(im?im.getBoundingClientRect().width:0)-w*.035, tw=t.scrollWidth; if(frei>0&&tw>frei){ fs=Math.max(8,fs*frei/tw); t.style.fontSize=fs+'px'; } }); }
 /* ---------- Name überall ---------- */
 function setzName(v){ S.name=v.trim().slice(0,28);
   $$('[data-name]').forEach(e=>{ e.textContent=S.name?(e.dataset.vor||'')+S.name:(e.dataset.leer||''); });
   $$('[data-name-gross]').forEach(e=>{ e.textContent=S.name||'Euer Name'; });
   passe(); }
 function passe(){ $$('.passt').forEach(el=>{ const b=el.parentElement, h=b.clientHeight, w=b.clientWidth; if(!h||!w)return;
-  let fs=h*.74; el.style.fontSize=fs+'px'; const sw=el.scrollWidth, max=w*.9; if(sw>max){ fs=fs*max/sw; el.style.fontSize=fs+'px'; } }); }
+  let fs=h*.74; el.style.fontSize=fs+'px'; const sw=el.scrollWidth, max=w*.9; if(sw>max){ fs=fs*max/sw; el.style.fontSize=fs+'px'; } });  markeSetz(); }
 
 /* ---------- Ton ---------- */
 const A={};
@@ -1435,12 +1456,17 @@ function wiederZeig(){ const st=GEMERKT, w=$('#wieder'); if(!st||!w||S.i!==0)ret
   $('#wWeiter').onclick=()=>{ los(); standSetz(st); geh(ziel); };
   $('#wVorn').onclick=()=>{ los(); standSetz(st); geh(1); };
   $('#wNeu').onclick=()=>{ w.hidden=true; $('#startF').hidden=false; GEMERKT=null; const n=S.name; S=neu(); setzName(n); merken(); $('#nameIn').focus(); }; }
+window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='marke')return;
+  const ok=u=>typeof u==='string'&&u.length<900000&&/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(u);
+  if(!ok(e.data.bande)||!ok(e.data.trikot)||typeof e.data.original!=='string'||e.data.original.length>900000||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(e.data.original))return;
+  MARKE={bande:e.data.bande,trikot:e.data.trikot,original:e.data.original,name:String(e.data.name||'').replace(/[^\S\n]+/g,' ').trim().slice(0,40)};
+  const fertig=()=>{ try{ passe(); }catch(_){} }; let n=0; const im=new Image(); im.onload=fertig; im.src=MARKE.bande; fertig(); }catch(x){} });
 window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='name')return; const i=$('#nameIn'), n=String(e.data.name||'').slice(0,40);
   if(i&&n&&!i.value&&S.i===0){ i.value=n; setzName(n); }   // setzName: sonst steht der Name im Feld, aber nicht an Bande, Wimpel und im Stand
   if(e.data.widmung&&typeof e.data.widmung.titel==='string'&&e.data.widmung.titel.trim()){ WIDMUNG={titel:e.data.widmung.titel.trim().slice(0,120),text:String(e.data.widmung.text||'').trim().slice(0,800)}; if(document.getElementById("tk")){ try{ tkZeig(); }catch(_){} } }
   if(e.data.merken)MERKT=true; TERMIN=!!e.data.termin; html.classList.toggle('termin',TERMIN);
   if(e.data.stand&&typeof e.data.stand==='object'){ GEMERKT=Object.assign({},e.data.stand,{_am:e.data.am||null}); wiederZeig(); } }catch(x){} });
-if(navigator.webdriver)Object.assign(window.REISE_PRUEF,{merken:()=>merken(),modus:()=>({termin:TERMIN,merkt:MERKT,sid:SID}),sek:()=>szSek,ticket:pi=>{ S.pi=pi; tkZeig(); return $('#tkBox').innerHTML; }});
+if(navigator.webdriver)Object.assign(window.REISE_PRUEF,{marke:()=>MARKE,merken:()=>merken(),modus:()=>({termin:TERMIN,merkt:MERKT,sid:SID}),sek:()=>szSek,ticket:pi=>{ S.pi=pi; tkZeig(); return $('#tkBox').innerHTML; }});
 if(IM_RAHMEN){ try{ const f=$('#startF'); if(f&&!$('#direktB')){ const b=document.createElement('button'); b.type='button'; b.className='zeile'; b.id='direktB'; b.textContent='Direkt zu Paketen und Vertrag'; b.style.cssText='margin-top:18px;font-size:14px;opacity:.85';
       ($('#wieder')||f).insertAdjacentElement('afterend',b); b.onclick=reiseFertig; } window.parent.postMessage({reise:'bereit'},location.origin); }catch(e){} }
 

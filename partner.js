@@ -166,6 +166,8 @@
       if(korb0.length){ const sp0=S.korb.filter(e=>e.key==='spende'); S.korb=korb0.concat(sp0); S.saisons=+A0.saisons>=1&&+A0.saisons<=5?+A0.saisons:1; S.auto=!!A0.auto; S.start=ab0>iso(new Date())&&ab0===String(D.naechste_saison).slice(0,10)?'naechste':'jetzt'; S.startWahl=true; S.weg='vertrag';
         S.angebot={nr:A0.nr,beginn:ab0}; S.angebot.sig=angebotSig(); S.trotz=true; ausAngebot=A0; } }
     if(S.angebot)S.trotz=true;   // offenes Angebot: der Vertrag steht im Abschluss, auch wenn über den Link schon eine Spende kam
+    // 0.99.85: Marke der Firma für die Präsentation zum Durchklicken (der Rahmen liest sie, sobald der Titel steht)
+    { const mk0=marke(); window.PD_MARKE=dk.logo||mk0.logo?{logo:dk.logo||mk0.logo,druck:mk0.logo||null,trikot:mk0.trikot||null,name:mk0.name||''}:null; }
     document.title='Partner werden · '+(dk.kurzname||dk.firma)+' · SV/BSC Mörlenbach';
     geruest(); fragen(); bereiche(); katalog(); korb(); abschluss(); kopfZahl();
     auftrittStart();
@@ -221,6 +223,11 @@
     korb(); kopfZahl(); setTimeout(()=>toast(weg.length===1?'Eine Leistung aus eurer Auswahl ist inzwischen vergeben. Wir haben sie für dich vorgemerkt.':'Einige Leistungen aus eurer Auswahl sind inzwischen vergeben. Wir haben sie für dich vorgemerkt.'),600); return true; }
 
   // ---------- Grundgerüst ----------
+  // 0.99.85 (Albert, 18.11.2026: „Logo nach links, rechts daneben die Typo“): passung.marke hält, was für Druckflächen gilt.
+  // logo: Fassung für Bande und Trikot (einfarbig gut lesbar), trikot: eigene Fassung fürs Trikot, name: Schriftzug neben einem Logo,
+  // das den Namen nicht selbst trägt (Zeilenumbruch erlaubt). Fehlt etwas, gilt das Logo der Präsentation.
+  function marke(){ const m=((D.deck||{}).passung||{}).marke||{}, ok=u=>typeof u==='string'&&/^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(u)?u:null;
+    return {logo:ok(m.logo),trikot:ok(m.trikot),name:typeof m.name==='string'?m.name.replace(/[^\S\n]+/g,' ').trim().slice(0,40):''}; }
   function logoImg(cls){ const dk=D.deck; return dk.logo?`<img class="${(cls||'')+(dk.logo_hell===false?' dk':'')}" src="${esc(dk.logo)}" alt="${esc(dk.firma)}">`:''; }
   // Schon dabei? Nach der Unterschrift hier oder auf einem anderen Gerät (dann meldet es der Server)
   function dabeiArt(){ if(fertig())return S.ergebnis.art; return D&&D.abschluss&&!T?D.abschluss.art:null; }
@@ -278,7 +285,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   <div class="bd-kopf"><h3 class="nur-sr" id="bdH">So sieht deine Bande aus</h3>
     <p class="lead">${esc(kurz)} am Rand unseres Platzes, im selben ruhigen Look wie alle Banden bei uns. So sieht euch jeder bei jedem Heimspiel.</p></div>
   <div class="bd-bw"><div class="bd-buehne" id="bdB"><canvas id="bdCv" role="img" aria-label="Eure Bande am Spielfeldrand"></canvas><div class="bd-laden" id="bdLaden">Eure Bande wird gestaltet …</div></div></div>
-  <div class="bd-text"><div class="tk-seg" id="bdLay" role="group" aria-label="Gestaltung"><button type="button" data-bdl="mitte">Logo groß</button><button type="button" data-bdl="claim">${esc((D.deck||{}).branche?'Logo und Branche':'Logo und Name')}</button></div>
+  <div class="bd-text"><div class="tk-seg" id="bdLay" role="group" aria-label="Gestaltung">${marke().name?'<button type="button" data-bdl="links">Logo und Schriftzug</button>':''}<button type="button" data-bdl="mitte">Logo groß</button><button type="button" data-bdl="claim">${esc((D.deck||{}).branche?'Logo und Branche':'Logo und Name')}</button></div>
     <div class="tk-seg" id="bdFmt" role="group" aria-label="Format"><button type="button" data-bdf="250x80">Einzelbande</button><button type="button" data-bdf="500x80">Doppelbande</button></div>
     <p class="bd-mass" id="bdMass"></p><p class="bd-frei" id="bdFrei"></p><div class="tk-passt" id="bdPasst" aria-live="polite"></div></div>
 </div></div>
@@ -357,7 +364,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     TK.team=kand.find(hatAermel)||kand.find(id=>tkFrei(id,'heim').length)||(T[0]||{}).id||null; TK.art='heim'; TK.platz=(tkFrei()[0]||{}).platz||null; }
   function tkBelegung(){ const B={}, lg=id=>((TK.d.logos||[]).find(l=>l.id===id)||{}).bild||null, dk=D.deck||{};
     tkPlaetze().forEach(p=>{ if(p.status!=='frei')B[p.platz]={status:'belegt',firma:p.firma,bild:p.logo?lg(p.logo):null,variante:p.variante||'weiss',groesse:+p.groesse||1};
-      else if(p.platz===TK.platz)B[p.platz]={status:'belegt',vorschau:true,firma:dk.kurzname||dk.firma,bild:dk.logo||null,variante:TK.art==='anzug'&&/^aermel/.test(p.platz)?'schwarz':'weiss',groesse:1};
+      else if(p.platz===TK.platz)B[p.platz]={status:'belegt',vorschau:true,firma:dk.kurzname||dk.firma,bild:marke().trikot||marke().logo||dk.logo||null,variante:TK.art==='anzug'&&/^aermel/.test(p.platz)?'schwarz':'weiss',groesse:1};
       else B[p.platz]={status:'frei'}; }); return B; }
   function tkZeigen(){ const sel=$('#tkTeam'); if(!sel||!TK.d)return; const s=tkSatz();
     document.querySelectorAll('[data-tka]').forEach(b=>{ const an=b.dataset.tka===TK.art; b.classList.toggle('on',an); b.setAttribute('aria-pressed',String(an)); });
@@ -402,7 +409,10 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // Das Logo aus der Präsentation im Partner-CI (weiße Bande, Logo in Marine, ohne Vereinsabsender), live am Spielfeldrand.
   // Daten nur aus banden_oeffentlich (Zahl freier Plätze je Bereich), keine Namen anderer Partner, keine Kontaktdaten.
   const BD={d:null,an:false,beob:false,laden:null,layout:'mitte',format:'250x80',L:null,res:null};
-  function bdSpec(){ const dk=D.deck||{}, nm=dk.kurzname||dk.firma||''; return {format:BD.format,stil:'ci',layout:BD.layout,firma:nm,name:nm,branche:dk.branche||'',web:dk.web||'',kontakt:true,nameAn:!dk.logo,logo:dk.logo||null}; }
+  function bdSpec(){ const dk=D.deck||{}, mk=marke(), nm=dk.kurzname||dk.firma||'', lg=mk.logo||dk.logo||null;
+    if(mk.name&&!BD.layWahl)BD.layout='links';   // Logo links, Schriftzug rechts, solange niemand etwas anderes antippt
+    const mit=!!mk.name&&BD.layout==='links';
+    return {format:BD.format,stil:'ci',layout:BD.layout,firma:nm,name:mit?mk.name.replace(/\n/g,' '):nm,branche:dk.branche||'',web:dk.web||'',kontakt:true,nameAn:mit||!lg,logo:lg}; }
   async function bdZeichnen(){ const cv=$('#bdCv'); if(!cv||typeof BANDE==='undefined')return; const sp=bdSpec();
     try{ BD.res=await BANDE.vorbereiten(sp,{basis:'partner/',wappen:'partner/svbsc.png'}); BD.L=BANDE.layout(sp,BD.res); BANDE.szene(cv,{haupt:{L:BD.L,res:BD.res}}); const L0=$('#bdLaden'); if(L0)L0.remove();
       Object.assign(cv.dataset,{stil:BD.L.stil,layout:BD.L.layout,format:BD.L.format,logo:BD.res.logoBild?'1':'0',wappen:BD.L.ops.some(o=>o.rolle==='wappen')?'1':'0',name:BD.L.ops.some(o=>o.rolle==='name')?'1':'0'}); }
@@ -430,7 +440,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   async function bandeAufbauen(){ if(BD.an)return; BD.an=true;
     await bdHolen();
     bdText(); await bdZeichnen();
-    document.querySelectorAll('[data-bdl]').forEach(b=>b.onclick=()=>{ if(BD.layout===b.dataset.bdl)return; BD.layout=b.dataset.bdl; tipp(); bdZeichnen(); });
+    document.querySelectorAll('[data-bdl]').forEach(b=>b.onclick=()=>{ if(BD.layout===b.dataset.bdl)return; BD.layout=b.dataset.bdl; BD.layWahl=true; tipp(); bdZeichnen(); });
     document.querySelectorAll('[data-bdf]').forEach(b=>b.onclick=()=>{ if(BD.format===b.dataset.bdf)return; BD.format=b.dataset.bdf; tipp(); bdZeichnen(); });
     if(window.ResizeObserver){ let w0=0, t=0; new ResizeObserver(es=>{ const w=Math.round(es[0].contentRect.width); if(Math.abs(w-w0)>4){ w0=w; clearTimeout(t); t=setTimeout(()=>{ if(BD.L)BANDE.szene($('#bdCv'),{haupt:{L:BD.L,res:BD.res}}); },150); } }).observe($('#bdB')); } }
   function bandeMoeglich(){ const dk=D.deck||{}; return !fertig()&&!!(dk.kurzname||dk.firma)&&typeof BANDE!=='undefined'&&aufBedarf().bd; }

@@ -679,6 +679,9 @@ function peZeigenIn(H){ try{ ({heute:peHeute,belegung:peBelegung,laufzeiten:peLa
 function peGegen(D){ return (D.vertraege||[]).filter(v=>v.status==='unterschrieben'&&!v.hat_unterschrift_verein&&!v.gegengezeichnet_am&&v.art!=='spende'); }
 const PE_VERTRETEN='Mit deiner Unterschrift nimmst du das Angebot für den Verein an. Unterschreibe nur, wenn du den Verein vertreten darfst (Vorstand nach § 26 BGB oder mit Vollmacht).';
 const PE_NICHT_GZ='Gegenzeichnen kann nur, wer für den Verein unterschreiben darf. Sag der Abteilungsleitung kurz Bescheid.';
+// Seit 0.99.85: Für den Verein zeichnet der Vorstand des Gesamtvereins. Wer Verträge pflegt, trägt die Unterschrift auf Papier unter „Verträge“ ein (svm123.js).
+const PE_PAPIER='Für den Verein unterschreibt der Vorstand. Das geht auf Papier: unter Verträge die Fassung der Firma drucken, unterschreiben lassen und den Scan eintragen.';
+const pePapierKnopf=()=>typeof vtPapier==='function'?'<button type="button" class="btn sm" data-pevt>Zu den Verträgen</button>':'';
 // Bindefrist: vier Wochen ab der Unterschrift des Partners (der Server rechnet gebunden_bis in deutscher Zeit)
 const peAbgelaufen=v=>!!(v&&v.gebunden_bis&&v.gebunden_bis<svtHeute());
 // Frist je Zeile: gebunden bis …, ab 7 Tagen vorher „noch N Tage“, bei zwei Unterschriften „1 von 2“
@@ -722,7 +725,7 @@ function peHeute(H){
     let hin='', text=a.text, titel=a.titel, klein=art, standard=true;
     if(a.art==='nachfassen'&&v&&/^bindefrist/.test(a.schluessel||'')){ standard=false;   // Bindefrist: gegenzeichnen bzw. annehmen, oder nicht annehmen
       if(/^bindefrist-ab:/.test(a.schluessel)||peAbgelaufen(v)){ if(dv)k('v-ab','Nicht annehmen …',''); else hin=PE_NUR_LEITUNG; m('erledigt','Erledigt'); }
-      else { if(dg)kn.push(peGzKnopf(v)); else hin=PE_NICHT_GZ; if(dv)k('v-ab','Nicht annehmen …'); m('spaeter7','In 7 Tagen'); } }
+      else { if(dg)kn.push(peGzKnopf(v)); else if(dv){ hin=PE_PAPIER; kn.push(pePapierKnopf()); } else hin=PE_NICHT_GZ; if(dv)k('v-ab','Nicht annehmen …'); m('spaeter7','In 7 Tagen'); } }
     else if(a.art==='verlaengerung'&&v){ standard=false; k('verl-msg',SVI('mail')+' Nachricht schreiben',''); if(dg){ k('verl-ja','Verlängert bis …'); k('verl-nein','Verlängert nicht'); m('verl-ueb','Überlegt noch'); } else hin='Verlängern kann nur, wer den Verein vertreten darf. Sag dem Vorstand kurz Bescheid.'; m('spaeter14','In 2 Wochen');
       const f=peFirma(v.sponsor), t=v.ende?peTage(v.ende):null, mon=t!=null?Math.round(t/30.4):null, n=grp?grp.length:1;
       const wann=t==null?'':mon<=0?'in wenigen Tagen':mon===1?'in einem Monat':'in '+mon+' Monaten';
@@ -761,9 +764,9 @@ function peHeute(H){
     if(G.length===1){ const v=G[0], f=peFirma(v.sponsor);
       return `<article class="pe-auf art-gegen"><div class="pe-auf-k"><span class="pe-ic" aria-hidden="true">${SVI('check')}</span><div><small>Wartet auf eure Unterschrift</small><b>${peE(f)} hat unterschrieben</b></div></div>
         <p>Vertrag ${peE(v.nr)}${v.unterschrieben_am?', unterschrieben am '+peDat(v.unterschrieben_am):''}${v.erste_unterschrift&&v.erste_unterschrift.name?', erste Unterschrift für den Verein von '+peE(v.erste_unterschrift.name):''}. Erst mit eurer Unterschrift ist der Vertrag geschlossen. ${peE(peRgSatz(v))}</p>
-        <div class="pe-auf-b">${dg?peGzKnopf(v):`<p class="pe-hinw">${NICHT}</p>`}</div>${peAbgelaufen(v)?`<p class="pe-hinw">${peE(PE_ABGELAUFEN)}</p>`:v.gebunden_bis?`<p class="pe-hinw">An die Unterschrift gebunden bis ${peDat(v.gebunden_bis)}.</p>`:''}</article>`; }
+        <div class="pe-auf-b">${dg?peGzKnopf(v):dv?`<p class="pe-hinw">${PE_PAPIER}</p>${pePapierKnopf()}`:`<p class="pe-hinw">${NICHT}</p>`}</div>${peAbgelaufen(v)?`<p class="pe-hinw">${peE(PE_ABGELAUFEN)}</p>`:v.gebunden_bis?`<p class="pe-hinw">An die Unterschrift gebunden bis ${peDat(v.gebunden_bis)}.</p>`:''}</article>`; }
     return `<article class="pe-auf art-gegen pe-buendel"><div class="pe-auf-k"><span class="pe-ic" aria-hidden="true">${SVI('check')}</span><div><small>Wartet auf eure Unterschrift</small><b>${G.length} Verträge zum Gegenzeichnen</b></div></div>
-      <p>${SATZ}</p>${dg?'':`<p class="pe-hinw">${NICHT}</p>`}
+      <p>${SATZ}</p>${dg?'':dv?`<p class="pe-hinw">${PE_PAPIER}</p>${pePapierKnopf()}`:`<p class="pe-hinw">${NICHT}</p>`}
       <div class="pe-bdl pe-gz">${G.map((v,i)=>`<div class="pe-bdz"><div><b>${peE(peFirma(v.sponsor))}</b><small>${peE(v.nr)}${peGzFrist(v)}</small></div>${dg?peGzKnopf(v,i?' ghost':''):''}</div>`).join('')}</div></article>`; };
   const liste=L=>peGruppen(L).map(g=>{ if(!g.buendel)return karte(g[0],g); const lz=g.buendel, auf=PE.lzAuf?' open':'';
     return `<article class="pe-auf art-laufzeit pe-buendel"><div class="pe-auf-k"><span class="pe-ic" aria-hidden="true">${SVI('cal')}</span><div><small>Laufzeit fehlt</small><b>Bei ${lz.length} Partnern fehlt noch die Laufzeit</b></div></div>
@@ -782,6 +785,7 @@ function peHeute(H){
   const sp=H.querySelector('details.pe-spaet'); if(sp)sp.ontoggle=()=>{ PE.spAuf=sp.open; const u=sp.querySelector('summary u'); if(u)u.textContent=sp.open?'zuklappen':'zeigen'; };
   H.querySelectorAll('[data-pea]').forEach(b=>b.onclick=()=>paEinmal(b,()=>peAntwort(b.dataset.pea,A.find(x=>x.id===b.dataset.id),b.dataset.grp?b.dataset.grp.split(',').map(id=>A.find(x=>x.id===id)).filter(Boolean):null)));
   H.querySelectorAll('[data-pegz]').forEach(b=>b.onclick=()=>peGegenzeichnen(D.vertraege.find(v=>v.id===b.dataset.pegz)));
+  H.querySelectorAll('[data-pevt]').forEach(b=>b.onclick=()=>spoWechsel('vertraege'));
   H.querySelectorAll('[data-peann]').forEach(b=>b.onclick=()=>peAnnehmen(D.vertraege.find(v=>v.id===b.dataset.peann)));
   H.querySelectorAll('[data-peab]').forEach(b=>b.onclick=()=>peAblehnen(D.vertraege.find(v=>v.id===b.dataset.peab)));
 }
