@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.94', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.95', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18661,6 +18661,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.95',v:'0.99.95',datum:'2026-11-18',titel:'Spieltagsstudio meldet sich nach dem Spiel',kurz:'Sobald Ergebnis und Spielverlauf bereitliegen, bekommst du eine Mitteilung.',
+   punkte:[
+    {ic:'\u{1F514}',t:'„Ergebnis liegt bereit“',d:'Wer das Spieltagsstudio hat, bekommt nach jedem Spiel eine Mitteilung, sobald Ergebnis und Spielverlauf vorbelegt sind. Ein Tipp führt ins Studio. Nachts bleibt es still, die Mitteilung kommt dann um 7 Uhr.',r:'team'}
+   ]},
   {id:'0.99.94',v:'0.99.94',datum:'2026-11-18',titel:'Spieltag auch als Story',kurz:'Heimspiel, Aufstellung, Ergebnis und Spielverlauf gibt es jetzt auch im Format 9:16 für Storys. Der Assistent schlägt keine geschätzten Zahlen mehr vor.',
    punkte:[
     {ic:'\u{1F4F1}',t:'Story 9:16 für alle vier Motive',d:'In der Einzelansicht wählst du zwischen „Beitrag 4:5“ und „Story 9:16“. Die Story ist dasselbe Motiv, so gesetzt, dass oben und unten frei bleibt, was Instagram überdeckt. Freigabe und Angaben gelten für beide Formate.',r:'team'},
