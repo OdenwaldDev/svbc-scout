@@ -579,6 +579,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.89',v:'0.99.89',datum:'2026-11-18',titel:'Präsentation zu einem Anlass',kurz:'Für Firmen, die kein Paket buchen, sondern Partner einer Aktion werden, gibt es jetzt eine eigene Präsentation mit eigenem kurzem Link.',
+   punkte:[
+    {ic:'\u{1F3C3}',t:'Eigene Präsentation für eine Aktion',d:'Die Firma sieht die Aktion, ihren Auftritt mit eigenem Logo, den Beitrag und mögliche Zusätze, und antwortet mit einem Tipp. Die Antwort steht danach im Verlauf der Firma. Angelegt wird eine solche Präsentation vorerst über Albert.',r:'team'}
+   ]},
   {id:'0.99.88',v:'0.99.88',datum:'2026-11-18',titel:'Linie unter „Echtem.“',kurz:'Am Anfang der Präsentation für Firmen steht die Linie jetzt unter dem Wort und nicht mehr auf den Buchstaben.',
    punkte:[
     {ic:'\u{3030}\u{FE0F}',t:'Linie unter dem Wort',d:'Die gezeichnete Linie unter „Echtem.“ sitzt etwas tiefer und lässt die Buchstaben frei.',r:'team'}

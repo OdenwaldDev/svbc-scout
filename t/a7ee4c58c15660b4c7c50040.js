@@ -1,3 +1,16 @@
+  if(document.body)start(); else document.addEventListener('DOMContentLoaded',start);
+}
+
+/* ---------- Offline-Hinweis: sichtbar sagen, dass gerade der gespeicherte Stand zu sehen ist ---------- */
+function sv68Netz(){
+  let b=document.getElementById('sv68off');
+  if(navigator.onLine!==false){ if(b){ b.classList.remove('an'); setTimeout(()=>{ if(navigator.onLine!==false&&b.isConnected)b.remove(); },300); } return; }
+  if(!b){ b=document.createElement('div'); b.id='sv68off'; b.setAttribute('role','status'); document.body.appendChild(b); }
+  let wann=''; try{ const t=localStorage.getItem('sv68_online'); if(t){ const d=new Date(+t); wann=' von '+String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'., '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' Uhr'; } }catch(e){}
+  b.innerHTML=`<b>Keine Verbindung.</b> <span>Du siehst den gespeicherten Stand${wann}. Änderungen gehen erst wieder, wenn du online bist.</span>`;
+  requestAnimationFrame(()=>b.classList.add('an'));
+}
+function sv68Merk(){ if(navigator.onLine!==false){ try{ localStorage.setItem('sv68_online',String(Date.now())); }catch(e){} } }
 addEventListener('offline',sv68Netz); addEventListener('online',()=>{ sv68Merk(); sv68Netz(); });
 setInterval(sv68Merk,60000); sv68Merk(); setTimeout(sv68Netz,0);
 
