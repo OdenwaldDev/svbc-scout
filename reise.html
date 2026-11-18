@@ -134,7 +134,10 @@ h1 .z>span{display:inline-block;transform:translateY(112%) rotate(4deg);transfor
 html.bereit h1 .z>span{transform:none}
 h1 .z:nth-child(2)>span{transition-delay:.09s}h1 .z:nth-child(3)>span{transition-delay:.18s}
 h1 .rot{color:var(--or);position:relative;white-space:nowrap}
-.strich{position:absolute;left:-2%;bottom:-.03em;width:104%;height:.2em;overflow:visible}
+/* Die Linie steht unter dem Wort, nicht auf den Buchstaben (Albert, 18.11.2026): Die letzte Zeile bekommt dafür unten Platz. */
+h1 .z:last-child{padding-bottom:.3em;margin-bottom:-.08em}
+h1 .z:last-child>span{transform:translateY(175%) rotate(4deg)}
+.strich{position:absolute;left:-2%;bottom:-.25em;width:104%;height:.2em;overflow:visible}
 .strich path{fill:none;stroke:var(--kreide);stroke-width:5;stroke-linecap:round;stroke-dasharray:420;stroke-dashoffset:420;transition:stroke-dashoffset 1s .9s cubic-bezier(.6,0,.2,1)}
 html.bereit .strich path{stroke-dashoffset:0}
 .start-t{max-width:27em;font-size:clamp(16px,2vw,20px);color:#e6eaf7}

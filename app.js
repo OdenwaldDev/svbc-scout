@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.87', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.88', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18661,6 +18661,10 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.88',v:'0.99.88',datum:'2026-11-18',titel:'Linie unter „Echtem.“',kurz:'Am Anfang der Präsentation für Firmen steht die Linie jetzt unter dem Wort und nicht mehr auf den Buchstaben.',
+   punkte:[
+    {ic:'\u{3030}\u{FE0F}',t:'Linie unter dem Wort',d:'Die gezeichnete Linie unter „Echtem.“ sitzt etwas tiefer und lässt die Buchstaben frei.',r:'team'}
+   ]},
   {id:'0.99.87',v:'0.99.87',datum:'2026-11-18',titel:'Ein Satz in der Präsentation',kurz:'Am Anfang der Präsentation für Firmen heißt es jetzt: „Das bauen wir auf. Für viele Jahre, nicht nur für eine Saison.“',
    punkte:[
     {ic:'\u{270F}\u{FE0F}',t:'Satz am Anfang der Präsentation',d:'Statt „Für lange, nicht für eine Saison“ steht dort jetzt „Für viele Jahre, nicht nur für eine Saison“.',r:'team'}
