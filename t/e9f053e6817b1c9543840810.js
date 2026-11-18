@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.101',v:'0.99.101',datum:'2026-11-18',titel:'Schritt für Schritt aufs iPhone',kurz:'Der Einrichtungsablauf führt dich durch TestFlight bis zur Anmeldung.',
+   punkte:[{ic:'i',t:'iPhone-Test starten',d:'Sobald der iPhone-Test geöffnet ist, führt dich die Einrichtungsseite direkt durch TestFlight, Installation und Anmeldung. Wer schon einen Vereinszugang hat, kann das Formular überspringen. Persönliche Links funktionieren weiter.',r:'team'}]},
   {id:'0.99.100',v:'0.99.100',datum:'2026-11-18',titel:'Nachgetragene Spielminuten kommen schneller an',kurz:'Neue FuPa-Aufstellungen zählen jetzt als Änderung am Spiel.',
    punkte:[{ic:'i',t:'FuPa-Nachträge übernehmen',d:'Wenn FuPa eine eigene Aufstellung ergänzt und der Import sie abholt, verarbeitet die App sie beim nächsten Abgleich. Die bisherige zusätzliche Wartezeit entfällt. Fehlende Minuten bleiben offen, bis belastbare Angaben vorliegen.',r:'team'}]},
   {id:'0.99.99',v:'0.99.99',datum:'2026-11-18',titel:'Die richtige Firma, das richtige Logo',kurz:'Beim Firmenwechsel öffnest du jetzt gezielt die passende Präsentation.',

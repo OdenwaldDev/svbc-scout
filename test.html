@@ -333,6 +333,7 @@ var CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJ
 var S={android:'bald',ios:'bald',gruppe:'',gruppe_name:'SVBSC Tester',play_test:'https://play.google.com/apps/testing/pro.kaderwerk.svbsc',
   play_store:'https://play.google.com/store/apps/details?id=pro.kaderwerk.svbsc',testflight:'',dabei:null,ziel:12};
 var TF='https://apps.apple.com/app/testflight/id899247664', MAIL='mailto:fussball@sv-moerlenbach.de?subject=SVBSC%20App-Test';
+function iosOffen(){return S.ios==='offen'&&!!S.testflight}
 var $=function(s){return document.querySelector(s)}, KEY='svbsc-test';
 var geraet=null, schritt=0, kennung=null, busy=false;
 // Persönlicher Link (?k=…, 146): Vorname bekannt, kein Formular; off=1 heißt, der Schritt „Postfach“ entfällt, weil der Zugang schon besteht
@@ -371,12 +372,12 @@ function wege(){
       link:['App im Browser öffnen','./'],ok:null,warten:true,hilfe:'Du bekommst eine Nachricht, sobald der Android-Test startet.'});
   }
   var I=[POST];
-  if(S.ios==='offen'&&S.testflight){
+  if(iosOffen()){
     I.push({t:'Erst <em>TestFlight</em> holen.',x:'Das ist Apples kostenlose App für Testversionen.',tun:['Öffne den App Store über den Knopf.','Lade TestFlight und komm hierher zurück.'],
       link:['TestFlight im App Store',TF],ok:'TestFlight ist installiert',hilfe:'TestFlight ist von Apple und kostenlos. Du brauchst dafür nur deine Apple-ID. Hast du TestFlight schon, tippe einfach auf „TestFlight ist installiert“.'});
-    I.push({t:'Einladung <em>annehmen.</em>',x:'Mit einem Tipp öffnet sich die Testversion in TestFlight.',tun:['Tippe auf den Knopf.','In TestFlight auf „Annehmen“ und dann auf „Installieren“ tippen.'],
-      link:['Testversion öffnen',S.testflight],ok:'Ist installiert',hilfe:'Öffnet sich nur der App Store, fehlt TestFlight noch. Geh einen Schritt zurück.'});
-    I.push({t:'Anmelden und <em>loslegen.</em>',x:'Fast fertig. Jetzt noch rein in die App.',tun:ANMELDEN,link:null,ok:'Fertig, ich bin dabei',hilfe:'Anmeldung klappt nicht oder die Freigabe dauert? Schreib uns an fussball@sv-moerlenbach.de.'});
+    I.push({t:'SVBSC <em>installieren.</em>',x:'Der Link öffnet unsere Testversion in TestFlight.',tun:['Öffne den Link auf deinem iPhone.','Tippe in TestFlight auf „Akzeptieren“ und anschließend auf „Installieren“.','Wenn SVBSC schon installiert ist, tippe auf „Update“ oder „Öffnen“.'],
+      link:['SVBSC in TestFlight öffnen',S.testflight],ok:'Ist installiert',hilfe:'Öffnet sich nur der App Store, fehlt TestFlight noch. Geh einen Schritt zurück. Zeigt TestFlight keinen verfügbaren Build, schreib uns an fussball@sv-moerlenbach.de.'});
+    I.push({t:'Anmelden und <em>loslegen.</em>',x:'Öffne jetzt SVBSC auf deinem iPhone.',tun:ANMELDEN,link:null,ok:'Fertig, ich bin dabei',hilfe:'Für SVBSC gilt deine beim Verein hinterlegte E-Mail mit deinem App-Passwort. Mit „Passwort vergessen“ kannst du ein neues festlegen. Ein neu angefragter Zugang braucht noch die Freigabe der Abteilung.'});
   }else{
     I.push({t:'Du stehst auf <em>der Liste.</em>',x:'Die Testversion fürs iPhone liegt bei Apple zur Prüfung. Sobald sie frei ist, bekommst du von uns eine Mail mit dem Link. Bis dahin läuft die App schon im Browser, auch als Symbol auf dem Startbildschirm.',
       tun:['Öffne die App in Safari über den Knopf.','Tippe unten auf Teilen, das Quadrat mit dem Pfeil.','Wähle „Zum Home-Bildschirm“.'],
@@ -395,8 +396,8 @@ function zeigAnm(g){
   $('#t-anm').focus({preventScroll:true});window.scrollTo(0,0);
 }
 function anmText(){var g=$('#formular').elements.geraet.value;
-  $('#a-text').textContent=g==='ios'?'Trag dich ein. Sobald Apple die Testversion freigibt, bekommst du den Link per Mail. Dein Zugang zur App wird gleich mit angelegt.':'Trag dich ein, dann führen wir dich Schritt für Schritt bis zur installierten App. Dein Zugang wird gleich mit angelegt.';
-  $('#f-mail-h').textContent=g==='ios'?'An diese Adresse kommt der Link zur Testversion.':'An diese Adresse kommen dein Zugang und der Link zum Test.';
+  if(!SZ)$('#a-text').textContent=g==='ios'?(iosOffen()?'Der iPhone-Test ist offen. Trag dich ein, dann führen wir dich durch TestFlight, die Installation und deine Anmeldung bei SVBSC. Deinen Vereinszugang beantragst du dabei gleich mit.':'Trag dich ein. Sobald Apple die Testversion freigibt, bekommst du den Link per Mail. Dein Zugang zur App wird gleich mit angelegt.'):'Trag dich ein, dann führen wir dich Schritt für Schritt bis zur installierten App. Dein Zugang wird gleich mit angelegt.';
+  $('#f-mail-h').textContent=g==='ios'?(iosOffen()?'Hierhin kommt die Mail für deinen SVBSC-Zugang.':'An diese Adresse kommt der Link zur Testversion.'):'An diese Adresse kommen dein Zugang und der Link zum Test.';
 }
 function zeig(){
   var W=wege()[geraet];if(schritt>W.length)schritt=W.length;
@@ -454,13 +455,13 @@ F.onsubmit=function(e){e.preventDefault();if(busy)return;
 };
 function stand(nurZahl){
   $('[data-geraet="android"]').dataset.offen=S.android==='offen';
-  $('[data-geraet="ios"]').dataset.offen=S.ios==='offen'&&!!S.testflight;
+  $('[data-geraet="ios"]').dataset.offen=iosOffen();
   $('#s-android').textContent=S.android==='offen'?'Über Google Play':'Jetzt eintragen';
-  $('#s-ios').textContent=S.ios==='offen'&&S.testflight?'Über TestFlight':'Auf die Liste';
+  $('#s-ios').textContent=iosOffen()?'Über TestFlight':'Auf die Liste';
   var n=typeof S.dabei==='number'?S.dabei:null, z=S.ziel||12;
   $('#stand').hidden=n===null;
   if(n!==null){$('#stand-t').textContent=n>=z?'Geschafft: '+n+' Tester sind angemeldet':'Noch '+(z-n)+' bis zum Ziel';$('#stand-z').textContent=n+' von '+z+' Android-Testern';setTimeout(function(){$('#stand-b').style.width=Math.min(100,Math.round(n/z*100))+'%'},60)}
-  if(!nurZahl&&!$('#weg').hidden)zeig();
+  if(!nurZahl){if(!$('#weg').hidden)zeig();if(!$('#anm').hidden)anmText()}
 }
 /* ---------- Durchklicken (0.99.71) ----------
    Albert, 17.11.2026: „Mach den Funnel eher wie die Partnerreise zum Durchklicken. Einfach geiles Onboarding.“
