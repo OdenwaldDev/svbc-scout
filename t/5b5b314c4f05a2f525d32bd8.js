@@ -1,13 +1,3 @@
-  t.nodeValue=(v.match(/^\s*/)[0])+rest;
-}
-// Striche in Textknoten
-function sv68Strich(n){
-  const v=n.nodeValue; if(v.indexOf('–')<0&&v.indexOf('—')<0)return;
-  const p=n.parentNode; if(!p||sv68Aus(p))return;
-  let x=v;
-  if(/^\s*[–—]\s*$/.test(x))x=x.replace(/[–—]/,'·');
-  x=x.replace(/(\d)\s?[–—]\s?(\d)/g,'$1 bis $2');
-  if(x.indexOf(' – ')>=0||x.indexOf(' — ')>=0){ try{ x=svPolish(x); }catch(e){} }
   x=x.replace(/^[–—]\s/,'').replace(/\s[–—]$/,'');
   if(x!==v)n.nodeValue=x;
 }

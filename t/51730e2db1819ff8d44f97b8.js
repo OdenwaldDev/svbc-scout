@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.98',v:'0.99.98',datum:'2026-11-18',titel:'Der ursprüngliche Einstieg ist zurück',kurz:'Sechs große Bilder und kurze Sätze. Jede Folie wartet auf Weiter.',
+   punkte:[{ic:'i',t:'Bilder wirken lassen',d:'Der frühere Auftritt der Partnerreise ist wieder da. Weiter, Zurück, Pfeiltasten und Wischen ersetzen den automatischen Wechsel. Keine zusätzlichen Zahlenblöcke oder Quellenansichten.',r:'team'}]},
   {id:'0.99.97',v:'0.99.97',datum:'2026-11-18',titel:'Unsere Vereinsgeschichte in sechs Kapiteln',kurz:'Die Partnerreise erzählt von den Anfängen, dem sportlichen Weg und den Menschen im Verein heute.',
    punkte:[{ic:'\u{25B6}',t:'Sechs kurze Einblicke',d:'Gründung, SV und BSC, Oberliga und Wiederaufstieg, Gesamtverein, Fußballnachwuchs und Vereinsleben. Jede Seite entfaltet sich kurz und bleibt dann stehen. Du blätterst mit Weiter und Zurück, Pfeiltasten oder Wischen.',r:'team'},
     {ic:'i',t:'Aktuelle Vereinszahlen und nachvollziehbare Geschichte',d:'Die von der Vereinsleitung bestätigten Größenordnungen für Gesamtverein und Fußball stehen getrennt in der Reise. Hinter Zahlen & Geschichte findest du den Stand der Angaben und die historischen Quellen.',r:'team'}]},
