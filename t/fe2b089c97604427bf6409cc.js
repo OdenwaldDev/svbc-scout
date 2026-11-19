@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.104',v:'0.99.104',datum:'2026-11-19',titel:'Sicherheitsbericht vorbereiten',kurz:'Die Website kann in der Google Search Console bestätigt werden.',
+    punkte:[{ic:'i',t:'Nachweis für die Vereinswebsite',d:'Der Eigentumsnachweis ermöglicht der Leitung, Googles Sicherheitsbericht zur Website einzusehen und eine erneute Prüfung zu beantragen.',r:'admin'}]},
   {id:'0.99.103',v:'0.99.103',datum:'2026-11-19',titel:'Aktueller Stand beim App-Test',kurz:'Die Testseite zeigt den verfügbaren Installationsweg je Handy.',
     punkte:[{ic:'i',t:'Android-Test noch nicht gestartet',d:'Solange der Android-Test noch nicht offen ist, führt die Testseite zur Browser-App. Bis dahin kannst du die Vereinsapp im Browser nutzen.'}]},
   {id:'0.99.102',v:'0.99.102',datum:'2026-11-19',titel:'Partnerflow vergrößern',kurz:'Auch beim Zoomen bleiben die Folien und die Navigation erreichbar.',
