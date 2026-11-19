@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.106',v:'0.99.106',datum:'2026-11-19',titel:'Privater App-Test',kurz:'Der Einstieg erklärt den geschlossenen Vereinstest.',
+    punkte:[{ic:'i',t:'Zugang für den Verein',d:'Die Testseite führt zu Google Play und TestFlight. Die Hinweise auf einen öffentlichen Store-Start sind entfernt. Der Vereinszugang bleibt freigabepflichtig.',r:'admin'}]},
   {id:'0.99.105',v:'0.99.105',datum:'2026-11-19',titel:'Platzwahl und Ärmel im Detail',kurz:'Partner wählen ihren Platzwunsch direkt in der 3D-Vorschau.',
     punkte:[{ic:'i',t:'Bandenplätze und Nachrücken',d:'Die neue Saisonreihe zeigt eure Bande neben den Nachbarn. Platzwünsche bleiben unverbindlich. Die Partnerleitung erfasst Zusagen und Laufzeiten und bestätigt begründete Nachrückvorschläge einzeln.',r:'admin'},{ic:'i',t:'Linker oder rechter Ärmel',d:'Die Nahansicht zeigt das Logo am gewählten Ärmel. Ärmelbausteine setzen das eigene Logo nicht auf die Brust.',r:'admin'}]},
   {id:'0.99.104',v:'0.99.104',datum:'2026-11-19',titel:'Sicherheitsbericht vorbereiten',kurz:'Die Website kann in der Google Search Console bestätigt werden.',

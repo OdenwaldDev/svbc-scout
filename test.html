@@ -263,7 +263,7 @@ body.sz .ja input{width:28px;height:28px;accent-color:#e8741f}
     <button class="geraet" data-geraet="ios"><strong>iPhone</strong><small id="s-ios">Über TestFlight</small></button>
   </div>
   <button class="leise" id="weiter" hidden>Da weitermachen, wo du warst</button>
-  <div class="karte stand" id="stand" hidden><div class="zeile"><b id="stand-t"></b><small id="stand-z"></small></div><div class="bal"><b id="stand-b" style="width:0"></b></div><p class="hinweis">Google lässt die App erst für alle in den Play Store, wenn zwölf Tester 14 Tage dabei waren. Jede Anmeldung zählt.</p></div>
+  <div class="karte stand" id="stand"><div class="zeile"><b id="stand-t">Geschlossener Vereinstest</b><small id="stand-z">Zugang über den Verein</small></div><p class="hinweis">Die App bleibt im geschlossenen Test. Du brauchst einen freigeschalteten Vereinszugang. Bei Android kommt die Google-Testgruppe dazu.</p></div>
   <ul class="nutzen">
     <li><i aria-hidden="true">✓</i><span><b>Zusagen mit einem Tipp.</b> Training und Spiel direkt in der Mitteilung beantworten.</span></li>
     <li><i aria-hidden="true">✓</i><span><b>Alles an einem Ort.</b> Termine, Helferplan und was im Verein ansteht.</span></li>
@@ -314,7 +314,7 @@ body.sz .ja input{width:28px;height:28px;accent-color:#e8741f}
   <h2 id="t-fragen" style="font-size:26px;margin-bottom:6px">Gut zu wissen</h2>
   <details><summary>Kostet das etwas?</summary><p>Nein. Die App ist kostenlos, ohne Werbung und ohne Käufe.</p></details>
   <details><summary>Brauche ich einen Zugang vom Verein?</summary><p>Ja, und den bekommst du hier gleich mit: Mit dem Eintragen legen wir deinen Zugang an. Du bestätigst deine E-Mail, legst ein Passwort fest, und die Abteilung gibt dich frei. Die App ist für Mitglieder, Spieler, Trainer, Eltern und Helfer der Fußballabteilung.</p></details>
-  <details><summary>Warum eine Testgruppe und 14 Tage?</summary><p>Das verlangt Google bei neuen Apps: Mindestens zwölf Tester müssen 14 Tage am Stück angemeldet sein. Erst danach darf die App für alle in den Play Store. Bitte bleib so lange im Test und öffne die App ab und zu.</p></details>
+  <details><summary>Warum eine Testgruppe?</summary><p>Die Android-App ist nur für unsere Testgruppe freigegeben. Tritt ihr mit dem Google-Konto bei, das du im Play Store nutzt. Ein öffentlicher Store-Start ist nicht vorgesehen. Deinen Zugang zur Vereinsapp schaltet weiterhin die Abteilung frei.</p></details>
   <details><summary>Geht es auch ohne Store?</summary><p>Ja. Die App läuft auch im Browser unter <a href="./">svbsc.kaderwerk.pro</a> und lässt sich von dort auf den Startbildschirm legen.</p></details>
   <details><summary>Was passiert mit meinen Daten?</summary><p>Wir speichern, was du hier einträgst: Name, E-Mail, Handynummer, deine Rolle im Verein und ob du Android oder iPhone nutzt. Die Handynummer sieht nur die Abteilungsleitung, für Rückfragen zur Freigabe. Damit legen wir deinen Zugang an und sagen dir Bescheid, wenn es weitergeht. Mehr steht im <a href="datenschutz.html">Datenschutz</a>.</p></details>
   <details><summary>Wem schreibe ich, wenn etwas hakt?</summary><p>An <a href="mailto:fussball@sv-moerlenbach.de?subject=SVBSC%20App-Test">fussball@sv-moerlenbach.de</a>. Schreib dazu, welches Handy du hast und bei welchem Schritt es nicht weitergeht.</p></details>
@@ -364,7 +364,7 @@ function wege(){
       link:['Im Play Store öffnen',S.play_store],ok:'Ist installiert',
       hilfe:'Findet der Play Store die App nicht, schließe ihn ganz und öffne ihn neu. Manchmal dauert es nach dem Testbeitritt bis zu einer Stunde.'});
     A.push({t:'Anmelden und <em>dabeibleiben.</em>',x:'Fast fertig. Jetzt noch rein in die App.',
-      tun:ANMELDEN.concat(['Bleib bitte 14 Tage im Test und öffne die App ab und zu. So lange braucht Google, bevor die App für alle in den Play Store darf.']),
+      tun:ANMELDEN.concat(['Teste die Funktionen, die du im Verein brauchst. Wenn etwas hakt, melde es uns über „Idee oder Fehler melden“ in der App.']),
       link:null,ok:'Fertig, ich bin dabei',hilfe:'Anmeldung klappt nicht oder die Freigabe dauert? Schreib uns an fussball@sv-moerlenbach.de.'});
   }else{
     A.push({t:'Du bist dabei. <em>Der Android-Test ist noch nicht offen.</em>',x:'Mehr brauchst du gerade nicht zu tun.',
@@ -407,7 +407,7 @@ function zeig(){
   $('#weg').dataset.phase=fertig?'fertig':s.warten?'warten':'schritt';
   if(fertig){
     $('#w-auge').textContent=gruss()+name+' · GESCHAFFT';$('#w-titel').innerHTML='Danke. <em>Du bist dabei.</em>';
-    $('#w-text').textContent=geraet==='android'?'Bleib bitte 14 Tage im Test. Wenn dir etwas auffällt, schreib uns. Jede Rückmeldung hilft.':'Wenn dir etwas auffällt, schreib uns. Jede Rückmeldung hilft.';
+    $('#w-text').textContent='Wenn dir etwas auffällt, schreib uns. Du bleibst im geschlossenen Vereinstest.';
     $('#w-tun').innerHTML='';$('#w-link').hidden=false;$('#w-link').textContent='Rückmeldung schreiben';$('#w-link').href=MAIL;$('#w-link').removeAttribute('target');
     $('#w-ok').hidden=true;$('#w-hinweis').textContent='Kennst du noch jemanden im Verein? Schick die Seite weiter: svbsc.kaderwerk.pro/test.html';$('#w-hilfe').hidden=true;
   }else{
@@ -458,9 +458,7 @@ function stand(nurZahl){
   $('[data-geraet="ios"]').dataset.offen=iosOffen();
   $('#s-android').textContent=S.android==='offen'?'Über Google Play':'Jetzt eintragen';
   $('#s-ios').textContent=iosOffen()?'Über TestFlight':'Auf die Liste';
-  var n=typeof S.dabei==='number'?S.dabei:null, z=S.ziel||12;
-  $('#stand').hidden=n===null;
-  if(n!==null){$('#stand-t').textContent=n>=z?'Geschafft: '+n+' Tester sind angemeldet':'Noch '+(z-n)+' bis zum Ziel';$('#stand-z').textContent=n+' von '+z+' Android-Testern';setTimeout(function(){$('#stand-b').style.width=Math.min(100,Math.round(n/z*100))+'%'},60)}
+  $('#stand').hidden=false;
   if(!nurZahl){if(!$('#weg').hidden)zeig();if(!$('#anm').hidden)anmText()}
 }
 /* ---------- Durchklicken (0.99.71) ----------
