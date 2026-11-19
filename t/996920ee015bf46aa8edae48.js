@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.102',v:'0.99.102',datum:'2026-11-19',titel:'Partnerflow vergrößern',kurz:'Auch beim Zoomen bleiben die Folien und die Navigation erreichbar.',
+    punkte:[{ic:'↔',t:'Zoomen ohne Unterbrechung',d:'Die Hochkant-Sperre ist entfernt. Beim Vergrößern und Verschieben bleibt die aktuelle Folie stehen; mit Weiter gehst du wie gewohnt weiter.',r:'admin'}]},
   {id:'0.99.101',v:'0.99.101',datum:'2026-11-18',titel:'Schritt für Schritt aufs iPhone',kurz:'Der Einrichtungsablauf führt dich durch TestFlight bis zur Anmeldung.',
    punkte:[{ic:'i',t:'iPhone-Test starten',d:'Sobald der iPhone-Test geöffnet ist, führt dich die Einrichtungsseite direkt durch TestFlight, Installation und Anmeldung. Wer schon einen Vereinszugang hat, kann das Formular überspringen. Persönliche Links funktionieren weiter.',r:'team'}]},
   {id:'0.99.100',v:'0.99.100',datum:'2026-11-18',titel:'Nachgetragene Spielminuten kommen schneller an',kurz:'Neue FuPa-Aufstellungen zählen jetzt als Änderung am Spiel.',

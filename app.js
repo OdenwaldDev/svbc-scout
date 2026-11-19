@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.101', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.102', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18661,6 +18661,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.102',v:'0.99.102',datum:'2026-11-19',titel:'Partnerflow vergrößern',kurz:'Auch beim Zoomen bleiben die Folien und die Navigation erreichbar.',
+    punkte:[{ic:'↔',t:'Zoomen ohne Unterbrechung',d:'Die Hochkant-Sperre ist entfernt. Beim Vergrößern und Verschieben bleibt die aktuelle Folie stehen; mit Weiter gehst du wie gewohnt weiter.',r:'admin'}]},
   {id:'0.99.101',v:'0.99.101',datum:'2026-11-18',titel:'Schritt für Schritt aufs iPhone',kurz:'Der Einrichtungsablauf führt dich durch TestFlight bis zur Anmeldung.',
    punkte:[{ic:'i',t:'iPhone-Test starten',d:'Sobald der iPhone-Test geöffnet ist, führt dich die Einrichtungsseite direkt durch TestFlight, Installation und Anmeldung. Wer schon einen Vereinszugang hat, kann das Formular überspringen. Persönliche Links funktionieren weiter.',r:'team'}]},
   {id:'0.99.100',v:'0.99.100',datum:'2026-11-18',titel:'Nachgetragene Spielminuten kommen schneller an',kurz:'Neue FuPa-Aufstellungen zählen jetzt als Änderung am Spiel.',

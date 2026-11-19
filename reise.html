@@ -500,7 +500,9 @@ html.bereit .foto-karte{opacity:1}
 @media(min-width:860px) and (max-height:900px){.stf{padding:6px 14px 7px}.stf span{font-size:13px}.stufen{margin-top:10px}.gr-fuss{margin-top:6px}}
 @media(max-height:680px){.stf span{display:none}}
 @media(max-width:400px){.bon .stempel{top:40px;font-size:13px;padding:4px 7px}}
-@media (orientation:landscape) and (max-height:480px){#film::after{content:"Bitte das Handy hochkant halten.";position:absolute;inset:0;z-index:200;display:grid;place-items:center;background:var(--nacht);font:800 24px/1.2 var(--d);text-transform:uppercase;text-align:center;padding:20px}}
+/* Browser-Zoom und Querformat verkleinern die verfügbare Höhe. Inhalte bleiben scrollbar,
+   die feste Navigation bleibt bedienbar; keine bildschirmfüllende Hochkant-Sperre. */
+@media(max-height:480px){.szene>.in{flex-shrink:0}}
 @media(prefers-reduced-motion:reduce){
   .led span{padding-left:0;animation:none}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
@@ -1142,20 +1144,21 @@ $$('[data-frage="platz"] [data-w]').forEach(b=>maus(b,()=>{ if(S.platz===b.datas
 
 /* ---------- Worum es geht: sechs Sätze, sechs Bilder ---------- */
 let wK=-1, wKlickBis=0;
+const wVerzoomt=()=>{ let v=window.visualViewport; try{ v=window.top.visualViewport||v; }catch(_){} return !!(v&&v.scale>1.01); };
 function worumZeig(k){ const fz=$$('#worum .fz'); wK=Math.max(0,Math.min(fz.length-1,k));
   fz.forEach((z,i)=>{ z.classList.toggle('solo',i===wK); z.setAttribute('aria-hidden',i!==wK); });
   $$('#takte i').forEach((t,i)=>{ t.classList.toggle('war',i<wK); t.classList.toggle('an',i===wK); });
   $$('.szene[data-s="worum"] .sz-bild').forEach(i=>i.classList.toggle('an',+i.dataset.fuer===wK));
   $('#wStand').textContent=(wK+1)+' von '+fz.length; routeZeig(); }
-szene('worum').addEventListener('click',e=>{ if(laeuft||Date.now()<sperrBis||Date.now()<wKlickBis||e.target.closest('button,a,input,select,textarea')||getSelection()?.toString())return;
+szene('worum').addEventListener('click',e=>{ if(laeuft||wVerzoomt()||Date.now()<sperrBis||Date.now()<wKlickBis||e.target.closest('button,a,input,select,textarea')||getSelection()?.toString())return;
   if(wK<$$('#worum .fz').length-1)worumZeig(wK+1); });
 /* Nur waagerechtes Wischen in dieser Szene. Senkrechtes Lesen/Scrollen und Pinch-Zoom bleiben frei. */
 (()=>{ const el=szene('worum'); let start=null;
-  el.addEventListener('pointerdown',e=>{ if(!e.isPrimary){ start=null; return; }
+  el.addEventListener('pointerdown',e=>{ if(!e.isPrimary||wVerzoomt()){ start=null; wKlickBis=Date.now()+600; return; }
     if(e.pointerType!=='touch'||laeuft||ORD[S.i]!=='worum'||e.target.closest('button,a,input,select,textarea'))return;
     start={id:e.pointerId,x:e.clientX,y:e.clientY,am:Date.now()}; },{passive:true});
-  el.addEventListener('pointercancel',()=>{ start=null; },{passive:true});
-  el.addEventListener('pointerup',e=>{ const s=start; start=null; if(!s||s.id!==e.pointerId||ORD[S.i]!=='worum')return;
+  el.addEventListener('pointercancel',()=>{ start=null; wKlickBis=Date.now()+600; },{passive:true});
+  el.addEventListener('pointerup',e=>{ const s=start; start=null; if(wVerzoomt()||(!s&&e.pointerType==='touch')){ wKlickBis=Date.now()+600; return; } if(!s||s.id!==e.pointerId||ORD[S.i]!=='worum')return;
     const dx=e.clientX-s.x,dy=e.clientY-s.y;
     if(Date.now()-s.am>1200||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5)return;
     wKlickBis=Date.now()+600; if(dx<0)vorB(); else zurueckB(); },{passive:true});

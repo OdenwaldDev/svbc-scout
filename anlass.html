@@ -500,7 +500,9 @@ html.bereit .foto-karte{opacity:1}
 @media(min-width:860px) and (max-height:900px){.stf{padding:6px 14px 7px}.stf span{font-size:13px}.stufen{margin-top:10px}.gr-fuss{margin-top:6px}}
 @media(max-height:680px){.stf span{display:none}}
 @media(max-width:400px){.bon .stempel{top:40px;font-size:13px;padding:4px 7px}}
-@media (orientation:landscape) and (max-height:480px){#film::after{content:"Bitte das Handy hochkant halten.";position:absolute;inset:0;z-index:200;display:grid;place-items:center;background:var(--nacht);font:800 24px/1.2 var(--d);text-transform:uppercase;text-align:center;padding:20px}}
+/* Browser-Zoom und Querformat verkleinern die verfügbare Höhe. Inhalte bleiben scrollbar,
+   die feste Navigation bleibt bedienbar; keine bildschirmfüllende Hochkant-Sperre. */
+@media(max-height:480px){.szene>.in{flex-shrink:0}}
 @media(prefers-reduced-motion:reduce){
   .led span{padding-left:0;animation:none}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
