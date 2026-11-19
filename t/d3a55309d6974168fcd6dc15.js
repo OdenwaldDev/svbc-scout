@@ -1,3 +1,22 @@
+const SV68_AUS='[contenteditable],input,textarea,select,pre,code,.st-canvas,.st-ed,.pk-buehne,.pk-karte,#panel-studio .st-m,.sv68-roh';
+function sv68Aus(el){ try{ return !!(el&&el.closest&&el.closest(SV68_AUS)); }catch(e){ return false; } }
+// Erstes Textstück eines Elements ohne führendes Emoji
+function sv68Emoji(el){
+  if(sv68Aus(el))return;
+  const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP});
+  const t=w.nextNode(); if(!t)return;
+  const v=t.nodeValue, m=v.match(SV68_EMO); if(!m)return;
+  const rest=v.slice(m[0].length); if(!rest.trim()&&!el.querySelector('svg'))return;   // reines Emoji-Symbol ohne Text (z. B. Knopf „🎂“) bleibt, sonst wäre es leer
+  t.nodeValue=(v.match(/^\s*/)[0])+rest;
+}
+// Striche in Textknoten
+function sv68Strich(n){
+  const v=n.nodeValue; if(v.indexOf('–')<0&&v.indexOf('—')<0)return;
+  const p=n.parentNode; if(!p||sv68Aus(p))return;
+  let x=v;
+  if(/^\s*[–—]\s*$/.test(x))x=x.replace(/[–—]/,'·');
+  x=x.replace(/(\d)\s?[–—]\s?(\d)/g,'$1 bis $2');
+  if(x.indexOf(' – ')>=0||x.indexOf(' — ')>=0){ try{ x=svPolish(x); }catch(e){} }
   x=x.replace(/^[–—]\s/,'').replace(/\s[–—]$/,'');
   if(x!==v)n.nodeValue=x;
 }

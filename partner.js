@@ -295,7 +295,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   <div class="bd-bw"><div class="bd-buehne" id="bdB"><canvas id="bdCv" role="img" aria-label="Eure Bande am Spielfeldrand"></canvas><div class="bd-laden" id="bdLaden">Eure Bande wird gestaltet …</div></div></div>
   <div class="bd-text"><div class="tk-seg" id="bdLay" role="group" aria-label="Gestaltung">${marke().name?'<button type="button" data-bdl="links">Logo und Schriftzug</button>':''}<button type="button" data-bdl="mitte">Logo groß</button><button type="button" data-bdl="claim">${esc((D.deck||{}).branche?'Logo und Branche':'Logo und Name')}</button></div>
     <div class="tk-seg" id="bdFmt" role="group" aria-label="Format"><button type="button" data-bdf="250x80">Einzelbande</button><button type="button" data-bdf="500x80">Doppelbande</button></div>
-    <p class="bd-mass" id="bdMass"></p><p class="bd-frei" id="bdFrei"></p><div class="tk-passt" id="bdPasst" aria-live="polite"></div></div>
+    <p class="bd-mass" id="bdMass"></p><button type="button" class="knopf-w" id="bdPlatzwahl">Platz in 3D auswählen</button><p id="bdWunsch" class="bd-mass" role="status"></p><p class="bd-frei" id="bdFrei"></p><div class="tk-passt" id="bdPasst" aria-live="polite"></div></div>
 </div></div>
 <div class="sec tk" id="trikots" role="region" aria-labelledby="tkH"><div class="ww tk-raster">
   <div class="tk-kopf"><h3 class="nur-sr" id="tkH">Dein Logo auf unseren Trikots</h3>
@@ -304,7 +304,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       <div class="tk-seg" id="tkArt" role="group" aria-label="Satz"><button type="button" data-tka="heim">Heim</button><button type="button" data-tka="auswaerts">Auswärts</button><button type="button" data-tka="anzug">Anzug</button></div></div>
     <h3 class="tk-h">Freie Plätze</h3><div class="tk-pl" id="tkPl" role="group" aria-label="Freie Plätze"></div>
     <p class="tk-belegt" id="tkBelegt"></p><div class="tk-passt" id="tkPasst" aria-live="polite"></div></div>
-  <div class="tk-bw"><div class="tk-buehne" id="tkB"><div class="tk-laden" id="tkLaden">Das Trikot wird aufgebaut …</div></div>
+  <div class="tk-bw"><div class="tk-seg tk-detail" role="group" aria-label="Ärmel aus Sicht des Trägers"><button type="button" data-tkdetail="aermel_r">Rechter Ärmel</button><button type="button" data-tkdetail="aermel_l">Linker Ärmel</button><button type="button" data-tkdetail="gesamt">Ganzes Trikot</button></div><p class="bd-mass">Links und rechts immer aus Sicht des Trikotträgers.</p><div class="tk-buehne" id="tkB"><div class="tk-laden" id="tkLaden">Das Trikot wird aufgebaut …</div></div>
     <div class="tk-seg tk-sicht" id="tkSicht" role="group" aria-label="Ansicht"><button type="button" data-tks="vorn">Vorn</button><button type="button" data-tks="seite">Seite</button><button type="button" data-tks="hinten">Hinten</button></div></div>
 </div></div>
 </section>
@@ -360,21 +360,25 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   const TK_REIHE=['aermel_l','aermel_r','brust','jacke_brust'];   // 0.81: nur Brust und die beiden Ärmel
   const TK_ART={heim:'Heim',auswaerts:'Auswärts',anzug:'Anzug'};
   function tkOhneJugend(){ return ((((D||{}).deck||{}).passung||{}).ohne||[]).includes('trikot'); }
-  function tkTeams(){ const L=((TK.d&&TK.d.mannschaften)||[]).filter(m=>(!tkOhneJugend()||m.art==='herren')&&!(KURZ&&m.id==='h2')); return L; }
+  function tkNurAermel(){ return S.korb.some(e=>/^aermel_/.test(e.key))&&!S.korb.some(e=>/^(brust_|trikot_)/.test(e.key)); }
+  function tkTeams(){ const L=((TK.d&&TK.d.mannschaften)||[]).filter(m=>(!tkOhneJugend()||m.art==='herren')&&!(KURZ&&m.id==='h2'&&!S.korb.some(e=>e.key==='aermel_zweite'))); return L; }
   function tkSatz(team,art){ return ((TK.d&&TK.d.saetze)||[]).find(x=>x.mannschaft===(team||TK.team)&&x.art===(art||TK.art))||null; }
   function tkPlaetze(team,art){ const s=tkSatz(team,art); return s?TK.d.plaetze.filter(p=>p.satz===s.id):[]; }
-  function tkFrei(team,art){ return tkPlaetze(team,art).filter(p=>p.status==='frei').sort((a,b)=>TK_REIHE.indexOf(a.platz)-TK_REIHE.indexOf(b.platz)); }
+  function tkFrei(team,art){ return tkPlaetze(team,art).filter(p=>p.status==='frei'&&(!tkNurAermel()||/^aermel_/.test(p.platz))).sort((a,b)=>TK_REIHE.indexOf(a.platz)-TK_REIHE.indexOf(b.platz)); }
   const TK_NAME={brust:'Brust',aermel_l:'Ärmel links',aermel_r:'Ärmel rechts',jacke_brust:'Jacke Brust',ruecken:'Rücken',nacken:'Nacken',hose_vorn:'Hose',hose_hinten:'Hose',jacke_ruecken:'Jacke Rücken',anzug_aermel:'Ärmel',anzug_hose:'Hose'};
   function tkName(k){ return TK_NAME[k]||k; }
   // Passende Mannschaft: die im Baukasten gewählte Jugend (S.team), sonst die Erste, sonst die erste mit freiem Ärmel
   function tkWahl(){ const T=tkTeams(), hatAermel=id=>tkFrei(id,'heim').some(p=>/^aermel/.test(p.platz));
-    const kand=[S.team,'h1'].concat(T.map(t=>t.id)).filter((id,i,a)=>id&&a.indexOf(id)===i&&T.some(t=>t.id===id));
+    const ziel=S.korb.some(e=>e.key==='aermel_zweite')?'h2':S.korb.some(e=>e.key==='aermel_erste')?'h1':S.team;
+    const kand=[ziel,S.team,'h1'].concat(T.map(t=>t.id)).filter((id,i,a)=>id&&a.indexOf(id)===i&&T.some(t=>t.id===id));
     TK.team=kand.find(hatAermel)||kand.find(id=>tkFrei(id,'heim').length)||(T[0]||{}).id||null; TK.art='heim'; TK.platz=(tkFrei()[0]||{}).platz||null; }
   function tkBelegung(){ const B={}, lg=id=>((TK.d.logos||[]).find(l=>l.id===id)||{}).bild||null, dk=D.deck||{};
     tkPlaetze().forEach(p=>{ if(p.status!=='frei')B[p.platz]={status:'belegt',firma:p.firma,bild:p.logo?lg(p.logo):null,variante:p.variante||'weiss',groesse:+p.groesse||1};
       else if(p.platz===TK.platz)B[p.platz]={status:'belegt',vorschau:true,firma:dk.kurzname||dk.firma,bild:marke().trikot||marke().logo||dk.logo||null,variante:TK.art==='anzug'&&/^aermel/.test(p.platz)?'schwarz':'weiss',groesse:1};
       else B[p.platz]={status:'frei'}; }); return B; }
+  function tkDetailKnoepfe(){ document.querySelectorAll('[data-tkdetail]').forEach(b=>{const an=b.dataset.tkdetail===(TK.v&&/^aermel_/.test(TK.v.fokusJetzt)?TK.v.fokusJetzt:'gesamt');b.setAttribute('aria-pressed',String(an));b.classList.toggle('on',an);}); }
   function tkZeigen(){ const sel=$('#tkTeam'); if(!sel||!TK.d)return; const s=tkSatz();
+    if(TK.platz&&!tkFrei().some(p=>p.platz===TK.platz))TK.platz=(tkFrei()[0]||{}).platz||null;
     document.querySelectorAll('[data-tka]').forEach(b=>{ const an=b.dataset.tka===TK.art; b.classList.toggle('on',an); b.setAttribute('aria-pressed',String(an)); });
     document.querySelectorAll('[data-tks]').forEach(b=>{ const an=b.dataset.tks===TK.sicht; b.classList.toggle('on',an); b.setAttribute('aria-pressed',String(an)); });
     const fr=tkFrei(), bel=tkPlaetze().filter(p=>p.status!=='frei'), mn=(M.find(m=>m.id===TK.team)||tkTeams().find(m=>m.id===TK.team)||{}).name||'';
@@ -389,10 +393,11 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     else P.innerHTML='';
     $('#tkPl').querySelectorAll('[data-tkp]').forEach(b=>b.onclick=()=>tkPlatz(b.dataset.tkp));
     if(TK.v&&s)TK.v.setzen({art:TK.art,grund:s.grundfarbe,akzent:s.akzentfarbe,nummer:'10',belegung:tkBelegung()});
-    void mn; }
+    tkDetailKnoepfe(); void mn; }
   function tkPlatz(k){ const p=tkPlaetze().find(x=>x.platz===k); if(!p)return;
     if(p.status!=='frei'){ toast(tkName(k)+' ist schon vergeben'+(p.firma?' an '+p.firma:'')+'. Nimm einen freien Platz.'); return; }
-    TK.platz=k; tipp(); tkZeigen(); if(TK.v){ const i=TRIKOT3D.platzInfo(TK.art,k), w=i.teil==='aermel'?(i.seite>0?.95:'vorn'):i.vorn===false?'hinten':'vorn'; TK.v.drehen(w); TK.sicht=typeof w==='number'?'seite':w; TK.v.fokus(i.fokus==='unten'?'unten':'oben'); tkZeigen(); }
+    if(tkNurAermel()&&!/^aermel_/.test(k))return;
+    TK.platz=k; tipp(); tkZeigen(); if(TK.v){ if(/^aermel_/.test(k))TK.v.detail(k); else TK.v.detail(null); TK.sicht='vorn'; tkZeigen(); }
     ansage('Euer Logo sitzt jetzt auf '+tkName(k)+'.'); }
   // Daten und Auswahl sofort (die Höhe der Station steht damit fest, nichts verrutscht später), die 3D-Bühne erst im Blick
   async function tkDaten(){ if(TK.daten)return TK.daten;
@@ -401,14 +406,15 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     tkWahl(); const sel=$('#tkTeam'); sel.innerHTML=tkTeams().map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join(''); sel.value=TK.team;
     sel.onchange=()=>{ TK.team=sel.value; TK.platz=(tkFrei()[0]||{}).platz||null; tkZeigen(); if(TK.platz)tkPlatz(TK.platz); };
     document.querySelectorAll('[data-tka]').forEach(b=>b.onclick=()=>{ TK.art=b.dataset.tka; TK.platz=(tkFrei()[0]||{}).platz||null; tkZeigen(); if(TK.platz)tkPlatz(TK.platz); });
-    document.querySelectorAll('[data-tks]').forEach(b=>b.onclick=()=>{ TK.sicht=b.dataset.tks; if(TK.v)TK.v.drehen(TK.sicht); tkZeigen(); });
+    document.querySelectorAll('[data-tks]').forEach(b=>b.onclick=()=>{ TK.sicht=b.dataset.tks; if(TK.v){ TK.v.fokus('oben'); TK.v.drehen(TK.sicht); } tkZeigen(); });
+    document.querySelectorAll('[data-tkdetail]').forEach(b=>b.onclick=()=>{ if(!TK.v)return; const k=b.dataset.tkdetail; if(k==='gesamt')TK.v.detail(null); else { if(tkFrei().some(p=>p.platz===k))TK.platz=k; tkZeigen(); TK.v.detail(k); } document.querySelectorAll('[data-tkdetail]').forEach(x=>{x.setAttribute('aria-pressed',String(x===b));x.classList.toggle('on',x===b);}); });
     tkZeigen(); return true; })(); return TK.daten; }
   async function tkAufbauen(){ if(TK.an)return; TK.an=true;
     if(!(await tkDaten())){ TK.an=false; return; }
     try{ await new Promise((ok,nein)=>{ if(window.TRIKOT3D)return ok(); const sc=document.createElement('script'); sc.src='trikot3d.js?v='+encodeURIComponent(C.build||''); sc.onload=ok; sc.onerror=nein; document.head.appendChild(sc); });
       TK.v=TRIKOT3D.buehne($('#tkB'),{three:'vendor/three.min.js?v='+encodeURIComponent(C.build||''),kit:'kit/',schrift:"'Barlow Condensed'",rahmen:true,name:tkName,
         onPlatz:k=>tkPlatz(k),onDreh:w=>{ TK.sicht=w; document.querySelectorAll('[data-tks]').forEach(b=>{ const an=b.dataset.tks===w; b.classList.toggle('on',an); b.setAttribute('aria-pressed',String(an)); }); }});
-      await TK.v.bereit; const L=$('#tkLaden'); if(L)L.remove(); tkZeigen(); if(TK.platz){ const i=TRIKOT3D.platzInfo(TK.art,TK.platz); if(i&&i.teil==='aermel'&&i.seite>0){ TK.v.drehen(.95,true); TK.sicht='seite'; tkZeigen(); } }
+      await TK.v.bereit; const L=$('#tkLaden'); if(L)L.remove(); tkZeigen(); if(/^aermel_/.test(TK.platz||''))TK.v.detail(TK.platz,true); tkDetailKnoepfe();
       
     }catch(e){ const L=$('#tkLaden'); if(L)L.textContent='Das Trikot lässt sich auf diesem Gerät nicht zeigen.'; } }
   // 3D kostet Daten und Rechenzeit: das Trikot wird erst aufgebaut, wenn jemand es antippt
@@ -448,6 +454,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   async function bandeAufbauen(){ if(BD.an)return; BD.an=true;
     await bdHolen();
     bdText(); await bdZeichnen();
+    const platzwahl=$('#bdPlatzwahl'); if(platzwahl)platzwahl.onclick=()=>platzwahlOeffnen();
     document.querySelectorAll('[data-bdl]').forEach(b=>b.onclick=()=>{ if(BD.layout===b.dataset.bdl)return; BD.layout=b.dataset.bdl; BD.layWahl=true; tipp(); bdZeichnen(); });
     document.querySelectorAll('[data-bdf]').forEach(b=>b.onclick=()=>{ if(BD.format===b.dataset.bdf)return; BD.format=b.dataset.bdf; tipp(); bdZeichnen(); });
     if(window.ResizeObserver){ let w0=0, t=0; new ResizeObserver(es=>{ const w=Math.round(es[0].contentRect.width); if(Math.abs(w-w0)>4){ w0=w; clearTimeout(t); t=setTimeout(()=>{ if(BD.L)BANDE.szene($('#bdCv'),{haupt:{L:BD.L,res:BD.res}}); },150); } }).observe($('#bdB')); } }
@@ -455,6 +462,28 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function bandeStart(){ const sec=$('#bande'); if(!sec||sec.hidden)return; bdText(); if(BD.beob)return; BD.beob=true;
     if('IntersectionObserver' in window){ let t=0; const io=new IntersectionObserver(es=>{ const da=es.some(e=>e.isIntersecting); clearTimeout(t); if(da)t=setTimeout(()=>{ io.disconnect(); bandeAufbauen(); },300); },{rootMargin:'200px 0px',threshold:.05}); io.observe(sec); }
     else bandeAufbauen(); }
+  function platzwahlOeffnen(paket){ if(!D||typeof BANDENWAHL==='undefined')return;
+    const pk=S.korb.find(e=>/^(club|premium|p1896)$/.test(e.key));
+    return BANDENWAHL.oeffnen({rpc,code,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,logo:marke().logo||D.deck.logo||null,
+      onSaved:w=>{ const el=$('#bdWunsch'); if(el)el.textContent=w?'Platzwunsch '+w.kennung+' ist gemerkt. Noch nicht reserviert.':'Der Platzwunsch ist zurückgenommen.'; },
+      onClose:()=>{ const f=$('#reiseRahmen'); f?.contentWindow?.postMessage({reise:'creator-zu'},location.origin); }}); }
+  async function aermelVorschau(){ if(!D||document.querySelector('.av'))return;
+    const vorher=document.activeElement, d=document.createElement('dialog'); d.className='bw av'; d.setAttribute('aria-labelledby','avTitel');
+    d.innerHTML=`<header class="bw-kopf"><div><p class="bw-kicker">SV/BSC Mörlenbach · Gestaltungsvorschau</p><h2 id="avTitel" tabindex="-1">Euer Logo auf dem Ärmel</h2></div><button type="button" class="bw-zu">Schließen</button></header><div class="bw-in"><div class="av-wahl" role="group" aria-label="Ärmel aus Sicht des Trägers"><button type="button" data-av="aermel_r" aria-pressed="true">Rechter Ärmel</button><button type="button" data-av="aermel_l" aria-pressed="false">Linker Ärmel</button></div><p class="bw-fuss">Links und rechts aus Sicht des Trikotträgers. Euer Logo sitzt ausschließlich auf dem gewählten Ärmel.</p><div class="av-buehne" id="avB"><p role="status">Die Nahansicht wird geladen.</p></div><p class="bw-fuss">Das ist eine Gestaltungsvorschau. Sie bucht keinen Ärmelplatz und verändert eure Auswahl nicht. Die Verfügbarkeit prüfen wir bei der jeweiligen Mannschaft.</p></div>`;
+    document.body.appendChild(d); const dialogZu=BANDENWAHL.modalOeffnen(d); d.querySelector('h2').focus(); let v=null, lebt=true, seite='aermel_r';
+    const zu=()=>{ lebt=false; v?.zerstoeren(); dialogZu(); d.remove(); vorher?.focus?.({preventScroll:true}); $('#reiseRahmen')?.contentWindow?.postMessage({reise:'creator-zu'},location.origin); };
+    d.querySelector('.bw-zu').onclick=zu; d.addEventListener('cancel',e=>{ e.preventDefault(); zu(); });
+    const setzen=()=>{ if(!v)return; v.setzen({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{[seite]:{status:'belegt',vorschau:true,firma:D.deck.kurzname||D.deck.firma,bild:marke().trikot||marke().logo||D.deck.logo||null,variante:'weiss',groesse:1}}}); v.detail(seite,true);
+      d.querySelectorAll('[data-av]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.av===seite))); };
+    d.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{ seite=b.dataset.av; setzen(); });
+    try { if(!window.TRIKOT3D)await new Promise((ok,no)=>{ const s=document.createElement('script'); s.src='trikot3d.js?v='+encodeURIComponent(C.build||''); s.onload=ok; s.onerror=no; document.head.appendChild(s); });
+      if(!lebt)return; v=TRIKOT3D.buehne(d.querySelector('#avB'),{three:'vendor/three.min.js',kit:'kit/',schrift:"'Barlow Condensed'",marken:false,rahmen:false}); await v.bereit;
+      if(!lebt){v.zerstoeren();return;} d.querySelector('#avB p')?.remove(); setzen();
+    } catch(_) { if(lebt)d.querySelector('#avB').textContent='Die Nahansicht lässt sich gerade nicht laden. Schließe sie und versuche es noch einmal.'; }
+  }
+  window.addEventListener('message',e=>{ const f=$('#reiseRahmen'); if(!f||e.source!==f.contentWindow||e.origin!==location.origin||e.data?.reise!=='creator')return;
+    if(e.data.art==='bande')platzwahlOeffnen(['club','premium','p1896'].includes(e.data.paket)?e.data.paket:'club');
+    if(e.data.art==='aermel')aermelVorschau(); });
   // ---------- 0.96: Station „Euer Auftritt“ ----------
   // Bande und Trikot liegen zusammen in einer Station, noch vor den Preisen. Die Bande steht gleich da,
   // das Trikot baut sich erst auf, wenn jemand darauf tippt.
@@ -469,7 +498,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     if(!F.includes(BD.format)){ BD.format=F[0]; if(BD.an&&BD.L)bdZeichnen(); } document.querySelectorAll('[data-bdf]').forEach(x=>{ const an=x.dataset.bdf===BD.format; x.classList.toggle('on',an); x.setAttribute('aria-pressed',String(an)); }); }
   function aufText(){ const el=$('#aufLead'); if(!el)return; const kurz=(D.deck||{}).kurzname||(D.deck||{}).firma||'ihr';
     el.textContent=AUF.bd&&AUF.tkDa?`So sieht ${kurz} bei uns aus: die Bande am Platz und das Logo auf dem Trikot.`:AUF.tkDa?`So sieht das Logo von ${kurz} auf unseren Trikots aus.`:`So sieht ${kurz} am Rand unseres Platzes aus.`; }
-  function aufPruefen(){ const b=aufBedarf(), k=(b.bd?'b':'')+(b.doppel?'d':'')+(b.einzel?'e':'')+(b.tk?'t':''); if(k===AUF.key)return; const war=!!AUF.key; AUF.key=k;
+  function aufPruefen(){ const b=aufBedarf(), k=(b.bd?'b':'')+(b.doppel?'d':'')+(b.einzel?'e':'')+(b.tk?'t':''); if(k===AUF.key){ if(TK.d)tkZeigen(); return; } const war=!!AUF.key; AUF.key=k;
     // Die Station liegt über den Paketen: Erscheint oder verschwindet sie über dem sichtbaren Ausschnitt, hält die Seite ihre Stelle (kein Springen)
     const sec=$('#auftritt'), ref=$('#pakete')||document.body, vor=sec&&!sec.hidden?sec.getBoundingClientRect().top:null, t0=ref.getBoundingClientRect().top;
     auftrittStart();

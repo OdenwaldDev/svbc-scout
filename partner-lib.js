@@ -3161,3 +3161,109 @@ const BANDE = (() => {
 
   return { C, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, laden };
 })();
+
+/* Gemeinsame Platzwahl für die persönliche Partnerreise. Alle Schreibzugriffe bleiben unverbindliche Wünsche. */
+const BANDENWAHL = (() => {
+  'use strict';
+  const E = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const klasse = s => s.rolle === 'mitte' ? 'haupt' : s.rolle === 'top' ? 'p1896' : 'normal';
+  const stand = s => ({frei:'Frei',vorgemerkt:'Vorgemerkt',fest:'Vergeben',option:'Angeboten'}[s.stand] || 'Vergeben');
+  // Die Store-Hülle unterstützt iOS 15.0. Dort fehlt der native Dialog noch, deshalb ein begrenzter Ersatz.
+  function modalOeffnen(d){
+    if(typeof d.showModal === 'function'){d.showModal();return()=>d.close();}
+    const schatten=document.createElement('div');schatten.className='bw-schatten';schatten.setAttribute('aria-hidden','true');document.body.appendChild(schatten);
+    const alt=[...document.body.children].filter(e=>e!==d&&e!==schatten).map(e=>[e,e.getAttribute('aria-hidden')]), scroll=document.documentElement.style.overflow;
+    alt.forEach(([e])=>e.setAttribute('aria-hidden','true'));document.documentElement.style.overflow='hidden';d.classList.add('bw-alt');d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');d.setAttribute('open','');
+    const taste=e=>{if(e.key==='Escape'){e.preventDefault();d.dispatchEvent(new Event('cancel',{cancelable:true}));return;}if(e.key!=='Tab')return;
+      const F=[...d.querySelectorAll('button,input,select,textarea,a[href],[tabindex="0"]')].filter(e=>!e.disabled&&!e.hidden&&e.getClientRects().length),a=F[0],z=F[F.length-1];if(!a)return;
+      if(e.shiftKey&&(document.activeElement===a||document.activeElement===d.querySelector('h2'))){e.preventDefault();z.focus();}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}};
+    d.addEventListener('keydown',taste);
+    return()=>{d.removeEventListener('keydown',taste);d.removeAttribute('open');schatten.remove();document.documentElement.style.overflow=scroll;alt.forEach(([e,v])=>{if(v===null)e.removeAttribute('aria-hidden');else e.setAttribute('aria-hidden',v);});};
+  }
+  const rang = a => { const S = a.slice().sort((x,y) => x.pos-y.pos); let x = -S.reduce((n,s) => n+(s.art === 'doppel' ? 5 : 2.5),0)/2;
+    return S.map(s => { const l = s.art === 'doppel' ? 5 : 2.5, o = {...s,x0:x,l}; x += l; return o; }); };
+  let offen = null;
+  async function oeffnen(opt) {
+    if(offen) return;
+    const fokus = document.activeElement, d = document.createElement('dialog'); d.className = 'bw';
+    d.setAttribute('aria-labelledby','bwTitel'); d.innerHTML = `<header class="bw-kopf"><div><p class="bw-kicker">SV/BSC Mörlenbach · Saison ${E(opt.saison)}/${String(+opt.saison+1).slice(-2)}</p><h2 id="bwTitel" tabindex="-1">Euer Platz am Spielfeldrand</h2></div><button type="button" class="bw-zu" aria-label="Zurück zur Präsentation">Schließen</button></header><div class="bw-in"><p role="status">Der Belegungsplan wird geladen.</p></div>`;
+    document.body.appendChild(d); offen = d; const dialogZu=modalOeffnen(d); d.querySelector('h2').focus();
+    let lebt = true, resize = null, raf = 0, S = [], sel = null, kam = 0, ziel = 0, boxen = [], pxm = 40, paket = opt.paket === 'p1896' ? 'p1896' : 'club', eigen = null;
+    const imgs = new Map(), ruhig = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    const schliessen = () => { lebt = false; cancelAnimationFrame(raf); resize?.disconnect(); dialogZu(); d.remove(); offen = null; fokus?.focus?.({preventScroll:true}); opt.onClose?.(); };
+    d.querySelector('.bw-zu').onclick = schliessen; d.addEventListener('cancel',e => { e.preventDefault(); schliessen(); });
+    const malen = () => {
+      const cv = d.querySelector('canvas'); if(!lebt || !cv || !S.length) return;
+      const T = S.map(s => { const me = s.id === sel && klasse(s) === (paket === 'p1896' ? 'p1896' : 'normal');
+        const bild = me ? eigen : imgs.get(s.id);
+        return {id:s.id,nr:s.kennung,x0:s.x0,l:s.l,h:.8,an:s.id === sel,frei:s.stand === 'frei' && !me,img:bild||null,
+          name:me ? opt.firma : s.firma || (s.rolle === 'mitte' ? 'Hauptpartner' : s.rolle === 'top' ? '1896 Partner' : 'Vergeben'),farbe:bild ? null : '#ffffff',ring:s.rolle === 'mitte' ? '#e8741f' : null}; });
+      const r = BANDE.reihe(cv,{tafeln:T,kamX:kam}); boxen = r.boxen; pxm = r.pxm || 40;
+    };
+    const fahrt = () => { raf = 0; if(!lebt) return; const diff = ziel-kam;
+      kam = ruhig || Math.abs(diff)<.015 ? ziel : kam+diff*.18; malen(); if(kam !== ziel) raf = requestAnimationFrame(fahrt); };
+    const fahren = x => { ziel = Math.max(S[0].x0,Math.min(S[S.length-1].x0+S[S.length-1].l,x)); if(!raf) raf = requestAnimationFrame(fahrt); };
+    const text = () => {
+      const s = S.find(s => s.id === sel), el = d.querySelector('#bwDetail'), save = d.querySelector('#bwSpeichern');
+      d.querySelectorAll('[data-bwslot]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.bwslot === sel)));
+      if(!s) { el.textContent = 'Wähle einen Platz in der Reihe. Du siehst eure Bande dann zwischen den Nachbarn.'; save.disabled = true; return; }
+      const passt = klasse(s) === (paket === 'p1896' ? 'p1896' : 'normal');
+      el.innerHTML = `<div class="bw-detailkopf"><b>Platz ${E(s.kennung)}</b><span>${E(stand(s))} · ${s.l === 5 ? '5' : '2,5'} × 0,80 m</span></div><p>${s.rolle === 'mitte' ? 'Die Mitte bleibt für den Hauptpartner reserviert.' : !passt ? s.rolle === 'top' ? 'Dieser Platz gehört zu den acht Plätzen für 1896 Partner.' : 'Dieser Einzelplatz gehört zum Club oder Premium Partner.' : s.stand !== 'frei' ? 'Hier ist bereits jemand vorgesehen. Eure Bande im Bild ist eine Vorschau. Ihr könnt diesen Platz für später wünschen.' : 'Eure Bande ist als Vorschau eingesetzt. Ein Platzwunsch reserviert noch keinen Platz.'}</p>`;
+      save.disabled = !passt; save.textContent = s.stand === 'frei' ? 'Platzwunsch merken' : 'Für diesen Platz vormerken';
+      const r = d.querySelector('#bwWeg'); r.value = String(s.pos); r.setAttribute('aria-valuetext',`Platz ${s.kennung}, ${stand(s)}`); malen();
+    };
+    const leisteZentrieren = id => { const l=d.querySelector('.bw-liste'), b=l&&[...l.querySelectorAll('[data-bwslot]')].find(b=>b.dataset.bwslot===id); if(l&&b)l.scrollLeft+=b.getBoundingClientRect().left-l.getBoundingClientRect().left-(l.clientWidth-b.offsetWidth)/2; };
+    const waehlen = id => { const s = S.find(s => s.id === id); if(!s) return; sel = id; fahren(s.x0+s.l/2); text(); leisteZentrieren(id); void eigeneBande(); };
+    const eigeneBande = async () => { const fmt = paket === 'p1896' ? '500x80' : '250x80';
+      try { const spec = {format:fmt,stil:'ci',layout:opt.logo ? 'links' : 'mitte',firma:opt.firma,name:opt.firma,logo:opt.logo||null,nameAn:!opt.logo,kontakt:false};
+        const res = await BANDE.vorbereiten(spec,{basis:'partner/',wappen:'partner/svbsc.png'}), L = BANDE.layout(spec,res), c = BANDE.bild(L,res,.24,false), im = new Image();
+        await new Promise((ok,no) => { im.onload = ok; im.onerror = no; im.src = c.toDataURL('image/png'); });
+        if(lebt && fmt === (paket === 'p1896' ? '500x80' : '250x80')) { eigen = im; malen(); }
+      } catch(_) { /* Der eigene Name bleibt als Vorschau sichtbar. */ }
+    };
+    try {
+      const data = await opt.rpc('banden_platzwahl',{p_code:opt.code,p_saison:opt.saison}); if(!lebt) return;
+      S = rang(data.slots || []); if(!S.length) throw new Error('Für diese Saison ist noch kein Belegungsplan hinterlegt.');
+      if(data.eigen?.paket === 'p1896') paket = 'p1896';
+      sel = S.some(s => s.id === data.eigen?.wunsch) ? data.eigen.wunsch : S.find(s=>s.eigen)?.id||null;
+      const frei = S.filter(s => s.stand === 'frei' && klasse(s) === (paket === 'p1896' ? 'p1896' : 'normal')).length;
+      const innen = d.querySelector('.bw-in'); innen.innerHTML = `<div class="bw-oben"><p>Geh an der Reihe entlang und schau, wie eure Bande neben den anderen wirkt. Mitte und 1896-Plätze bleiben für diese Stufen reserviert.</p><label>Vorschau für<select id="bwPaket"><option value="club">Club / Premium Partner</option><option value="p1896">1896 Partner</option></select></label></div>
+        <div class="bw-plan" aria-label="Plätze von links nach rechts, vom Rasen aus"><span>Links</span><div class="bw-mini" aria-hidden="true">${S.map(s => `<i class="${E(s.rolle)} ${E(s.stand)}" style="flex:${s.l}"></i>`).join('')}</div><span>Rechts</span></div>
+        <div class="bw-buehne"><canvas tabindex="0" role="img" aria-label="Bandenreihe in 3D. Mit den Pfeiltasten oder dem Regler entlanggehen. Die Platzliste darunter bietet dieselbe Auswahl."></canvas><span class="bw-bildhinweis">Vorschau, keine Reservierung</span></div>
+        <div class="bw-gehen"><button type="button" data-bwgehen="-1" aria-label="Einen Platz nach links">←</button><label>Entlang der Banden gehen<input id="bwWeg" type="range" min="${S[0].pos}" max="${S[S.length-1].pos}" step="1" value="17"></label><button type="button" data-bwgehen="1" aria-label="Einen Platz nach rechts">→</button></div>
+        <div class="bw-liste" role="group" aria-label="Platz auswählen">${S.map(s => `<button type="button" data-bwslot="${E(s.id)}" class="${E(s.rolle)} ${E(s.stand)}" aria-pressed="false"><b>${E(s.kennung)}</b><span>${s.rolle === 'mitte' ? 'Hauptpartner' : s.rolle === 'top' ? '1896' : E(stand(s))}</span></button>`).join('')}</div>
+        <div class="bw-unten"><div id="bwDetail" aria-live="polite"></div><div class="bw-merken"><label><input id="bwNach" type="checkbox"${data.eigen?.nachruecken ? ' checked' : ''}> Bei einem besseren freien Platz berücksichtigen</label><label><input id="bwFlex" type="checkbox"${data.eigen?.flexibel === false ? '' : ' checked'}> Auch andere passende Plätze anbieten</label><button id="bwSpeichern" type="button" class="bw-haupt">Platzwunsch merken</button><button id="bwZurueck" type="button" class="bw-zu"${data.eigen?.wunsch||data.eigen?.nachruecken?'':' hidden'}>Platzwunsch zurücknehmen</button><p id="bwMeldung" role="status"></p></div></div>
+        <p class="bw-fuss">Die Reihe ist für 2027/28 geplant. Lage und Nachbarn können sich bis zur Montage ändern. Eure Auswahl bleibt unverbindlich. Andere Firmennamen und Logos erscheinen nur mit Freigabe. ${frei ? '' : 'In dieser Stufe ist gerade kein Platz frei. Mit eurem Wunsch kommt ihr auf die Warteliste.'}</p>`;
+      const paketSel = d.querySelector('#bwPaket'); paketSel.value = paket;
+      paketSel.onchange = () => { paket = paketSel.value; eigen = null; text(); void eigeneBande(); };
+      d.querySelectorAll('[data-bwslot]').forEach(b => b.onclick = () => waehlen(b.dataset.bwslot));
+      d.querySelectorAll('[data-bwgehen]').forEach(b => b.onclick = () => { const nah = S.reduce((a,s) => Math.abs(s.x0+s.l/2-ziel) < Math.abs(a.x0+a.l/2-ziel) ? s : a,S[0]); waehlen(S[Math.max(0,Math.min(S.length-1,S.indexOf(nah)+ +b.dataset.bwgehen))].id); });
+      d.querySelector('#bwWeg').oninput = e => waehlen(S.find(s => s.pos === +e.target.value)?.id);
+      const cv = d.querySelector('canvas'); let drag = null;
+      cv.onpointerdown = e => { drag = {x:e.clientX,k:kam,weg:0}; cv.setPointerCapture(e.pointerId); };
+      cv.onpointermove = e => { if(!drag) return; const dx = e.clientX-drag.x; drag.weg = Math.max(drag.weg,Math.abs(dx)); fahren(drag.k-dx/Math.max(8,pxm)); };
+      cv.onpointerup = e => { if(!drag) return; const click = drag.weg<7; drag = null; if(!click) return; const r = cv.getBoundingClientRect(), x=e.clientX-r.left,y=e.clientY-r.top;
+        const hit = boxen.filter(b => x >= b.x && x <= b.x+b.w && y >= b.y-28 && y <= b.y+b.h+10).sort((a,b) => b.w-a.w)[0]; if(hit) waehlen(hit.id); };
+      cv.onpointercancel = () => { drag = null; };
+      cv.onkeydown = e => { if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); d.querySelector(`[data-bwgehen="${e.key === 'ArrowLeft' ? '-1' : '1'}"]`).click(); } };
+      d.querySelector('#bwSpeichern').onclick = async e => {
+        const b = e.currentTarget, s = S.find(s => s.id === sel); if(!s || b.disabled) return; b.disabled = true;
+        const msg = d.querySelector('#bwMeldung'), w = {saison:opt.saison,wunsch:sel,paket,nachruecken:d.querySelector('#bwNach').checked,flexibel:d.querySelector('#bwFlex').checked};
+        try { const r = await opt.rpc('banden_wunsch_setzen',{p_code:opt.code,p:w}); if(!lebt) return;
+          msg.textContent = r.demo ? 'Probeansicht: Hier wird nichts gespeichert.' : 'Euer Platzwunsch ist gespeichert. Das Partner-Team stimmt den Platz mit euch ab.'; d.querySelector('#bwZurueck').hidden=false; opt.onSaved?.({...w,kennung:s.kennung});
+        } catch(err) { if(lebt) msg.textContent = err.message || 'Der Wunsch wurde nicht gespeichert. Bitte versuche es noch einmal.'; }
+        finally { if(lebt) b.disabled = false; }
+      };
+      d.querySelector('#bwZurueck').onclick = async e => { const b=e.currentTarget; b.disabled=true;
+        try { const r=await opt.rpc('banden_wunsch_setzen',{p_code:opt.code,p:{saison:opt.saison,paket,wunsch:null,nachruecken:false,flexibel:true}}); if(!lebt)return;
+          sel=null; d.querySelector('#bwNach').checked=false; b.hidden=true; text(); d.querySelector('#bwMeldung').textContent=r.demo?'Probeansicht: Hier wird nichts gespeichert.':'Euer Platzwunsch ist zurückgenommen. Bestehende Vereinbarungen bleiben erhalten.'; opt.onSaved?.(null);
+        } catch(err) { if(lebt)d.querySelector('#bwMeldung').textContent=err.message||'Der Wunsch wurde nicht zurückgenommen. Bitte versuche es noch einmal.'; }
+        finally { if(lebt)b.disabled=false; }
+      };
+      S.filter(s => s.logo).forEach(s => { const im = new Image(); im.onload = () => { imgs.set(s.id,im); malen(); }; im.src = s.logo; });
+      resize = new ResizeObserver(malen); resize.observe(cv); text(); if(sel) waehlen(sel); else {malen();leisteZentrieren(S.find(s=>s.rolle==='mitte')?.id);} void eigeneBande();
+    } catch(err) { if(lebt) d.querySelector('.bw-in').innerHTML = `<p role="alert">${E(err.message || 'Der Plan lässt sich gerade nicht laden.')}</p><button type="button" class="bw-haupt" id="bwNochmal">Noch einmal versuchen</button>`;
+      d.querySelector('#bwNochmal')?.addEventListener('click',() => { schliessen(); void oeffnen(opt); }); }
+  }
+  return {oeffnen,rang,klasse,modalOeffnen};
+})();

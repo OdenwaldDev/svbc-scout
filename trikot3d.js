@@ -641,13 +641,17 @@ window.TRIKOT3D = (function(){
 
     /* ----- Kamera, Drehen, Marken ----- */
     const FOKUS = { gesamt:null, oben:null, unten:null };
-    function kameraZiel(f){ const top = Z.oben + .03, bot = Z.unten - .03;   // 0.81: nur noch Trikot bzw. Jacke, alle Ansichten zeigen das ganze Oberteil
-      void f; return { y0:bot, y1:top + .02 }; }
+    function kameraZiel(f){ const top = Z.oben + .03, bot = Z.unten - .03;
+      if((f === 'aermel_l' || f === 'aermel_r') && Z.anker && Z.anker[f]){
+        const p = Z.anker[f].P, w = Z.winkel;
+        return { x:p[0] * Math.cos(w) - p[2] * Math.sin(w), y0:p[1] - .14, y1:p[1] + .14, breite:.3 };
+      }
+      return { x:0, y0:bot, y1:top + .02, breite:.98 }; }
     function kameraSetzen(){
       const a = kameraZiel(Z.fokus), b = kameraZiel(Z.fokusZiel), k = sst(0, 1, Z.fk), y0 = lerp(a.y0, b.y0, k), y1 = lerp(a.y1, b.y1, k);
-      const hoehe = (y1 - y0) * 1.08, breite = Z.fokusZiel === 'oben' && Z.fk >= 1 ? .9 : .98, fov = kamera.fov * PI / 180;
+      const hoehe = (y1 - y0) * 1.08, breite = lerp(a.breite,b.breite,k), cx = lerp(a.x,b.x,k), fov = kamera.fov * PI / 180;
       const dH = hoehe / 2 / Math.tan(fov / 2), dW = breite / 2 / Math.tan(fov / 2) / kamera.aspect, dist = Math.max(dH, dW) + .25;
-      const cy = (y0 + y1) / 2; kamera.position.set(0, cy + dist * .045, dist); kamera.lookAt(0, cy, 0); void FOKUS;
+      const cy = (y0 + y1) / 2; kamera.position.set(cx, cy + dist * .045, dist); kamera.lookAt(cx, cy, 0); void FOKUS;
     }
     function zeigen3d(){ if(!raf) raf = requestAnimationFrame(schritt); }
     let tAlt = 0;
@@ -663,7 +667,8 @@ window.TRIKOT3D = (function(){
       if(weiter || Z.zieht) raf = requestAnimationFrame(schritt); else tAlt = 0;
     }
     // Fotomodell: vorn oder hinten, „seite“ erst ab der Schrägansicht (über der Zieh-Grenze); gebaut wie bisher in Vierteln
-    function sichtVon(w){ if(!Z.foto3d) return w < PI / 4 ? 'vorn' : w > 3 * PI / 4 ? 'hinten' : 'seite';
+    function sichtVon(w){ if(Z.fokusZiel === 'aermel_l' || Z.fokusZiel === 'aermel_r') return 'seite';
+      if(!Z.foto3d) return w < PI / 4 ? 'vorn' : w > 3 * PI / 4 ? 'hinten' : 'seite';
       const r = w > PI / 2 ? PI : 0; return Math.abs(w - r) > GRENZE * 1.1 ? 'seite' : r ? 'hinten' : 'vorn'; }
     function physik(dt){
       let weiter = false;
@@ -713,7 +718,10 @@ window.TRIKOT3D = (function(){
       if(Z.foto3d){ const r = z > PI / 2 ? PI : 0; z = r + kl(z - r, -GRENZE * 1.2, GRENZE * 1.2); }   // z. B. Ärmel (.95): Schrägansicht statt flacher Seite
       Z.ziel = z; if(sofort || ruhig()){ Z.winkel = z; Z.vw = 0; } zeigen3d();
     }
-    function fokus(f, sofort){ if(f === Z.fokusZiel) return; Z.fokus = Z.fk >= 1 ? Z.fokusZiel : Z.fokus; Z.fokusZiel = f; Z.fk = sofort || ruhig() ? 1 : 0; if(Z.fk >= 1) Z.fokus = f; zeigen3d(); }
+    function fokus(f, sofort){ if(f === Z.fokusZiel) return; Z.fokus = Z.fk >= 1 ? Z.fokusZiel : Z.fokus; Z.fokusZiel = f; Z.fk = sofort || ruhig() ? 1 : 0; if(Z.fk >= 1) Z.fokus = f; if(Z.modus === 'foto') foto(); else zeigen3d(); }
+    function detail(k, sofort){ if(k !== 'aermel_l' && k !== 'aermel_r'){ delete wurzel.dataset.detail; const cv = wurzel.querySelector('.t3-gl'); if(cv)cv.setAttribute('aria-label','Trikot in 3D. Ziehen oder Pfeiltasten zum Drehen.'); fokus('oben',sofort); drehen('vorn',sofort); return; }
+      drehen(k === 'aermel_l' ? .32 : -.32,sofort); fokus(k,sofort);
+      wurzel.dataset.detail = k; const cv = wurzel.querySelector('.t3-gl'); if(cv) cv.setAttribute('aria-label',(k === 'aermel_l' ? 'Linker' : 'Rechter') + ' Ärmel in Nahaufnahme, aus Sicht des Trägers.'); }
     function markeHolen(k){ if(marken[k]) return marken[k];
       const b = document.createElement('button'); b.type = 'button'; b.className = 't3-p'; b.dataset.platz = k; b.innerHTML = '<i aria-hidden="true"></i><span></span>';
       b.onclick = e => { e.stopPropagation(); opt.onPlatz && opt.onPlatz(k); }; mk.appendChild(b); marken[k] = b; return b; }
@@ -753,7 +761,9 @@ window.TRIKOT3D = (function(){
       const r = wurzel.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); cvF.width = Math.round(r.width * dpr); cvF.height = Math.round(r.height * dpr);
       const x = cvF.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cvF.width, cvF.height);
       // Foto als Karte mit seinem eigenen hellen Grund
-      const pad = 14 * dpr, s = Math.min((cvF.width - pad * 2) / F.w, (cvF.height - pad * 2) / F.h), ox = (cvF.width - F.w * s) / 2, oy = (cvF.height - F.h * s) / 2;
+      const nah = (Z.fokusZiel === 'aermel_l' || Z.fokusZiel === 'aermel_r') && F[Z.fokusZiel], pad = 14 * dpr,
+        s = Math.min((cvF.width - pad * 2) / (nah ? F.w * .43 : F.w), (cvF.height - pad * 2) / (nah ? F.h * .38 : F.h)),
+        ox = cvF.width / 2 - (nah ? nah[0] : F.w / 2) * s, oy = cvF.height / 2 - (nah ? nah[1] : F.h / 2) * s;
       x.save(); x.beginPath(); const rr = 14 * dpr; if(x.roundRect) x.roundRect(ox, oy, F.w * s, F.h * s, rr); else x.rect(ox, oy, F.w * s, F.h * s); x.fillStyle = '#ffffff'; x.fill(); x.clip();
       x.drawImage(img, ox, oy, F.w * s, F.h * s);
       // Arbeitsfläche in Fotopixeln, danach mit dem Stoff schattieren
@@ -787,6 +797,7 @@ window.TRIKOT3D = (function(){
 
     /* ----- nach außen ----- */
     async function setzen(daten){
+      wurzel.dataset.vorschauPlaetze=Object.entries(daten.belegung||{}).filter(([,b])=>b&&b.vorschau).map(([k])=>k).join(',');
       const artNeu = daten.art === 'anzug' ? 'anzug' : daten.art === 'auswaerts' ? 'auswaerts' : 'heim', formWechsel = (artNeu === 'anzug') !== (Z.art === 'anzug') || !(teile.torso || teile.foto) || (teile.foto && teile.foto.satz !== artNeu), farbWechsel = !Z.daten || Z.daten.grund !== daten.grund;
       Z.art = artNeu; Z.daten = daten;
       if(Z.art === 'anzug' && Z.modus === 'foto' && Z.gl){ Z.modus = '3d'; modusZeigen(); }
@@ -823,7 +834,7 @@ window.TRIKOT3D = (function(){
       for(let i = 0; i < 64; i++){ gl.readPixels(Math.floor(w * (.3 + .4 * (i % 8) / 7)), Math.floor(h * (.25 + .6 * Math.floor(i / 8) / 7)), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p.subarray(i * 4, i * 4 + 4)); if(p[i * 4 + 3] > 0) n++; } return n / 64; }
 
     const bereit = (Z.modus === '3d' ? start3d().catch(e => { Z.fehler = e; Z.modus = 'foto'; modusZeigen(); }) : Promise.resolve()).then(() => { modusZeigen(); });
-    return { bereit, setzen, drehen, fokus, modus, platzBei, hervorheben, png, zerstoeren, pixelTest, netz:() => teile.foto ? teile.foto.info : null,
+    return { bereit, setzen, drehen, fokus, detail, modus, platzBei, hervorheben, png, zerstoeren, pixelTest, netz:() => teile.foto ? teile.foto.info : null,
       get modusJetzt(){ return Z.modus; }, get fotoModell(){ return Z.foto3d || null; }, get fokusJetzt(){ return Z.fokusZiel; }, get sicht(){ return Z.sicht; }, get webgl(){ return Z.gl; }, get winkel(){ return Z.winkel; }, wurzel };
   }
 

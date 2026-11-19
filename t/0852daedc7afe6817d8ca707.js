@@ -77,6 +77,7 @@ function tcListe(){
 function TRIKOT3D_LISTE(){ return window.TRIKOT3D ? TRIKOT3D.platzListe(TC.art) : []; }
 // Platz zeigen: Trikot dahin drehen, Hose nah heranholen
 function tcHinsehen(k){ const i = TRIKOT3D_INFO(k); if(!i || !TC.v) return;
+  if(k==='aermel_l'||k==='aermel_r'){TC.v.detail(k);TC.sicht='seite';tcKnoepfe();return;}
   const w = i.teil === 'aermel' ? (i.seite > 0 ? .95 : 'vorn') : i.vorn === false ? 'hinten' : 'vorn';
   TC.v.drehen(w); TC.sicht = typeof w === 'number' ? 'seite' : w; TC.v.fokus(i.fokus === 'unten' ? 'unten' : 'oben'); tcKnoepfe(); }
 function tcPlatzTipp(k, ausListe){

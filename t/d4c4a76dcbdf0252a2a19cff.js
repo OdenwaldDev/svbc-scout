@@ -1493,6 +1493,7 @@ async function tcRender(B){
     <div class="pz-tc-raster"><div class="pz-tc-links">
       <div class="pz-tc-wahl"><label class="pz-tc-team"><span>Mannschaft</span><select id="tcTeam" aria-label="Mannschaft"></select></label>
         <div class="pz-tc-seg" id="tcArt" role="group" aria-label="Satz">${TC_ARTEN.map(([k, t]) => `<button type="button" data-tcart="${k}">${t}</button>`).join('')}</div></div>
+      <div class="pz-tc-seg" id="tcAermel" role="group" aria-label="Ärmel aus Sicht des Trägers"><button type="button" data-tcaermel="aermel_r">Rechter Ärmel</button><button type="button" data-tcaermel="aermel_l">Linker Ärmel</button><button type="button" data-tcaermel="gesamt">Ganzes Trikot</button></div><p class="pz-tc-tipp">Links und rechts aus Sicht des Trikotträgers.</p>
       <div class="pz-tc-buehne" id="tcBuehne"><div class="pz-tc-laden" id="tcLaden"><i></i>Trikots werden aufgebaut …</div></div>
       <div class="pz-tc-leiste"><div class="pz-tc-seg klein" id="tcSicht" role="group" aria-label="Ansicht">${[['vorn', 'Vorn'], ['seite', 'Seite'], ['hinten', 'Hinten']].map(([k, t]) => `<button type="button" data-tcsicht="${k}">${t}</button>`).join('')}</div>
         <div class="pz-tc-seg klein" id="tcModus" role="group" aria-label="Darstellung"><button type="button" data-tcmodus="3d">3D</button><button type="button" data-tcmodus="foto">Foto</button></div></div>
@@ -1508,7 +1509,8 @@ async function tcRender(B){
     </div></div></div>`;
   const P = B.querySelector('.pz-tc');
   P.querySelector('#tcArt').onclick = e => { const b = e.target.closest('[data-tcart]'); if(b){ TC.art = b.dataset.tcart; TC.platz = null; tcStand(true); } };
-  P.querySelector('#tcSicht').onclick = e => { const b = e.target.closest('[data-tcsicht]'); if(b && TC.v){ TC.v.drehen(b.dataset.tcsicht); TC.sicht = b.dataset.tcsicht; tcKnoepfe(); } };
+  P.querySelector('#tcSicht').onclick = e => { const b = e.target.closest('[data-tcsicht]'); if(b && TC.v){ TC.v.fokus('oben'); TC.v.drehen(b.dataset.tcsicht); TC.sicht = b.dataset.tcsicht; tcKnoepfe(); } };
+  P.querySelector('#tcAermel').onclick = e => { const b=e.target.closest('[data-tcaermel]'); if(b&&TC.v){ TC.v.detail(b.dataset.tcaermel); tcKnoepfe(); } };
   P.querySelector('#tcModus').onclick = async e => { const b = e.target.closest('[data-tcmodus]'); if(!b || !TC.v) return; const ok = await TC.v.modus(b.dataset.tcmodus); if(ok) TC.modus = b.dataset.tcmodus; else kToast(TC.art === 'anzug' ? 'Für den Anzug gibt es nur die 3D-Ansicht.' : 'Die 3D-Ansicht geht auf diesem Gerät nicht.'); tcKnoepfe(); };
   P.querySelector('#tcDatei').onchange = tcHochladen;
   P.querySelector('#tcTeilen').onclick = e => tcBild(true, e.currentTarget);
@@ -1529,6 +1531,7 @@ async function tcRender(B){
 }
 function tcZoomText(){ const zb = document.getElementById('tcZoom'); if(!zb || !TC.v) return; const ganz = TC.v.fokusJetzt === 'gesamt'; zb.textContent = ganz ? 'Trikot nah' : 'Ganzes Set'; zb.setAttribute('aria-pressed', String(ganz)); zb.hidden = !TC.v.webgl || TC.modus === 'foto'; }
 function tcKnoepfe(){ const P = document.querySelector('.pz-tc'); if(!P) return; tcZoomText();
+  P.querySelectorAll('[data-tcaermel]').forEach(b=>{const an=b.dataset.tcaermel === (TC.v&&/^aermel_/.test(TC.v.fokusJetzt)?TC.v.fokusJetzt:'gesamt');b.setAttribute('aria-pressed',String(an));b.classList.toggle('on',an);});
   P.querySelectorAll('[data-tcart]').forEach(b => { const an = b.dataset.tcart === TC.art; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); });
   P.querySelectorAll('[data-tcsicht]').forEach(b => { const an = b.dataset.tcsicht === TC.sicht; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); b.disabled = TC.modus === 'foto' && b.dataset.tcsicht === 'seite'; });
   P.querySelectorAll('[data-tcmodus]').forEach(b => { const an = b.dataset.tcmodus === TC.modus; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); b.disabled = (b.dataset.tcmodus === 'foto' && TC.art === 'anzug') || (b.dataset.tcmodus === '3d' && TC.v && !TC.v.webgl); });

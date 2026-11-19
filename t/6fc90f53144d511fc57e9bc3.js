@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.105',v:'0.99.105',datum:'2026-11-19',titel:'Platzwahl und Ärmel im Detail',kurz:'Partner wählen ihren Platzwunsch direkt in der 3D-Vorschau.',
+    punkte:[{ic:'i',t:'Bandenplätze und Nachrücken',d:'Die neue Saisonreihe zeigt eure Bande neben den Nachbarn. Platzwünsche bleiben unverbindlich. Die Partnerleitung erfasst Zusagen und Laufzeiten und bestätigt begründete Nachrückvorschläge einzeln.',r:'admin'},{ic:'i',t:'Linker oder rechter Ärmel',d:'Die Nahansicht zeigt das Logo am gewählten Ärmel. Ärmelbausteine setzen das eigene Logo nicht auf die Brust.',r:'admin'}]},
   {id:'0.99.104',v:'0.99.104',datum:'2026-11-19',titel:'Sicherheitsbericht vorbereiten',kurz:'Die Website kann in der Google Search Console bestätigt werden.',
     punkte:[{ic:'i',t:'Nachweis für die Vereinswebsite',d:'Der Eigentumsnachweis ermöglicht der Leitung, Googles Sicherheitsbericht zur Website einzusehen und eine erneute Prüfung zu beantragen.',r:'admin'}]},
   {id:'0.99.103',v:'0.99.103',datum:'2026-11-19',titel:'Aktueller Stand beim App-Test',kurz:'Die Testseite zeigt den verfügbaren Installationsweg je Handy.',

@@ -205,6 +205,7 @@ html.bereit .foto-karte{opacity:1}
 .kacheln .ich.mk{position:relative;padding:0}
 .kacheln .ich.mk img{position:absolute;left:8%;top:13%;width:84%;height:74%;object-fit:contain}
 .sz-trikot>img{object-position:50% 46%}
+.creator-zug{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.creator-zug .zeile{min-height:44px;font-size:14px}
 .trikot-name{position:absolute;left:33%;width:34%;top:35%;height:20%;display:grid;place-items:center;transform:perspective(600px) rotateY(-3deg) rotate(-1deg)}
 .trikot-name .passt{color:#eef6ff;opacity:.93;text-shadow:0 1px 1px rgba(0,0,20,.5)}
 .sz-durch{background:radial-gradient(120% 90% at 50% 0,#17205a,#070b22 70%);display:grid;align-content:center;gap:6%;padding:6% 7%}
@@ -763,6 +764,7 @@ html.zeiger .spot{opacity:1}
           <button class="zeile" type="button" data-w="wand" aria-pressed="false">Lieber leise dabei</button>
         </div>
         <div class="lob" id="lob-platz" aria-live="polite"><p></p></div>
+        <div class="creator-zug" role="group" aria-label="Eigene Vorschau"><button class="zeile" id="reiseBande" type="button">Platzwahl in 3D öffnen</button><button class="zeile" id="reiseAermel" type="button">Logo auf dem Ärmel ansehen</button></div>
       </div>
     </div>
   </section>
@@ -987,6 +989,8 @@ let S=neu(), laeuft=false, ton=false, sperrBis=0;
 // 0.99.76: Die Reise läuft im Rahmen der Partnerseite (GERAHMT). TERMIN heißt: Ein angemeldetes Konto aus dem Partner-Team hat sie geöffnet.
 // Öffnet die Firma ihren Link allein, gibt es keine Notizen fürs Gespräch und später keinen Nachlass, es wird nur gespeichert (Albert, 17.11.2026).
 const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true; } })();
+// Ein Abstecher in den Creator beendet die Reise nicht. Antworten und Folie bleiben im selben Rahmen erhalten.
+['reiseBande','reiseAermel'].forEach((id,i)=>{ const b=$('#'+id); if(!b)return; b.hidden=!GERAHMT; b.onclick=()=>{ if(!GERAHMT)return; clearInterval(szUhr); window.parent.postMessage({reise:'creator',art:i?'aermel':'bande',paket:pk()},location.origin); }; });
 let FIRMA=null, KONTEXT_BEREIT=!GERAHMT;
 let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
 
