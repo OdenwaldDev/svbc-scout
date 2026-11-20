@@ -3195,9 +3195,27 @@ const BANDENWAHL = (() => {
   }
   const rang = a => { const S = a.slice().sort((x,y) => x.pos-y.pos); let x = -S.reduce((n,s) => n+(s.art === 'doppel' ? 5 : 2.5),0)/2;
     return S.map(s => { const l = s.art === 'doppel' ? 5 : 2.5, o = {...s,x0:x,l}; x += l; return o; }); };
-  const bestandRang = (a,bereich) => { const P=a.filter(s=>s.bereich===bereich).slice().sort((x,y)=>x.nr-y.nr), cm=(n,d)=>Number.isFinite(+n)&&+n>0?+n:d;
-    let x=-P.reduce((n,s)=>n+cm(s.laenge_cm,parseFloat(s.format)||500)/100+Math.max(0,+s.luecke_cm||0)/100,0)/2;
-    return P.map(s=>{x+=Math.max(0,+s.luecke_cm||0)/100;const l=cm(s.laenge_cm,parseFloat(s.format)||500)/100,o={...s,x0:x,l,h:(+(String(s.format||'').split('x')[1])||80)/100,kennung:String(s.nummer||s.nr)};x+=l;return o;}); };
+  // Derselbe feste Stadionplan wie bpReihe in svm101.js. Erst alle Plätze verorten, dann einen Bereich filtern.
+  const bestandRang = (a,bereich) => {
+    const G=84.4,NORD=50,SUED=48.6,RB=48.6,OST=52.5,P=Array.isArray(a)?a:[],out=[],
+      von=k=>P.filter(p=>p.bereich===k).sort((a,b)=>a.nr-b.nr),
+      laenge=p=>+p.laenge_cm>0?p.laenge_cm/100:parseInt(String(p.format||''),10)>0?parseInt(String(p.format),10)/100:3,
+      sum=L=>L.reduce((s,p)=>s+laenge(p),0),
+      eintrag=(p,l,x0,linie,plan,vor=0)=>out.push({...p,x0,l,h:(+(String(p.format||'').split('x')[1])||80)/100,kennung:String(p.nummer||p.nr),linie,plan,vor});
+    const nordPunkt=s=>{const g=G/2;if(s < -g){const f=(-g-s)/NORD;return {x:-g-NORD*Math.sin(f),y:-NORD*Math.cos(f),w:-f*180/Math.PI,nx:-Math.sin(f),ny:-Math.cos(f)};}
+      if(s > g){const f=(s-g)/NORD;return {x:g+NORD*Math.sin(f),y:-NORD*Math.cos(f),w:f*180/Math.PI,nx:Math.sin(f),ny:-Math.cos(f)};}return {x:s,y:-NORD,w:0,nx:0,ny:-1};};
+    const nord=von('spielplatz').concat(von('laengsseite')),luecke=(p,i)=>i?Math.max(0,(+p.luecke_cm||0)/100):0;
+    let x=OST-nord.reduce((s,p,i)=>s+luecke(p,i)+laenge(p),0);
+    nord.forEach((p,i)=>{const l=laenge(p),vor=luecke(p,i);x+=vor;eintrag(p,l,x,'nord',nordPunkt(x+l/2),vor);x+=l;});
+    const tor=von('tor'),h=Math.ceil(tor.length/2);let torFlach=-sum(tor)/2;
+    const bogen=(L,cx,mitte,linie)=>{let a=mitte-sum(L)/RB/2;
+      L.forEach(p=>{const l=laenge(p),am=a+l/RB/2;eintrag(p,l,torFlach,linie,{x:cx+RB*Math.cos(am),y:RB*Math.sin(am),w:am*180/Math.PI+90,nx:Math.cos(am),ny:Math.sin(am)});torFlach+=l;a+=l/RB;});};
+    bogen(tor.slice(0,h),G/2,0,'ost');
+    const sued=von('gegenseite');let xs=sum(sued)/2;
+    sued.forEach(p=>{const l=laenge(p);eintrag(p,l,-xs,'sued',{x:xs-l/2,y:SUED,w:0,nx:0,ny:1});xs-=l;});
+    bogen(tor.slice(h),-G/2,Math.PI,'west');
+    return bereich==null?out:out.filter(p=>p.bereich===bereich);
+  };
   let offen = null;
   async function oeffnen(opt) {
     if(offen) return;
@@ -3205,8 +3223,16 @@ const BANDENWAHL = (() => {
     d.setAttribute('aria-labelledby','bwTitel'); d.innerHTML = `<header class="bw-kopf"><div><p class="bw-kicker">SV/BSC Mörlenbach · Saison ${E(opt.saison)}/${String(+opt.saison+1).slice(-2)}</p><h2 id="bwTitel" tabindex="-1">Euer Platz am Spielfeldrand</h2></div><button type="button" class="bw-zu" aria-label="Zurück zur Präsentation">Schließen</button></header><div class="bw-in"><p role="status">Der Belegungsplan wird geladen.</p></div>`;
     document.body.appendChild(d); offen = d; const dialogZu=modalOeffnen(d); d.querySelector('h2').focus();
     let lebt = true, resize = null, raf = 0, S = [], sel = null, kam = 0, ziel = 0, boxen = [], pxm = 40, paket = opt.paket === 'p1896' ? 'p1896' : 'club', eigen = null,
-      raum=null, flach=false, heute=false, bestand=null, bereich='', bestandSel=null, hold=0, letzteTafeln=[],fotoSchliessen=null,fensterStop=null;
+      raum=null, raumBereit=false, stadionEinstieg=false, flach=false, heute=false, bestand=null, bereich='', bestandSel=null, hold=0, letzteTafeln=[],fotoSchliessen=null,fensterStop=null;
     const imgs = new Map(), ruhig = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    const kameraBereich=()=>{if(!heute)return 'nord';const R=bestandRang(bestand?.plaetze||[],bereich);return (R.find(s=>s.id===bestandSel)||R[0])?.linie||'nord';};
+    const flachStart=()=>{if(!flach)return;cancelAnimationFrame(raf);raf=0;const R=heute?bestandRang(bestand?.plaetze||[],bereich):S,s=R.find(s=>s.id===(heute?bestandSel:sel));
+      kam=ziel=s?s.x0+s.l/2:R.length?(R[0].x0+R[R.length-1].x0+R[R.length-1].l)/2:0;};
+    const blickBasis=()=>{const b=d.querySelector('#bwBlickpunkt');if(b)b.value='banden';};
+    const reihenStart=()=>{blickBasis();if(flach){flachStart();malen();return;}if(!raum)return;
+      const R=heute?bestandRang(bestand?.plaetze||[],bereich):[],s=R.find(s=>s.id===bestandSel)||(bereich==='tor'?R.find(s=>s.linie==='ost'):R[Math.floor((R.length-1)/2)]);
+      if(s)raum.zentrieren(s.id);else raum.reset();};
+    const bestandsEinstieg=()=>{if(heute&&raumBereit&&!stadionEinstieg&&raum?.rundblick){stadionEinstieg=true;raum.rundblick();d.querySelector('#bwBlickpunkt').value='platz';}};
     const nahInfo=()=>{const s=heute?(bestand?.plaetze||[]).find(s=>s.id===bestandSel):S.find(s=>s.id===sel);if(!s)return null;
       const me=!heute&&klasse(s)===(paket==='p1896'?'p1896':'normal'),bild=me?eigen:imgs.get(s.id);
       return {bild,titel:(heute?'Bande '+(s.nummer||s.nr):'Platz '+s.kennung)+' · '+(me?opt.firma:s.firma||'Bandenplatz'),status:heute?'Heutiger Bestand':me?'Eure Gestaltungsvorschau · '+stand(s):s.kennzeichnung||stand(s)};};
@@ -3215,17 +3241,18 @@ const BANDENWAHL = (() => {
     d.querySelector('.bw-zu').onclick = schliessen; d.addEventListener('cancel',e => { e.preventDefault();if(fotoSchliessen&&!d.querySelector('#bwAufdruck').hidden){fotoSchliessen();d.querySelector('#bwFoto').focus({preventScroll:true});}else schliessen(); });
     const malen = () => {
       const cv = d.querySelector('canvas'); if(!lebt || !cv || !S.length) return;
-      const T = (heute?bestandRang(bestand?.plaetze||[],bereich):S).map(s => { const me = !heute && s.id === sel && klasse(s) === (paket === 'p1896' ? 'p1896' : 'normal');
+      const R=heute?bestandRang(bestand?.plaetze||[]):S;
+      const T = (heute&&flach?R.filter(s=>s.bereich===bereich):R).map(s => { const me = !heute && s.id === sel && klasse(s) === (paket === 'p1896' ? 'p1896' : 'normal');
         const bild = me ? eigen : imgs.get(s.id);
-        return {id:s.id,nr:s.kennung,x0:s.x0,l:s.l,h:s.h||.8,an:s.id === (heute?bestandSel:sel),frei:(heute?s.status==='frei':s.stand === 'frei') && !me,img:bild||null,
+        return {id:s.id,nr:s.kennung,x0:s.x0,l:s.l,h:s.h||.8,bereich:s.linie,plan:s.plan,an:s.id === (heute?bestandSel:sel),frei:(heute?s.status==='frei':s.stand === 'frei') && !me,img:bild||null,
           name:me ? opt.firma : s.firma || (heute?s.status==='frei'?'Freier Platz':'Bestandsbande':s.rolle === 'mitte' ? 'Hauptpartner' : s.rolle === 'top' ? '1896 Partner' : 'Vergeben'),farbe:bild ? null : s.farbe||'#ffffff',ring:s.rolle === 'mitte' ? '#e8741f' : null}; });
-      letzteTafeln=T;nahStatus();if(raum){raum.setTafeln(T);return;} if(!flach)return;
+      letzteTafeln=T;nahStatus();if(raum){raum.setTafeln(T,{bereich:kameraBereich()});return;} if(!flach)return;
       const r = BANDE.reihe(cv,{tafeln:T,kamX:kam}); boxen = r.boxen; pxm = r.pxm || 40;
     };
     const fahrt = () => { raf = 0; if(!lebt) return; const diff = ziel-kam;
       kam = ruhig || Math.abs(diff)<.015 ? ziel : kam+diff*.18; malen(); if(kam !== ziel) raf = requestAnimationFrame(fahrt); };
     const fahren = x => { const R=heute?bestandRang(bestand?.plaetze||[],bereich):S;if(!R.length)return;
-      ziel = Math.max(R[0].x0,Math.min(R[R.length-1].x0+R[R.length-1].l,x)); if(raum){kam=ziel;raum.zentrieren(x);return;}if(!raf) raf = requestAnimationFrame(fahrt); };
+      ziel = Math.max(R[0].x0,Math.min(R[R.length-1].x0+R[R.length-1].l,x)); if(raum){kam=ziel;raum.zentrieren(heute?R.reduce((a,s)=>Math.abs(s.x0+s.l/2-x)<Math.abs(a.x0+a.l/2-x)?s:a,R[0]).id:x);return;}if(!raf) raf = requestAnimationFrame(fahrt); };
     const text = () => {
       const s = S.find(s => s.id === sel), el = d.querySelector('#bwDetail'), save = d.querySelector('#bwSpeichern');
       if(heute){const b=(bestand?.plaetze||[]).find(s=>s.id===bestandSel);el.innerHTML=b?`<div class="bw-detailkopf"><b>Bande ${E(b.nummer||b.nr)}</b><span>${E(b.firma||'Bestandsbande')}</span></div><p>Vorhandene Bande am Platz. Diese Ansicht ändert weder die Belegung noch einen Vertrag.</p>`:'<p>Schau dich zwischen den vorhandenen Banden um. Für einen eigenen Platzwunsch wechselst du zum Plan 2027/28.</p>';malen();return;}
@@ -3237,7 +3264,7 @@ const BANDENWAHL = (() => {
       const r = d.querySelector('#bwWeg'); r.value = String(s.pos); r.setAttribute('aria-valuetext',`Platz ${s.kennung}, ${stand(s)}`); malen();
     };
     const leisteZentrieren = id => { const l=d.querySelector('.bw-liste'), b=l&&[...l.querySelectorAll('[data-bwslot]')].find(b=>b.dataset.bwslot===id); if(l&&b)l.scrollLeft+=b.getBoundingClientRect().left-l.getBoundingClientRect().left-(l.clientWidth-b.offsetWidth)/2; };
-    const waehlen = id => { const s = S.find(s => s.id === id); if(!s) return; sel = id; fahren(s.x0+s.l/2); text(); leisteZentrieren(id); void eigeneBande(); };
+    const waehlen = id => { const s = S.find(s => s.id === id); if(!s) return; blickBasis();sel = id; fahren(s.x0+s.l/2); text(); leisteZentrieren(id); void eigeneBande(); };
     const eigeneBande = async () => { const fmt = paket === 'p1896' ? '500x80' : '250x80';
       try { const spec = {format:fmt,stil:'ci',layout:opt.name ? 'links' : 'mitte',firma:opt.firma,name:opt.name||opt.firma,logo:opt.logo||null,nameAn:!!opt.name||!opt.logo,kontakt:false};
         const res = await BANDE.vorbereiten(spec,{basis:'partner/',wappen:'partner/svbsc.png'}), L = BANDE.layout(spec,res), c = BANDE.bild(L,res,.24,false), im = new Image();
@@ -3258,7 +3285,7 @@ const BANDENWAHL = (() => {
         <div class="bw-oben"><p id="bwEinordnung">Geh an der Reihe entlang und schau, wie eure Bande neben den anderen wirkt. Mitte und 1896-Plätze bleiben für diese Stufen reserviert.</p><label id="bwPaketLabel">Vorschau für<select id="bwPaket"><option value="club">Club / Premium Partner</option><option value="p1896">1896 Partner</option></select></label><label id="bwBereichLabel" hidden>Bereich<select id="bwBereich">${(bestand?.bereiche||[]).filter(b=>bestand.plaetze.some(p=>p.bereich===b.key)).map(b=>`<option value="${E(b.key)}">${E(b.titel)}</option>`).join('')}</select></label></div>
         <div class="bw-plan" data-bw-plan aria-label="Plätze von links nach rechts, vom Rasen aus"><span>Links</span><div class="bw-mini" aria-hidden="true">${S.map(s => `<i class="${E(s.rolle)} ${E(s.stand)}" style="flex:${s.l}"></i>`).join('')}</div><span>Rechts</span></div>
         <div class="bw-buehne"><canvas tabindex="0" role="img" aria-label="Begehbare Bandenansicht. WASD zum Gehen, Pfeile zum Drehen, mit Maus oder Finger umsehen. Alternativ die Tasten darunter nutzen."></canvas><span class="bw-bildhinweis" id="bwBildhinweis">Vorschau, keine Reservierung</span><button type="button" class="bw-bildgross" id="bwBildGross">Große Ansicht</button><div class="bw-aufdruck" id="bwAufdruck" hidden><button type="button" id="bwFotoZu" class="bw-zu">Zurück zum Rundgang</button><div id="bwFotoBild"></div><p id="bwFotoText"></p></div></div>
-        <div class="bw-navigation" role="group" aria-label="Im Stadion bewegen"><div class="bw-navgruppe"><span>Gehen · gedrückt halten</span><div class="bw-schritte"><button type="button" data-bwbeweg="vor" aria-label="Vorwärts gehen">Vorwärts</button><button type="button" data-bwbeweg="links" aria-label="Seitwärts nach links gehen">Links</button><button type="button" data-bwbeweg="zurueck" aria-label="Rückwärts gehen">Rückwärts</button><button type="button" data-bwbeweg="rechts" aria-label="Seitwärts nach rechts gehen">Rechts</button></div></div><div class="bw-navgruppe"><span>Blick drehen</span><div class="bw-blick"><button type="button" data-bwblick="-1" aria-label="Nach links schauen">↶</button><button type="button" id="bwUebersicht">Startansicht</button><button type="button" data-bwblick="1" aria-label="Nach rechts schauen">↷</button><button type="button" id="bwGross" aria-pressed="false">Groß ansehen</button></div></div></div>
+        <div class="bw-navigation" role="group" aria-label="Im Stadion bewegen"><div class="bw-navgruppe"><span>Gehen · gedrückt halten</span><div class="bw-schritte"><button type="button" data-bwbeweg="vor" aria-label="Vorwärts gehen">Vorwärts</button><button type="button" data-bwbeweg="links" aria-label="Seitwärts nach links gehen">Links</button><button type="button" data-bwbeweg="zurueck" aria-label="Rückwärts gehen">Rückwärts</button><button type="button" data-bwbeweg="rechts" aria-label="Seitwärts nach rechts gehen">Rechts</button></div></div><label class="bw-blickpunkt">Blickpunkt<select id="bwBlickpunkt" disabled><option value="banden">Bandenreihe</option><option value="platz">Über den Platz</option><option value="vereinsheim">Zum Vereinsheim</option></select></label><div class="bw-navgruppe"><span>Blick drehen</span><div class="bw-blick"><button type="button" data-bwblick="-1" aria-label="Nach links schauen">↶</button><button type="button" id="bwUebersicht">Startansicht</button><button type="button" data-bwblick="1" aria-label="Nach rechts schauen">↷</button><button type="button" id="bwGross" aria-pressed="false">Groß ansehen</button></div></div></div>
         <div class="bw-nah"><p id="bwAuswahl" aria-live="polite">Tippe auf eine Bande, um sie näher anzusehen.</p><button type="button" id="bwFoto" disabled aria-controls="bwAufdruck">Aufdruck groß ansehen</button></div>
         <p class="bw-bedienung" id="bwRaumStatus" role="status">Die 3D-Ansicht wird vorbereitet.</p>
         <p class="bw-bedienung" id="bwVormerkung" hidden></p>
@@ -3273,7 +3300,8 @@ const BANDENWAHL = (() => {
       d.querySelectorAll('[data-bwgehen]').forEach(b => b.onclick = () => { const nah = S.reduce((a,s) => Math.abs(s.x0+s.l/2-ziel) < Math.abs(a.x0+a.l/2-ziel) ? s : a,S[0]); waehlen(S[Math.max(0,Math.min(S.length-1,S.indexOf(nah)+ +b.dataset.bwgehen))].id); });
       d.querySelector('#bwWeg').oninput = e => waehlen(S.find(s => s.pos === +e.target.value)?.id);
       let cv = d.querySelector('canvas');
-      const ausBild=id=>{if(heute){bestandSel=id;text();raum?.zentrieren(id);}else waehlen(id);};
+      const ausBild=id=>{if(heute){const s=bestandRang(bestand?.plaetze||[]).find(s=>s.id===id);if(!s)return;
+        bestandSel=id;bereich=s.bereich;d.querySelector('#bwBereich').value=bereich;stadionEinstieg=true;blickBasis();flachStart();text();raum?.zentrieren(id);}else waehlen(id);};
       const stopHold=()=>{cancelAnimationFrame(hold);hold=0;};
       fensterStop=stopHold;window.addEventListener('blur',fensterStop);
       const wechseln=h=>{stopHold();heute=!!h&&!!bestand;bestandSel=null;
@@ -3282,13 +3310,15 @@ const BANDENWAHL = (() => {
         d.querySelector('#bwHeute').setAttribute('aria-pressed',String(heute));d.querySelector('#bwZukunft').setAttribute('aria-pressed',String(!heute));
         d.querySelectorAll('[data-bw-plan]').forEach(e=>e.hidden=heute);d.querySelector('#bwPaketLabel').hidden=heute;d.querySelector('#bwBereichLabel').hidden=!heute;d.querySelector('#bwPlanStart').hidden=!heute;
         d.querySelector('#bwEinordnung').textContent=heute?'Die vorhandenen Banden mit ihren Originalaufdrucken. Schau dich frei um. Für die nächste Saison gibt es einen eigenen Platzplan.':'Platzplan für 2027/28. Eure Gestaltung lässt sich an verschiedenen Positionen ansehen. Freigegebene Partner erscheinen mit ihrem Logo. Vormerkungen sind gekennzeichnet.';
-        d.querySelector('#bwBildhinweis').textContent=heute?'Heutiger Bestand · Umfeld als Visualisierung':'Plan 2027/28 · Gestaltungsvorschau';
+        d.querySelector('#bwBildhinweis').textContent=heute?'Heutiger Bestand · Stadion nach Originalfotos':'Plan 2027/28 · Stadion nach Originalfotos';
         const v=d.querySelector('#bwVormerkung'),vormerkungen=S.filter(s=>s.kennzeichnung&&s.firma);v.hidden=heute||!vormerkungen.length;v.textContent=vormerkungen.map(s=>s.firma+' · Platz '+s.kennung+': '+s.kennzeichnung).join('. ');
-        d.querySelector('.bw-fuss').textContent=heute?'Heutiger Bestand laut Vereinsplan. Die Umgebung ist eine Visualisierung.':'Die Reihe ist für 2027/28 geplant. Lage und Nachbarn können sich bis zur Montage ändern. Eure Auswahl bleibt unverbindlich. Andere Firmennamen und Logos erscheinen nur mit Freigabe.';
-        text();raum?.reset();if(!heute&&sel)fahren(S.find(s=>s.id===sel).x0+S.find(s=>s.id===sel).l/2);
+        d.querySelector('.bw-fuss').textContent=heute?'Heutiger Bestand laut Vereinsplan. Stadion nach Originalfotos; Maße und Blickwinkel sind angenähert.':'Die Reihe ist für 2027/28 geplant. Lage und Nachbarn können sich bis zur Montage ändern. Eure Auswahl bleibt unverbindlich. Andere Firmennamen und Logos erscheinen nur mit Freigabe.';
+        flachStart();text();reihenStart();if(heute)bestandsEinstieg();else if(sel)fahren(S.find(s=>s.id===sel).x0+S.find(s=>s.id===sel).l/2);
       };
       d.querySelector('#bwHeute').onclick=()=>wechseln(true);d.querySelector('#bwZukunft').onclick=()=>wechseln(false);d.querySelector('#bwPlanStart').onclick=()=>wechseln(false);
-      const bereichSel=d.querySelector('#bwBereich');bereichSel.value=bereich;bereichSel.onchange=()=>{bereich=bereichSel.value;bestandSel=null;text();raum?.reset();};
+      const bereichSel=d.querySelector('#bwBereich');bereichSel.value=bereich;bereichSel.onchange=()=>{stopHold();bereich=bereichSel.value;bestandSel=null;stadionEinstieg=true;flachStart();text();reihenStart();};
+      const blickSel=d.querySelector('#bwBlickpunkt');blickSel.onchange=()=>{stopHold();if(!raumBereit||!raum)return;if(heute)stadionEinstieg=true;
+        if(blickSel.value==='platz')raum.rundblick?.();else if(blickSel.value==='vereinsheim')raum.vereinsheim?.();else reihenStart();};
       const bestandBilderLaden=()=>{(bestand?.plaetze||[]).filter(s=>s.bild&&!imgs.has(s.id)).forEach(s=>{const im=new Image();im.onload=()=>{if(lebt){imgs.set(s.id,im);malen();}};im.src=s.bild;});};
       d.querySelector('#bwBestandNeu').onclick=async e=>{const b=e.currentTarget;b.disabled=true;d.querySelector('#bwBestandText').textContent='Der heutige Bestand wird geladen.';
         try{const r=await opt.rpc('banden_bestandsbild',{p_code:opt.code});if(!lebt)return;if(!Array.isArray(r?.plaetze)||!r.plaetze.length)throw new Error('Noch kein Bestand');
@@ -3296,7 +3326,7 @@ const BANDENWAHL = (() => {
           d.querySelector('#bwHeute').disabled=false;d.querySelector('#bwBestandStatus').hidden=true;bestandBilderLaden();wechseln(true);
         }catch(_){if(lebt)d.querySelector('#bwBestandText').textContent='Der heutige Bestand ist gerade nicht verfügbar. Du kannst es noch einmal versuchen oder den Zukunftsplan nutzen.';}
         finally{if(lebt)b.disabled=false;}};
-      d.querySelector('#bwUebersicht').onclick=()=>{stopHold();raum?.reset();if(flach)fahren(0);};
+      d.querySelector('#bwUebersicht').onclick=()=>{stopHold();if(heute)stadionEinstieg=true;reihenStart();};
       d.querySelector('#bwGross').onclick=e=>{stopHold();const an=d.classList.toggle('bw-immersiv');e.currentTarget.textContent=an?'Kleine Ansicht':'Groß ansehen';e.currentTarget.setAttribute('aria-pressed',String(an));d.scrollTop=0;if(an)cv.focus({preventScroll:true});else e.currentTarget.focus({preventScroll:true});};
       d.querySelector('#bwBildGross').onclick=()=>d.querySelector('#bwGross').click();
       const nav=d.querySelector('.bw-navigation');
@@ -3312,7 +3342,7 @@ const BANDENWAHL = (() => {
           const tick=t=>{if(!lebt||!raum||document.hidden){stopHold();return;}if(vor)beweg(Math.min(.05,(t-vor)/1000));vor=t;hold=requestAnimationFrame(tick);};hold=requestAnimationFrame(tick);};
         b.onpointerup=b.onpointercancel=b.onlostpointercapture=stopHold;b.onclick=e=>{if(e.detail===0)beweg(.22);};
       });
-      const flachEinrichten=()=>{if(!lebt||flach)return;stopHold();raum?.zerstoeren();raum=null;flach=true;const neu=cv.cloneNode(false);cv.replaceWith(neu);cv=neu;
+      const flachEinrichten=()=>{if(!lebt||flach)return;stopHold();raum?.zerstoeren();raum=null;raumBereit=false;blickSel.disabled=true;flach=true;const neu=cv.cloneNode(false);cv.replaceWith(neu);cv=neu;
         d.classList.remove('bw-immersiv');d.querySelector('#bwGross').textContent='Groß ansehen';d.querySelector('#bwGross').setAttribute('aria-pressed','false');d.scrollTop=0;
         d.querySelector('#bwBildGross').hidden=true;
         cv.setAttribute('aria-label','Bandenreihe als flache Übersicht. Mit den Pfeiltasten, dem Regler oder der Platzliste wählen.');nav.hidden=true;d.querySelector('#bwRaumStatus').textContent='3D ist auf diesem Gerät gerade nicht verfügbar. Die flache Übersicht und die Platzwahl funktionieren weiter.';
@@ -3321,14 +3351,14 @@ const BANDENWAHL = (() => {
         cv.onpointerup=e=>{if(!drag)return;const click=drag.weg<7;drag=null;if(!click)return;const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
           const hit=boxen.filter(b=>x>=b.x&&x<=b.x+b.w&&y>=b.y-28&&y<=b.y+b.h+10).sort((a,b)=>b.w-a.w)[0];if(hit)ausBild(hit.id);};
         cv.onpointercancel=()=>{drag=null;};cv.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();if(heute)fahren(kam+(e.key==='ArrowLeft'?-3:3));else d.querySelector(`[data-bwgehen="${e.key==='ArrowLeft'?'-1':'1'}"]`).click();}};
-        resize?.disconnect();resize=new ResizeObserver(malen);resize.observe(cv);malen();cv.focus({preventScroll:true});
+        resize?.disconnect();resize=new ResizeObserver(malen);resize.observe(cv);flachStart();malen();cv.focus({preventScroll:true});
       };
       const starteRaum=async()=>{try{
         if(!window.BANDENRAUM)await new Promise((ja,nein)=>{const s=document.createElement('script');s.src='bandenraum.js?v='+encodeURIComponent(opt.build||'');s.onload=ja;s.onerror=nein;document.head.appendChild(s);});
         if(!lebt)return;if(!window.BANDENRAUM)throw new Error('3D-Modul fehlt');
-        raum=BANDENRAUM.erstellen(cv,{tafeln:letzteTafeln,three:'vendor/three.min.js',texturen:{rasen:'partner/stadion-rasen.webp',weg:'partner/stadion-weg.webp',umfeld:'partner/stadion-umfeld.webp'},
+        raum=BANDENRAUM.erstellen(cv,{tafeln:letzteTafeln,bereich:kameraBereich(),three:'vendor/three.min.js',texturen:{rasen:'partner/stadion-rasen.webp',weg:'partner/stadion-weg.webp'},
           onSelect:ausBild,onStatus:t=>{if(lebt)d.querySelector('#bwRaumStatus').textContent=t;},onFallback:flachEinrichten});
-        await raum.bereit;if(!lebt)return;if(flach){raum?.zerstoeren();raum=null;return;}d.querySelector('#bwRaumStatus').textContent='WASD zum Gehen. Pfeile oder Ziehen zum Umsehen. Am Handy die Tasten nutzen.';malen();if(!heute&&sel)raum.zentrieren(sel);
+        await raum.bereit;if(!lebt)return;if(flach){raum?.zerstoeren();raum=null;return;}raumBereit=true;blickSel.disabled=false;d.querySelector('#bwRaumStatus').textContent='WASD zum Gehen. Pfeile oder Ziehen zum Umsehen. Am Handy die Tasten nutzen.';malen();if(heute){reihenStart();bestandsEinstieg();}else if(sel)raum.zentrieren(sel);
       }catch(_){flachEinrichten();}};
       d.querySelector('#bwSpeichern').onclick = async e => {
         const b = e.currentTarget, s = S.find(s => s.id === sel); if(heute || !s || b.disabled) return; b.disabled = true;

@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.109', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.110', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18661,6 +18661,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.110',v:'0.99.110',datum:'2026-11-20',titel:'Unser Stadion nach Originalfotos',kurz:'Der Rundgang nutzt die echte Anlage als Vorlage.',
+    punkte:[{ic:'i',t:'Vereinsheim und Banden am richtigen Ort',d:'Originalaufnahmen zeigen die Umgebung des Weschnitztalstadions. Vereinsheim, Laufbahn und Banden folgen dem vorhandenen Stadionplan. Du kannst über den Platz schauen, zum Vereinsheim wechseln oder einzelne Banden ansehen. Alle heutigen Plätze bleiben beim Bereichswechsel an ihrem festen Ort.',r:'admin'},{ic:'i',t:'Antworten beim Wiederkommen behalten',d:'Die automatische Speicherung wartet, solange die Auswahl zum Fortsetzen offen ist. Ein neuer Anfang wird erst gespeichert, wenn du ihn ausdrücklich wählst.',r:'admin'}]},
   {id:'0.99.109',v:'0.99.109',datum:'2026-11-20',titel:'Am Spielfeldrand umsehen',kurz:'Begehbare Bandenansicht mit vorhandenen Aufdrucken und besser lesbaren Firmenlogos.',
     punkte:[{ic:'i',t:'Banden im räumlichen Zusammenhang',d:'Im Partnerflow kannst du am Spielfeldrand gehen und dich umsehen. Heutiger Bestand und Platzplan für 2027/28 sind getrennt. Filaus erhält aus dem Original aufbereitete Druckfassungen für Bande und Ärmel. Die gewünschte Hauptpartner-Gestaltung bleibt als vorgemerkt gekennzeichnet.',r:'admin'}]},
   {id:'0.99.108',v:'0.99.108',datum:'2026-11-20',titel:'Euer Logo auf dem Ärmel',kurz:'Auch die Trikotkarte am Schwarzen Brett zeigt die jeweilige Firma.',

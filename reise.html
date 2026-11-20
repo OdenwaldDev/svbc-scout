@@ -897,7 +897,7 @@ window.REISE_TRIKOT=(()=>{
     if(bibliothekP)return bibliothekP;
     bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.109';
+      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.110';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); });
     }})().catch(e=>{bibliothekP=null;throw e;});
@@ -1542,6 +1542,7 @@ setInterval(()=>{ if(MERKT&&!document.hidden){ const id=ORD[S.i]; szSek[id]=(szS
 function standJetzt(){ const o={i:S.i,name:S.name,skeptisch:!!S.skeptisch,auto:!!S.auto,verl:!!S.verl,laufzeit:S.laufzeit,antrieb:S.antrieb.slice(),extras:[...S.extras],info:(S.info||[]).slice(),paket:pk()};
   ['verb','platz','jahr','ja','weg','wann'].forEach(k=>{ if(S[k])o[k]=S[k]; }); ['groesse','pi'].forEach(k=>{ if(S[k]!=null)o[k]=S[k]; }); return o; }
 function merken(){ clearTimeout(merkUhr); merkUhr=null; if(!MERKT)return;
+  if(GEMERKT&&S.i===0&&$('#wieder')?.hidden===false)return; // Die Rückkehr-Auswahl hat den gespeicherten Stand noch nicht übernommen.
   try{ window.parent.postMessage({reise:'merken',sitzung:SID,daten:{schritt:ORD[S.i],hoch:innerHeight>innerWidth,dauer_s:Math.round((Date.now()-T0)/1000),stand:standJetzt(),szenen:Object.assign({},szSek),klicks:klNeu.splice(0),info:(S.info||[]).slice()}},location.origin); }catch(e){} }
 function merkBald(){ if(!MERKT||merkUhr)return; merkUhr=setTimeout(merken,1800); }
 setInterval(()=>{ if(MERKT&&!document.hidden)merken(); },20000);

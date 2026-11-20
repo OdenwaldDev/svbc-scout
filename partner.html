@@ -760,6 +760,19 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
 .bw-bestand-status{display:flex;align-items:center;gap:14px;margin:12px 0 18px;font-size:14px;flex:0 0 auto}.bw-bestand-status button{border:1px solid #afb1bf;background:#fff;border-radius:8px;padding:9px 13px;flex:0 0 auto}@media(max-width:650px){.bw-bestand-status{align-items:flex-start;flex-direction:column;gap:8px}}
 .bw-bildgross{position:absolute;right:12px;top:12px;border:1px solid #afb1bf;background:#f6f3ecf2;border-radius:8px;padding:9px 13px;min-height:44px}.bw-immersiv .bw-bildgross{display:none}
 @media(max-width:650px){.bw-blick #bwUebersicht{flex:0 0 110px;font-size:14px;padding:8px 10px}}
+.bw-blickpunkt{display:grid;gap:4px;font-size:13px;color:#4e536a;flex:0 0 174px}.bw-blickpunkt select{width:100%;min-height:48px;color:var(--bw-ink)}
+@media(max-width:1100px) and (min-width:651px){.bw-navigation{flex-wrap:wrap;gap:12px}.bw-blickpunkt{order:3;flex:1 0 100%;grid-template-columns:auto minmax(174px,260px);align-items:center;justify-content:center;gap:12px}}
+@media(max-width:650px){.bw-blickpunkt{grid-template-columns:auto 1fr;align-items:center;gap:12px}.bw-blickpunkt select{min-height:44px}.bw-immersiv .bw-blickpunkt{font-size:12px}.bw-immersiv .bw-blickpunkt select{padding:7px 10px}}
+@media(max-height:500px) and (min-width:651px){
+ .bw-immersiv .bw-kopf{padding:4px 14px;gap:12px}.bw-immersiv .bw-kicker{display:none}.bw-immersiv .bw-kopf h2{font-size:24px}.bw-immersiv .bw-zu{min-height:44px;padding:6px 10px;font-size:13px}.bw-immersiv .bw-in{padding:0 12px}
+ .bw-immersiv .bw-ansicht{margin:3px 0;gap:6px}.bw-immersiv .bw-ansicht button{min-height:44px;padding:7px 10px;font-size:13px}
+ .bw-immersiv .bw-navigation{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;padding:4px 0}.bw-immersiv .bw-navgruppe{gap:0;min-width:0}.bw-immersiv .bw-navgruppe>span{display:none}.bw-immersiv .bw-schritte,.bw-immersiv .bw-blick{gap:4px;flex-wrap:nowrap}
+ .bw-immersiv .bw-navigation button{min-width:44px;min-height:44px;flex:0 0 auto;padding:6px 8px;font-size:13px}.bw-immersiv #bwUebersicht{display:none}.bw-immersiv .bw-blickpunkt{display:block;order:0;flex:0 0 150px;font-size:0;line-height:1}.bw-immersiv .bw-blickpunkt select{min-height:44px;padding:6px 8px;font-size:13px}
+ .bw-immersiv .bw-nah{margin:2px 0;gap:8px}.bw-immersiv .bw-nah p{font-size:12px;line-height:1.3}.bw-immersiv .bw-nah button{min-height:44px;padding:6px 9px;font-size:13px}.bw-immersiv #bwRaumStatus{display:none}
+}
+@media(max-height:500px) and (max-width:650px) and (orientation:landscape){
+ .bw.bw-immersiv{overflow:auto}.bw-immersiv .bw-in{flex:0 0 auto;overflow:visible}.bw-immersiv .bw-buehne{flex:0 0 200px;height:200px;min-height:200px}.bw-immersiv .bw-buehne canvas{height:200px}
+}
 </style>
 </head>
 <body>
@@ -770,9 +783,9 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
   <p class="start-t">Eure Übersicht wird geladen …</p>
   <div class="start-b" aria-hidden="true"><i></i><i></i><i></i></div>
 </div></div>
-<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.109", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
-<script src="partner-lib.js?v=beta-0.99.109"></script>
-<script src="partner.js?v=beta-0.99.109"></script>
+<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.110", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
+<script src="partner-lib.js?v=beta-0.99.110"></script>
+<script src="partner.js?v=beta-0.99.110"></script>
 <script>(function(){ try{
   var q=new URLSearchParams(location.search), hp=new URLSearchParams(location.hash.slice(1));
   if(q.get('reise')==='0')return;
