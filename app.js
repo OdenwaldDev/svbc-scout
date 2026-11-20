@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.111', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.112', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18661,6 +18661,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.112',v:'0.99.112',datum:'2026-11-20',titel:'Holz, Stoff und ein ruhiger Blick auf den Platz',kurz:'Die Partnerreise bekommt neue Materialien für Trikotfach und Wimpel sowie eine kurze Animation des Originalfotos.',
+    punkte:[{ic:'i',t:'Materialien im Vereinsdesign',d:'Das Trikot hängt vor einer Holzrückwand. Die Wimpel zeigen eine dunkelblaue Stoffstruktur. Wappen, Firmenlogos und Texte bleiben die persönlichen Originale.',r:'admin'},{ic:'i',t:'Originalplatz mit wenig Bewegung',d:'Im Einstieg bewegen sich einzelne Blätter im Stadionfoto. Gebäude, Banden und Spielfeld bleiben an ihrem Platz. Der stumme Clip lässt sich pausieren. Bei Datensparen oder weniger Bewegung bleibt das Foto.',r:'admin'}]},
   {id:'0.99.111',v:'0.99.111',datum:'2026-11-20',titel:'Vom Platz bis zum eigenen Trikot',kurz:'Die Partnerreise zeigt Originalbilder und persönliche Vorschauen mit mehr Zusammenhang.',
     punkte:[{ic:'i',t:'Trikot im Kabinenfach',d:'Du kannst das ganze Trikot ansehen, den Ärmel vergrößern und zwischen rechts und links wechseln. Der persönliche Aufdruck bleibt auf dem Ärmel. Auch der Abschluss greift den gewählten Auftritt wieder auf.',r:'admin'},{ic:'i',t:'Wimpel, Brett und Spieltagsaushang',d:'Wimpel und Papiere haben ruhigere Materialien. Partner des Tages zeigt das Firmenlogo auf einem Spieltagsaushang, auch am Schwarzen Brett. Originalfotos des Vereins und der Anlage bekommen mehr Raum.',r:'admin'},{ic:'i',t:'Bewegung unter Kontrolle',d:'Vorschauen wechseln erst nach deiner Auswahl. Der kurze Rasenfilm wird nur auf seiner Folie geladen und lässt sich pausieren. Bei Datensparen oder weniger Bewegung bleibt das Standbild.',r:'admin'}]},
   {id:'0.99.110',v:'0.99.110',datum:'2026-11-20',titel:'Unser Stadion nach Originalfotos',kurz:'Der Rundgang nutzt die echte Anlage als Vorlage.',

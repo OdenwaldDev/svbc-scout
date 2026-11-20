@@ -1131,6 +1131,8 @@ html.zeiger .spot{opacity:1}
 .banden-entwurf{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden}
 .banden-entwurf>img{width:100%;height:100%;object-fit:cover}
 .sz.sz-trikot .trikot-gesamt{background:transparent;inset:15% 7% 5%}
+.szene.an .sz.sz-trikot{--schrank-rueckwand:url("partner/r-schrank-holz.webp")}
+.szene.an .wimpel .tuch{background-image:linear-gradient(100deg,#00000038,transparent 24%,#ffffff0b 42%,#00000017 62%,transparent 82%,#00000038),url("partner/r-wimpel-stoff.webp"),linear-gradient(90deg,#1b2755,#29396e 38%,#21305d 72%,#1d2852);background-size:auto,125% 125%,auto;background-position:center;background-repeat:no-repeat}
 .sz.sz-trikot .trikot-gesamt:not([data-foto="true"]) img{transform:scale(1.6);transform-origin:50% 50%}
 .sz-trikot[data-ansicht="detail"]::after{opacity:.3}
 .trikot-ansichten{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -1222,6 +1224,15 @@ html.zeiger .spot{opacity:1}
  h1 .z>span{white-space:nowrap}
 }
 @media(max-height:500px) and (min-aspect-ratio:1/1){
+ .szene[data-s="platz"][data-teil="1"] .wimpel-b{grid-template-columns:minmax(0,1fr) minmax(170px,.7fr);column-gap:24px;row-gap:6px}
+ .szene[data-s="platz"][data-teil="1"] .wimpel-b>:not(.wimpel){grid-column:1}
+ .szene[data-s="platz"][data-teil="1"] .wimpel{grid-column:2;grid-row:1/5;width:200px;max-width:100%;margin-top:34px;align-self:center}
+ .szene[data-s="platz"][data-teil="1"] .wimpel .tuch{min-height:190px;padding:12px 18px 52px}
+ .szene[data-s="platz"][data-teil="1"] .wimpel img{width:46px;margin-bottom:4px}
+ .szene[data-s="platz"][data-teil="1"] .wimpel b{font-size:22px}
+ .szene[data-s="platz"][data-teil="1"] .gehoert{margin:0;gap:3px}.szene[data-s="platz"][data-teil="1"] .gehoert q{font-size:20px}
+ .szene[data-s="platz"][data-teil="1"] .wimpel-t{font-size:20px;margin:0}
+ .szene[data-s="platz"][data-teil="1"] .stimmt{margin:0;gap:0}.szene[data-s="platz"][data-teil="1"] .stimmt .knopf{min-height:44px;padding:8px 16px;font-size:16px}.szene[data-s="platz"][data-teil="1"] .stimmt .zeile{font-size:14px}
  .bue-g{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);grid-template-areas:'k r' 'w r';column-gap:20px;align-items:start}
  .bue-k{grid-area:k;align-self:end}.bue-r{grid-area:r;margin-inline:0}.bue-w{grid-area:w;align-self:start}
  .bue-k h2{font-size:38px}.bue-w .unter{font-size:13px}
@@ -1241,10 +1252,12 @@ html.zeiger .spot{opacity:1}
  .trikot-ansichten{padding-inline:0}.trikot-ansichten button{padding:7px 5px;font-size:12px}
 }
 @media(max-height:500px) and (max-width:650px) and (min-aspect-ratio:1/1){.trikot-ansichten{grid-template-columns:1fr 1fr}}
+/* Hier steht in der Fußleiste nur der Zurück-Pfeil; die Aktionen liegen links daneben. */
+@media(max-height:360px) and (min-aspect-ratio:1/1){.szene[data-s="platz"][data-teil="1"]{--mf:calc(16px + env(safe-area-inset-bottom,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
 @media(prefers-reduced-motion:reduce){.sz.kommt,.sz-trikot.kommt,.sz-bande.fahrt{animation:none}.sz-bild,.fz{transition:none}}
 </style></head><body><div id="film" data-s="start" data-licht="1">
   <div class="hg" aria-hidden="true">
-    <div data-hg="nacht" class="an" data-reise-medium data-reise-szenen="start"><img class="zoom" src="partner/stadion-original-nordost.jpg" alt=""></div>
+    <div data-hg="nacht" class="an" data-reise-medium data-reise-szenen="start" data-reise-video="partner/r-stadionclip.mp4"><img class="zoom" src="partner/stadion-original-nordost.jpg" alt=""></div>
     <div data-hg="rasen"><img class="zoom" src="partner/r-rasen.webp" alt=""></div>
     <div data-hg="ball"><img class="zoom" src="partner/r-ball.webp" alt="" style="object-position:50% 70%"></div>
     <div data-hg="rauch"><img class="zoom" src="partner/stadion-original-nord.jpg" alt=""></div>
@@ -1487,7 +1500,7 @@ window.REISE_TRIKOT=(()=>{
     if(bibliothekP)return bibliothekP;
     bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.111';
+      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.112';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); });
     }})().catch(e=>{bibliothekP=null;throw e;});
