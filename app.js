@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.112', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.113', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18661,6 +18661,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.113',v:'0.99.113',datum:'2026-11-20',titel:'Näher am echten Stadion',kurz:'Der Rundgang folgt den Originalfotos genauer und zeigt Vereinsheim und Spielfeld auch zusammen.',
+    punkte:[{ic:'i',t:'Blick und Materialien abgeglichen',d:'Tor, Masten und kleine Bauwerke sind auf denselben Fotoblick ausgerichtet. Die Laufbahn verwendet Originalaufnahmen für Sonne und Schatten. Der helle Anbau zeigt die Wandmotive aus dem Panorama. Unter Blickpunkt kannst du Vereinsheim und Platz gemeinsam ansehen.',r:'admin'}]},
   {id:'0.99.112',v:'0.99.112',datum:'2026-11-20',titel:'Holz, Stoff und ein ruhiger Blick auf den Platz',kurz:'Die Partnerreise bekommt neue Materialien für Trikotfach und Wimpel sowie eine kurze Animation des Originalfotos.',
     punkte:[{ic:'i',t:'Materialien im Vereinsdesign',d:'Das Trikot hängt vor einer Holzrückwand. Die Wimpel zeigen eine dunkelblaue Stoffstruktur. Wappen, Firmenlogos und Texte bleiben die persönlichen Originale.',r:'admin'},{ic:'i',t:'Originalplatz mit wenig Bewegung',d:'Im Einstieg bewegen sich einzelne Blätter im Stadionfoto. Gebäude, Banden und Spielfeld bleiben an ihrem Platz. Der stumme Clip lässt sich pausieren. Bei Datensparen oder weniger Bewegung bleibt das Foto.',r:'admin'}]},
   {id:'0.99.111',v:'0.99.111',datum:'2026-11-20',titel:'Vom Platz bis zum eigenen Trikot',kurz:'Die Partnerreise zeigt Originalbilder und persönliche Vorschauen mit mehr Zusammenhang.',

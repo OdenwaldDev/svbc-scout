@@ -3,10 +3,15 @@
    Projektion aus überlappenden Aufnahmen, kein vermessenes 3D-Modell der Nachbargrundstücke.
    Gemeinsame Fernpunkte: Foto 278343/278342, Brennweite 904 px bei 1280 px Breite,
    Blickdifferenz 42,759 Grad. Kamerastandpunkt und Tiefe sind Fotoannahmen, siehe Referenzdokument.
+   Kamerakorrektur aus dem östlichen Haupttor seit 0.99.113, keine Veränderung des Bandenplans.
    Plan-X wird negiert, Plan-Y nach -(Y+50) abgebildet, wie im Bandenplan. */
 window.STADIONFOTO=(()=>{
   'use strict';
-  const RAD=Math.PI/180,REF=Object.freeze({x:45,y:35,h:1.65}),G=42.2,R=60,SKY=0x59a9e9;
+  const RAD=Math.PI/180,REF=Object.freeze({x:35.533914572,y:38.553707819,h:1.65}),G=42.2,R=60,SKY=0x59a9e9;
+  // Gemeinsame Korrektur aus den vier Torpfosten-Ecken. Die Mehrbild-Rotation bleibt erhalten.
+  const DELTA=Object.freeze([.993119212635115,-.115075316802543,.0217232853092145,.115167055705413,.99334155865148,-.00301619298916623,-.0212315522120465,.00549724623093133,.999759471711094]);
+  const SCHATTEN=Object.freeze({achse:26.3359385391,steigung:.116785269361});
+  function drehen(d,invers=false){const r=DELTA,v=[d.x,d.y,d.h],q=[0,1,2].map(i=>v.reduce((s,x,j)=>s+r[invers?j*3+i:i*3+j]*x,0));return {x:q[0],y:q[1],h:q[2]};}
   const NORDOST_ROT=Object.freeze([.734206046,.007064777,-.678889955,-.018087186,.999794483,-.009156706,.678685742,.019002118,.734182936]);
   const FOTOS=Object.freeze([
     {id:'rundblick',datei:'stadion-original-rundblick.jpg',typ:'zylinder',breite:1280,hoehe:462,
@@ -16,13 +21,14 @@ window.STADIONFOTO=(()=>{
     {id:'nordost',datei:'stadion-original-nordost.jpg',typ:'perspektive',breite:1280,hoehe:721,
       achse:-43.7,neigung:-1.2,rotation:NORDOST_ROT,f:904,x0:0,x1:1279,unten:336,ordnung:3}
   ].map(Object.freeze));
-  function strahl(f,x,y){const a=f.achse*RAD;
+  function strahlRoh(f,x,y){const a=f.achse*RAD;
     if(f.typ==='zylinder'){const w=a+(x/f.breite-.5)*f.fov*RAD;return {x:Math.sin(w),y:-Math.cos(w),h:(f.cy-y)/f.fy};}
     let px=(x-f.breite/2)/f.f,py=(f.hoehe/2-y)/f.f,pz=1;
     if(f.rotation){const r=f.rotation,u=px,v=-py;px=r[0]*u+r[3]*v+r[6];py=-(r[1]*u+r[4]*v+r[7]);pz=r[2]*u+r[5]*v+r[8];}
     const b=f.neigung*RAD,c=pz*Math.cos(b)-py*Math.sin(b);
     return {x:Math.sin(a)*c+Math.cos(a)*px,y:-Math.cos(a)*c+Math.sin(a)*px,h:pz*Math.sin(b)+py*Math.cos(b)};
   }
+  function strahl(f,x,y){return drehen(strahlRoh(f,x,y));}
   function schnitt(d){const kandidaten=[];
     for(const y of [-R,R]){const t=(y-REF.y)/d.y,x=REF.x+t*d.x;if(t>0&&x>=-G&&x<=G)kandidaten.push(t);}
     for(const c of [-G,G]){const dx=REF.x-c,A=d.x*d.x+d.y*d.y,B=2*(dx*d.x+REF.y*d.y),C=dx*dx+REF.y*REF.y-R*R,D=B*B-4*A*C;
@@ -30,7 +36,7 @@ window.STADIONFOTO=(()=>{
     const t=Math.min(...kandidaten);if(!Number.isFinite(t))throw new Error('Fotoprojektion außerhalb der Stadionkontur');
     return {x:REF.x+t*d.x,y:REF.y+t*d.y,h:REF.h+t*d.h};
   }
-  function bildpunkt(f,p){const dx=p.x-REF.x,dy=p.y-REF.y,h=p.h-REF.h,a=f.achse*RAD;
+  function bildpunkt(f,p){const v=drehen({x:p.x-REF.x,y:p.y-REF.y,h:p.h-REF.h},true),dx=v.x,dy=v.y,h=v.h,a=f.achse*RAD;
     if(f.typ==='zylinder'){const w=Math.atan2(dx,-dy)-a;return {x:f.breite*(.5+Math.atan2(Math.sin(w),Math.cos(w))/(f.fov*RAD)),y:f.cy-f.fy*h/Math.hypot(dx,dy)};}
     const b=f.neigung*RAD,vor=dx*Math.sin(a)-dy*Math.cos(a),quer=dx*Math.cos(a)+dy*Math.sin(a),hoch=h*Math.cos(b)-vor*Math.sin(b);
     let k=[quer,-hoch,vor*Math.cos(b)+h*Math.sin(b)];if(f.rotation){const r=f.rotation;k=[r[0]*k[0]+r[1]*k[1]+r[2]*k[2],r[3]*k[0]+r[4]*k[1]+r[5]*k[2],r[6]*k[0]+r[7]*k[1]+r[8]*k[2]];}
@@ -48,22 +54,16 @@ window.STADIONFOTO=(()=>{
   }
   function bauen(T,opt={}){const gruppe=new T.Group();gruppe.name='stadion-originalumfeld';
     gruppe.userData={quelle:'Alberts Originalfotos 278344, 278343, 278342',annahme:{kamera:REF,radius:R},fotografisch:true};
-    const bodenUniforms={foto1:{value:null},geladen:{value:new T.Vector3()}},fotoMaterialien=[];let grasTextur=null;
+    const bodenUniforms={foto1:{value:null},geladen:{value:new T.Vector3()},schatten:{value:new T.Vector2(SCHATTEN.achse,SCHATTEN.steigung)}},fotoMaterialien=[];let grasTextur=null;
     const bodenMaterial=new T.ShaderMaterial({uniforms:bodenUniforms,toneMapped:false,transparent:true,depthWrite:false,
       vertexShader:'varying vec3 ort;void main(){vec4 w=modelMatrix*vec4(position,1.0);ort=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
-      fragmentShader:`uniform sampler2D foto1;uniform vec3 geladen;varying vec3 ort;
-        float weich(vec2 p,vec4 r){return smoothstep(r.x,r.x+.025,p.x)*(1.-smoothstep(r.z-.025,r.z,p.x))*smoothstep(r.y,r.y+.015,p.y)*(1.-smoothstep(r.w-.025,r.w,p.y));}
-        vec3 kamera(vec3 v){float a=-.762708883,c=cos(a),s=sin(a),b=-.020943951;float vor=v.x*s-v.y*c,quer=v.x*c+v.y*s;
-          return vec3(quer,-(v.z*cos(b)-vor*sin(b)),vor*cos(b)+v.z*sin(b));}
-        vec2 perspektive(vec3 k){if(k.z<.1)return vec2(-5.);return vec2(.5+904.*k.x/k.z/1280.,.5+904.*k.y/k.z/721.);}
-        void druck(vec3 quelle,float w,inout vec3 c,inout float alpha){float a=alpha+(1.-alpha)*w;c=(c*alpha*(1.-w)+quelle*w)/max(.0001,a);alpha=a;}
-        void main(){vec3 v=vec3(-ort.x-45.,-ort.z-85.,ort.y-1.65);vec2 muster=fract(vec2(ort.x*.13,ort.z*.18));
+      fragmentShader:`uniform sampler2D foto1;uniform vec3 geladen;uniform vec2 schatten;varying vec3 ort;
+        void main(){vec2 muster=1.-abs(mod(vec2(ort.x*.13,ort.z*.18),2.)-1.);
           vec3 hell=texture2D(foto1,vec2(.28+muster.x*.27,1.-(.52+muster.y*.065))).rgb;
-          vec3 schatten=texture2D(foto1,vec2(.27+muster.x*.34,1.-(.75+muster.y*.20))).rgb;
-          float schattenkante=31.4893+.105113*ort.x;
-          vec3 c=mix(hell,schatten,smoothstep(schattenkante-.5,schattenkante+.5,-ort.z-50.));float alpha=geladen.y;
-          vec3 k=kamera(v);vec2 p=perspektive(k);float w=weich(p,vec4(.001,.43,.999,.999))*geladen.y;druck(texture2D(foto1,vec2(p.x,1.-(.508+abs(p.y-.508)))).rgb,w,c,alpha);
-          if(alpha<.001)discard;gl_FragColor=vec4(c,alpha);
+          vec3 dunkel=texture2D(foto1,vec2(.27+muster.x*.34,1.-(.75+muster.y*.20))).rgb;
+          float kante=schatten.x-schatten.y*ort.x;
+          vec3 c=mix(hell,dunkel,smoothstep(kante-.5,kante+.5,-ort.z-50.));
+          if(geladen.y<.5)discard;gl_FragColor=vec4(c,1.);
           #include <encodings_fragment>
         }`});
     const kontur=new T.Shape();kontur.moveTo(-G,-36.45);kontur.lineTo(G,-36.45);kontur.absarc(G,0,36.45,-Math.PI/2,Math.PI/2,false);kontur.lineTo(-G,36.45);kontur.absarc(-G,0,36.45,Math.PI/2,Math.PI*1.5,false);
@@ -78,16 +78,21 @@ window.STADIONFOTO=(()=>{
         vertexShader:'varying vec2 fotoUV;varying float hoehe;void main(){fotoUV=uv;hoehe=position.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
         fragmentShader:`uniform sampler2D bild;uniform sampler2D grasFoto;uniform float grasBereit;uniform float bereit;uniform vec3 sky;uniform vec3 horizont;uniform vec2 kante;varying vec2 fotoUV;varying float hoehe;
           void main(){if(bereit<.5)discard;vec2 uv=clamp(fotoUV,vec2(.0005),vec2(.9995));vec4 c=texture2D(bild,uv);
-            ${spuren.map(x=>`if(abs(uv.x-${x.toFixed(6)})<.0032){c=mix(texture2D(bild,vec2(${(x-.0045).toFixed(6)},uv.y)),texture2D(bild,vec2(${(x+.0045).toFixed(6)},uv.y)),.5);}`).join('\n')}
+            ${spuren.map(x=>`if(abs(uv.x-${x.toFixed(6)})<.0032){vec4 ersatz=mix(texture2D(bild,vec2(${(x-.0045).toFixed(6)},uv.y)),texture2D(bild,vec2(${(x+.0045).toFixed(6)},uv.y)),smoothstep(${(x-.0032).toFixed(6)},${(x+.0032).toFixed(6)},uv.x));c=mix(c,ersatz,1.-smoothstep(.0013,.0032,abs(uv.x-${x.toFixed(6)})));}`).join('\n')}
             ${koepfe.map(([x0,y0,x1,y1])=>`if(uv.x>${(x0/f.breite).toFixed(6)}&&uv.x<${(x1/f.breite).toFixed(6)}&&uv.y>${(1-y1/f.hoehe).toFixed(6)}&&uv.y<${(1-y0/f.hoehe).toFixed(6)})c=mix(texture2D(bild,vec2(${((x0-3)/f.breite).toFixed(6)},uv.y)),texture2D(bild,vec2(${((x1+3)/f.breite).toFixed(6)},uv.y)),smoothstep(${(x0/f.breite).toFixed(6)},${(x1/f.breite).toFixed(6)},uv.x));`).join('\n')}
             ${huetten.map(([x0,y0,x1,y1])=>`if(uv.x>${(x0/f.breite).toFixed(6)}&&uv.x<${(x1/f.breite).toFixed(6)}&&uv.y>${(1-y1/f.hoehe).toFixed(6)}&&uv.y<${(1-y0/f.hoehe).toFixed(6)}){
               float rand=smoothstep(${(x0/f.breite).toFixed(6)},${((x0+3)/f.breite).toFixed(6)},uv.x)*(1.-smoothstep(${((x1-3)/f.breite).toFixed(6)},${(x1/f.breite).toFixed(6)},uv.x));
               c=mix(c,texture2D(bild,uv+vec2(0.,${((y1-y0+6)/f.hoehe).toFixed(6)})),rand);
             }`).join('\n')}
+            ${f.id==='nordost'?`if(uv.x>849./1280.&&uv.x<918./1280.&&uv.y>1.-367./721.&&uv.y<1.-297./721.){
+              float rand=smoothstep(849./1280.,852./1280.,uv.x)*(1.-smoothstep(915./1280.,918./1280.,uv.x));
+              rand*=smoothstep(1.-367./721.,1.-364./721.,uv.y)*(1.-smoothstep(1.-300./721.,1.-297./721.,uv.y));
+              c=mix(c,texture2D(bild,uv-vec2(75./1280.,0.)),rand);
+            }`:''}
             if(uv.y<${(1-untergrund[0]/f.hoehe).toFixed(6)}){${f.id==='rundblick'?
               'c=grasBereit>.5?texture2D(grasFoto,vec2(.3+fract(uv.x*7.)*.4,1.-(.518+fract(uv.y*20.)*.06))):vec4(.09,.18,.045,1.);':
               `c=texture2D(bild,vec2(uv.x,1.-(${untergrund[1].toFixed(1)}+abs((1.-uv.y)*${f.hoehe.toFixed(1)}-${untergrund[1].toFixed(1)}))/${f.hoehe.toFixed(1)}));`}}
-            float rand=smoothstep(kante.x,kante.x+.055,fotoUV.x)*(1.-smoothstep(kante.y-.055,kante.y,fotoUV.x));
+            float rand=smoothstep(kante.x,kante.x+.055,fotoUV.x)*(1.-smoothstep(kante.y-.055,kante.y,fotoUV.x))*smoothstep(.025,1.6,hoehe);
             float himmel=max(smoothstep(.92,1.05,fotoUV.y),smoothstep(.025,.10,c.b-max(c.r,c.g))*smoothstep(.48,.65,fotoUV.y));
             c.rgb=mix(c.rgb,mix(horizont,sky,smoothstep(0.,45.,hoehe)),himmel);gl_FragColor=vec4(c.rgb,rand);
             #include <encodings_fragment>
@@ -103,7 +108,7 @@ window.STADIONFOTO=(()=>{
     }
     return gruppe;
   }
-  return {bauen,netz,strahl,schnitt,bildpunkt,FOTOS,REF,SKY};
+  return {bauen,netz,strahl,schnitt,bildpunkt,FOTOS,REF,SKY,SCHATTEN};
 })();
 
 /* Clubhaus nach Originalfotos und Alberts Panorama vom 20.11.2026, keine erzeugte Fassade.
@@ -122,8 +127,8 @@ window.STADIONBAU=(()=>{
     // Saubere Innenfläche des echten rechten Ziegeldachs, ohne Dachkante, Himmel oder Sonnenstrahl.
     ziegel:[2280,502,2540,606]};
   // Ein projektives Viereck im Originalbild, kein zugeschnittener oder entzerrter Rasterexport.
-  function homographie(T,punkte){
-    const p=punkte.map(([x,y])=>[x/FOTO.breite,1-y/FOTO.hoehe]),[a,b,c,d]=p;
+  function homographie(T,punkte,breite=FOTO.breite,hoehe=FOTO.hoehe){
+    const p=punkte.map(([x,y])=>[x/breite,1-y/hoehe]),[a,b,c,d]=p;
     const dx1=b[0]-c[0],dx2=d[0]-c[0],dx3=a[0]-b[0]+c[0]-d[0],
       dy1=b[1]-c[1],dy2=d[1]-c[1],dy3=a[1]-b[1]+c[1]-d[1],nenner=dx1*dy2-dx2*dy1;
     const u=(dx3*dy2-dx2*dy3)/nenner,v=(dx1*dy3-dx3*dy1)/nenner;
@@ -135,7 +140,7 @@ window.STADIONBAU=(()=>{
     const front=homographie(T,FOTO.front),dach=homographie(T,FOTO.dach),bereit={value:0},mats=new Set(),vorher=[],gemerkt=new Set(),
       ziegel=new T.Vector4(FOTO.ziegel[0]/FOTO.breite,1-FOTO.ziegel[3]/FOTO.hoehe,
         (FOTO.ziegel[2]-FOTO.ziegel[0])/FOTO.breite,(FOTO.ziegel[3]-FOTO.ziegel[1])/FOTO.hoehe);
-    g.traverse(o=>{for(const m of (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean))mats.add(m);});
+    g.traverse(o=>{for(const m of (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean))if(m.userData.foto!==false)mats.add(m);});
     const lebendig=()=>typeof opt.lebendig!=='function'||opt.lebendig();
     if(!lebendig())return;
     let textur=null,verbunden=false,fehlgeschlagen=false;
@@ -155,6 +160,7 @@ window.STADIONBAU=(()=>{
             // Die normale UV-Abbildung wird ersetzt, damit das vollständige Foto nicht zusätzlich auf jeder Box erscheint.
             s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>','');
             s.fragmentShader=s.fragmentShader.replace('#include <normal_fragment_begin>',`
+              vec4 sfAbdruck=vec4(0.0);
               if(sfBereit>.5){
                 vec3 n=normalize(sfN);vec3 q=vec3(0.0);bool foto=false;
                 if(sfP.x>=-30.0&&sfP.x<=-4.0){
@@ -169,13 +175,22 @@ window.STADIONBAU=(()=>{
                   q=vec3(sfZiegel.xy+p*sfZiegel.zw,1.0);foto=true;
                 }
                 if(foto&&abs(q.z)>.00001){vec2 uv=q.xy/q.z;
-                  if(all(greaterThanEqual(uv,vec2(0.0)))&&all(lessThanEqual(uv,vec2(1.0))))diffuseColor.rgb=texture2D(map,uv).rgb;
+                  if(all(greaterThanEqual(uv,vec2(0.0)))&&all(lessThanEqual(uv,vec2(1.0)))){
+                    ${m.userData.hinterTreppe?`if(sfP.x< -23.4&&sfP.y<3.12&&sfP.z< -107.0){
+                      vec2 ziegel=1.-abs(mod(vec2(sfP.x/.95,sfP.y/.70),2.)-1.);
+                      uv=vec2((550.+70.*ziegel.x)/2560.,1.-(690.+50.*ziegel.y)/1440.);
+                    }`:''}
+                    sfAbdruck=vec4(texture2D(map,uv).rgb,1.0);diffuseColor.rgb=sfAbdruck.rgb;
+                  }
                 }
               }
               #include <normal_fragment_begin>
             `);
+            // Das Original enthält bereits Licht und Schatten. Nur die Fotoanteile unverändert ausgeben.
+            s.fragmentShader=s.fragmentShader.replace('#include <output_fragment>','if(sfAbdruck.a>.5)outgoingLight=sfAbdruck.rgb;\n#include <output_fragment>')
+              .replace('#include <tonemapping_fragment>','if(sfAbdruck.a<.5){\n#include <tonemapping_fragment>\n}');
           };
-          m.customProgramCacheKey=()=>key.call(m)+'|clubhaus-originalfoto-2';m.map=t;m.needsUpdate=true;
+          m.customProgramCacheKey=()=>key.call(m)+'|clubhaus-originalfoto-3';m.map=t;m.needsUpdate=true;
         }
       }else for(const m of mats)if(m.map!==t){m.map=t;m.needsUpdate=true;}
       merken(t);
@@ -194,6 +209,39 @@ window.STADIONBAU=(()=>{
       verbinden(textur);
     }catch(_){fehler();}
   }
+  function anbauAnbringen(g,T,opt){
+    if(opt.panorama!==true||opt.foto===false||!T.TextureLoader)return;
+    const lebt=()=>typeof opt.lebendig!=='function'||opt.lebendig();if(!lebt())return;
+    const wand=g.getObjectByName('anbau-hell');if(!wand)return;
+    const alt=wand.material,m=new T.MeshStandardMaterial({color:alt.color,roughness:alt.roughness});wand.material=m;
+    const H=homographie(T,[[302,104],[537,92],[537,146],[302,132]],1280,271),bereit={value:0},foto={value:null},gemerkt=new Set();let t=null,fehlerhaft=false;
+    m.onBeforeCompile=s=>{s.uniforms.saFoto=foto;s.uniforms.saBereit=bereit;s.uniforms.saBild={value:H};
+      const vars='varying vec3 saP;varying vec3 saN;\n';
+      s.vertexShader=vars+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nsaP=(modelMatrix*vec4(transformed,1.)).xyz;saN=mat3(modelMatrix)*normal;');
+      s.fragmentShader=vars+'uniform sampler2D saFoto;uniform float saBereit;uniform mat3 saBild;\n'+s.fragmentShader;
+      s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>','').replace('#include <normal_fragment_begin>',`
+        vec4 saAbdruck=vec4(0.);if(saBereit>.5&&normalize(saN).z>.75){
+          vec3 q=saBild*vec3((saP.x+54.)/24.,1.-(saP.y-.18)/2.86,1.);vec2 uv=q.xy/q.z;
+          if(all(greaterThanEqual(uv,vec2(0.)))&&all(lessThanEqual(uv,vec2(1.)))){
+            // Die schmale Vordergrundspur des Fahnenmasts nicht auf die Wand übertragen.
+            if(uv.x>.267&&uv.x<.272)uv.x=.275;
+            saAbdruck=vec4(texture2D(saFoto,uv).rgb,1.);diffuseColor.rgb=saAbdruck.rgb;
+          }
+        }
+        #include <normal_fragment_begin>
+      `).replace('#include <output_fragment>','if(saAbdruck.a>.5)outgoingLight=saAbdruck.rgb;\n#include <output_fragment>')
+        .replace('#include <tonemapping_fragment>','if(saAbdruck.a<.5){\n#include <tonemapping_fragment>\n}');
+    };m.customProgramCacheKey=()=> 'clubhaus-anbau-original-1';
+    function verbinden(bild){t=bild;foto.value=bild;bild.encoding=T.sRGBEncoding;bild.wrapS=bild.wrapT=T.ClampToEdgeWrapping;
+      bild.anisotropy=Math.max(1,Math.min(8,opt.anisotropie||1));m.map=bild;m.needsUpdate=true;if(!gemerkt.has(bild)){gemerkt.add(bild);opt.onTextur?.(bild);}}
+    function ausfall(){fehlerhaft=true;bereit.value=0;t?.dispose();if(!lebt())return;m.map=null;m.needsUpdate=true;g.userData.anbauStatus='ersatz';opt.onFehler?.();opt.onChange?.();}
+    try{t=new T.TextureLoader().load('partner/stadion-original-clubhaus-panorama.jpg',bild=>{
+      if(!lebt()||fehlerhaft){bild.dispose();return;}verbinden(bild);bereit.value=1;g.userData.anbauStatus='bereit';opt.onChange?.();
+    },undefined,ausfall);if(fehlerhaft||!lebt()){t?.dispose();return;}
+      verbinden(t);
+      g.userData.anbauStatus=bereit.value?'bereit':'laedt';
+    }catch(_){ausfall();}
+  }
   function bauen(T,opt={}){
     if(!T?.Group||!T?.MeshStandardMaterial)throw new Error('Die 3D-Bibliothek für das Clubhaus fehlt.');
     const g=new T.Group();g.name='stadion-bauten';
@@ -206,7 +254,7 @@ window.STADIONBAU=(()=>{
       dach=material(0x363b3c,.95),flachdach=material(0x5c615b,.99),holz=material(0x352c27,.87),
       gruen=material(0x335744,.68),glas=material(0x596e68,.19,.12),metall=material(0x90968e,.62,.35),
       gelb=material(0xb4a35c,.68),sockel=material(0x73736a,.98);
-    glas.envMapIntensity=.65;dach.side=T.DoubleSide;putz.side=T.DoubleSide;
+    glas.envMapIntensity=.65;dach.side=T.DoubleSide;putz.side=T.DoubleSide;metall.userData.foto=false;klinker.userData.hinterTreppe=true;
     // Mauerfugen und Dachziegel liegen in Metern. In der Ferne werden die feinen Linien weich ausgeblendet.
     // Keine Bilddatei, DOM-Leinwand oder Netzabfrage ist nötig.
     function oberflaeche(m,art){
@@ -324,14 +372,15 @@ window.STADIONBAU=(()=>{
     box('rechter-stirnblende',-6,4,55.45,55.69,2.84,3.10,holz,rechts);
     fenster('rechter-tuer',1.8,3.15,55.67,.18,2.62,gruen,1,rechts);
     for(const x of [-3.8,-.9])fenster('rechter-oberlicht-'+x,x-.72,x+.72,55.67,2.12,2.58,gruen,1,rechts);
-    fotoAnbringen(g,T,opt);return g;
+    fotoAnbringen(g,T,opt);anbauAnbringen(g,T,opt);return g;
   }
   return {bauen};
 })();
 
 /* Drei Nordmasten aus Alberts überlappenden Originalfotos, keine gespiegelte Stadionbeleuchtung.
    Foto 3: A bei x502, B bei x860. Foto 4: derselbe B bei x134, C bei x730.
-   Plan: A(-65,-50), B(-7,-55), C(52.5,-53). Welt-X=-Plan-x, Welt-Z=-(Plan-y+50).
+   Frühere Ersatzanker: A(-65,-50), B(-7,-55), C(52.5,-53). Welt-X=-Plan-x, Welt-Z=-(Plan-y+50).
+   Mit Fotomodul werden X und Höhe aus demselben Referenzblick an den sichtbaren Köpfen ausgerichtet.
    Die 18 m Schafthöhe, Radien 0,11/0,07 m und Kopfmaße sind Fotoannahmen, nicht vermessen.
    Alle Geometrien und Materialien hängen an Meshes der Gruppe und sind per traverse entsorgbar.
    Kein Laden, DOM, Zeitgeber oder zusätzliches Szenenlicht. */
@@ -353,9 +402,13 @@ window.STADIONMASTEN=(()=>{
       metall=new T.MeshStandardMaterial({color:0x3d464b,roughness:.63,metalness:.4}),
       reflektor=new T.MeshStandardMaterial({color:0xd7d9cf,roughness:.3,metalness:.12});
     function mesh(parent,name,geo,mat,x,y,z){const m=new T.Mesh(geo,mat);m.name=name;m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
-    for(const p of MASTEN){
+    for(const original of MASTEN){
+      const F=window.STADIONFOTO,f=F?.FOTOS?.find(f=>f.id===(original.id==='C'?'nordost':'nord')),
+        pixel=original.id==='A'?[502,242]:original.id==='B'?[860,203]:[730,173];let p=original,sy=1;
+      if(f){const d=F.strahl(f,...pixel),t=(p.y-F.REF.y)/d.y,h=F.REF.h+t*d.h,x=F.REF.x+t*d.x;
+        if(t>0&&Number.isFinite(x)&&Math.abs(x)<100&&h>12&&h<25){p={...p,x};sy=h/17.96;}}
       const mast=new T.Group();mast.name='stadion-nordmast-'+p.id;mast.position.set(-p.x,0,-p.y-50);
-      mast.userData={mast:p.id,plan:{x:p.x,y:p.y},fotos:p.fotos.map(f=>({...f})),hoeheAnnahme:18};g.add(mast);
+      mast.scale.y=sy;mast.userData={mast:p.id,plan:{x:p.x,y:p.y},fotos:p.fotos.map(f=>({...f})),hoeheAnnahme:18*sy,fotoAbgleich:sy!==1};g.add(mast);
       const rohr=mesh(mast,'mast-'+p.id+'-schaft',schaft,blau,0,9,0);rohr.userData.typ='mastschaft';
       const kopf=new T.Group();kopf.name='mast-'+p.id+'-kopf';
       // Lokale Vorderseite ist -Z. Einmal zum Spielfeld ausrichten, keine erfundenen Zusatzmasten.
@@ -382,6 +435,8 @@ window.STADIONMASTEN=(()=>{
    Pavillon nicht zum Foto. Annäherung an seine 53×38 Pixel: 7,3 m Breite, 5,5 m Höhe plus 0,55 m Sockel.
    Kleiner Unterstand: 5,5 m Breite, 2,7 m Höhe plus 0,20 m Sockel bei 66×26 Pixeln. Tiefen 3/2,5 m
    bleiben Fotoannahmen, ebenso Dachneigung und Geländehöhe. Keine Aussage über Innenräume.
+   Seit 0.99.113 folgt die sichtbare Silhouette derselben Tor-Kamerakorrektur wie Masten und Umfeld.
+   Unterhalb des sichtbaren Fotobereichs bleibt das bestehende Modell, der Sockel bleibt am Boden.
    Diese kleinen Vorlagen können Nahdetails nicht belegen. Die großen Flächen und Silhouetten sind
    rekonstruiert; verdeckte Seiten bleiben einfache passende Materialien. Originalpixel nur per UV-Projektion. */
 window.STADIONPAVILLONS=(()=>{
@@ -471,9 +526,77 @@ window.STADIONPAVILLONS=(()=>{
         pult(p,'klein-einfaches-pultdach',x0,x1,v,h,2.72,2.90,dach);
         // Kein höherer Dachkörper auf dem kleinen Unterstand.
       }
-      foto(p,a);
+      // Die aus den Torpfosten bestimmte Kamera ist auch für die sichtbaren Bauwerkskanten maßgeblich.
+      const F=window.STADIONFOTO,f=F?.FOTOS?.find(f=>f.id===(a.id==='gross'?'nord':'nordost'));let quelle=a;
+      if(f){const [u0,v0,u1,v1]=a.pixel,py=a.y+a.d/2,punkt=(u,v)=>{const r=F.strahl(f,u,v),t=(py-F.REF.y)/r.y;return {x:F.REF.x+t*r.x,h:F.REF.h+t*r.h};},
+          l=punkt(u0,(v0+v1)/2),r=punkt(u1,(v0+v1)/2),oben=punkt((u0+u1)/2,v0),unten=punkt((u0+u1)/2,v1),x=(l.x+r.x)/2,w=Math.abs(r.x-l.x);
+        if(Number.isFinite(x)&&Math.abs(x)<100&&w>2&&w<15&&oben.h>2&&oben.h<12&&unten.h>=0&&oben.h>unten.h){
+          const sx=w/a.w,sy=oben.h/(a.basis+a.h);p.scale.set(sx,sy,1);p.position.x=a.x*sx-x;
+          quelle={...a,x,w,basis:unten.h,h:oben.h-unten.h};p.userData.fotoAbgleich={planX:x,breite:w,obereKante:oben.h,sichtbareUnterkante:unten.h};
+        }
+      }
+      foto(p,quelle);
     }
     return g;
+  }
+  return {bauen};
+})();
+
+/* Tenne aus unveränderten Originalfotos. Gebackene Farben werden nicht noch einmal beleuchtet.
+   Dunkel: Clubhauspanorama UV [.35,.53]×[.005,.205]. Hell: schmaler roter Streifen im Nordostfoto,
+   Ecken (1032,363.5), (1178,373.5), (1178,376.5), (1032,366.5), ohne Rasen oder Banden.
+   Plan-X=-Welt-X, Plan-Y=-Welt-Z-50. Die Schattenkante entspricht dem fotografischen Rasen. */
+window.STADIONASCHE=(()=>{
+  'use strict';
+  function bauen(T,opt={}){
+    const s=opt.schatten||{},achse=Number.isFinite(s.achse)?s.achse:31.4893,steigung=Number.isFinite(s.steigung)?s.steigung:-.105113;
+    const u={dunkel:{value:null},hell:{value:null},geladen:{value:new T.Vector2()},
+      farbe:{value:new T.Color(opt.farbe??0x723c29).convertSRGBToLinear()},schattenkante:{value:new T.Vector3(achse,steigung,.5)},
+      mittelDunkel:{value:new T.Color(38/255,36/255,48/255).convertSRGBToLinear()},mittelHell:{value:new T.Color(209/255,121/255,91/255).convertSRGBToLinear()}};
+    const m=new T.ShaderMaterial({uniforms:u,toneMapped:false,lights:false,extensions:{derivatives:true},
+      vertexShader:'varying vec3 ort;void main(){vec4 w=modelMatrix*vec4(position,1.);ort=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
+      fragmentShader:`uniform sampler2D dunkel;uniform sampler2D hell;uniform vec2 geladen;
+        uniform vec3 farbe;uniform vec3 schattenkante;uniform vec3 mittelDunkel;uniform vec3 mittelHell;varying vec3 ort;
+        float zufall(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+        float korn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(zufall(i),zufall(i+vec2(1.,0.)),f.x),mix(zufall(i+vec2(0.,1.)),zufall(i+vec2(1.)),f.x),f.y);}
+        void main(){vec2 plan=vec2(-ort.x,-ort.z-50.);vec2 p=1.-abs(mod(plan/1.7,2.)-1.);vec3 c=farbe;
+          if(geladen.x>.5)c=mix(mittelDunkel,texture2D(dunkel,vec2(.35+p.x*.18,.005+p.y*.20)).rgb,.08);
+          if(geladen.y>.5){vec3 h=mix(mittelHell,texture2D(hell,vec2((1032.+146.*p.x)/1280.,1.-(363.5+10.*p.x+3.*p.y)/721.)).rgb,.08);
+            if(geladen.x>.5){float k=schattenkante.x+schattenkante.y*plan.x;
+              c=mix(h,c,smoothstep(k-schattenkante.z,k+schattenkante.z,plan.y));}else c=h;}
+          float detail=1.-smoothstep(.01,.06,max(length(dFdx(plan)),length(dFdy(plan))));
+          c*=1.+(korn(plan*95.)-.5)*.10*detail+(korn(plan*13.)-.5)*.04;
+          gl_FragColor=vec4(c,1.);
+          #include <encodings_fragment>
+        }`});
+    m.name='stadion-originalasche';m.userData={fotografisch:true,wiederholung_m:1.7,
+      quellen:['stadion-original-clubhaus-panorama.jpg','stadion-original-nordost.jpg']};
+    let weg=false;const gemerkt=new Set(),entsorgt=new Set();
+    m.addEventListener('dispose',()=>{weg=true;});
+    const lebt=()=>!weg&&(typeof opt.lebendig!=='function'||opt.lebendig());
+    const entsorgen=t=>{if(t&&!entsorgt.has(t)){entsorgt.add(t);t.dispose();}};
+    const merken=t=>{if(!gemerkt.has(t)){gemerkt.add(t);opt.onTextur?.(t);}};
+    function einrichten(t){
+      t.encoding=T.sRGBEncoding;t.wrapS=t.wrapT=T.ClampToEdgeWrapping;
+      // Kein Mipmap darf Gras von neben dem nur drei Pixel hohen hellen Streifen hineinmischen.
+      t.minFilter=T.LinearFilter;t.generateMipmaps=false;
+      t.anisotropy=Math.max(1,Math.min(8,Number.isFinite(opt.anisotropie)?opt.anisotropie:1));
+    }
+    for(const [i,id,datei] of [[0,'dunkel',m.userData.quellen[0]],[1,'hell',m.userData.quellen[1]]]){
+      if(!lebt())break;
+      let fehlgeschlagen=false;
+      const fehler=()=>{if(fehlgeschlagen)return;fehlgeschlagen=true;entsorgen(u[id].value);u[id].value=null;u.geladen.value.setComponent(i,0);
+        if(lebt()){opt.onFehler?.(id);opt.onChange?.();}};
+      const fertig=t=>{
+        if(!lebt()||fehlgeschlagen){entsorgen(t);return;}
+        einrichten(t);u[id].value=t;merken(t);u.geladen.value.setComponent(i,1);opt.onChange?.();
+      };
+      try{
+        const t=new T.TextureLoader().load((opt.basis||'partner/')+datei,fertig,undefined,fehler);
+        if(t){if(!lebt()||fehlgeschlagen)entsorgen(t);else{einrichten(t);u[id].value=t;merken(t);}}
+      }catch(_){fehler();}
+    }
+    return m;
   }
   return {bauen};
 })();
@@ -536,7 +659,9 @@ window.BANDENRAUM=(()=>{
     function zustand(){const py=-p.z-50,k=ansichtBereich,dx=p.x-kl(p.x,-STADION.G/2,STADION.G/2);let a=Math.atan2(py,p.x-(k==='west'?-1:1)*STADION.G/2);if(k==='west'&&a<0)a+=2*Math.PI;
       const s=k==='nord'?(dx?Math.sign(dx)*(STADION.G/2+STADION.NORD*Math.atan2(Math.abs(dx),-py)):p.x):k==='sued'?-p.x:STADION.RB*(a-(k==='west'?Math.PI:0));
       const q=linienPunkt(s,k),abstand=Math.hypot(p.x-q.x,py-q.y);return {x:p.x,y:1.65,z:p.z,blick:p.blick,neigung:p.neigung,abstand,s,planX:p.x,planY:py};}
-    function kameraSetzen(){if(!kamera)return;const co=Math.cos(p.neigung);kamera.position.set(-p.x,1.65,p.z);
+    function kameraSetzen(){if(!kamera)return;const f=Math.min(p.ueberblick?72:43.5,2*Math.atan(Math.tan((p.ueberblick?36:40)*Math.PI/180)/kamera.aspect)*180/Math.PI);
+      if(Math.abs(kamera.fov-f)>.001){kamera.fov=f;kamera.updateProjectionMatrix();}cv.dataset.bildwinkel=f.toFixed(2);
+      const co=Math.cos(p.neigung);kamera.position.set(-p.x,1.65,p.z);
       kamera.lookAt(-p.x-Math.sin(p.blick)*co,1.65+Math.sin(p.neigung),p.z+Math.cos(p.blick)*co);
       const z=zustand();cv.dataset.kameraX=p.x.toFixed(2);cv.dataset.abstand=z.abstand.toFixed(2);cv.dataset.blick=p.blick.toFixed(3);
       cv.dataset.planY=(-p.z-50).toFixed(2);cv.dataset.bogenposition=z.s.toFixed(2);
@@ -572,7 +697,9 @@ window.BANDENRAUM=(()=>{
       if(relief){const k=tex(t.clone());k.encoding=T.LinearEncoding;k.needsUpdate=true;material.bumpMap=k;material.bumpScale=relief;}
       material.needsUpdate=true;anfordern();},undefined,()=>{if(lebt)meldung('Die Materialien werden vereinfacht dargestellt. Du kannst die Plätze weiter ansehen.');});}
     function umfeld(){
-      const gras=mat(new T.MeshStandardMaterial({color:0xa0ac7a,roughness:1})),bahn=mat(new T.MeshStandardMaterial({color:0x723c29,roughness:.98})),
+      const originaleAsche=window.STADIONASCHE?.bauen(T,{lebendig:()=>lebt,onTextur:tex,onChange:anfordern,schatten:window.STADIONFOTO?.SCHATTEN,
+        anisotropie:renderer.capabilities.getMaxAnisotropy(),onFehler:()=>meldung('Die Laufbahn wird vereinfacht dargestellt. Die Platzwahl bleibt verfügbar.')});
+      const gras=mat(new T.MeshStandardMaterial({color:0xa0ac7a,roughness:1})),bahn=mat(originaleAsche||new T.MeshStandardMaterial({color:0x723c29,roughness:.98})),
         weiss=mat(new T.MeshStandardMaterial({color:0xeeeade,roughness:.9}));
       const grund=boden(2000,1800,0,-50,gras,-.035);grund.name='stadion-grund';ladenTextur(opt.texturen?.rasen,[800,720],gras,.025);
       function ovalRing(ri,ra,m,y,name){const innen=ovalKontur(ri),aussen=ovalKontur(ra),pos=[],uv=[],idx=[];
@@ -581,12 +708,12 @@ window.BANDENRAUM=(()=>{
         const o=mesh(g,m,0,0,0,false);o.name=name;o.userData={innen:ri,aussen:ra,gerade:STADION.G};return o;
       }
       ovalRing(STADION.RI,STADION.RA,bahn,.004,'stadion-laufbahn');
-      if(window.STADIONFOTO){
+      if(!originaleAsche&&window.STADIONFOTO){
         // Die rote Asche stammt aus dem unberührten Clubhauspanorama, nur der UV-Ausschnitt wird wiederholt.
         bahn.color.setHex(0x9d4b25);bahn.customProgramCacheKey=()=> 'original-asche-1';
         bahn.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>',T.ShaderChunk.map_fragment.replace('texture2D( map, vUv )','texture2D( map, vec2(.35+fract(vUv.x)*.18,.005+fract(vUv.y)*.20) )'));};
         ladenTextur('partner/stadion-original-clubhaus-panorama.jpg',[1,1],bahn,0,true);
-      }else ladenTextur(opt.texturen?.weg,[1,1],bahn,.018);
+      }else if(!originaleAsche)ladenTextur(opt.texturen?.weg,[1,1],bahn,.018);
       // In den Hauptplatzfotos sind keine parallelen weißen Bahnlinien erkennbar.
       const stein=mat(new T.MeshStandardMaterial({color:0xaaa99e,roughness:.95}));ovalRing(STADION.RI-.05,STADION.RI+.05,stein,.016,'stadion-steinrand');
       const feldX=-STADION.FELD_L/2,feldZ=-50-STADION.FELD_B/2,strich=.1,feld=mat(new T.MeshBasicMaterial({color:0xf0efe2,transparent:true,opacity:.08,depthWrite:false}));
@@ -640,8 +767,10 @@ window.BANDENRAUM=(()=>{
     function drehen(yaw,pitch=0){if(!lebt)return;p.blick+=kl(zahl(yaw),-.7,.7);p.neigung=kl(p.neigung+kl(zahl(pitch),-.35,.35),-.62,.35);anfordern();}
     function reset(){if(!lebt)return;const k=ansichtBereich,d=k==='nord'?18:k==='sued'?16.6:STADION.G/2+STADION.RB-STADION.FELD_L/2;
       p=kameraBei(linienPunkt(0,k),d,-.055);anfordern();opt.onMove?.(zustand());}
-    function rundblick(){if(!lebt)return;tasten.clear();p=begrenzen({x:45,y:1.65,z:-85,blick:-43.7*Math.PI/180,neigung:-1.2*Math.PI/180},G);anfordern();opt.onMove?.(zustand());}
+    function rundblick(){if(!lebt)return;tasten.clear();const F=window.STADIONFOTO,f=F?.FOTOS?.find(f=>f.id==='nord'),ref=F?.REF||{x:45,y:35},d=f&&F.strahl(f,f.breite/2,f.hoehe/2);
+      p=begrenzen({x:ref.x,y:1.65,z:-ref.y-50,blick:d?Math.atan2(d.x,-d.y):-43.7*Math.PI/180,neigung:d?Math.atan2(d.h,Math.hypot(d.x,d.y)):-1.2*Math.PI/180},G);anfordern();opt.onMove?.(zustand());}
     function vereinsheim(){if(!lebt)return;tasten.clear();p=begrenzen({x:20,y:1.65,z:-75,blick:Math.PI,neigung:.035},G);anfordern();opt.onMove?.(zustand());}
+    function anlagenblick(){if(!lebt)return;tasten.clear();p=begrenzen({x:88,y:1.65,z:-50,blick:-111*Math.PI/180,neigung:-.025,ueberblick:true},G);anfordern();opt.onMove?.(zustand());}
     function eingaben(){cv.style.touchAction='none';if(altIndex===null)cv.setAttribute('tabindex','0');
       const zugeordnet=k=>['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright'].includes(k);
       event(cv,'keydown',e=>{const k=e.key.toLowerCase();if(e.target!==cv)return;if(k==='home'){e.preventDefault();reset();return;}if(!zugeordnet(k))return;e.preventDefault();tasten.add(k);anfordern();});
@@ -668,7 +797,7 @@ window.BANDENRAUM=(()=>{
       umfeld();
       const bauOpt={lebendig:()=>lebt,onTextur:tex,onChange:anfordern,anisotropie:renderer.capabilities.getMaxAnisotropy()};
       function baugruppe(bau){if(!bau?.isObject3D)return;bau.traverse(o=>{if(o.geometry)geometrien.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean)){materialien.add(m);for(const t of Object.values(m))if(t?.isTexture)texturen.add(t);for(const u of Object.values(m.uniforms||{}))if(u.value?.isTexture)texturen.add(u.value);}});szene.add(bau);}
-      if(window.STADIONBAU?.bauen)baugruppe(window.STADIONBAU.bauen(T,bauOpt));
+      if(window.STADIONBAU?.bauen)baugruppe(window.STADIONBAU.bauen(T,{...bauOpt,panorama:true}));
       if(window.STADIONMASTEN?.bauen)baugruppe(window.STADIONMASTEN.bauen(T));
       if(window.STADIONPAVILLONS?.bauen)baugruppe(window.STADIONPAVILLONS.bauen(T,bauOpt));
       if(window.STADIONFOTO?.bauen)baugruppe(window.STADIONFOTO.bauen(T,{...bauOpt,onFehler:()=>meldung('Ein Stadionfoto konnte nicht geladen werden. Der Rundgang und die Platzwahl bleiben verfügbar.')}));
@@ -678,7 +807,7 @@ window.BANDENRAUM=(()=>{
       document.fonts?.ready?.then(()=>{if(lebt){for(const b of belege.values())b.t={...b.t,name:null};tafelnSetzen(tafeln);}});
       return true;
     })().catch(e=>{if(lebt){meldung('3D ist auf diesem Gerät gerade nicht verfügbar. Du kannst die Plätze in der Liste auswählen.');lebt=false;aufraeumen();opt.onFallback?.(e);}throw e;});
-    return {bereit,setTafeln:tafelnSetzen,setSelection:selection,zentrieren,gehen,drehen,reset,rundblick,vereinsheim,zerstoeren(){if(!lebt)return;lebt=false;aufraeumen();},get position(){return zustand();}};
+    return {bereit,setTafeln:tafelnSetzen,setSelection:selection,zentrieren,gehen,drehen,reset,rundblick,vereinsheim,anlagenblick,zerstoeren(){if(!lebt)return;lebt=false;aufraeumen();},get position(){return zustand();}};
   }
   return {erstellen,grenzen,versetzen,STADION,nordPunkt,linienPunkt,tafelLage,ovalKontur};
 })();
