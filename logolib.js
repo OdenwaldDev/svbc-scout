@@ -70,15 +70,19 @@ const LOGO = (() => {
   // Einfarbig (0.81): Abstand zu Weiß als weiche Deckung. Farbiges und Dunkles wird voll, Weißes im Logo fällt weg (bleibt als Aussparung),
   // Kanten bleiben glatt. Ist das Logo selbst überwiegend hell (weiße Schrift), wird alles Sichtbare eingefärbt.
   const sst = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-  function einfarbig(c, farbe){
+  function einfarbig(c, farbe, hintergrund){
     const n = leinwand(c.width, c.height), x = n.getContext('2d', { willReadFrequently:true }); x.drawImage(c, 0, 0);
     const d = x.getImageData(0, 0, n.width, n.height), p = d.data;
     let hell = 0, dunkel = 0; for(let k = 0; k < p.length; k += 4){ if(p[k + 3] < 128) continue; if(lum(p[k], p[k + 1], p[k + 2]) > .78) hell++; else dunkel++; }
     const nurHell = hell / Math.max(1, hell + dunkel) >= .6;
     const [r, g, b] = [1, 3, 5].map(i => parseInt(farbe.slice(i, i + 2), 16));
+    const bg = /^#[0-9a-f]{6}$/i.test(hintergrund || '') ? [1, 3, 5].map(i => parseInt(hintergrund.slice(i, i + 2), 16)) : null;
     for(let k = 0; k < p.length; k += 4){ const a = p[k + 3] / 255; if(!a){ continue; }
       let deck = a;
       if(!nurHell){ const m = Math.min(p[k], p[k + 1], p[k + 2]) / 255 * a + (1 - a); deck = sst(.1, .42, 1 - m); }
+      // Ein dunkler Bildhintergrund kann auch in geschlossenen Buchstaben oder einem Fenster liegen.
+      // Nur die beim Freistellen erkannte Farbe aussparen, nicht pauschal alle dunklen Markenteile.
+      if(bg) deck *= sst(16, 64, Math.abs(p[k] - bg[0]) + Math.abs(p[k + 1] - bg[1]) + Math.abs(p[k + 2] - bg[2]));
       p[k] = r; p[k + 1] = g; p[k + 2] = b; p[k + 3] = Math.round(deck * 255); }
     x.putImageData(d, 0, 0); return n;
   }
@@ -104,7 +108,9 @@ const LOGO = (() => {
     const wd = art === 'weiss' && weissDatei(src);
     if(wd){ try{ const w = (await aufbereiten(wd)).c; merk.set(k, w); return w; }catch(e){ /* sonst selbst rechnen */ } }
     const farbe = art === 'weiss' ? '#ffffff' : art === 'schwarz' ? '#111111' : (art.startsWith('farbe:') ? art.slice(6) : '#ffffff');
-    const c = einfarbig(a.c, farbe); merk.set(k, c); return c;
+    // Weiß ausgesparte Flächen können nach der Umfärbung leer sein. Den Druck dann erneut einpassen,
+    // sonst bestimmt die frühere Fläche die Größe und das sichtbare Zeichen wird unnötig klein.
+    const c = zuschneiden(einfarbig(a.c, farbe, a.hintergrund)); merk.set(k, c); return c;
   }
   async function alsDataUrl(src, art, max = 1024){
     const c = await variante(src, art); const s = Math.min(1, max / Math.max(c.width, c.height));

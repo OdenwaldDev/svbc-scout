@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.109',v:'0.99.109',datum:'2026-11-20',titel:'Am Spielfeldrand umsehen',kurz:'Begehbare Bandenansicht mit vorhandenen Aufdrucken und besser lesbaren Firmenlogos.',
+    punkte:[{ic:'i',t:'Banden im räumlichen Zusammenhang',d:'Im Partnerflow kannst du am Spielfeldrand gehen und dich umsehen. Heutiger Bestand und Platzplan für 2027/28 sind getrennt. Filaus erhält aus dem Original aufbereitete Druckfassungen für Bande und Ärmel. Die gewünschte Hauptpartner-Gestaltung bleibt als vorgemerkt gekennzeichnet.',r:'admin'}]},
   {id:'0.99.108',v:'0.99.108',datum:'2026-11-20',titel:'Euer Logo auf dem Ärmel',kurz:'Auch die Trikotkarte am Schwarzen Brett zeigt die jeweilige Firma.',
     punkte:[{ic:'i',t:'Die eigene Ärmelansicht',d:'Die Partnerreise zeigt das Firmenlogo in einer Ärmel-Nahaufnahme. Große Vorschau und Trikotkarte nutzen dieselben Bilder. Ohne Logo erscheint der Firmenname als Vorschau.',r:'admin'}]},
   {id:'0.99.107',v:'0.99.107',datum:'2026-11-20',titel:'Partnerreise für die nächste Saison',kurz:'Die Auswahl aus der Präsentation startet auch im Abschluss zur Saison 2027/28.',

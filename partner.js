@@ -464,7 +464,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     else bandeAufbauen(); }
   function platzwahlOeffnen(paket){ if(!D||typeof BANDENWAHL==='undefined')return;
     const pk=S.korb.find(e=>/^(club|premium|p1896)$/.test(e.key));
-    return BANDENWAHL.oeffnen({rpc,code,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,logo:marke().logo||D.deck.logo||null,
+    return BANDENWAHL.oeffnen({rpc,code,build:C.build,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,logo:marke().logo||D.deck.logo||null,name:marke().name||null,
       onSaved:w=>{ const el=$('#bdWunsch'); if(el)el.textContent=w?'Platzwunsch '+w.kennung+' ist gemerkt. Noch nicht reserviert.':'Der Platzwunsch ist zurückgenommen.'; },
       onClose:()=>{ const f=$('#reiseRahmen'); f?.contentWindow?.postMessage({reise:'creator-zu'},location.origin); }}); }
   async function aermelVorschau(startSeite){ if(!D||document.querySelector('.av'))return;

@@ -1,3 +1,5 @@
+   Läuft nach jedem Rendern (MutationObserver), nie in Eingabefeldern, Editoren oder Plakat-Vorschauen.
+   ===================================================================== */
 const SV68_EMO=/^\s*(?:\p{Emoji_Presentation}|\p{Extended_Pictographic}️)(?:️|‍(?:\p{Extended_Pictographic})️?|\p{Emoji_Modifier})*\s*/u;
 const SV68_ZIEL='h1,h2,h3,h4,summary,.gh,.ht-h,.btn,.tb-title,.hub-in button,.sgrid button,.chips4 button,.seg4 button,.trh';
 const SV68_AUS='[contenteditable],input,textarea,select,pre,code,.st-canvas,.st-ed,.pk-buehne,.pk-karte,#panel-studio .st-m,.sv68-roh';
