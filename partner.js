@@ -111,7 +111,7 @@
     return best?{id:best.id,off:Math.round(oben-best.t)}:null; }
   function merken(){ const st=ablage(); if(!st||!D)return;
     const fe=fertig(), F0=fe?{firma:S.F.firma,anrede:S.F.anrede,ansprech:S.F.ansprech,email:S.F.email}:S.F;
-    try{ st.setItem(SKEY,JSON.stringify({t:Date.now(),korb:S.korb,wl:S.wl,saisons:S.saisons,start:S.start,auto:S.auto,rmonat:S.rmonat||null,F:F0,herz:[...S.herz],ziele:[...S.ziele],budget:S.budget,team:S.team,ergebnis:demo()||!S.ergebnis?null:Object.assign({},S.ergebnis,{spendeBody:undefined}),angebot:S.angebot||null,pos:stelle(),antw:!!S.antw,idem:S.idem,bankZeit:S.bankZeit||0,idemOffen:S.idemOffen||null,nenn:S.nennStand||null,nennOffen:!!S.nennOffen,uid})); }catch(e){} }
+    try{ st.setItem(SKEY,JSON.stringify({t:Date.now(),korb:S.korb,wl:S.wl,saisons:S.saisons,start:S.start,startWahl:!!S.startWahl,auto:S.auto,rmonat:S.rmonat||null,F:F0,herz:[...S.herz],ziele:[...S.ziele],budget:S.budget,team:S.team,ergebnis:demo()||!S.ergebnis?null:Object.assign({},S.ergebnis,{spendeBody:undefined}),angebot:S.angebot||null,pos:stelle(),antw:!!S.antw,idem:S.idem,bankZeit:S.bankZeit||0,idemOffen:S.idemOffen||null,nenn:S.nennStand||null,nennOffen:!!S.nennOffen,uid})); }catch(e){} }
   function vergessen(){ const st=ablage(); try{ st&&st.removeItem(SKEY); }catch(e){} }
   function zurueckholen(){ const st=ablage(); if(!st)return false; let j=null; try{ j=JSON.parse(st.getItem(SKEY)||'null'); }catch(e){}
     if(!j||!(Date.now()-j.t<14*864e5))return false;
@@ -121,7 +121,7 @@
     const mOk=e=>!lk(e.key).je_mannschaft||M.some(m=>m.id===e.mannschaft), vorher=(j.korb||[]).filter(ok).length+(j.wl||[]).filter(w=>lk(w.key)).length;
     S.korb=(j.korb||[]).filter(ok).filter(mOk); S.wl=(j.wl||[]).filter(w=>lk(w.key)).filter(mOk);
     if(S.korb.length+S.wl.length<vorher)setTimeout(()=>toast('Eine Mannschaft aus eurer Auswahl spielt in dieser Saison nicht mehr. Bitte wähl eine andere.'),900); S.saisons=[1,2,3].includes(j.saisons)||(ang&&j.saisons>=1&&j.saisons<=5)?j.saisons:1; S.angebot=ang; S.standZeit=+j.t||0; if(j.antw)S.antw=true; S.pos=j.pos&&/^[a-z0-9-]+$/.test(j.pos.id||'')?j.pos:null;
-    if(!ang)S.korb.forEach(e=>{ if(e.ang){ delete e.ang; if(!T&&lk(e.key).preis!=null)e.preis=null; } }); S.start=j.start==='naechste'?'naechste':'jetzt'; S.auto=!!j.auto; S.rmonat=+j.rmonat>=1&&+j.rmonat<=12?+j.rmonat:null;
+    if(!ang)S.korb.forEach(e=>{ if(e.ang){ delete e.ang; if(!T&&lk(e.key).preis!=null)e.preis=null; } }); S.start=j.start==='naechste'?'naechste':'jetzt'; S.startWahl=typeof j.startWahl==='boolean'?j.startWahl:S.start==='naechste'; S.auto=!!j.auto; S.rmonat=+j.rmonat>=1&&+j.rmonat<=12?+j.rmonat:null;
     Object.keys(j.F||{}).forEach(k=>{ if(j.F[k])S.F[k]=String(j.F[k]).slice(0,120); });
     (j.herz||[]).forEach(z=>WELT[z]&&S.herz.add(z)); (j.ziele||[]).forEach(z=>S.ziele.add(z)); if(j.budget)S.budget=j.budget; if(j.team&&M.some(m=>m.id===j.team))S.team=j.team;
     S.ergebnis=j.ergebnis||null; S.idem=j.idem||null; S.bankZeit=+j.bankZeit||0; if(j.nenn==='ja'||j.nenn==='nein'){ S.nennStand=j.nenn; S.nenn=j.nenn==='ja'; } S.nennOffen=!!j.nennOffen;
@@ -835,10 +835,15 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // in der Auswahl oder ist abgeschlossen, bleibt es. Was vergeben ist, kommt nicht hinein. Bausteine für eine Mannschaft werden nicht
   // geraten, die wählt man hier mit der Mannschaft dazu.
   function ausReise(w){ if(!w||S.ergebnis||S.korb.length)return null; let n=0; const offen=[];
+    // Die Präsentation wirbt ausdrücklich für 2027/28. Nicht stillschweigend die laufende Saison berechnen.
+    if(w.beginn!==String(D.naechste_saison).slice(0,10)){ toast('Die Saison aus der Präsentation ist nicht mehr aktuell. Bitte wählt Paket und Start hier neu.'); return null; }
+    const vorher={start:S.start,startWahl:S.startWahl,saisons:S.saisons,auto:S.auto};
+    S.start='naechste'; S.startWahl=true;
+    if([1,2,3].includes(+w.saisons))S.saisons=+w.saisons; if(typeof w.auto==='boolean')S.auto=w.auto;
     const rein=k=>{ const l=lk(k); if(!l)return; if(l.je_mannschaft){ offen.push(l.titel); return; } if(frei(l,null)===0)return; dazu(k,null,true); n++; };
     if(w.paket&&w.paket!=='keins')rein(w.paket); (Array.isArray(w.extras)?w.extras:[]).slice(0,12).forEach(k=>rein(String(k)));
-    if(!n&&!offen.length)return null;
-    if(n){ if([1,2,3].includes(+w.saisons))S.saisons=+w.saisons; if(typeof w.auto==='boolean')S.auto=w.auto; nachKorb(true); }
+    if(!n&&!offen.length){ Object.assign(S,vorher); return null; }
+    nachKorb(true);
     return {n,offen}; }
   window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='fertig'||!e.data.wahl)return; const r=ausReise(e.data.wahl); if(!r)return;
     setTimeout(()=>{ if(r.n)zu('baukasten'); toast(r.n?'Eure Auswahl aus der Präsentation ist schon eingetragen.'+(r.offen.length?' Für '+r.offen.join(' und ')+' wählt ihr hier noch die Mannschaft.':''):'Für '+r.offen.join(' und ')+' wählt ihr hier noch die Mannschaft.'); },450); }catch(x){} });
@@ -951,7 +956,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       ${leer?'':`<div class="korb">${S.korb.filter(e=>e.key!=='spende').map(zeile).join('')}</div>`}
       ${S.wl.length?`<p class="wl-n">Vorgemerkt: ${esc(S.wl.map(w=>(lk(w.key)||{}).titel+(w.mannschaft?' ('+mn(w.mannschaft)+')':'')).join(', '))}</p>`:''}
       ${TV()?`<div class="sonst" id="sonst"><label>Sonstiges, im Termin vereinbart<input id="soT" maxlength="80" placeholder="z. B. Vereinsheim-Abend" enterkeyhint="next"></label><label>Preis netto<input id="soP" type="text" inputmode="decimal" enterkeyhint="done"></label><button type="button" id="soAdd">Dazu</button></div>`:''}
-      ${c.netto_jahr>0?`<div class="unter" id="laufzeit"><h3 id="lzK">Laufzeit</h3><div class="opts drei" role="radiogroup" aria-labelledby="lzK">${[[1,'1 Saison',S.auto?'Bis '+datum(endeNach(1))+', danach jedes Jahr neu.':'Endet am '+datum(endeNach(1))+' von selbst.'],[2,'2 Saisons','Preis fest bis '+datum(endeNach(2))+'.'+spar(2)],[3,'3 Saisons','Platz und Preis drei Saisons sicher.'+spar(3)]].map(([n,t,s])=>`<button type="button" class="opt${S.saisons===n?' on':''}" data-sa="${n}" role="radio" aria-checked="${S.saisons===n}" tabindex="${S.saisons===n?0:-1}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>
+      ${c.netto_jahr>0?`<div class="unter" id="laufzeit"><h3 id="lzK">Laufzeit</h3><div class="opts drei" role="radiogroup" aria-labelledby="lzK">${[[1,'1 Saison',S.auto?'Bis '+datum(endeNach(1))+', danach jedes Jahr neu.':'Endet am '+datum(endeNach(1))+' von selbst.'],[2,'2 Saisons','Preis fest bis '+datum(endeNach(2))+'.'+spar(2)],[3,'3 Saisons','Preis fest bis '+datum(endeNach(3))+'.'+spar(3)]].map(([n,t,s])=>`<button type="button" class="opt${S.saisons===n?' on':''}" data-sa="${n}" role="radio" aria-checked="${S.saisons===n}" tabindex="${S.saisons===n?0:-1}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>
         <div class="opts" role="radiogroup" aria-label="Start">${[['jetzt','Ab sofort','Gleich los, bis zum '+datum((+String(D.saison).slice(0,4)+S.saisons)+'-06-30')+'.'],['naechste','Ab Saison '+saisonTxt(D.naechste_saison),'Los geht es am '+datum(String(D.naechste_saison).slice(0,10))+'. Zahlen müsst ihr erst zum Start.']].map(([k,t,s])=>{ const aus=k==='jetzt'&&naechsteDrin;
           return `<button type="button" class="opt${S.start===k?' on':''}" data-st="${k}" role="radio" aria-checked="${S.start===k}" tabindex="${S.start===k?0:-1}"${aus?' disabled':''}><b>${t}</b><small>${aus?'Ein Baustein ist erst ab '+saisonTxt(D.naechste_saison)+' frei':s}</small></button>`; }).join('')}</div>
         ${S.start==='jetzt'&&iso(new Date())>String(D.saison).slice(0,10)?`<p class="einmal lz-notiz">Berechnet wird die ganze Saison ${saisonTxt(D.saison)}, auch wenn sie schon läuft. Lieber mit einer neuen Saison anfangen? Dann oben „Ab Saison ${saisonTxt(D.naechste_saison)}“ wählen. Zahlen müsst ihr dann erst zum Start.${S.saisons===1&&basis>0?` Nehmt ihr zwei Saisons, seid ihr bis zum ${datum(endeNach(2))} dabei und spart ${eur(Math.round(basis*2*.05*100)/100).replace(' ','\u00a0')}.`:''}</p>`:''}

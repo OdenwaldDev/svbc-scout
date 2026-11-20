@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.107',v:'0.99.107',datum:'2026-11-20',titel:'Partnerreise für die nächste Saison',kurz:'Die Auswahl aus der Präsentation startet auch im Abschluss zur Saison 2027/28.',
+    punkte:[{ic:'i',t:'Auswahl und Start zusammen übernehmen',d:'Paket, Laufzeit und Verlängerungswahl kommen mit dem Start am 1. Juli 2027 im Abschluss an. Bestehende Auswahlen bleiben erhalten. Einstieg und Laufzeithilfe sind überarbeitet; ein Platzwunsch bleibt unverbindlich.',r:'admin'}]},
   {id:'0.99.106',v:'0.99.106',datum:'2026-11-19',titel:'Privater App-Test',kurz:'Der Einstieg erklärt den geschlossenen Vereinstest.',
     punkte:[{ic:'i',t:'Zugang für den Verein',d:'Die Testseite führt zu Google Play und TestFlight. Die Hinweise auf einen öffentlichen Store-Start sind entfernt. Der Vereinszugang bleibt freigabepflichtig.',r:'admin'}]},
   {id:'0.99.105',v:'0.99.105',datum:'2026-11-19',titel:'Platzwahl und Ärmel im Detail',kurz:'Partner wählen ihren Platzwunsch direkt in der 3D-Vorschau.',

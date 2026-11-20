@@ -725,7 +725,7 @@ html.zeiger .spot{opacity:1}
   <!-- 2 Grund -->
   <section class="szene" data-s="antrieb" data-hg="rasen" data-dicht="1">
     <div class="in">
-      <p class="eyebrow auf">Mal angenommen, ihr wärt dabei · das Wichtigste zuerst</p>
+      <p class="eyebrow auf">Das Wichtigste zuerst</p>
       <h2 class="auf" style="--v:1">Was wäre euch dabei <em>wichtig?</em></h2>
       <div class="karten auf" style="--v:2" data-frage="antrieb">
         <button class="bk" type="button" data-w="kinder" aria-pressed="false"><img src="partner/r-jugend.webp" alt=""><span class="st"></span><b>Kindern etwas ermöglichen<small>Dass hier jedes Kind kicken kann.</small></b></button>
@@ -942,7 +942,7 @@ const LOB={
     skep:'Danke für die klare Ansage. Schaut es euch an und sagt am Ende, ob etwas dabei ist.'},
   platz:{bande:'Die Bande. Die sieht jeder, der am Platz steht.',trikot:'Aufs Trikot geht es bei uns über die Jugend.',tag:'Ein Heimspiel lang gehört der Platz euch.',wand:'Euer Logo hängt dann an der Partnerwand.'},
   groesse:{3:'Einer von acht. Das besprechen wir in Ruhe.',2:'Vorne stehen. Dann lernt ihr auch die anderen kennen.',1:'Mit eigener Bande am Platz.',0:'Jeder Name an der Wand hilft.','-1':'Das geht. Es gibt auch kleine Wege, dabei zu sein.',auto:'Machen wir. Ihr sagt uns danach, ob wir richtig liegen.'},
-  laufzeit:{1:'Eine Saison zum Kennenlernen.',2:'Zwei Saisons. Der Preis bleibt so.',3:'Drei Saisons. Preis und Platz bleiben.'}
+  laufzeit:{1:'Eine Saison.',2:'Zwei Saisons mit festem Saisonpreis.',3:'Drei Saisons mit festem Saisonpreis.'}
 };
 const KURZ={kinder:'Kinder',sehen:'Sichtbarkeit',leute:'Gute Leute',netz:'Kontakte',zurueck:'Etwas zurückgeben',vorn:'Vorne dabei sein'};
 const ERST={kinder:'Erst die Kinder',sehen:'Erst gesehen werden',leute:'Erst gute Leute finden',netz:'Erst die anderen Betriebe treffen',zurueck:'Erst etwas zurückgeben',vorn:'Erst vorne dabei sein'};
@@ -950,7 +950,7 @@ const GEWICHT=[4,4,3,3,2,2], ZAHLWORT=['','eine','zwei','drei','vier','fünf'];
 const DANN={kinder:'dann die Kinder',sehen:'dann gesehen werden',leute:'dann gute Leute',netz:'dann die Kontakte',zurueck:'dann etwas zurückgeben',vorn:'dann vorne dabei sein'};
 const BREMSE=[
   ['nutzen','Bringt uns das überhaupt was?','Neue Kunden können wir nicht versprechen. Was wir versprechen können: Euer Name steht dort, wo der Ort zusammenkommt. Und ihr gehört zu denen, die das möglich machen.'],
-  ['binden','Wie lange sind wir gebunden?','Eine Saison. Danach läuft es von selbst weiter, wenn ihr mögt. Kündigen könnt ihr jedes Jahr bis 31. März, eine Mail genügt. Oder ihr stellt das Weiterlaufen gleich aus.'],
+  ['binden','Wie lange sind wir gebunden?','Bei Saisonleistungen wählt ihr eine, zwei oder drei Saisons. Auch das automatische Weiterlaufen könnt ihr ausschalten. Die gewählten Angaben stehen vor der Unterschrift noch einmal im Vertrag.'],
   ['arbeit','Wie viel Arbeit haben wir damit?','Fast keine. Wir brauchen euer Logo und einmal euer Okay. Den Rest machen wir.'],
   ['allein','Das entscheide ich nicht allein.','Gut so. Ihr bekommt alles schriftlich mit. Sagt uns, bis wann ihr gesprochen habt. Vorher melden wir uns nicht.'],
   ['geld','Gerade ist es knapp.','Dann drängen wir nicht. Es gibt auch kleine Wege, dabei zu sein. Oder ihr sagt uns, wann wir wieder fragen dürfen.'],
@@ -1456,7 +1456,7 @@ let notizAlt='';
 function reiseMelden(){ try{ const n=reiseNotiz(); if(!n||n===notizAlt||window.parent===window)return; notizAlt=n; window.parent.postMessage({reise:'notiz',notiz:n},location.origin); }catch(e){} }
 // Die Wahl geht nur mit, wenn die Firma Ja gesagt hat. Vorher ist das Paket nur ein Vorschlag und darf nicht in den Vertrag rutschen.
 function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz(),
-  wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],saisons:S.laufzeit,auto:!!S.verl}:null},location.origin); }catch(e){} }
+  wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],saisons:S.laufzeit,auto:!!S.verl,beginn:'2027-07-01'}:null},location.origin); }catch(e){} }
 /* ---------- Speichern, Spur und Wiederkommen (0.99.76, R12, R15, R17) ----------
    Der Rahmen in partner.html kennt den persönlichen Link und spricht mit dem Server (partner_reise_stand, partner_reise_merken).
    Die Reise selbst kennt weder Schlüssel noch Adresse: Sie schickt nur Nachrichten an den Rahmen. Ohne Rahmen wird nichts gespeichert.
