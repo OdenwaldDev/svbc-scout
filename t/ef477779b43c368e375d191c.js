@@ -1,3 +1,9 @@
+
+/* =====================================================================
+   Sportzentrale Beta 0.74 · Ruhige Texte
+   - Überschriften, Reiter und Knöpfe ohne vorangestelltes Emoji (Symbole bleiben, wo sie Bedeutung tragen: ★, ✓, ♥, Status-Pillen)
+   - Keine Gedankenstriche in sichtbarem Text: Bereiche „16–19“ werden „16 bis 19“, leere Werte „–“ werden „·“,
+     ein Strich mit Leerzeichen geht durch svPolish (wie bei svEsc)
    Läuft nach jedem Rendern (MutationObserver), nie in Eingabefeldern, Editoren oder Plakat-Vorschauen.
    ===================================================================== */
 const SV68_EMO=/^\s*(?:\p{Emoji_Presentation}|\p{Extended_Pictographic}️)(?:️|‍(?:\p{Extended_Pictographic})️?|\p{Emoji_Modifier})*\s*/u;

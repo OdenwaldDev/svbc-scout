@@ -655,12 +655,599 @@ html.zeiger .spot{opacity:1}
 
 /* 0.99.78: Zettel mit Summe der ersten Saison (Trikots stehen getrennt, die Summe nennt alles) */
 .bon .zl.sum{font-weight:700;border-top:2px solid var(--tinte);margin-top:4px;padding-top:8px}
+/* Partnerreise: räumliche Materialien. Nach reise_stil.css einbinden.
+   Keine neuen Inhalte oder Bilder der Firma, keine zusätzlichen Schriftarten.
+   Optional: .sz-trikot { --schrank-rueckwand: url("partner/r-schrank.webp") }
+   Die Rückwand muss textlos sein und darf kein zweites Trikot enthalten.
+   Die bestehenden [data-trikot-vorschau]-Elemente bleiben unverändert.
+   .trikot-gesamt ist die gerenderte Gesamtansicht, data-ansicht steuert
+   "ganz" oder "detail". .trikot-ansichten gehört unter .rahmen. */
+
+/* Ein offener Vereinsschrank. Der dunkle Kern passt zum vorhandenen
+   gerenderten Ärmelbild. Holz, Bügel und Leuchte bleiben dessen Umgebung. */
+.sz.sz-trikot {
+  --schrank-rueckwand: none;
+  background-color: #10182e;
+  background-image:
+    linear-gradient(90deg, #111b31 0, #27334e 3%, transparent 7% 93%, #26314b 97%, #111a2d 100%),
+    linear-gradient(180deg, rgb(246 230 204 / .13), transparent 27%, transparent 84%, rgb(0 0 0 / .38)),
+    var(--schrank-rueckwand),
+    repeating-linear-gradient(91deg, rgb(31 23 17 / .18) 0 1px, transparent 1px 11px, rgb(177 138 96 / .05) 11px 13px, transparent 13px 23px),
+    linear-gradient(90deg, #3e342b, #584739 20%, #41372e 56%, #4e4033 82%, #322b25);
+  background-size: auto, auto, cover, auto, auto;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  box-shadow: inset 0 1px rgb(255 255 255 / .12), inset 0 -12px 18px rgb(0 0 0 / .45);
+}
+
+.sz.sz-trikot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border: 10px solid #1e2944;
+  border-top-color: #2d3850;
+  border-bottom-color: #151e33;
+  box-shadow: inset 1px 0 rgb(255 255 255 / .14), inset -1px 0 rgb(0 0 0 / .5), inset 0 2px 7px rgb(0 0 0 / .6);
+  pointer-events: none;
+}
+
+/* Gezeichnete Metallstange, Haken und Holz-Bügel, ohne Bild eines Trikots. */
+.sz.sz-trikot::after {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 5%;
+  height: 24%;
+  z-index: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 100'%3E%3Cdefs%3E%3ClinearGradient id='m' x2='0' y2='1'%3E%3Cstop stop-color='%23565b61'/%3E%3Cstop offset='.36' stop-color='%23d4d1c8'/%3E%3Cstop offset='.64' stop-color='%23797b79'/%3E%3Cstop offset='1' stop-color='%2330353b'/%3E%3C/linearGradient%3E%3ClinearGradient id='w' x2='0' y2='1'%3E%3Cstop stop-color='%23aa8561'/%3E%3Cstop offset='1' stop-color='%236d4c32'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='5' y='7' width='590' height='4' rx='2' fill='url(%23m)'/%3E%3Crect x='25' y='1' width='550' height='2' rx='1' fill='%23f0e7d4' opacity='.8'/%3E%3Cpath d='M294 24c0-14 19-15 19-3 0 7-13 10-13 18v9' fill='none' stroke='%239f9c92' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M300 44 221 82q-8 6 3 7h152q11-1 3-7Z' fill='url(%23w)' stroke='%23352921' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M300 53 243 82h114Z' fill='%23372f29'/%3E%3Cpath d='M227 83 299 47 373 83' fill='none' stroke='%23d2ac83' stroke-opacity='.45' stroke-width='1'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+
+/* Mehr Höhe nur bei geöffnetem Schrank. Andere Bühnen bleiben unverändert. */
+.rahmen:has(.sz-trikot.an) { aspect-ratio: 4 / 3; }
+
+/* Genug Platz für das ganze vorhandene Render, einschließlich Logo.
+   Kein Zuschnitt, kein Blend-Mode, kein Farbfilter auf dem Ärmelbild. */
+.sz-trikot .trikot-name.trikot-nah {
+  position: absolute;
+  inset: 22% 7% 9%;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  transform: none;
+  background: #10182e;
+  border: 1px solid rgb(194 207 226 / .13);
+  box-shadow: 0 5px 10px rgb(0 0 0 / .32), 0 1px rgb(255 255 255 / .06);
+}
+
+.sz-trikot .trikot-name.trikot-nah img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  object-fit: contain;
+  filter: none;
+  opacity: 1;
+  transform: none;
+}
+
+.sz-trikot .trikot-name.trikot-nah .trikot-seite {
+  grid-row: 2;
+  position: relative;
+  inset: auto;
+  display: block;
+  padding: 7px 10px;
+  border-top: 1px solid #303a50;
+  background: #111b2f;
+  color: #f3f5fa;
+  font-size: 11.5px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.sz-trikot .trikot-platzhalter {
+  inset: 8% 7% 23%;
+  color: #f3f5fa;
+}
+
+.sz-trikot .trikot-gesamt {
+  position: absolute;
+  inset: 21% 7% 8%;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  background: #10182e;
+}
+
+.sz-trikot .trikot-gesamt img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  filter: none;
+  opacity: 1;
+}
+
+.sz-trikot[data-ansicht="ganz"] .trikot-name.trikot-nah,
+.sz-trikot[data-ansicht="detail"] .trikot-gesamt {
+  display: none;
+}
+
+.trikot-ansichten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 0 0;
+}
+
+.trikot-ansichten button {
+  flex: 1 1 auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px 13px;
+  border: 1px solid #66718c;
+  background: #111b31;
+  color: #f3f5fa;
+  font: 600 13px/1.2 var(--t);
+  text-align: center;
+}
+
+.trikot-ansichten button[aria-pressed="true"] {
+  border-color: #e6e8ed;
+  background: #e6e8ed;
+  color: #182345;
+}
+
+.trikot-ansichten button:focus-visible {
+  outline: 3px solid var(--or);
+  outline-offset: 3px;
+}
+
+/* Ein gewebter Wimpel mit Kordel, gekettelter Kante und sichtbarer Naht. */
+.wimpel {
+  --wimpel-borte: #a4c2d1;
+  margin-top: 42px;
+  filter: drop-shadow(4px 12px 9px rgb(0 0 0 / .4));
+}
+
+.wimpel.gold { --wimpel-borte: #d4bb80; }
+
+.wimpel::before,
+.wimpel.gold::before {
+  left: 3%;
+  top: -36px;
+  width: 94%;
+  height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 40' preserveAspectRatio='none'%3E%3Cpath d='M5 39 120 3 235 39' fill='none' stroke='%23251f1a' stroke-width='3.2'/%3E%3Cpath d='M5 38 120 2 235 38' fill='none' stroke='%23b3ab95' stroke-width='1.6'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+
+.wimpel::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 3px);
+  top: -37px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #e3dbc4, #8b8270 60%, #3c3a35);
+  box-shadow: 1px 2px 2px rgb(0 0 0 / .45);
+  pointer-events: none;
+}
+
+.wimpel .stange {
+  height: 8px;
+  margin-inline: -6px;
+  border: 1px solid #858980;
+  background: linear-gradient(180deg, #d9ded7, #939e9f 37%, #c0c6bd 53%, #596464);
+  box-shadow: 0 3px 4px rgb(0 0 0 / .32);
+}
+
+.wimpel.gold .stange {
+  border-color: #8d774e;
+  background: linear-gradient(180deg, #d6c696, #a98f5f 39%, #d4bd82 56%, #73613e);
+}
+
+.wimpel .tuch {
+  min-height: 238px;
+  padding: 20px 22px 74px;
+  background-color: #202e63;
+  background-image:
+    linear-gradient(100deg, rgb(0 0 0 / .22), transparent 24%, rgb(255 255 255 / .045) 42%, rgb(0 0 0 / .09) 62%, transparent 82%, rgb(0 0 0 / .22)),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / .045) 0 .6px, transparent .6px 2px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / .1) 0 .7px, transparent .7px 2.5px),
+    linear-gradient(90deg, #1b2755, #29396e 38%, #21305d 72%, #1d2852);
+  clip-path: polygon(0 0, 100% 0, 100% 68%, 50% 100%, 0 68%);
+  filter: none;
+  text-shadow: 0 1px rgb(0 0 0 / .25);
+}
+
+.wimpel .tuch::before,
+.wimpel.gold .tuch::before {
+  inset: 0;
+  clip-path: none;
+  background: var(--wimpel-borte);
+  box-shadow: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 280' preserveAspectRatio='none'%3E%3Cpath d='M3 3h234v185L120 276 3 188Z' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M9 9h222v176l-111 84L9 185Z' fill='none' stroke='white' stroke-width='.9' stroke-dasharray='2.3 2.3'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 280' preserveAspectRatio='none'%3E%3Cpath d='M3 3h234v185L120 276 3 188Z' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M9 9h222v176l-111 84L9 185Z' fill='none' stroke='white' stroke-width='.9' stroke-dasharray='2.3 2.3'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  opacity: .88;
+}
+
+.wimpel img {
+  width: 58px;
+  margin-bottom: 8px;
+  filter: none;
+}
+
+.wimpel small { color: #bed4e5; }
+.wimpel b { margin-top: 7px; }
+.wimpel span { max-width: 9em; line-height: 1.12; }
+
+.szene.los .wimpel {
+  animation: reise-wimpel-ein .7s .25s cubic-bezier(.2, .7, .3, 1) both;
+}
+
+@keyframes reise-wimpel-ein {
+  from { opacity: 0; transform: translateY(-12px) rotate(-2deg); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Eine Ansage auf einem echten Spieltagsblatt, mit ruhigem Druckbild. */
+.sz.sz-durch {
+  grid-template-rows: 22px auto 25px;
+  gap: 12px;
+  padding: 6% 7%;
+  color: #192546;
+  background-color: #f0ece2;
+  background-image:
+    linear-gradient(95deg, rgb(141 116 82 / .07), transparent 30%, rgb(255 255 255 / .25) 65%, transparent),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgb(100 85 63 / .024) 3px 4px);
+  box-shadow: inset 0 0 0 8px #1e2a4e, inset 0 0 0 9px #9a9c97;
+}
+
+.sz-durch .laut {
+  height: 22px;
+  gap: 4px;
+}
+
+.sz-durch .laut i {
+  height: 30%;
+  max-width: 5px;
+  border-radius: 1px;
+  background: #46567c;
+  animation: none;
+}
+
+.sz-durch .laut i:nth-child(3n) { height: 68%; background: #b3541b; }
+.sz-durch .laut i:nth-child(4n + 1) { height: 90%; }
+.sz-durch .laut i:nth-child(5n + 2) { height: 47%; }
+.sz-durch .durch-t b { color: #a44617; }
+.sz-durch .led {
+  padding: 6px 0;
+  font-size: clamp(13px, 3.2vw, 20px);
+  line-height: 1;
+  letter-spacing: .09em;
+  color: #f1e9d7;
+  background: #25314c;
+  text-shadow: none;
+}
+
+/* Tickets und Quittung: Papierfasern, Druckfarbe und ein feiner Kartonrand. */
+.tk,
+.bon {
+  background-color: #f6f3ec;
+  background-image:
+    linear-gradient(96deg, rgb(151 127 94 / .055), transparent 34%, rgb(255 255 255 / .23) 71%, transparent),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgb(84 71 55 / .018) 3px 4px);
+  border: 1px solid #c7c3b9;
+  box-shadow: 0 1px 0 #dad4c7, 0 3px 0 #a9a499, 0 18px 28px -12px rgb(0 0 0 / .6);
+}
+
+.tk::before,
+.tk::after { box-shadow: inset 0 1px 3px rgb(0 0 0 / .4); }
+
+.tk-kopf {
+  background-image: linear-gradient(105deg, rgb(0 0 0 / .08), transparent 48%, rgb(255 255 255 / .035));
+  box-shadow: inset 0 1px rgb(255 255 255 / .14);
+}
+
+.tk-in { border-top: 1px dashed #8d8b84; }
+.tk-in .rat { border: 1px solid #d9d4ca; border-left: 4px solid var(--navy); }
+.tk-in .rat button,
+.tk-in .dazu button { min-height: 44px; }
+.tk h3 .ib { width: 44px; height: 44px; }
+.tk h3 .ib::after { inset: 0; }
+
+/* Schwarzes Brett. Die vorhandene horizontale Kartenwahl bleibt erhalten. */
+.brett {
+  gap: 20px;
+  padding-block: 27px;
+  border-block: 1px solid #3d4250;
+  background-color: #1b202a;
+  background-image:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / .02) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / .14) 0 1px, transparent 1px 5px),
+    linear-gradient(100deg, #171d27, #262d37 48%, #1d2530);
+  box-shadow: inset 0 3px 8px rgb(0 0 0 / .45), inset 0 -1px rgb(255 255 255 / .035);
+}
+
+.brett .zt {
+  min-width: 0;
+  border: 1px solid #d3cec1;
+  background-color: #f5f1e7;
+  background-image:
+    linear-gradient(101deg, rgb(169 143 102 / .065), transparent 44%, rgb(255 255 255 / .26) 78%, transparent),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgb(88 72 49 / .022) 3px 4px);
+  box-shadow: 0 1px 0 #ebe5d8, 0 3px 0 #bbb3a3, 2px 13px 14px -6px rgb(0 0 0 / .6);
+}
+
+.brett .zt::before {
+  top: -9px;
+  width: 64px;
+  height: 21px;
+  margin-left: -32px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 2px, rgb(255 255 255 / .08) 2px 3px),
+    linear-gradient(95deg, rgb(205 203 177 / .7), rgb(231 228 206 / .85) 50%, rgb(197 199 180 / .72));
+  box-shadow: 0 1px 2px rgb(0 0 0 / .15);
+  clip-path: polygon(3% 0, 98% 2%, 97% 15%, 100% 27%, 97% 42%, 100% 63%, 98% 82%, 99% 100%, 0 98%, 2% 82%, 0 65%, 2% 45%, 0 22%);
+}
+
+.brett .zt .bild {
+  margin: 9px 9px 0;
+  border: 1px solid rgb(12 18 36 / .2);
+  box-shadow: 0 1px 2px rgb(39 31 20 / .14);
+}
+
+.brett .zt .tx { padding: 12px 14px 14px; }
+.brett .zt .weil-t { color: #334171; }
+.brett .zt .pr { border-top-color: #aaa394; }
+.brett .zt .pr > span { min-height: 44px; display: inline-flex; align-items: center; }
+.brett .zt .ib { width: 44px; height: 44px; top: 13px; right: 13px; }
+.brett .zt .ib::after { inset: 0; }
+
+/* Auf dem Brett bleibt ebenfalls das vollständige personalisierte Bild.
+   Die gewählte Ärmel-Seite und die Beschriftung kommen weiter aus dem JS. */
+.brett .zt .bild.trikot-nah {
+  min-height: 174px;
+  aspect-ratio: auto;
+  background: #10182e;
+}
+
+.brett .zt .bild.trikot-nah img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: none;
+  transform: none;
+  opacity: 1;
+}
+
+.brett .zt .bild.trikot-nah .trikot-seite {
+  position: relative;
+  display: block;
+  padding: 8px 9px;
+  border-top: 1px solid #303a50;
+  color: #f3f5fa;
+  background: #111b2f;
+  overflow-wrap: anywhere;
+}
+
+.brett .zt[data-k="sotd"] .bild { border-bottom: 3px solid var(--or); }
+.brett .zt.hinweis { background-color: #f9f7f0; }
+
+@media (hover: hover) {
+  .brett .zt[data-k]:hover {
+    transform: rotate(0deg) translateY(-4px);
+  }
+  .brett .zt[data-k]:hover .bild.trikot-nah img { transform: none; }
+}
+
+/* Auf schmalen Geräten behält die Nahansicht die größtmögliche Fläche. */
+@media (max-width: 599px) {
+  .sz.sz-trikot::before { border-width: 8px; }
+  .sz-trikot .trikot-name.trikot-nah { inset: 20% 5% 7%; }
+  .sz-trikot .trikot-gesamt { inset: 20% 5% 7%; }
+  .sz-trikot .trikot-name.trikot-nah .trikot-seite { padding: 6px 8px; font-size: 11px; }
+  .wimpel .tuch { padding: 18px 20px 70px; }
+  .brett { gap: 18px; }
+  .sz.sz-durch { gap: 9px; }
+}
+
+@media (max-width: 859px) {
+  .trikot-ansichten { padding-inline: var(--rand); }
+}
+
+/* Wenig Höhe wird durch die vorhandene Szenen-Scrollfläche aufgefangen. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .wimpel { width: min(28vw, 200px); }
+  .wimpel .tuch { min-height: 218px; padding-bottom: 64px; }
+  .sz.sz-durch { gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .szene.los .wimpel { opacity: 1; animation: none; transform: none; }
+  .brett .zt { transition: none; }
+  .brett .zt[data-k]:hover { transform: rotate(var(--r, -1.5deg)); }
+  .brett .zt .bild img { transition: none; }
+  .sz-durch .led span { padding-left: 0; animation: none; }
+}
+/* Eine Reise vom echten Platz über die Kabine zum eigenen Platz im Verein.
+   Originalfotos, Firmenzeichen und gerenderte Trikots bleiben eigene Ebenen. */
+:root{--nacht:#041127;--tief:#0b1c35;--navy:#142e55;--hb:#a4d4ff;--or:#ff8731;--or2:#ffa35f;--papier:#f6f6f2}
+.hg .zoom{animation:none;transform:none}
+.strahl,.spot{display:none}
+.korn{opacity:.025}
+.hg img{object-position:center}
+#film[data-s="start"] .schleier{background:linear-gradient(90deg,#041127e8 0%,#041127bd 46%,#04112712 100%),linear-gradient(0deg,#041127 0%,transparent 72%)}
+.foto-karte{box-shadow:0 28px 64px #0006;transform:rotate(5deg)}
+.start-t{max-width:28em;color:#f0f2f7}
+.start-in .eyebrow{color:var(--papier)}
+.szene[data-s="start"]:has(#wieder:not([hidden])) h1{font-size:clamp(52px,min(17.4vw,12vh),118px)}
+.szene[data-s="start"]:has(#wieder:not([hidden])) .start-in{margin-block:auto;}
+.film-knopf{margin-left:auto;min-height:44px;padding:8px 14px;border:1px solid #b2c3db88;border-radius:4px;background:#041127d9;color:#f6f6f2;font:600 13px/1.2 var(--t)}
+.top #tonB{min-width:44px;min-height:44px;width:44px;height:44px}
+.zeile{min-height:44px}
+.fragen h4 button{min-width:44px;min-height:44px;width:44px;height:44px}
+.sz-bild img{width:100%;height:100%;object-fit:cover}
+.szene[data-s="worum"]{background:#041127}
+.szene[data-s="worum"]>.in{position:relative;z-index:1}
+.szene[data-s="worum"]::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#041127 0%,#041127d9 28%,#04112718 78%),linear-gradient(0deg,#041127cc,transparent 50%)}
+.szene[data-s="worum"] .sz-bild{filter:none;transform:none;transition:opacity .65s;object-position:center}
+.fz{font-size:clamp(40px,min(calc(11.6vw / var(--z,1)),calc(9.6vh / var(--z,1))),98px);max-width:9em;text-wrap:balance}
+.fz:not(.solo){visibility:hidden}
+.fz.solo{visibility:inherit}
+.fz .hand{font-family:var(--t);font-weight:500;font-size:clamp(17px,2vw,22px);line-height:1.4;max-width:22em}
+.takte i.an{background:var(--or)}
+.szene[data-s="worum"] .sz-bild[data-fuer="1"]{object-position:65% 48%}
+.szene[data-s="worum"] .sz-bild[data-fuer="3"]{object-position:72% 50%}
+.szene[data-s="worum"] .sz-bild[data-fuer="5"]{object-position:65% 55%}
+.saetze{gap:8px}
+.sa{min-height:44px;padding:5px 0;color:#d9e4f5;-webkit-text-stroke:0;background:none;transform:none}
+.saetze.gewaehlt .sa:not([aria-pressed="true"]){opacity:.7;transform:none}
+.sa[aria-pressed="true"]{transform:none}
+.sa[aria-pressed="true"] em{color:#ffa35f}
+.szene[data-s="verb"] .sz-bild{filter:brightness(.36) saturate(.8)}
+.bk{border:1px solid #dce9f340;box-shadow:0 12px 30px #0003}
+.bk::before{background:linear-gradient(180deg,#04112710 0,#041127b8 28%,#041127f2 100%)}
+.bk[aria-pressed="true"]{border-color:#ffad6d;box-shadow:inset 0 0 0 2px #ffad6d,0 12px 30px #0003}
+.bk .st{background:#ff8731;color:#041127}
+.bk b small{color:#fff;opacity:.94;font-size:13px;line-height:1.35}
+.sz.kommt,.sz-trikot.kommt,.sz-bande.fahrt{animation:bildAn .35s ease-out both;transform-origin:center}
+@keyframes bildAn{from{opacity:.2;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sz:not(.an){visibility:hidden;pointer-events:none}
+.sz.an{visibility:inherit}
+.rahmen,.rahmen:has(.sz-trikot.an){aspect-ratio:4/3}
+.sz.sz-bande{display:grid;place-items:center;background:#041127}
+.banden-entwurf{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden}
+.banden-entwurf>img{width:100%;height:100%;object-fit:cover}
+.sz.sz-trikot .trikot-gesamt{background:transparent;inset:15% 7% 5%}
+.sz.sz-trikot .trikot-gesamt:not([data-foto="true"]) img{transform:scale(1.6);transform-origin:50% 50%}
+.sz-trikot[data-ansicht="detail"]::after{opacity:.3}
+.trikot-ansichten{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.trikot-ansichten button{min-width:0}
+.tabs .zeile{min-height:44px}
+.bue-w .lob{min-height:0}
+.bue-w .lob:has(p:empty){display:none}
+.bue-w .lob p{font-family:var(--t);font-weight:500;font-size:15px;line-height:1.4;transform:none}
+.szene.los .wimpel-b .auf{transition-delay:.15s}
+.sz.sz-durch{display:block;padding:0;background:#e5e5dc}
+.spieltag-karte{height:100%;display:grid;grid-template-rows:auto minmax(30px,.65fr) minmax(100px,1.35fr) auto;background:#f6f6f2;color:#102844;overflow:hidden;text-align:left;box-shadow:inset 0 0 0 1px #132e551f}
+.spieltag-kopf{padding:3% 5%;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #10284426}
+.spieltag-kopf>img{width:19%;height:auto;max-height:48px;object-fit:contain}
+.spieltag-kopf>span{font:800 italic clamp(18px,3.8vw,26px)/1 var(--d);text-align:right;text-transform:uppercase}
+.spieltag-kopf small{font:600 11px/1.5 var(--t);letter-spacing:.06em}
+.spieltag-foto{min-height:0;overflow:hidden}
+.spieltag-foto img{width:100%;height:100%;object-fit:cover;object-position:center 57%}
+.spieltag-in{padding:3% 5%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:5px;min-height:0}
+.spieltag-in>small{font:800 11px/1.3 var(--t);letter-spacing:.1em;text-transform:uppercase;color:#526273}
+.spieltag-marke{display:grid;place-items:center;min-height:0}
+.spieltag-marke img{width:100%;height:100%;max-height:100%;object-fit:contain;min-height:0}
+.spieltag-marke b{font:800 italic clamp(23px,5.3vw,46px)/.95 var(--d);text-transform:uppercase;overflow-wrap:anywhere;text-align:center}
+.spieltag-in>p{font:500 13px/1.3 var(--t);color:#314558}
+.spieltag-fuss{background:#142e55;color:#fff;display:flex;justify-content:space-between;gap:12px;padding:2% 5%;font:700 12px/1.4 var(--t)}
+.spieltag-fuss small{font:500 11px/1.4 var(--t);opacity:.85}
+.zt .bild.spieltag-klein{aspect-ratio:4/3;min-height:190px;background:#f6f6f2}
+.spieltag-klein .spieltag-foto{display:none}
+.spieltag-klein .spieltag-karte{grid-template-rows:auto minmax(0,1fr) auto}
+.spieltag-klein .spieltag-in>p{font-size:12px}
+.spieltag-klein .spieltag-marke img{height:60px;max-height:60px}
+.zt .spieltag-karte .spieltag-marke img{width:100%;height:60px;max-height:60px;object-fit:contain}
+.zt .spieltag-karte .spieltag-kopf>img{width:19%;height:auto;max-height:40px;object-fit:contain}
+.zt .spieltag-karte img{transform:none}
+.brett .zt[data-k]:hover .spieltag-karte img{transform:none}
+.spieltag-klein .spieltag-in{grid-template-rows:auto minmax(60px,1fr);gap:8px;padding:8px 12px}
+.spieltag-klein .spieltag-in>p{display:none}
+.sz-wand{background:#e6e8e5;border:10px solid #18334f;box-shadow:inset 0 1px 12px #0003}
+.kacheln>i{border:none;background:#152a3e08;box-shadow:inset 0 1px #fff8}
+.kacheln .ich{background:#fff;border:1px solid #162f4c40;box-shadow:0 4px 12px #1028441a}
+.kacheln{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);align-content:stretch;gap:8px}
+.kacheln i{aspect-ratio:auto}
+.kacheln .ich{grid-row:span 2}
+.kacheln .ich.mk img{padding:0}
+.stf{margin-left:0;border:1px solid #bac8df42;border-bottom:none;background:#0b1c35e8;min-height:68px;padding:15px 18px}
+.stf:last-child{border-bottom:1px solid #bac8df42}
+.stufen .stf[aria-pressed="true"],.stufen .stf[aria-pressed="true"]:hover{background:#f6f6f2;color:#102844;border-color:#f6f6f2;box-shadow:inset 4px 0 #ff8731}
+.stufen .stf[aria-pressed="true"] b,.stufen .stf[aria-pressed="true"] em,.stufen .stf[aria-pressed="true"] span{color:#102844}
+.szene[data-s="ja"] .anstoss button{animation:none;box-shadow:0 8px 24px #0004}
+.anstoss .ring{display:none}
+.anstoss>svg{animation:none;opacity:.75}
+.finalbild:has(.sz-trikot),.finalbild:has(.sz-durch){aspect-ratio:4/3}
+.finalbild .sz-trikot{opacity:1;visibility:inherit;top:0;height:100%;animation:none}
+.finalbild .sz-durch{opacity:1;visibility:inherit;top:0;height:100%;animation:none}
+.finalbild .sz{visibility:inherit}
+.finalbild.wandbild .sz-wand{visibility:inherit}
+#film[data-s="ja"] .schleier{background:#041127cc}
+@media(min-width:860px){
+ .szene[data-s="worum"] .sz-bild{left:42%;width:58%;object-fit:contain;object-position:50% 50%;background:#041127}
+ .szene[data-s="worum"] .sz-bild[data-fuer="1"],.szene[data-s="worum"] .sz-bild[data-fuer="3"],.szene[data-s="worum"] .sz-bild[data-fuer="5"]{object-position:50% 50%}
+ .szene[data-s="worum"] .sz-bild[data-fuer="4"] img{object-fit:contain}
+ .szene[data-s="worum"] .fz{max-width:7.5em;font-size:clamp(42px,5vw,76px)}
+ .szene[data-s="worum"]::after{background:linear-gradient(90deg,#041127 0%,#041127 34%,#04112780 48%,transparent 65%),linear-gradient(0deg,#041127b3,transparent 30%)}
+ .szene[data-s="worum"] .streifen{min-height:46vh}
+ .szene[data-s="worum"]>.in{width:min(1200px,100%)}
+ .trikot-ansichten{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:859px){
+ #film[data-s="start"] .schleier{background:linear-gradient(180deg,#04112780 0%,#04112790 27%,#041127eb 62%,#041127 100%)}
+ .szene[data-s="worum"]::after{background:linear-gradient(180deg,#04112720 0%,#04112728 27%,#041127df 50%,#041127 92%)}
+ .szene[data-s="worum"] .sz-bild{height:55%;object-fit:cover;object-position:50% 35%}
+ .szene[data-s="worum"] .sz-bild[data-fuer="1"]{object-position:50% 38%}
+ .szene[data-s="worum"] .sz-bild[data-fuer="3"]{object-position:55% 48%}
+ .szene[data-s="worum"] .sz-bild[data-fuer="5"]{object-position:50% 48%}
+ .szene[data-s="worum"]>.in{margin:auto 0 0}
+ .szene[data-s="worum"] .streifen{min-height:30vh}
+ .szene[data-s="worum"] .fz{font-size:clamp(40px,10vw,70px);max-width:10em}
+ .szene[data-s="worum"] .fz .hand{font-size:17px;line-height:1.4}
+ .szene[data-s="worum"] .takte{margin-top:20px}
+ .spieltag-kopf>span{font-size:22px}
+ .spieltag-in>p{font-size:12px}
+ .spieltag-marke b{font-size:30px}
+}
+@media(max-width:859px) and (max-aspect-ratio:1/1){
+ .szene[data-s="start"]{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;row-gap:18px}
+ .szene[data-s="start"] .foto-karte{position:relative;inset:auto;grid-row:1;justify-self:end;width:min(46vw,190px);margin:8px 8px 10px 0}
+ .szene[data-s="start"]:has(#wieder:not([hidden])) .foto-karte{width:132px}
+ .szene[data-s="start"] .start-in,.szene[data-s="start"]:has(#wieder:not([hidden])) .start-in{grid-row:2;min-height:0;align-content:start;margin:0;width:100%}
+ .szene[data-s="start"] .foto-karte figcaption{font-size:17px}
+ h1 .z>span{white-space:nowrap}
+}
+@media(max-height:500px) and (min-aspect-ratio:1/1){
+ .bue-g{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);grid-template-areas:'k r' 'w r';column-gap:20px;align-items:start}
+ .bue-k{grid-area:k;align-self:end}.bue-r{grid-area:r;margin-inline:0}.bue-w{grid-area:w;align-self:start}
+ .bue-k h2{font-size:38px}.bue-w .unter{font-size:13px}
+ .rahmen,.rahmen:has(.sz-trikot.an){height:clamp(150px,48vh,230px);aspect-ratio:auto}
+ .spieltag-karte{grid-template-rows:auto minmax(60px,1fr) auto}.spieltag-foto{display:none}
+ .spieltag-kopf{padding:6px 12px}.spieltag-kopf>img{max-height:30px}.spieltag-kopf>span{font-size:20px}
+ .spieltag-in{padding:6px 12px;gap:3px}.spieltag-fuss{padding:4px 12px;font-size:11px;line-height:1.3}
+ .spieltag-in{grid-template-rows:auto minmax(50px,1fr)}.spieltag-in>p{display:none}
+ .bue-w .tabs{gap:2px 12px}.bue-w .tabs .zeile{font-size:15px}
+ .bue-w .creator-zug{gap:4px 12px;margin-top:8px}.bue-w .creator-zug .zeile{font-size:12px}
+ .szene[data-s="worum"]>.in{margin:auto}
+ .szene[data-s="worum"] .sz-bild{left:48%;width:52%;height:100%;object-fit:contain}
+ .szene[data-s="worum"]::after{background:linear-gradient(90deg,#041127 0 40%,#04112780 55%,transparent)}
+ .szene[data-s="worum"] .streifen{min-height:30vh}
+ .szene[data-s="worum"] .fz{max-width:8em;font-size:34px}
+ .trikot-ansichten{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .trikot-ansichten{padding-inline:0}.trikot-ansichten button{padding:7px 5px;font-size:12px}
+}
+@media(max-height:500px) and (max-width:650px) and (min-aspect-ratio:1/1){.trikot-ansichten{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){.sz.kommt,.sz-trikot.kommt,.sz-bande.fahrt{animation:none}.sz-bild,.fz{transition:none}}
 </style></head><body><div id="film" data-s="start" data-licht="1">
   <div class="hg" aria-hidden="true">
-    <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture><video muted loop playsinline preload="none" data-quer="partner/r-nacht.mp4" data-hoch="partner/r-nachthoch.mp4"></video></div>
-    <div data-hg="rasen"><img class="zoom" src="partner/r-rasen.webp" alt=""><video muted loop playsinline preload="none" data-quer="partner/r-rasen.mp4" data-hoch="partner/r-rasen.mp4"></video></div>
+    <div data-hg="nacht" class="an" data-reise-medium data-reise-szenen="start"><img class="zoom" src="partner/stadion-original-nordost.jpg" alt=""></div>
+    <div data-hg="rasen"><img class="zoom" src="partner/r-rasen.webp" alt=""></div>
     <div data-hg="ball"><img class="zoom" src="partner/r-ball.webp" alt="" style="object-position:50% 70%"></div>
-    <div data-hg="rauch"><img class="zoom" src="partner/r-rauch.webp" alt=""><video muted loop playsinline preload="none" data-quer="partner/r-rauch.mp4" data-hoch="partner/r-rauch.mp4"></video></div>
+    <div data-hg="rauch"><img class="zoom" src="partner/stadion-original-nord.jpg" alt=""></div>
   </div>
   <div class="schleier"></div>
   <div class="strahl s1"></div><div class="strahl s2"></div>
@@ -668,6 +1255,7 @@ html.zeiger .spot{opacity:1}
 
   <header class="top">
     <img class="wappen" id="wappen" src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach" width="480" height="273" draggable="false">
+    <button id="bewegungB" class="film-knopf" type="button" hidden>Video pausieren</button>
     <button id="tonB" type="button" aria-pressed="false" aria-label="Ton an oder aus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16.5 9a4 4 0 0 1 0 6"/><path class="w2" d="M19 6.5a8 8 0 0 1 0 11"/><path class="x" d="M17 10l4 4M21 10l-4 4"/></svg></button>
   </header>
 
@@ -695,7 +1283,7 @@ html.zeiger .spot{opacity:1}
 
   <!-- 1 Worum es geht -->
   <section class="szene" data-s="worum" data-hg="nacht" data-dicht="1">
-    <img class="sz-bild" data-fuer="0" src="partner/r-nacht.webp" alt=""><img class="sz-bild" data-fuer="1" src="partner/r-jugend.webp" alt=""><img class="sz-bild" data-fuer="2" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="3" src="partner/r-zeltlager.webp" alt=""><img class="sz-bild" data-fuer="4" src="partner/r-rasen.webp" alt=""><img class="sz-bild" data-fuer="5" src="partner/r-ferienspiele.webp" alt="">
+    <img class="sz-bild" data-fuer="0" src="partner/stadion-clubhaus-original.jpg" alt=""><img class="sz-bild" data-fuer="1" src="partner/r-jugend.webp" alt=""><img class="sz-bild" data-fuer="2" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="3" src="partner/r-zeltlager.webp" alt=""><div class="sz-bild" data-fuer="4" data-reise-medium data-reise-szenen="worum" data-reise-teil="4" data-reise-video="partner/r-rasen.mp4"><img src="partner/r-rasen.webp" alt=""></div><img class="sz-bild" data-fuer="5" src="partner/r-ferienspiele.webp" alt="">
     <div class="in">
       <div class="streifen" id="worum">
         <p class="fz">Seit <em>1896</em> gehört Sport hier zum Ort.</p>
@@ -712,7 +1300,7 @@ html.zeiger .spot{opacity:1}
 
   <!-- 1 Woher -->
   <section class="szene" data-s="verb" data-hg="rasen">
-    <img class="sz-bild" data-fuer="hier" src="partner/r-nacht.webp" alt=""><img class="sz-bild" data-fuer="familie" src="partner/r-jugend.webp" alt=""><img class="sz-bild" data-fuer="ehemalig" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="partner" src="partner/r-bande.webp" alt="">
+    <img class="sz-bild" data-fuer="hier" src="partner/stadion-original-nordost.jpg" alt=""><img class="sz-bild" data-fuer="familie" src="partner/r-jugend.webp" alt=""><img class="sz-bild" data-fuer="ehemalig" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="partner" src="partner/r-bande.webp" alt="">
     <div class="in">
       <p class="eyebrow auf">Erst mal zu euch<span data-name data-vor=", " data-leer=""></span></p>
       <p class="frage auf" style="--v:1">Woher kennt ihr uns?</p>
@@ -740,7 +1328,7 @@ html.zeiger .spot{opacity:1}
         <button class="bk" type="button" data-w="sehen" aria-pressed="false"><img src="partner/r-bande.webp" alt=""><span class="st"></span><b>Im Ort gesehen werden<small>Kunden von hier sollen an uns denken.</small></b></button>
         <button class="bk" type="button" data-w="leute" aria-pressed="false"><img src="partner/r-hero.webp" alt=""><span class="st"></span><b>Gute Leute finden<small>Azubis und Mitarbeiter von hier.</small></b></button>
         <button class="bk" type="button" data-w="netz" aria-pressed="false"><img src="partner/r-zeltlager.webp" alt=""><span class="st"></span><b>Andere Betriebe treffen<small>Kontakte, die im Ort bleiben.</small></b></button>
-        <button class="bk" type="button" data-w="zurueck" aria-pressed="false"><img src="partner/r-nacht.webp" alt=""><span class="st"></span><b>Etwas zurückgeben<small>Der Ort trägt uns. Wir gehören dazu.</small></b></button>
+        <button class="bk" type="button" data-w="zurueck" aria-pressed="false"><img src="partner/stadion-original-nordost.jpg" alt=""><span class="st"></span><b>Etwas zurückgeben<small>Der Ort trägt uns. Wir gehören dazu.</small></b></button>
         <button class="bk" type="button" data-w="vorn" aria-pressed="false"><img src="partner/r-ball.webp" alt=""><span class="st"></span><b>Vorne mit dabei sein<small>Wenn wir etwas machen, dann richtig.</small></b></button>
       </div>
       <button class="zeile leise auf" style="--v:3;margin-top:10px" type="button" id="skepB" aria-pressed="false">Ehrlich gesagt: Wir wissen noch nicht, ob uns das etwas bringt.</button>
@@ -757,11 +1345,12 @@ html.zeiger .spot{opacity:1}
       </div>
       <div class="bue-r auf" style="--v:2">
         <div class="rahmen" id="rahmen">
-          <div class="sz sz-bande an" data-sz="bande"><img src="partner/r-bande.webp" alt="Bande am Spielfeldrand mit eurem Namen"><div class="bande-name"><span class="passt" data-name-gross>EUER NAME</span></div></div>
-          <div class="sz sz-trikot" data-sz="trikot"><div class="trikot-name trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem rechten Ärmel"><span class="trikot-platzhalter" data-name-gross>EUER NAME</span><small class="trikot-seite">Rechter Ärmel · Gestaltungsvorschau</small></div></div>
-          <div class="sz sz-durch" data-sz="tag"><div class="laut" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p class="durch-t">„Und wir begrüßen heute ganz besonders <b data-name data-leer="euch">euch</b>, unseren Partner des Tages!“</p><div class="led" aria-hidden="true"><span>+++ Heimspiel präsentiert von <span data-name data-leer="euch">euch</span> +++ Danke für eure Unterstützung +++</span></div></div>
+          <div class="sz sz-bande an" data-sz="bande"><div class="banden-entwurf"><img src="partner/r-bande.webp" alt="Bande am Spielfeldrand mit eurem Namen"><div class="bande-name"><span class="passt" data-name-gross>EUER NAME</span></div></div></div>
+          <div class="sz sz-trikot" data-sz="trikot" data-ansicht="ganz"><div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div><div class="trikot-name trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem rechten Ärmel"><span class="trikot-platzhalter" data-name-gross>EUER NAME</span><small class="trikot-seite">Rechter Ärmel · Gestaltungsvorschau</small></div></div>
+          <div class="sz sz-durch" data-sz="tag" data-spieltag></div>
           <div class="sz sz-wand" data-sz="wand"><h4>Unsere Partnerwand <small>SAISON 2027/28</small></h4><div class="kacheln"><i></i><i></i><i></i><i></i><i></i><div class="ich"><span class="passt" data-name-gross>EUER NAME</span></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
+        <div class="trikot-ansichten" id="trikotAnsichten" role="group" aria-label="Trikotansicht" hidden><button type="button" data-trikot-ansicht="ganz" aria-pressed="true">Ganzes Trikot</button><button type="button" data-trikot-ansicht="detail" aria-pressed="false">Ärmel näher</button><button type="button" data-trikot-seite="aermel_r" aria-pressed="true">Rechter Ärmel</button><button type="button" data-trikot-seite="aermel_l" aria-pressed="false">Linker Ärmel</button></div>
       </div>
       <div class="bue-w">
         <p class="unter auf" style="--v:3">Tippt euch durch. Wo seht ihr euch am liebsten?</p>
@@ -779,7 +1368,7 @@ html.zeiger .spot{opacity:1}
 
   <!-- 5 Wie dabei sein -->
   <section class="szene" data-s="groesse" data-hg="rasen" data-dicht="1">
-    <img class="sz-bild" data-fuer="bande" src="partner/r-bande.webp" alt=""><img class="sz-bild" data-fuer="wand" src="partner/r-nacht.webp" alt=""><img class="sz-bild" data-fuer="klein" src="partner/r-ball.webp" alt="">
+    <img class="sz-bild" data-fuer="bande" src="partner/r-bande.webp" alt=""><img class="sz-bild" data-fuer="wand" src="partner/stadion-original-nordost.jpg" alt=""><img class="sz-bild" data-fuer="klein" src="partner/r-ball.webp" alt="">
     <div class="in">
       <p class="eyebrow auf">Partner sind bei uns ein Kreis, keine Liste</p>
       <h2 class="auf" style="--v:1">Wie wollt ihr <em>dabei sein?</em></h2>
@@ -887,7 +1476,8 @@ html.zeiger .spot{opacity:1}
   <div id="intro" aria-hidden="true"><div class="lampen"><div class="lampe"></div><div class="lampe"></div><div class="lampe"></div><div class="lampe"></div></div><p>Flutlicht an</p></div>
 </div>
 <script>
-/* Ärmelbilder der jeweiligen Firma, aus demselben Modell wie die große 3D-Vorschau. */
+/* Ärmelbilder der jeweiligen Firma, aus demselben Modell wie die große 3D-Vorschau.
+   bilder(firma,logo,true) ergänzt zwei Ganzansichten des echten Squadra-Trikots. */
 window.REISE_TRIKOT=(()=>{
   'use strict';
   let bibliothekP=null, zuletzt=null;
@@ -897,13 +1487,13 @@ window.REISE_TRIKOT=(()=>{
     if(bibliothekP)return bibliothekP;
     bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.110';
+      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.111';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); });
     }})().catch(e=>{bibliothekP=null;throw e;});
     return bibliothekP;
   }
-  async function erzeugen(firma,logo){
+  async function erzeugen(firma,logo,mitGesamt){
     await bibliothek();
     const host=document.createElement('div'); host.setAttribute('aria-hidden','true'); host.inert=true;
     host.style.cssText='position:fixed;left:-2000px;top:0;width:640px;height:400px;pointer-events:none;opacity:0';
@@ -917,23 +1507,167 @@ window.REISE_TRIKOT=(()=>{
         const cv=await v.png({breite:960,hoehe:600,ohneRahmen:true,grund:'#10182e'});
         bilder[seite]=cv.toDataURL('image/png');
       }
+      if(mitGesamt){
+        // Auch der Foto-Rückfall erhält dasselbe Hochformat wie die exportierte Leinwand.
+        host.style.width='720px';host.style.height='900px';
+        const platz=()=>({status:'belegt',vorschau:true,firma,bild:logo||null,variante:'weiss',groesse:1});
+        await v.setzen({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{aermel_r:platz(),aermel_l:platz()}});
+        v.detail(null,true);v.fokus('gesamt',true);
+        // Öffentliche Bühnen-API, gleiche leichte Neigung wie die jeweiligen Ärmel-Details.
+        for(const [name,winkel] of [['gesamt_r',-.32],['gesamt_l',.32]]){
+          v.drehen(winkel,true);
+          const cv=await v.png({breite:720,hoehe:900,ohneRahmen:true,grund:'transparent'});
+          bilder[name]=cv.toDataURL('image/png');
+        }
+        // Der Foto-Rückfall behält seine Karte und darf im Schrank nicht wie das freie Modell vergrößert werden.
+        bilder.gesamt_foto=v.webgl===false;
+      }
       return bilder;
-    }finally{v?.zerstoeren();host.remove();}
+    }finally{try{v?.zerstoeren();}finally{host.remove();}}
   }
-  function bilder(firma,logo){
-    const key=JSON.stringify([firma,logo||null]);
+  function bilder(firma,logo,mitGesamt=false){
+    mitGesamt=mitGesamt===true;
+    const key=JSON.stringify([firma,logo||null,mitGesamt]);
     if(zuletzt?.key===key)return zuletzt.p;
     const job={key,p:null}; zuletzt=job;
-    job.p=erzeugen(firma,logo).catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});
+    job.p=erzeugen(firma,logo,mitGesamt).catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});
     return job.p;
   }
   return {bilder};
 })();
 
+/* Optionale Hintergrundfilme der Partnerreise. Standbilder und Inhalt bleiben immer im DOM.
+   Vor reise_logik.js einhängen:
+     const medien=REISE_MEDIEN.starten({wurzel:F,knopf:document.getElementById('bewegungB'),szene:'start'});
+     medien.zeigen(id); // nach dem tatsächlichen Szenenwechsel in geh()
+   Slot: <div data-reise-medium data-reise-szenen="start worum" data-reise-video="partner/r-nacht.mp4"><picture>...</picture></div>
+   Optional data-reise-teil="0", dann zeigen('worum','0'). Ohne Video bleibt der Slot ein Standbild.
+   pausieren()/fortsetzen() merken nur die bewusste Wahl während dieser Reise. sichtbar(false/true)
+   unterbricht zusätzlich beim Öffnen/Schließen eines überdeckenden Creators, ohne die Wahl zu ändern.
+   Keine Dienste, Speicherzugriffe, Beobachter oder Timer. Fehlende oder fehlerhafte Filme bleiben aus. */
+(function(g){
+  'use strict';
+  const SZENE=/^[a-z][a-z0-9_-]{0,39}$/;
+  // Nur flache, mitgelieferte Dateien. Kein fremder Host, Protokoll, Query, Fragment oder Pfadwechsel.
+  const FILM=/^(?:img|partner)\/[a-zA-Z0-9][a-zA-Z0-9_-]*\.(?:mp4|webm)$/;
+  const holen=(el,n)=>el.getAttribute(n);
+  function starten(optionen){
+    const o=optionen||{},wurzel=o.wurzel||g.document.getElementById('film'),doc=wurzel&&wurzel.ownerDocument||g.document;
+    if(!wurzel||typeof wurzel.querySelectorAll!=='function')throw new TypeError('Wurzel der Partnerreise fehlt');
+    const bewegung=typeof g.matchMedia==='function'?g.matchMedia('(prefers-reduced-motion: reduce)'):null,
+      verbindung=g.navigator&&g.navigator.connection,knopf=o.knopf||null,aufraeumen=[];
+    let ende=false,pausiert=false,verdeckt=false,weg=false,szene='',teil='';
+    const felder=Array.from(wurzel.querySelectorAll('[data-reise-medium]')).map(el=>({
+      el,szenen:(holen(el,'data-reise-szenen')||'').split(/\s+/).filter(s=>SZENE.test(s)),
+      teil:holen(el,'data-reise-teil')||'',quelle:holen(el,'data-reise-video')||'',film:null,putzen:null,fehler:false,
+      status:holen(el,'data-reise-status'),position:el.style.getPropertyValue('position'),prioritaet:el.style.getPropertyPriority('position'),positionGesetzt:false
+    }));
+    const knopfAlt=knopf?{kinder:Array.from(knopf.childNodes),hidden:knopf.hidden,attribute:['aria-label','aria-pressed','title','type'].map(n=>[n,holen(knopf,n)]),
+      breite:knopf.style.getPropertyValue('min-width'),hoehe:knopf.style.getPropertyValue('min-height'),breiteP:knopf.style.getPropertyPriority('min-width'),hoeheP:knopf.style.getPropertyPriority('min-height')}:null;
+    function hoeren(ziel,name,fn){
+      if(!ziel||typeof ziel.addEventListener!=='function')return;
+      ziel.addEventListener(name,fn);aufraeumen.push(()=>ziel.removeEventListener(name,fn));
+    }
+    function passt(f){return f.szenen.includes(szene)&&(!f.teil||f.teil===teil)&&FILM.test(f.quelle)&&!f.fehler;}
+    function weniger(){return !!(bewegung&&bewegung.matches);}
+    function sparen(){return !!(verbindung&&verbindung.saveData);}
+    function gesperrt(){return ende||pausiert||verdeckt||weg||!!doc.hidden||weniger()||sparen();}
+    function status(f,s){f.el.setAttribute('data-reise-status',s);}
+    function positionZurueck(f){
+      if(!f.positionGesetzt)return;
+      if(f.el.style.getPropertyValue('position')==='relative'){
+        if(f.position)f.el.style.setProperty('position',f.position,f.prioritaet);else f.el.style.removeProperty('position');
+      }
+      f.positionGesetzt=false;
+    }
+    function stoppen(f){
+      const v=f.film;f.film=null;
+      if(f.putzen){f.putzen();f.putzen=null;}
+      if(v){
+        v.style.opacity='0';
+        try{v.pause();}catch(_){}
+        // Entfernt auch den laufenden Abruf. Ein verspätetes play()-Promise darf nichts neu starten.
+        v.removeAttribute('src');try{v.load();}catch(_){}
+        v.remove();
+      }
+      positionZurueck(f);status(f,f.fehler?'fehler':'standbild');
+    }
+    function fehlgeschlagen(f,v){
+      if(ende||f.film!==v)return;
+      f.fehler=true;stoppen(f);knopfZeigen();
+    }
+    function spielen(f){
+      if(f.film||gesperrt()||!passt(f))return;
+      const v=doc.createElement('video');f.film=v;
+      v.className='reise-medium-film';v.muted=true;v.defaultMuted=true;v.volume=0;v.loop=true;v.playsInline=true;v.controls=false;v.preload='none';v.tabIndex=-1;
+      v.setAttribute('aria-hidden','true');v.setAttribute('muted','');v.setAttribute('playsinline','');v.setAttribute('disablepictureinpicture','');
+      Object.assign(v.style,{position:'absolute',inset:'0',width:'100%',height:'100%',objectFit:'cover',pointerEvents:'none',opacity:'0'});
+      const lief=()=>{
+        if(f.film!==v||gesperrt()||!passt(f)){try{v.pause();}catch(_){}return;}
+        v.style.opacity='1';status(f,'laeuft');
+      },fehler=()=>fehlgeschlagen(f,v),stumm=()=>{if(!v.muted)v.muted=true;if(v.volume!==0)v.volume=0;};
+      v.addEventListener('playing',lief);v.addEventListener('error',fehler);v.addEventListener('volumechange',stumm);
+      f.putzen=()=>{v.removeEventListener('playing',lief);v.removeEventListener('error',fehler);v.removeEventListener('volumechange',stumm);};
+      const p=typeof g.getComputedStyle==='function'?g.getComputedStyle(f.el).position:f.el.style.position;
+      if(!p||p==='static'){f.el.style.setProperty('position','relative');f.positionGesetzt=true;}
+      status(f,'laden');f.el.appendChild(v);v.src=f.quelle;
+      try{
+        const gestartet=v.play();
+        if(gestartet&&typeof gestartet.then==='function')gestartet.then(()=>{
+          if(ende||f.film!==v||gesperrt()||!passt(f)){try{v.pause();}catch(_){}}
+        },fehler);
+      }catch(_){fehler();}
+    }
+    function knopfZeigen(){
+      if(!knopf||ende)return;
+      knopf.hidden=weniger()||sparen()||!felder.some(passt);
+      const text=pausiert?'Video fortsetzen':'Video pausieren';
+      knopf.textContent=text;knopf.setAttribute('aria-label',text);knopf.setAttribute('title',text);knopf.setAttribute('aria-pressed',String(pausiert));
+    }
+    function abgleichen(){
+      if(ende)return;
+      const halt=gesperrt();
+      felder.forEach(f=>{if(halt||!passt(f))stoppen(f);else spielen(f);});knopfZeigen();
+    }
+    const api=Object.freeze({
+      zeigen(id,abschnitt){
+        if(ende)return;
+        szene=typeof id==='string'&&SZENE.test(id)?id:'';teil=abschnitt==null?'':String(abschnitt);abgleichen();
+      },
+      pausieren(){if(!ende){pausiert=true;abgleichen();}},
+      fortsetzen(){if(!ende){pausiert=false;abgleichen();}},
+      sichtbar(an){if(!ende){verdeckt=an===false;abgleichen();}},
+      zerstoeren(){
+        if(ende)return;ende=true;aufraeumen.splice(0).forEach(fn=>fn());
+        felder.forEach(f=>{stoppen(f);if(f.status==null)f.el.removeAttribute('data-reise-status');else f.el.setAttribute('data-reise-status',f.status);});
+        if(knopf){
+          knopf.replaceChildren(...knopfAlt.kinder);knopf.hidden=knopfAlt.hidden;
+          knopfAlt.attribute.forEach(([n,v])=>{if(v==null)knopf.removeAttribute(n);else knopf.setAttribute(n,v);});
+          [['min-width',knopfAlt.breite,knopfAlt.breiteP],['min-height',knopfAlt.hoehe,knopfAlt.hoeheP]].forEach(([n,v,p])=>{if(v)knopf.style.setProperty(n,v,p);else knopf.style.removeProperty(n);});
+        }
+      }
+    });
+    hoeren(doc,'visibilitychange',abgleichen);hoeren(g,'pagehide',()=>{weg=true;abgleichen();});hoeren(g,'pageshow',()=>{weg=false;abgleichen();});
+    if(bewegung&&typeof bewegung.addEventListener==='function')hoeren(bewegung,'change',abgleichen);
+    else if(bewegung&&typeof bewegung.addListener==='function'){bewegung.addListener(abgleichen);aufraeumen.push(()=>bewegung.removeListener(abgleichen));}
+    hoeren(verbindung,'change',abgleichen);
+    if(knopf){
+      knopf.setAttribute('type','button');
+      const stil=typeof g.getComputedStyle==='function'?g.getComputedStyle(knopf):{};
+      if(!(parseFloat(stil.minWidth)>=44))knopf.style.setProperty('min-width','44px');
+      if(!(parseFloat(stil.minHeight)>=44))knopf.style.setProperty('min-height','44px');
+      hoeren(knopf,'click',()=>{if(pausiert)api.fortsetzen();else api.pausieren();});
+    }
+    api.zeigen(o.szene||wurzel.dataset.s||'start',o.teil);return api;
+  }
+  g.REISE_MEDIEN=Object.freeze({starten});
+})(window);
+
 (()=>{
 'use strict';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const html=document.documentElement, F=$('#film');
+const REISEFILM=REISE_MEDIEN.starten({wurzel:F,knopf:$('#bewegungB'),szene:'start'});
 const ruhig=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const eur=(n,dez)=>{ const r=Math.round(n*100)/100; return r.toLocaleString('de-DE',{minimumFractionDigits:dez||!Number.isInteger(r)?2:0,maximumFractionDigits:2})+' €'; };
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -949,7 +1683,7 @@ const PAK={
 };
 const GRUND={
   buehne:{supporter:'Euer Logo hängt an der Partnerwand am Platz.',club:'Eure Bande steht am Platz, bei jedem Heimspiel.',premium:'Eure Bande bekommt einen bevorzugten Platz.',p1896:'Eure Bande bekommt einen der besten Plätze, und ein Heimspiel läuft in eurem Namen.'},
-  herz:{supporter:'Ihr tragt den ganzen Verein mit, auch die zwölf Jugendmannschaften.',club:'Ihr tragt den ganzen Verein mit, auch die zwölf Jugendmannschaften.',premium:'Ihr tragt den ganzen Verein mit, auch die zwölf Jugendmannschaften.',p1896:'Ihr tragt den ganzen Verein mit, auch die zwölf Jugendmannschaften.'},
+  herz:{supporter:'Ihr tragt den ganzen Verein mit, von den Minikickern bis zur Ersten.',club:'Ihr tragt den ganzen Verein mit, von den Minikickern bis zur Ersten.',premium:'Ihr tragt den ganzen Verein mit, von den Minikickern bis zur Ersten.',p1896:'Ihr tragt den ganzen Verein mit, von den Minikickern bis zur Ersten.'},
   team:{supporter:'Am Platz stehen jede Woche Jugendspieler und Eltern. Die sehen dann euren Namen.',club:'Am Platz stehen jede Woche Jugendspieler und Eltern. Die sehen dann eure Bande.',premium:'Eine Stellenanzeige je Saison ist schon dabei.',p1896:'Zwei Stellenanzeigen je Saison sind schon dabei.'},
   netz:{supporter:'Ihr steht mit Link auf unserer Partnerseite, neben den anderen Betrieben.',club:'Ihr seid zum Partnerabend eingeladen.',premium:'Alle vier Partnertreffen im Jahr stehen euch offen.',p1896:'Bei den Partnertreffen habt ihr Vorrang als Gastgeber.'},
   ehre:{supporter:'Der Partner-Aufkleber zeigt: Ihr gehört dazu.',club:'Wir begrüßen euch öffentlich auf Instagram und Facebook.',premium:'Einmal in der Saison stellen wir euren Betrieb besonders heraus.',p1896:'Ihr seid einer von nur acht, mit nummeriertem Schild.'},
@@ -989,7 +1723,7 @@ const KLEIN={herz:'baelle_jugend',team:'jobpost',buehne:'matchball',ehre:'matchb
 const LOB={
   // Albert, 17.11.2026: keine Sprüche. Nach „Woher kennt ihr uns?“ kommt keine Antwortzeile mehr, nur beim bestehenden Partner ein Danke.
   verb:{hier:'',familie:'',ehemalig:'',partner:'Danke, dass ihr dabei seid.',neu:''},
-  antrieb:{kinder:'Zwölf Jugendmannschaften. Da kommt jede Hilfe an.',sehen:'Verständlich. Am Platz kommt der Ort zusammen.',leute:'Versprechen können wir niemanden. Aber am Platz lernt man sich kennen, lange vor der Bewerbung.',netz:'Dafür gibt es bei uns eigene Abende. Partner treffen Partner.',zurueck:'Danke. Davon lebt der Verein.',vorn:'Gut. Dann zeigen wir euch auch, was es ganz vorne gibt.',
+  antrieb:{kinder:'Fast 300 Kinder spielen hier Fußball. Euer Beitrag hilft dabei.',sehen:'Verständlich. Am Platz kommt der Ort zusammen.',leute:'Versprechen können wir niemanden. Aber am Platz lernt man sich kennen, lange vor der Bewerbung.',netz:'Dafür gibt es bei uns eigene Abende. Partner treffen Partner.',zurueck:'Danke. Davon lebt der Verein.',vorn:'Gut. Dann zeigen wir euch auch, was es ganz vorne gibt.',
     skep:'Danke für die klare Ansage. Schaut es euch an und sagt am Ende, ob etwas dabei ist.'},
   platz:{bande:'Die Bande. Die sieht jeder, der am Platz steht.',trikot:'Aufs Trikot geht es bei uns über die Jugend.',tag:'Ein Heimspiel lang gehört der Platz euch.',wand:'Euer Logo hängt dann an der Partnerwand.'},
   groesse:{3:'Einer von acht. Das besprechen wir in Ruhe.',2:'Vorne stehen. Dann lernt ihr auch die anderen kennen.',1:'Mit eigener Bande am Platz.',0:'Jeder Name an der Wand hilft.','-1':'Das geht. Es gibt auch kleine Wege, dabei zu sein.',auto:'Machen wir. Ihr sagt uns danach, ob wir richtig liegen.'},
@@ -1041,7 +1775,8 @@ let S=neu(), laeuft=false, ton=false, sperrBis=0;
 // Öffnet die Firma ihren Link allein, gibt es keine Notizen fürs Gespräch und später keinen Nachlass, es wird nur gespeichert (Albert, 17.11.2026).
 const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true; } })();
 // Ein Abstecher in den Creator beendet die Reise nicht. Antworten und Folie bleiben im selben Rahmen erhalten.
-['reiseBande','reiseAermel'].forEach((id,i)=>{ const b=$('#'+id); if(!b)return; b.hidden=!GERAHMT; b.onclick=()=>{ if(!GERAHMT)return; clearInterval(szUhr); window.parent.postMessage({reise:'creator',art:i?'aermel':'bande',paket:pk(),seite:AERMEL_SEITE},location.origin); }; });
+['reiseBande','reiseAermel'].forEach((id,i)=>{ const b=$('#'+id); if(!b)return; b.hidden=!GERAHMT; b.onclick=()=>{ if(!GERAHMT)return; clearInterval(szUhr); REISEFILM.sichtbar(false); window.parent.postMessage({reise:'creator',art:i?'aermel':'bande',paket:pk(),seite:AERMEL_SEITE},location.origin); }; });
+window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.reise==='creator-zu')REISEFILM.sichtbar(true);});
 let FIRMA=null, KONTEXT_BEREIT=!GERAHMT;
 let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
 
@@ -1075,14 +1810,17 @@ const kleinstBaustein=()=>KLEIN[reihe()[0]]||'baelle_jugend';
    die Typo.“ Der Rahmen in partner.html schickt die fertigen Fassungen (Marine für die Bande, Weiß fürs Trikot, Original für die
    Partnerwand). name steht nur dabei, wenn das Logo den Namen nicht selbst trägt. Ohne Rahmen oder ohne Logo bleibt der Name als Schrift. */
 var MARKE=null;
-let AERMEL_SEITE='aermel_r', TRIKOT_BILDER=null, TRIKOT_ANFRAGE=null, TRIKOT_FEHLER=false;
+let AERMEL_SEITE='aermel_r', TRIKOT_ANSICHT='ganz', TRIKOT_BILDER=null, TRIKOT_ANFRAGE=null, TRIKOT_FEHLER=false;
 function trikotHtml(){ return '<div class="bild trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem Ärmel"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Ärmel · Gestaltungsvorschau</small></div>'; }
+function trikotGanzHtml(){return '<div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div>';}
+function spieltagHtml(){return '<div class="spieltag-karte"><div class="spieltag-kopf"><img src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach"><span>Heimspiel<br><small>Saison 2027/28</small></span></div><div class="spieltag-foto" aria-hidden="true"><img src="partner/stadion-original-nord.jpg" alt=""></div><div class="spieltag-in"><small>Unser Partner des Tages</small><div class="spieltag-marke">'+(MARKE?.original?'<img src="'+esc(MARKE.original)+'" alt="'+esc(S.name||'Euer Logo')+'">':'<b>'+esc(S.name||'Euer Name')+'</b>')+'</div><p>Ein Heimspiel in eurem Namen.</p></div><div class="spieltag-fuss"><span>Euer Heimspiel</span><small>Gestaltungsvorschau</small></div></div>';}
+function spieltagSetz(){const key=JSON.stringify([S.name,MARKE?.original||'']);$$('[data-spieltag]').forEach(e=>{if(e.dataset.marke===key)return;e.dataset.marke=key;e.innerHTML=spieltagHtml();});}
 function trikotSetz(){
   if(!['buehne','extras','ja'].includes(ORD[S.i]))return;
   const logo=MARKE?.trikot||null, key=JSON.stringify([S.name,logo]);
   if(TRIKOT_ANFRAGE!==key){
     TRIKOT_ANFRAGE=key; TRIKOT_BILDER=null; TRIKOT_FEHLER=false;
-    REISE_TRIKOT.bilder(S.name||'Euer Name',logo).then(b=>{if(TRIKOT_ANFRAGE===key){TRIKOT_BILDER=b;trikotSetz();}})
+    REISE_TRIKOT.bilder(S.name||'Euer Name',logo,true).then(b=>{if(TRIKOT_ANFRAGE===key){TRIKOT_BILDER=b;trikotSetz();}})
       .catch(()=>{if(TRIKOT_ANFRAGE===key){TRIKOT_FEHLER=true;trikotSetz();}});
   }
   const seite=AERMEL_SEITE==='aermel_l'?'Linker':'Rechter';
@@ -1095,7 +1833,14 @@ function trikotSetz(){
     platz.hidden=!!bild; platz.textContent=S.name||'Euer Name';
     text.textContent=TRIKOT_FEHLER?'Vorschau konnte nicht geladen werden.':seite+' Ärmel · '+(logo?(S.name||'Gestaltungsvorschau'):'Firmenname als Vorschau');
   });
+  $$('[data-trikot-gesamt]').forEach(e=>{const im=$('img',e),p=$('.trikot-platzhalter',e),bild=TRIKOT_BILDER?.[AERMEL_SEITE==='aermel_l'?'gesamt_l':'gesamt_r'];im.hidden=!bild;p.hidden=!!bild;e.dataset.foto=String(!!TRIKOT_BILDER?.gesamt_foto);
+    if(bild&&im.getAttribute('src')!==bild)im.src=bild;if(!bild)im.removeAttribute('src');p.textContent=TRIKOT_FEHLER?'Vorschau konnte nicht geladen werden. Öffnet die Ärmelvorschau erneut.':'Trikotvorschau wird geladen.';});
+  $$('.sz-trikot[data-sz]').forEach(e=>e.dataset.ansicht=TRIKOT_ANSICHT);
+  $$('[data-trikot-ansicht]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.trikotAnsicht===TRIKOT_ANSICHT));
+  $$('[data-trikot-seite]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.trikotSeite===AERMEL_SEITE));
 }
+$$('[data-trikot-ansicht]').forEach(b=>b.onclick=()=>{TRIKOT_ANSICHT=b.dataset.trikotAnsicht;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
+$$('[data-trikot-seite]').forEach(b=>b.onclick=()=>{AERMEL_SEITE=b.dataset.trikotSeite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
 window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||e.data?.reise!=='aermel-seite'||!['aermel_r','aermel_l'].includes(e.data.seite))return;
   AERMEL_SEITE=e.data.seite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
 function markeSetz(){ if(!MARKE)return; const bild=u=>'<img src="'+u+'" alt="">';
@@ -1109,7 +1854,7 @@ function setzName(v){ S.name=(FIRMA!==null?FIRMA:v).trim().slice(0,40);
   $$('[data-name]').forEach(e=>{ e.textContent=S.name?(e.dataset.vor||'')+S.name:(e.dataset.leer||''); });
   $$('[data-name-gross]').forEach(e=>{ e.textContent=S.name||'Euer Name'; });
   passe(); }
-function passe(){ $$('.passt').forEach(el=>{ const b=el.parentElement, h=b.clientHeight, w=b.clientWidth; if(!h||!w)return;
+function passe(){ spieltagSetz(); $$('.passt').forEach(el=>{ const b=el.parentElement, h=b.clientHeight, w=b.clientWidth; if(!h||!w)return;
   let fs=h*.74; el.style.fontSize=fs+'px'; const sw=el.scrollWidth, max=w*.9; if(sw>max){ fs=fs*max/sw; el.style.fontSize=fs+'px'; } });  markeSetz(); trikotSetz(); }
 
 /* ---------- Ton ---------- */
@@ -1158,10 +1903,7 @@ addEventListener('pointermove',e=>{ if(e.pointerType!=='mouse'||ruhig)return; zx
 const maus=(b,rein,raus)=>{ b.addEventListener('pointerenter',e=>{ if(e.pointerType==='mouse')rein(); }); b.addEventListener('pointerleave',e=>{ if(e.pointerType==='mouse')raus(); }); };
 
 /* ---------- Hintergrund ---------- */
-function hgSetz(name){ const hoch=innerHeight>innerWidth;
-  $$('.hg>div').forEach(d=>{ const an=d.dataset.hg===name; d.classList.toggle('an',an); const v=$('video',d); if(!v)return;
-    if(an&&!ruhig){ const src=hoch?v.dataset.hoch:v.dataset.quer; if(v.dataset.ist!==src){ v.dataset.ist=src; v.src=src; v.addEventListener('playing',()=>v.classList.add('laeuft'),{once:true}); v.addEventListener('error',()=>v.classList.remove('laeuft')); }
-      v.play().catch(()=>{}); } else v.pause(); }); }
+function hgSetz(name){$$('.hg>div').forEach(d=>d.classList.toggle('an',d.dataset.hg===name));REISEFILM.zeigen(ORD[S.i]);}
 
 /* ---------- Schnitt: Titelkarte nur an den drei Aktgrenzen, sonst Wischer ---------- */
 const szene=id=>$('.szene[data-s="'+id+'"]');
@@ -1212,12 +1954,12 @@ $('#skepB').onclick=()=>{ S.skeptisch=!S.skeptisch; if(S.skeptisch)S.antrieb=[];
 
 /* ---------- Station 3: Name am Platz ---------- */
 let szUhr=null;
-function zeigSz(w,wie){ $$('#rahmen .sz').forEach(s=>{ const an=s.dataset.sz===w; s.classList.remove('kommt','fahrt'); s.classList.toggle('an',an); if(an&&wie&&!ruhig){ void s.offsetWidth; s.classList.add(wie); } }); passe(); }
-function szAuto(){ clearInterval(szUhr); if(S.platz||ruhig)return; const f=['bande','trikot','tag','wand']; let k=0; szUhr=setInterval(()=>{ if(ORD[S.i]!=='buehne'||S.platz){ clearInterval(szUhr); return; } k=(k+1)%4; zeigSz(f[k],'kommt'); },4200); }
+function zeigSz(w,wie){ $$('#rahmen .sz').forEach(s=>{ const an=s.dataset.sz===w; s.classList.remove('kommt','fahrt'); s.classList.toggle('an',an); if(an&&wie&&!ruhig){ void s.offsetWidth; s.classList.add(wie); } }); $('#trikotAnsichten').hidden=w!=='trikot'; passe(); }
+function szAuto(){ clearInterval(szUhr); } // Jede Vorschau bleibt stehen, bis die Firma eine andere wählt.
 $$('[data-frage="platz"] [data-w]').forEach(b=>b.onclick=()=>{ S.platz=b.dataset.w; neuRechnen(); clearInterval(szUhr);
   $$('[data-frage="platz"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x===b)); zeigSz(S.platz,'kommt'); lob('platz',LOB.platz[S.platz]); routeZeig(); regieZeig(); });
 
-$$('[data-frage="platz"] [data-w]').forEach(b=>maus(b,()=>{ if(S.platz===b.dataset.w)return; clearInterval(szUhr); zeigSz(b.dataset.w,'kommt'); },()=>{ if(S.platz&&S.platz!==b.dataset.w)zeigSz(S.platz); }));
+// Die Ansicht wechselt nur nach einer bewussten Auswahl. Ein Hover darf keine Knöpfe verschieben.
 
 /* ---------- Worum es geht: sechs Sätze, sechs Bilder ---------- */
 let wK=-1, wKlickBis=0;
@@ -1226,7 +1968,7 @@ function worumZeig(k){ const fz=$$('#worum .fz'); wK=Math.max(0,Math.min(fz.leng
   fz.forEach((z,i)=>{ z.classList.toggle('solo',i===wK); z.setAttribute('aria-hidden',i!==wK); });
   $$('#takte i').forEach((t,i)=>{ t.classList.toggle('war',i<wK); t.classList.toggle('an',i===wK); });
   $$('.szene[data-s="worum"] .sz-bild').forEach(i=>i.classList.toggle('an',+i.dataset.fuer===wK));
-  $('#wStand').textContent=(wK+1)+' von '+fz.length; routeZeig(); }
+  $('#wStand').textContent=(wK+1)+' von '+fz.length; F.dataset.bild=String(wK); REISEFILM.zeigen('worum',wK); routeZeig(); }
 szene('worum').addEventListener('click',e=>{ if(laeuft||wVerzoomt()||Date.now()<sperrBis||Date.now()<wKlickBis||e.target.closest('button,a,input,select,textarea')||getSelection()?.toString())return;
   if(wK<$$('#worum .fz').length-1)worumZeig(wK+1); });
 /* Nur waagerechtes Wischen in dieser Szene. Senkrechtes Lesen/Scrollen und Pinch-Zoom bleiben frei. */
@@ -1311,7 +2053,7 @@ function exWahl(){ const p=punkte(), paket=pk(), fest=paket==='keins'?kleinstBau
 // Räumt Bausteine weg, die nicht mehr zu Paket und Antworten gehören (auch wenn das Brett übersprungen wird).
 function exPutzen(){ const ok=new Set(exWahl().map(e=>e.k)); if(pk()==='keins')ok.add(kleinstBaustein()); [...S.extras].forEach(k=>{ if(!ok.has(k))S.extras.delete(k); }); }
 function exBild(k){ const x=EX[k], n=esc(S.name||'Euer Name');
-  if(x.bild==='plakat')return '<div class="bild"><img src="partner/r-ball.webp" alt=""><div class="bn"><span class="passt">'+n+'</span></div></div>';
+  if(x.bild==='plakat')return '<div class="bild spieltag-klein" data-spieltag>'+spieltagHtml()+'</div>';
   if(x.bild==='bande')return '<div class="bild"><img src="partner/r-bande.webp" alt=""></div>';
   if(x.bild==='trikot')return trikotHtml();
   if(x.bild)return '<div class="bild"><img src="'+x.bild+'" alt=""></div>';
@@ -1341,7 +2083,7 @@ const INFO={
     t:['Eure Bande bekommt einen bevorzugten Platz. Wichtiger ist aber, was daneben passiert: Ihr seid bei allen vier Partnertreffen im Jahr dabei. Dort lernt man sich kennen, lange bevor man sich braucht.','Einmal in der Saison stellen wir euren Betrieb eigens heraus. Und wenn ihr Leute sucht: Eine Stellenanzeige ist schon dabei.'],
     d:['Bevorzugter Platz für eure Bande.','Hervorgehobene Darstellung an der Partnerwand, mit ausführlichem Profil eures Betriebs.','Zwei Partnerkarten für die Heimspiele, zum Weitergeben.','Der Partnerabend und alle vier Partnertreffen im Jahr.','Einmal je Saison stellen wir euren Betrieb besonders heraus.','Eine Stellenanzeige je Saison.','Das Begrüßungspaket mit Saison-Zeichen, Partnerkarten und Saisonübersicht.','Partner des Tages könnt ihr dazubuchen.'],g:GUT+GUT_B},
   p1896:{l:'Acht Plätze. Einer je Branche.',
-    t:['Seit 1896 wird hier Fußball gespielt. Acht Betriebe tragen diese Zahl, mehr werden es nicht. Aus jeder Branche ist nur einer dabei.','Wer hier steht, zeigt dem Ort, dass er vorangeht. Ihr bekommt einen der besten Plätze für eure Bande, ein Heimspiel in eurem Namen und bei den Partnertreffen den Vorrang als Gastgeber.'],
+    t:['Sport gehört hier seit 1896 zum Ort. Fußball seit 1933. Acht Betriebe tragen diese Zahl, mehr werden es nicht. Aus jeder Branche ist nur einer dabei.','Wer hier steht, zeigt dem Ort, dass er vorangeht. Ihr bekommt einen der besten Plätze für eure Bande, ein Heimspiel in eurem Namen und bei den Partnertreffen den Vorrang als Gastgeber.'],
     d:['Bande an einem der besten Plätze, nach Verfügbarkeit.','Kein zweiter Betrieb aus eurer Branche unter den acht.','Ein Heimspiel je Saison als Partner des Tages. Das Spiel sucht ihr vor den anderen aus.','Vier Partnerkarten für die Heimspiele, zum Weitergeben.','Der Partnerabend, alle Partnertreffen und der Vorrang als Gastgeber.','Ein Porträt eures Betriebs oder ein kurzer Film je Saison.','Zwei Stellenanzeigen je Saison.','Das nummerierte Schild: einer von acht.'],g:GUT+GUT_B},
   sotd:{l:'Ein Heimspiel lang gehört der Platz euch.',
     t:['Euer Name fällt in mehreren Durchsagen, und danach berichten wir auf Instagram und Facebook. Das passt zu einem Jubiläum, zu einer Neueröffnung oder wenn ihr euren Leuten einfach einmal etwas Besonderes zeigen wollt.'],
@@ -1432,9 +2174,12 @@ function finalZeig(h,ohneApp){ $('#jaVor').hidden=true; const n=$('#jaNach'); n.
   szene('ja').scrollTop=0; passe(); const nb=$('#nochmalB'); if(nb)nb.onclick=vonVorn; const wa=$('#weiterAppB'); if(wa)wa.onclick=reiseFertig; const mb=$('#mitB'); if(mb)mb.onclick=()=>mitgeben(mb); regieZeig(); }
 function wannBinden(id,ziel){ $$('#'+id+' button').forEach(b=>b.onclick=()=>{ $$('#'+id+' button').forEach(x=>x.setAttribute('aria-pressed',x===b)); S.wann=b.dataset.t; const z=$('#'+ziel); if(z)z.textContent=b.dataset.t; regieZeig(); }); }
 function schlussBild(n){ const p=pk();
-  if(p==='supporter')return '<div class="finalbild wandbild"><div class="sz sz-wand"><h4>Unsere Partnerwand <small>SAISON 2027/28</small></h4><div class="kacheln"><i></i><i></i><i></i><i></i><i></i><div class="ich"><span class="passt">'+(n||'Euer Name')+'</span></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>';
+  const art=p==='keins'?EX[[...S.extras][0]||kleinstBaustein()]?.bild:S.platz;
+  if(art==='trikot')return '<div class="finalbild"><div class="sz sz-trikot" data-ansicht="ganz">'+trikotGanzHtml()+'</div></div>';
+  if(art==='tag'||art==='plakat')return '<div class="finalbild"><div class="sz sz-durch" data-spieltag>'+spieltagHtml()+'</div></div>';
+  if(p==='supporter'||art==='wand')return '<div class="finalbild wandbild"><div class="sz sz-wand"><h4>Unsere Partnerwand <small>SAISON 2027/28</small></h4><div class="kacheln"><i></i><i></i><i></i><i></i><i></i><div class="ich"><span class="passt">'+(n||'Euer Name')+'</span></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>';
   if(p==='keins'){ const x=EX[[...S.extras][0]||kleinstBaustein()]; return x.bild&&x.bild.indexOf('partner/r-')===0?'<div class="finalbild"><div class="sz"><img src="'+x.bild+'" alt=""></div></div>':''; }
-  return '<div class="finalbild"><div class="sz sz-bande"><img src="partner/r-bande.webp" alt=""><div class="bande-name"><span class="passt">'+(n||'Euer Name')+'</span></div></div></div>'; }
+  return '<div class="finalbild"><div class="sz sz-bande"><div class="banden-entwurf"><img src="partner/r-bande.webp" alt=""><div class="bande-name"><span class="passt">'+(n||'Euer Name')+'</span></div></div></div></div>'; }
 // 0.99.75 (Albert, 17.11.2026): Am Ende steht eine einzige Frage, „Seid ihr dabei?“, mit einem Knopf. Kein Ausweichen auf
 // „erst schriftlich“, „klein anfangen“ oder „erst zum Heimspiel“. Nach dem Ja kommt zuerst der Abbinder (Bande mit Namen,
 // Willkommen, Stolz), erst dann die Frage, wie es weitergeht: gleich unterschreiben oder Angebot und Antrag per Mail.
@@ -1469,7 +2214,7 @@ const REIN={
   ja:()=>{ S.ja=null; S.weg=null; S.wann=''; $('#jaVor').hidden=false; const n=$('#jaNach'); n.hidden=true; n.innerHTML=''; n.classList.remove('fest'); $('#fragen').classList.remove('da'); $('#jaWas').textContent=wahlText(); }
 };
 const AUF={
-  buehne:()=>{ if(!S.platz&&!ruhig){ zeigSz('bande','fahrt'); setTimeout(szAuto,3800); } },
+  buehne:()=>{ if(!S.platz)zeigSz('bande'); },
   platz:()=>{ spiel('licht',1); setTimeout(()=>fx('stempel'),650); }
 };
 
