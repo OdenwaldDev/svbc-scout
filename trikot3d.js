@@ -644,13 +644,13 @@ window.TRIKOT3D = (function(){
     function kameraZiel(f){ const top = Z.oben + .03, bot = Z.unten - .03;
       if((f === 'aermel_l' || f === 'aermel_r') && Z.anker && Z.anker[f]){
         const p = Z.anker[f].P, w = Z.winkel;
-        return { x:p[0] * Math.cos(w) - p[2] * Math.sin(w), y0:p[1] - .14, y1:p[1] + .14, breite:.3 };
+        return { x:p[0] * Math.cos(w) - p[2] * Math.sin(w), y0:p[1] - .105, y1:p[1] + .105, breite:.24, nah:true };
       }
       return { x:0, y0:bot, y1:top + .02, breite:.98 }; }
     function kameraSetzen(){
       const a = kameraZiel(Z.fokus), b = kameraZiel(Z.fokusZiel), k = sst(0, 1, Z.fk), y0 = lerp(a.y0, b.y0, k), y1 = lerp(a.y1, b.y1, k);
       const hoehe = (y1 - y0) * 1.08, breite = lerp(a.breite,b.breite,k), cx = lerp(a.x,b.x,k), fov = kamera.fov * PI / 180;
-      const dH = hoehe / 2 / Math.tan(fov / 2), dW = breite / 2 / Math.tan(fov / 2) / kamera.aspect, dist = Math.max(dH, dW) + .25;
+      const dH = hoehe / 2 / Math.tan(fov / 2), dW = breite / 2 / Math.tan(fov / 2) / kamera.aspect, dist = Math.max(dH, dW) + lerp(a.nah ? .12 : .25,b.nah ? .12 : .25,k);
       const cy = (y0 + y1) / 2; kamera.position.set(cx, cy + dist * .045, dist); kamera.lookAt(cx, cy, 0); void FOKUS;
     }
     function zeigen3d(){ if(!raf) raf = requestAnimationFrame(schritt); }
@@ -747,22 +747,22 @@ window.TRIKOT3D = (function(){
     }
 
     /* ----- Foto-Ansicht ----- */
-    async function foto(){
+    async function foto(streng=false){
       if(Z.modus !== 'foto' || !Z.daten) return; const nr = ++fotoNr;
       const d = Z.daten, satz = Z.art === 'auswaerts' ? 'auswaerts' : 'heim', seite = Z.sicht === 'hinten' ? 'hinten' : 'vorn', F = FOTO[satz][seite];
       if(Z.art === 'anzug'){ const r0 = wurzel.getBoundingClientRect(), dp = Math.min(2, window.devicePixelRatio || 1); cvF.width = Math.round(r0.width * dp); cvF.height = Math.round(r0.height * dp);
         const x0 = cvF.getContext('2d'); x0.clearRect(0, 0, cvF.width, cvF.height); x0.fillStyle = '#4a5064'; x0.font = `600 ${15 * dp}px system-ui, sans-serif`; x0.textAlign = 'center';
         x0.fillText('Den Anzug zeigen wir nur in 3D.', cvF.width / 2, cvF.height / 2); Z.fotoLage = null; Object.values(marken).forEach(m => m.classList.add('weg')); return; }
-      let img; try{ img = await bild(opt.kit + F.bild); }catch(e){ return; }
+      let img; try{ img = await bild(opt.kit + F.bild); }catch(e){ if(streng)throw e; return; }
       const fest = {}; await Promise.all([['wappen', 'wappen.png'], ['gemeinde', 'wappen-glocken-weiss.png'], ['jungs', 'jungs.png']].map(async ([k, f]) => { try{ fest[k] = await bild(opt.kit + f); }catch(e){} }));
       try{ await document.fonts.load(`700 100px ${opt.schrift}`); }catch(e){}
       const logos = {}; await Promise.all(Object.entries(d.belegung || {}).map(async ([k, b]) => { if(F[k] && b && b.status !== 'frei' && (b.bild || b.firma)) logos[k] = await logoLeinwand(b, opt.schrift); }));
-      if(nr !== fotoNr || Z.modus !== 'foto') return;
+      if(nr !== fotoNr || Z.modus !== 'foto'){ if(streng)throw new Error('Fotoansicht wurde gewechselt'); return; }
       const r = wurzel.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); cvF.width = Math.round(r.width * dpr); cvF.height = Math.round(r.height * dpr);
       const x = cvF.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cvF.width, cvF.height);
       // Foto als Karte mit seinem eigenen hellen Grund
       const nah = (Z.fokusZiel === 'aermel_l' || Z.fokusZiel === 'aermel_r') && F[Z.fokusZiel], pad = 14 * dpr,
-        s = Math.min((cvF.width - pad * 2) / (nah ? F.w * .43 : F.w), (cvF.height - pad * 2) / (nah ? F.h * .38 : F.h)),
+        s = Math.min((cvF.width - pad * 2) / (nah ? F.w * .28 : F.w), (cvF.height - pad * 2) / (nah ? F.h * .26 : F.h)),
         ox = cvF.width / 2 - (nah ? nah[0] : F.w / 2) * s, oy = cvF.height / 2 - (nah ? nah[1] : F.h / 2) * s;
       x.save(); x.beginPath(); const rr = 14 * dpr; if(x.roundRect) x.roundRect(ox, oy, F.w * s, F.h * s, rr); else x.rect(ox, oy, F.w * s, F.h * s); x.fillStyle = '#ffffff'; x.fill(); x.clip();
       x.drawImage(img, ox, oy, F.w * s, F.h * s);
@@ -814,14 +814,18 @@ window.TRIKOT3D = (function(){
     // Bild zum Speichern und Teilen: Bühne mit ruhigem Grund und Unterschrift
     async function png(o){
       o = Object.assign({ breite:1080, hoehe:1350, titel:'So sieht dein Logo bei uns aus', zeile:'', grund:'#eef0f4' }, o || {});
-      const c = leinwand(o.breite, o.hoehe), x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, o.hoehe); g.addColorStop(0, '#f6f7f9'); g.addColorStop(1, '#e4e7ee'); x.fillStyle = g; x.fillRect(0, 0, o.breite, o.hoehe);
+      clearTimeout(malT);
+      const c = leinwand(o.breite, o.hoehe), x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, o.hoehe); g.addColorStop(0, '#f6f7f9'); g.addColorStop(1, '#e4e7ee'); x.fillStyle = o.ohneRahmen ? o.grund : g; x.fillRect(0, 0, o.breite, o.hoehe);
       const altR = opt.rahmen, altAn = Z.an; opt.rahmen = false; Z.an = null;
-      const fl = { x:60, y:190, w:o.breite - 120, h:o.hoehe - 300 };
-      if(Z.modus === '3d' && Z.gl){ await malenJetzt(); const alt = renderer.getSize(new T.Vector2()), pr = renderer.getPixelRatio();
+      const fl = o.ohneRahmen ? {x:0,y:0,w:o.breite,h:o.hoehe} : { x:60, y:190, w:o.breite - 120, h:o.hoehe - 300 };
+      try{if(Z.modus === '3d' && Z.gl){ await malenJetzt(); const alt = renderer.getSize(new T.Vector2()), pr = renderer.getPixelRatio();
+        try{
         renderer.setPixelRatio(1); renderer.setSize(fl.w, fl.h, false); kamera.aspect = fl.w / fl.h; kamera.updateProjectionMatrix(); gruppe.rotation.y = -Z.winkel; kameraSetzen(); renderer.render(szene, kamera);
-        x.drawImage(renderer.domElement, fl.x, fl.y, fl.w, fl.h); renderer.setPixelRatio(pr); renderer.setSize(alt.x, alt.y, false); kamera.aspect = alt.x / alt.y; kamera.updateProjectionMatrix(); }
-      else { await foto(); x.drawImage(cvF, fl.x, fl.y, fl.w, fl.h); }
-      opt.rahmen = altR; Z.an = altAn; if(Z.modus === 'foto') foto(); else malen();
+        x.drawImage(renderer.domElement, fl.x, fl.y, fl.w, fl.h);
+        }finally{renderer.setPixelRatio(pr); renderer.setSize(alt.x, alt.y, false); kamera.aspect = alt.x / alt.y; kamera.updateProjectionMatrix();} }
+      else { await foto(true); x.drawImage(cvF, fl.x, fl.y, fl.w, fl.h); }
+      }finally{opt.rahmen = altR; Z.an = altAn; if(Z.modus === 'foto') foto(); else malen();}
+      if(o.ohneRahmen)return c;
       try{ await document.fonts.load(`800 60px ${opt.schrift}`); }catch(e){}
       x.fillStyle = '#1d2760'; x.font = `800 64px ${opt.schrift}, sans-serif`; x.textBaseline = 'alphabetic'; x.fillText(o.titel.toUpperCase(), 60, 120);
       x.fillStyle = '#4a5064'; x.font = `600 34px ${opt.schrift}, sans-serif`; if(o.zeile) x.fillText(o.zeile, 60, 165);

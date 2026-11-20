@@ -579,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.108',v:'0.99.108',datum:'2026-11-20',titel:'Euer Logo auf dem Ärmel',kurz:'Auch die Trikotkarte am Schwarzen Brett zeigt die jeweilige Firma.',
+    punkte:[{ic:'i',t:'Die eigene Ärmelansicht',d:'Die Partnerreise zeigt das Firmenlogo in einer Ärmel-Nahaufnahme. Große Vorschau und Trikotkarte nutzen dieselben Bilder. Ohne Logo erscheint der Firmenname als Vorschau.',r:'admin'}]},
   {id:'0.99.107',v:'0.99.107',datum:'2026-11-20',titel:'Partnerreise für die nächste Saison',kurz:'Die Auswahl aus der Präsentation startet auch im Abschluss zur Saison 2027/28.',
     punkte:[{ic:'i',t:'Auswahl und Start zusammen übernehmen',d:'Paket, Laufzeit und Verlängerungswahl kommen mit dem Start am 1. Juli 2027 im Abschluss an. Bestehende Auswahlen bleiben erhalten. Einstieg und Laufzeithilfe sind überarbeitet; ein Platzwunsch bleibt unverbindlich.',r:'admin'}]},
   {id:'0.99.106',v:'0.99.106',datum:'2026-11-19',titel:'Privater App-Test',kurz:'Der Einstieg erklärt den geschlossenen Vereinstest.',

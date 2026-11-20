@@ -467,14 +467,15 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     return BANDENWAHL.oeffnen({rpc,code,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,logo:marke().logo||D.deck.logo||null,
       onSaved:w=>{ const el=$('#bdWunsch'); if(el)el.textContent=w?'Platzwunsch '+w.kennung+' ist gemerkt. Noch nicht reserviert.':'Der Platzwunsch ist zurückgenommen.'; },
       onClose:()=>{ const f=$('#reiseRahmen'); f?.contentWindow?.postMessage({reise:'creator-zu'},location.origin); }}); }
-  async function aermelVorschau(){ if(!D||document.querySelector('.av'))return;
+  async function aermelVorschau(startSeite){ if(!D||document.querySelector('.av'))return;
     const vorher=document.activeElement, d=document.createElement('dialog'); d.className='bw av'; d.setAttribute('aria-labelledby','avTitel');
     d.innerHTML=`<header class="bw-kopf"><div><p class="bw-kicker">SV/BSC Mörlenbach · Gestaltungsvorschau</p><h2 id="avTitel" tabindex="-1">Euer Logo auf dem Ärmel</h2></div><button type="button" class="bw-zu">Schließen</button></header><div class="bw-in"><div class="av-wahl" role="group" aria-label="Ärmel aus Sicht des Trägers"><button type="button" data-av="aermel_r" aria-pressed="true">Rechter Ärmel</button><button type="button" data-av="aermel_l" aria-pressed="false">Linker Ärmel</button></div><p class="bw-fuss">Links und rechts aus Sicht des Trikotträgers. Euer Logo sitzt ausschließlich auf dem gewählten Ärmel.</p><div class="av-buehne" id="avB"><p role="status">Die Nahansicht wird geladen.</p></div><p class="bw-fuss">Das ist eine Gestaltungsvorschau. Sie bucht keinen Ärmelplatz und verändert eure Auswahl nicht. Die Verfügbarkeit prüfen wir bei der jeweiligen Mannschaft.</p></div>`;
-    document.body.appendChild(d); const dialogZu=BANDENWAHL.modalOeffnen(d); d.querySelector('h2').focus(); let v=null, lebt=true, seite='aermel_r';
+    document.body.appendChild(d); const dialogZu=BANDENWAHL.modalOeffnen(d); d.querySelector('h2').focus(); let v=null, lebt=true, seite=startSeite==='aermel_l'?'aermel_l':'aermel_r';
     const zu=()=>{ lebt=false; v?.zerstoeren(); dialogZu(); d.remove(); vorher?.focus?.({preventScroll:true}); $('#reiseRahmen')?.contentWindow?.postMessage({reise:'creator-zu'},location.origin); };
     d.querySelector('.bw-zu').onclick=zu; d.addEventListener('cancel',e=>{ e.preventDefault(); zu(); });
     const setzen=()=>{ if(!v)return; v.setzen({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{[seite]:{status:'belegt',vorschau:true,firma:D.deck.kurzname||D.deck.firma,bild:marke().trikot||marke().logo||D.deck.logo||null,variante:'weiss',groesse:1}}}); v.detail(seite,true);
-      d.querySelectorAll('[data-av]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.av===seite))); };
+      d.querySelectorAll('[data-av]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.av===seite)));
+      $('#reiseRahmen')?.contentWindow?.postMessage({reise:'aermel-seite',seite},location.origin); };
     d.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{ seite=b.dataset.av; setzen(); });
     try { if(!window.TRIKOT3D)await new Promise((ok,no)=>{ const s=document.createElement('script'); s.src='trikot3d.js?v='+encodeURIComponent(C.build||''); s.onload=ok; s.onerror=no; document.head.appendChild(s); });
       if(!lebt)return; v=TRIKOT3D.buehne(d.querySelector('#avB'),{three:'vendor/three.min.js',kit:'kit/',schrift:"'Barlow Condensed'",marken:false,rahmen:false}); await v.bereit;
@@ -483,7 +484,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   }
   window.addEventListener('message',e=>{ const f=$('#reiseRahmen'); if(!f||e.source!==f.contentWindow||e.origin!==location.origin||e.data?.reise!=='creator')return;
     if(e.data.art==='bande')platzwahlOeffnen(['club','premium','p1896'].includes(e.data.paket)?e.data.paket:'club');
-    if(e.data.art==='aermel')aermelVorschau(); });
+    if(e.data.art==='aermel')aermelVorschau(e.data.seite); });
   // ---------- 0.96: Station „Euer Auftritt“ ----------
   // Bande und Trikot liegen zusammen in einer Station, noch vor den Preisen. Die Bande steht gleich da,
   // das Trikot baut sich erst auf, wenn jemand darauf tippt.

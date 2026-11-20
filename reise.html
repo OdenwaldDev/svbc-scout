@@ -202,6 +202,12 @@ html.bereit .foto-karte{opacity:1}
 .bande-name.mk .mk-n{flex:0 1 auto;min-width:0;white-space:pre;font:800 40px/.92 var(--d);text-transform:uppercase;letter-spacing:.01em;color:#1d2760;mix-blend-mode:multiply;opacity:.94}
 .trikot-name.mk{left:29%;width:42%;top:33%;height:23%}
 .trikot-name.mk img{width:100%;height:100%;object-fit:contain;opacity:.93;filter:drop-shadow(0 1px 1px rgba(0,0,20,.5))}
+.trikot-name.trikot-nah{inset:0;width:100%;height:100%;transform:none;display:block;background:#10182e}
+.trikot-nah{position:relative;background:#10182e;overflow:hidden}
+.trikot-nah img,.trikot-name.trikot-nah img{width:100%;height:100%;object-fit:cover;filter:none;opacity:1}
+.trikot-platzhalter{position:absolute;inset:15% 8%;display:grid;place-items:center;text-align:center;font:800 clamp(18px,5vw,36px)/1.1 var(--d);color:#fff;overflow-wrap:anywhere}
+.trikot-seite{position:absolute;left:0;right:0;bottom:0;padding:8px 12px;background:#10182ee8;color:#fff;font:600 12px/1.3 var(--t);text-align:left}
+.zt .bild.trikot-nah{aspect-ratio:16/10}
 .kacheln .ich.mk{position:relative;padding:0}
 .kacheln .ich.mk img{position:absolute;left:8%;top:13%;width:84%;height:74%;object-fit:contain}
 .sz-trikot>img{object-position:50% 46%}
@@ -750,7 +756,7 @@ html.zeiger .spot{opacity:1}
       <div class="bue-r auf" style="--v:2">
         <div class="rahmen" id="rahmen">
           <div class="sz sz-bande an" data-sz="bande"><img src="partner/r-bande.webp" alt="Bande am Spielfeldrand mit eurem Namen"><div class="bande-name"><span class="passt" data-name-gross>EUER NAME</span></div></div>
-          <div class="sz sz-trikot" data-sz="trikot"><img src="partner/r-trikot.webp" alt="Trikot mit eurem Namen auf der Brust"><div class="trikot-name"><span class="passt" data-name-gross>EUER NAME</span></div></div>
+          <div class="sz sz-trikot" data-sz="trikot"><div class="trikot-name trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem rechten Ärmel"><span class="trikot-platzhalter" data-name-gross>EUER NAME</span><small class="trikot-seite">Rechter Ärmel · Gestaltungsvorschau</small></div></div>
           <div class="sz sz-durch" data-sz="tag"><div class="laut" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p class="durch-t">„Und wir begrüßen heute ganz besonders <b data-name data-leer="euch">euch</b>, unseren Partner des Tages!“</p><div class="led" aria-hidden="true"><span>+++ Heimspiel präsentiert von <span data-name data-leer="euch">euch</span> +++ Danke für eure Unterstützung +++</span></div></div>
           <div class="sz sz-wand" data-sz="wand"><h4>Unsere Partnerwand <small>SAISON 2027/28</small></h4><div class="kacheln"><i></i><i></i><i></i><i></i><i></i><div class="ich"><span class="passt" data-name-gross>EUER NAME</span></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
@@ -879,6 +885,49 @@ html.zeiger .spot{opacity:1}
   <div id="intro" aria-hidden="true"><div class="lampen"><div class="lampe"></div><div class="lampe"></div><div class="lampe"></div><div class="lampe"></div></div><p>Flutlicht an</p></div>
 </div>
 <script>
+/* Ärmelbilder der jeweiligen Firma, aus demselben Modell wie die große 3D-Vorschau. */
+window.REISE_TRIKOT=(()=>{
+  'use strict';
+  let bibliothekP=null, zuletzt=null;
+  const vorhanden=name=>name==='LOGO'?typeof LOGO!=='undefined':!!window.TRIKOT3D;
+  function bibliothek(){
+    if(vorhanden('TRIKOT3D')&&vorhanden('LOGO'))return Promise.resolve();
+    if(bibliothekP)return bibliothekP;
+    bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
+      if(vorhanden(name))continue;
+      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.108';
+        s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
+        document.head.appendChild(s); });
+    }})().catch(e=>{bibliothekP=null;throw e;});
+    return bibliothekP;
+  }
+  async function erzeugen(firma,logo){
+    await bibliothek();
+    const host=document.createElement('div'); host.setAttribute('aria-hidden','true'); host.inert=true;
+    host.style.cssText='position:fixed;left:-2000px;top:0;width:640px;height:400px;pointer-events:none;opacity:0';
+    document.body.appendChild(host); let v=null;
+    try{
+      v=TRIKOT3D.buehne(host,{three:'vendor/three.min.js',kit:'kit/',schrift:'BarlowC',marken:false,rahmen:false});
+      await v.bereit; const bilder={};
+      for(const seite of ['aermel_r','aermel_l']){
+        v.setzen({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{[seite]:{status:'belegt',vorschau:true,firma,bild:logo||null,variante:'weiss',groesse:1}}});
+        v.detail(seite,true);
+        const cv=await v.png({breite:960,hoehe:600,ohneRahmen:true,grund:'#10182e'});
+        bilder[seite]=cv.toDataURL('image/png');
+      }
+      return bilder;
+    }finally{v?.zerstoeren();host.remove();}
+  }
+  function bilder(firma,logo){
+    const key=JSON.stringify([firma,logo||null]);
+    if(zuletzt?.key===key)return zuletzt.p;
+    const job={key,p:null}; zuletzt=job;
+    job.p=erzeugen(firma,logo).catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});
+    return job.p;
+  }
+  return {bilder};
+})();
+
 (()=>{
 'use strict';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -990,7 +1039,7 @@ let S=neu(), laeuft=false, ton=false, sperrBis=0;
 // Öffnet die Firma ihren Link allein, gibt es keine Notizen fürs Gespräch und später keinen Nachlass, es wird nur gespeichert (Albert, 17.11.2026).
 const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true; } })();
 // Ein Abstecher in den Creator beendet die Reise nicht. Antworten und Folie bleiben im selben Rahmen erhalten.
-['reiseBande','reiseAermel'].forEach((id,i)=>{ const b=$('#'+id); if(!b)return; b.hidden=!GERAHMT; b.onclick=()=>{ if(!GERAHMT)return; clearInterval(szUhr); window.parent.postMessage({reise:'creator',art:i?'aermel':'bande',paket:pk()},location.origin); }; });
+['reiseBande','reiseAermel'].forEach((id,i)=>{ const b=$('#'+id); if(!b)return; b.hidden=!GERAHMT; b.onclick=()=>{ if(!GERAHMT)return; clearInterval(szUhr); window.parent.postMessage({reise:'creator',art:i?'aermel':'bande',paket:pk(),seite:AERMEL_SEITE},location.origin); }; });
 let FIRMA=null, KONTEXT_BEREIT=!GERAHMT;
 let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
 
@@ -1024,9 +1073,31 @@ const kleinstBaustein=()=>KLEIN[reihe()[0]]||'baelle_jugend';
    die Typo.“ Der Rahmen in partner.html schickt die fertigen Fassungen (Marine für die Bande, Weiß fürs Trikot, Original für die
    Partnerwand). name steht nur dabei, wenn das Logo den Namen nicht selbst trägt. Ohne Rahmen oder ohne Logo bleibt der Name als Schrift. */
 var MARKE=null;
+let AERMEL_SEITE='aermel_r', TRIKOT_BILDER=null, TRIKOT_ANFRAGE=null, TRIKOT_FEHLER=false;
+function trikotHtml(){ return '<div class="bild trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem Ärmel"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Ärmel · Gestaltungsvorschau</small></div>'; }
+function trikotSetz(){
+  if(!['buehne','extras','ja'].includes(ORD[S.i]))return;
+  const logo=MARKE?.trikot||null, key=JSON.stringify([S.name,logo]);
+  if(TRIKOT_ANFRAGE!==key){
+    TRIKOT_ANFRAGE=key; TRIKOT_BILDER=null; TRIKOT_FEHLER=false;
+    REISE_TRIKOT.bilder(S.name||'Euer Name',logo).then(b=>{if(TRIKOT_ANFRAGE===key){TRIKOT_BILDER=b;trikotSetz();}})
+      .catch(()=>{if(TRIKOT_ANFRAGE===key){TRIKOT_FEHLER=true;trikotSetz();}});
+  }
+  const seite=AERMEL_SEITE==='aermel_l'?'Linker':'Rechter';
+  $$('[data-trikot-vorschau]').forEach(e=>{
+    const im=$('img',e), platz=$('.trikot-platzhalter',e), text=$('.trikot-seite',e), bild=TRIKOT_BILDER?.[AERMEL_SEITE];
+    e.dataset.seite=AERMEL_SEITE; e.classList.toggle('mk',!!logo); im.hidden=!bild;
+    if(bild&&im.getAttribute('src')!==bild)im.src=bild;
+    if(!bild)im.removeAttribute('src');
+    im.alt=(logo?'Euer Logo':'Euer Firmenname')+' auf dem '+(AERMEL_SEITE==='aermel_l'?'linken':'rechten')+' Ärmel';
+    platz.hidden=!!bild; platz.textContent=S.name||'Euer Name';
+    text.textContent=TRIKOT_FEHLER?'Vorschau konnte nicht geladen werden.':seite+' Ärmel · '+(logo?(S.name||'Gestaltungsvorschau'):'Firmenname als Vorschau');
+  });
+}
+window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||e.data?.reise!=='aermel-seite'||!['aermel_r','aermel_l'].includes(e.data.seite))return;
+  AERMEL_SEITE=e.data.seite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
 function markeSetz(){ if(!MARKE)return; const bild=u=>'<img src="'+u+'" alt="">';
   $$('.bande-name:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.classList.toggle('nur',!MARKE.name); b.innerHTML=bild(MARKE.bande)+(MARKE.name?'<span class="mk-n">'+esc(MARKE.name)+'</span>':''); });
-  $$('.trikot-name:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.innerHTML=bild(MARKE.trikot); });
   $$('.kacheln .ich:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.innerHTML=bild(MARKE.original); });
   $$('.bande-name.mk:not(.nur)').forEach(b=>{ const t=$('.mk-n',b), im=$('img',b), h=b.clientHeight, w=b.clientWidth; if(!t||!h||!w)return;
     const zeilen=MARKE.name.split('\n').length; let fs=h*(zeilen>1?.4:.52); t.style.fontSize=fs+'px';
@@ -1037,7 +1108,7 @@ function setzName(v){ S.name=(FIRMA!==null?FIRMA:v).trim().slice(0,40);
   $$('[data-name-gross]').forEach(e=>{ e.textContent=S.name||'Euer Name'; });
   passe(); }
 function passe(){ $$('.passt').forEach(el=>{ const b=el.parentElement, h=b.clientHeight, w=b.clientWidth; if(!h||!w)return;
-  let fs=h*.74; el.style.fontSize=fs+'px'; const sw=el.scrollWidth, max=w*.9; if(sw>max){ fs=fs*max/sw; el.style.fontSize=fs+'px'; } });  markeSetz(); }
+  let fs=h*.74; el.style.fontSize=fs+'px'; const sw=el.scrollWidth, max=w*.9; if(sw>max){ fs=fs*max/sw; el.style.fontSize=fs+'px'; } });  markeSetz(); trikotSetz(); }
 
 /* ---------- Ton ---------- */
 const A={};
@@ -1240,7 +1311,7 @@ function exPutzen(){ const ok=new Set(exWahl().map(e=>e.k)); if(pk()==='keins')o
 function exBild(k){ const x=EX[k], n=esc(S.name||'Euer Name');
   if(x.bild==='plakat')return '<div class="bild"><img src="partner/r-ball.webp" alt=""><div class="bn"><span class="passt">'+n+'</span></div></div>';
   if(x.bild==='bande')return '<div class="bild"><img src="partner/r-bande.webp" alt=""></div>';
-  if(x.bild==='trikot')return '<div class="bild"><img src="partner/r-trikot.webp" alt="" style="object-position:50% 40%"></div>';
+  if(x.bild==='trikot')return trikotHtml();
   if(x.bild)return '<div class="bild"><img src="'+x.bild+'" alt=""></div>';
   return '<div class="bild schrift">'+x.schrift+'</div>'; }
 function exZeig(hinweis){ exPutzen(); const l=exWahl(), paket=pk(), bandeHinweis=paket==='supporter'&&(S.platz==='bande'||S.antrieb.includes('sehen'));
