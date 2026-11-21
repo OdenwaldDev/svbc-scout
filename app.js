@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.127', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.128', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18698,6 +18698,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.128',v:'0.99.128',datum:'2026-11-21',titel:'Dieselbe Marke auf beiden Kleidungsstücken',kurz:'Trikot und Trainingsanzug verwenden die eigene vorbereitete Ärmelfassung.',punkte:[{ic:'i',t:'Ärmelvorschauen stimmen überein',d:'Eine gespeicherte Ärmelfassung gilt auch für den Trainingsanzug und die große Vorschau. Auf dem Trikot erscheint sie weiß, auf dem Anzug schwarz. Die Bandenfassung bleibt davon getrennt.',r:'team'}]},
   {id:'0.99.127',v:'0.99.127',datum:'2026-11-21',titel:'Spielwerte gesammelt übernehmen',kurz:'Eine Tabelle statt jeden Wert einzeln einzutippen.',punkte:[{ic:'i',t:'Erst prüfen, dann übernehmen',d:'Im Leistungsbereich kann das Trainerteam mehrere Spielerwerte aus einer Vereinsvorlage einfügen. Die Vorschau erkennt ungültige Zahlen und doppelte Rückennummern. Danach werden die Spieler einzeln zugeordnet und an der Veo-Aufnahme geprüft. Kein automatischer Veo-Abgleich.',r:'team'}]},
   {id:'0.99.126',v:'0.99.126',datum:'2026-11-21',titel:'Bisherige Anzugpartner links',kurz:'Die vorhandenen Mölter-Zuordnungen bei E1, E2 und C2 stehen nur auf dem linken Ärmel.',punkte:[{ic:'i',t:'Rechte Ärmel wieder einzeln verfügbar',d:'Die alten rechten Doppeleinträge sind nach Sicherung bereinigt. Neuere Vergaben und vertragliche Belegungen bleiben geschützt.',r:'admin'}]},
   {id:'0.99.125',v:'0.99.125',datum:'2026-11-21',titel:'Ärmelpartner für Trainingsanzüge',kurz:'Im Partnerflow könnt ihr Trainingsanzüge ansehen und einen freien Ärmel je Mannschaft auswählen.',

@@ -213,7 +213,7 @@
     }
     if(S.angebot)S.trotz=true;   // offenes Angebot: der Vertrag steht im Abschluss, auch wenn über den Link schon eine Spende kam
     // 0.99.85: Marke der Firma für die Präsentation zum Durchklicken (der Rahmen liest sie, sobald der Titel steht)
-    { const mk0=marke(); window.PD_MARKE=dk.logo||mk0.logo?{logo:dk.logo||mk0.logo,druck:mk0.logo||null,trikot:mk0.trikot||null,name:mk0.name||''}:null; }
+    { const mk0=marke(); window.PD_MARKE=dk.logo||mk0.logo||mk0.trikot?{logo:dk.logo||mk0.logo||mk0.trikot,druck:mk0.logo||null,trikot:mk0.trikot||null,name:mk0.name||''}:null; }
     document.title='Partner werden · '+(dk.kurzname||dk.firma)+' · SV/BSC Mörlenbach';
     geruest(); fragen(); bereiche(); katalog(); korb(); abschluss(); kopfZahl();anzugStandSenden();
     if(window.PD_BANDENSTUDIO&&!demo()){
@@ -286,6 +286,7 @@
   // das den Namen nicht selbst trägt (Zeilenumbruch erlaubt). Fehlt etwas, gilt das Logo der Präsentation.
   function marke(){ const m=((D.deck||{}).passung||{}).marke||{}, ok=u=>typeof u==='string'&&/^data:image\/(png|jpeg|webp|svg\+xml);base64,/.test(u)?u:null;
     return {logo:ok(m.logo),trikot:ok(m.trikot),name:typeof m.name==='string'?m.name.replace(/[^\S\n]+/g,' ').trim().slice(0,40):''}; }
+  function aermelLogo(){const m=marke();return m.trikot||m.logo||D.deck.logo||null;}
   function logoImg(cls){ const dk=D.deck; return dk.logo?`<img class="${(cls||'')+(dk.logo_hell===false?' dk':'')}" src="${esc(dk.logo)}" alt="${esc(dk.firma)}">`:''; }
   // Schon dabei? Nach der Unterschrift hier oder auf einem anderen Gerät (dann meldet es der Server)
   function dabeiArt(){ if(fertig())return S.ergebnis.art; return D&&D.abschluss&&!T?D.abschluss.art:null; }
@@ -424,7 +425,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     TK.team=kand.find(hatAermel)||kand.find(id=>tkFrei(id,'heim').length)||(T[0]||{}).id||null; TK.art='heim'; TK.platz=(tkFrei()[0]||{}).platz||null; }
   function tkBelegung(){ const B={}, lg=id=>((TK.d.logos||[]).find(l=>l.id===id)||{}).bild||null, dk=D.deck||{};
     tkPlaetze().forEach(p=>{ if(p.status!=='frei')B[p.platz]={status:'belegt',firma:p.firma,bild:p.logo?lg(p.logo):null,variante:p.variante||'weiss',groesse:+p.groesse||1};
-      else if(p.platz===TK.platz)B[p.platz]={status:'belegt',vorschau:true,firma:dk.kurzname||dk.firma,bild:marke().trikot||marke().logo||dk.logo||null,variante:TK.art==='anzug'&&/^aermel/.test(p.platz)?'schwarz':'weiss',groesse:1};
+      else if(p.platz===TK.platz)B[p.platz]={status:'belegt',vorschau:true,firma:dk.kurzname||dk.firma,bild:aermelLogo(),variante:TK.art==='anzug'&&/^aermel/.test(p.platz)?'schwarz':'weiss',groesse:1};
       else B[p.platz]={status:'frei'}; }); return B; }
   function tkDetailKnoepfe(){ document.querySelectorAll('[data-tkdetail]').forEach(b=>{const an=b.dataset.tkdetail===(TK.v&&/^aermel_/.test(TK.v.fokusJetzt)?TK.v.fokusJetzt:'gesamt');b.setAttribute('aria-pressed',String(an));b.classList.toggle('on',an);}); }
   function tkZeigen(){ const sel=$('#tkTeam'); if(!sel||!TK.d)return; const s=tkSatz();
@@ -529,8 +530,8 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const setzen=async()=>{const gen=++nr,a=art,k=seite,loader=d.querySelector('#avLaden');d.classList.toggle('anzug',a==='anzug');loader.hidden=false;loader.textContent='Die Nahansicht wird geladen.';d.querySelector('#avTrikot').hidden=a==='anzug';d.querySelector('#avAnzug').hidden=a!=='anzug';
       d.querySelectorAll('[data-av]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.av===k)));d.querySelectorAll('[data-av-art]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.avArt===a)));
       $('#reiseRahmen')?.contentWindow?.postMessage({reise:'aermel-seite',seite:k,kleidung:a==='anzug'?'anzug':'trikot'},location.origin);
-      try{if(a==='anzug'){const cv=await TRAININGSANZUG.zeichnen({firma:D.deck.kurzname||D.deck.firma,logo:marke().logo||D.deck.logo||marke().trikot||null,seite:k,breite:1200});if(!lebt||gen!==nr)return;const im=d.querySelector('#avAnzug img');im.src=cv.toDataURL('image/webp',.94);im.alt='Euer schwarzes Logo auf dem '+(k==='aermel_l'?'linken':'rechten')+' Anzugärmel';cv.width=cv.height=1;}
-      else{const scene=await trikotLaden();if(!lebt||gen!==nr||!scene)return;await scene.setzen({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{[k]:{status:'belegt',vorschau:true,firma:D.deck.kurzname||D.deck.firma,bild:marke().trikot||marke().logo||D.deck.logo||null,variante:'weiss',groesse:1}}});if(!lebt||gen!==nr)return;scene.detail(k,true);}if(lebt&&gen===nr)loader.hidden=true;}
+      try{if(a==='anzug'){const cv=await TRAININGSANZUG.zeichnen({firma:D.deck.kurzname||D.deck.firma,logo:aermelLogo(),seite:k,breite:1200});if(!lebt||gen!==nr)return;const im=d.querySelector('#avAnzug img');im.src=cv.toDataURL('image/webp',.94);im.alt='Euer schwarzes Logo auf dem '+(k==='aermel_l'?'linken':'rechten')+' Anzugärmel';cv.width=cv.height=1;}
+      else{const scene=await trikotLaden();if(!lebt||gen!==nr||!scene)return;await scene.setzen({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{[k]:{status:'belegt',vorschau:true,firma:D.deck.kurzname||D.deck.firma,bild:aermelLogo(),variante:'weiss',groesse:1}}});if(!lebt||gen!==nr)return;scene.detail(k,true);}if(lebt&&gen===nr)loader.hidden=true;}
       catch(_){if(lebt&&gen===nr)loader.textContent='Die Nahansicht konnte nicht geladen werden. Schließe sie und versuche es erneut.';}
     };
     d.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{seite=b.dataset.av;setzen();});d.querySelectorAll('[data-av-art]').forEach(b=>b.onclick=()=>{art=b.dataset.avArt;setzen();});setzen();

@@ -812,9 +812,9 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
   <p class="start-t">Eure Übersicht wird geladen …</p>
   <div class="start-b" aria-hidden="true"><i></i><i></i><i></i></div>
 </div></div>
-<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.127", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
-<script src="partner-lib.js?v=beta-0.99.127"></script>
-<script src="partner-teilen.js?v=beta-0.99.127"></script><script src="partner.js?v=beta-0.99.127"></script>
+<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.128", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
+<script src="partner-lib.js?v=beta-0.99.128"></script>
+<script src="partner-teilen.js?v=beta-0.99.128"></script><script src="partner.js?v=beta-0.99.128"></script>
 <script>(function(){ try{
   var q=new URLSearchParams(location.search), hp=new URLSearchParams(location.hash.slice(1));
   if(q.get('reise')==='0')return;
@@ -846,9 +846,9 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
     if(e.data.reise==='bereit'){ var n=0, t=setInterval(function(){ var x=name(); if(!x){ if(++n>160){ clearInterval(t); zu(false); } return; } clearInterval(t);
       if(f.contentWindow)f.contentWindow.postMessage({reise:'name',name:x,gebunden:codeOk,identitaet:true},location.origin);
       // 0.99.85: Logo der Firma für Bande, Trikot und Partnerwand der Präsentation (einfarbig wie im Partner-CI, weiß fürs Trikot)
-      try{ var mk=window.PD_MARKE; if(mk&&mk.logo&&typeof LOGO!=='undefined'){ var dr=mk.druck||mk.logo;
-        Promise.all([LOGO.alsDataUrl(dr,'farbe:#1d2760',900),LOGO.alsDataUrl(mk.trikot||dr,'weiss',700),(/^data:image\/(png|jpeg|webp);base64,/.test(mk.logo)?Promise.resolve(mk.logo):LOGO.alsDataUrl(mk.logo,'original',500))]).then(function(a){   // Partnerwand: das Logo, wie es ist (mit seiner eigenen Fläche)
-          if(f.contentWindow)f.contentWindow.postMessage({reise:'marke',bande:a[0],trikot:a[1],original:a[2],name:mk.name||''},location.origin); }).catch(function(){}); } }catch(z){}
+      try{ var mk=window.PD_MARKE; if(mk&&mk.logo&&typeof LOGO!=='undefined'){ var dr=mk.druck||mk.logo,ar=mk.trikot||dr;
+        Promise.all([LOGO.alsDataUrl(dr,'farbe:#1d2760',900),LOGO.alsDataUrl(ar,'weiss',700),(/^data:image\/(png|jpeg|webp);base64,/.test(mk.logo)?Promise.resolve(mk.logo):LOGO.alsDataUrl(mk.logo,'original',500)),LOGO.alsDataUrl(ar,'schwarz',700)]).then(function(a){   // Partnerwand behält das Original, beide Ärmelvarianten nutzen dieselbe vorbereitete Quelle.
+          if(f.contentWindow)f.contentWindow.postMessage({reise:'marke',bande:a[0],trikot:a[1],original:a[2],anzug:a[3],name:mk.name||''},location.origin); }).catch(function(){}); } }catch(z){}
       if(window.PD_TEILEN&&window.PD_TEILEN.aktiv){window.PD_TEILEN.rahmenBereit(f);return;}
       standP.then(function(st){ if(f.contentWindow)f.contentWindow.postMessage({reise:'name',name:x||'',gebunden:codeOk,merken:codeOk&&!!st,termin:!!(st&&st.termin),stand:st&&st.stand||null,am:st&&st.am||null,widmung:st&&st.widmung||null},location.origin); }); },250); } });
   var rein=function(){ document.documentElement.style.overflow='hidden'; document.body.appendChild(f); };

@@ -1521,7 +1521,7 @@ window.REISE_TRIKOT=(()=>{
   async function bibliothek(art){
     for(const [name,datei] of [['LOGO','logolib.js'],art==='anzug'?['TRAININGSANZUG','trainingsanzug.js']:['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.127';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.128';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -1949,7 +1949,7 @@ function anzugSetz(){
   const w=$('#kleidungWahl');if(w)w.hidden=$('#trikotAnsichten').hidden;
   const alle=$$('[data-anzug-vorschau]');if(!alle.length)return;
   const gebraucht=KLEIDUNG==='anzug'||ORD[S.i]==='extras'&&alle.some(e=>e.dataset.anzugAngebot==='1');if(!gebraucht)return;
-  const logo=MARKE?.original||MARKE?.trikot||null,key=JSON.stringify([S.name,logo]);
+  const logo=MARKE?.anzug||MARKE?.trikot||MARKE?.original||null,key=JSON.stringify([S.name,logo]);
   if(ANZUG_ANFRAGE!==key){ANZUG_ANFRAGE=key;ANZUG_BILDER=null;ANZUG_FEHLER=false;REISE_TRIKOT.bilder(S.name||'Euer Name',logo,false,'anzug').then(b=>{if(ANZUG_ANFRAGE===key){ANZUG_BILDER=b;anzugSetz();}}).catch(()=>{if(ANZUG_ANFRAGE===key){ANZUG_FEHLER=true;anzugSetz();}});}
   alle.forEach(e=>{const im=$('img',e),p=$('.trikot-platzhalter',e),t=$('.trikot-seite',e),seite=e.dataset.anzugAngebot==='1'?(S.anzugSeite||AERMEL_SEITE):AERMEL_SEITE,u=ANZUG_BILDER?.[seite];im.hidden=!u;if(u&&im.getAttribute('src')!==u)im.src=u;if(!u)im.removeAttribute('src');im.alt=(logo?'Euer schwarzes Logo':'Euer Firmenname')+' auf dem '+(seite==='aermel_l'?'linken':'rechten')+' Anzugärmel';p.hidden=!!u;p.textContent=ANZUG_FEHLER?'Die Vorschau konnte nicht geladen werden. Öffnet die Ärmelansicht erneut.':'Anzugvorschau wird geladen.';t.textContent='Trainingsanzug · '+(seite==='aermel_l'?'linker':'rechter')+' Ärmel · Gestaltungsvorschau';});
 }
@@ -2469,8 +2469,9 @@ function wiederZeig(){ const st=GEMERKT, w=$('#wieder'); if(!st||!w||S.i!==0)ret
 window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origin!==location.origin||!e.data||e.data.reise!=='marke')return;
   const ok=u=>typeof u==='string'&&u.length<900000&&/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(u);
   if(!ok(e.data.bande)||!ok(e.data.trikot)||typeof e.data.original!=='string'||e.data.original.length>900000||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(e.data.original))return;
+  if(e.data.anzug!==undefined&&!ok(e.data.anzug))return;
   $$('.mk').forEach(b=>{ b.classList.remove('mk','nur'); });
-  MARKE={bande:e.data.bande,trikot:e.data.trikot,original:e.data.original,name:String(e.data.name||'').replace(/[^\S\n]+/g,' ').trim().slice(0,40)};
+  MARKE={bande:e.data.bande,trikot:e.data.trikot,original:e.data.original,anzug:e.data.anzug||null,name:String(e.data.name||'').replace(/[^\S\n]+/g,' ').trim().slice(0,40)};
   const fertig=()=>{ try{ passe(); }catch(_){} }; let n=0; const im=new Image(); im.onload=fertig; im.src=MARKE.bande; fertig(); }catch(x){} });
 window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||!e.data)return;
   if(e.data.reise==='bande-editor-zu'){REISEFILM.sichtbar(true);const b=$('[data-bande-bearbeiten]:not([hidden])');if(b)b.focus({preventScroll:true});return;}
