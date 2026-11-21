@@ -607,7 +607,377 @@ function bnPlatzDetails(id,I){const s=B27.d?.slots.find(x=>x.id===id);if(!s)retu
 {const alt=b27Detail;b27Detail=function(){const h=alt.apply(this,arguments),s=B27.d?.slots.find(x=>x.id===B27.sel);return h+(s?.frei_ab?`<p class="pz-tc-tipp">Voraussichtlich frei ab ${bnDatum(s.frei_ab)}. Noch nicht freigegeben.</p>`:'')+(s&&B27.d.darf?`<button type="button" class="pz-tc-k leise" data-bndetails="${s.id}">Verfügbarkeit und Vorschau</button>`:'');};}
 {const alt=b27Zeigen;b27Zeigen=function(I){const r=alt.apply(this,arguments);bnZeigen(I);I.querySelectorAll('[data-bndetails]').forEach(b=>b.onclick=()=>bnPlatzDetails(b.dataset.bndetails,I));return r;};}
 
-(function(){var s=document.createElement('style');s.textContent=".bn{border:1px solid var(--linie,#bcc0cf);border-radius:12px;background:var(--papier,#fff);padding:0 16px;margin-top:18px;color:var(--ink,#1d2760)}.bn>summary{min-height:52px;display:flex;align-items:center;font-weight:700;cursor:pointer;font-size:16px}.bn-in{padding:10px 0 20px}.bn-kopf{display:flex;justify-content:space-between;align-items:start;gap:20px}.bn h3{font-size:21px;margin:0}.bn h4{font-size:17px;margin:0 0 8px}.bn p{font-size:14px;margin:8px 0 14px}.bn-kopf p{margin-top:5px}.bn-gruppe{border-top:1px solid var(--linie,#cdd0dc);padding-top:20px;margin-top:20px}.bn-zeile{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 0;border-top:1px solid var(--linie,#d5d7df)}.bn-zeile:first-of-type{border-top:0}.bn-zeile>div:first-child{min-width:0}.bn-zeile b{font-size:16px;overflow-wrap:anywhere}.bn-zeile span,.bn-zeile small{display:block;font-size:13px;line-height:1.6;color:var(--ink2,#4e536a)}.bn-kn{display:flex;flex-wrap:wrap;gap:7px}.bn-zeile details{font-size:13px}.bn-zeile summary,.bn-log summary{min-height:44px;display:flex;align-items:center;cursor:pointer}.bn-hinweis{padding:14px 16px;margin:16px 0;border-left:3px solid #e8741f;background:var(--papier,#fff)}.bn-hinweis p{margin:4px 0 0}.bn-log{font-size:13px;border-top:1px solid var(--linie,#cdd0dc);margin:18px 0 8px}.bn-form{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.bn-check{display:flex;align-items:center;gap:10px;font-size:14px;min-height:44px}.bn-check input{flex:0 0 20px;width:20px;height:20px;accent-color:#1d2760}.bn button{min-height:44px}.bn-form input,.bn-form select{min-height:44px}.bn :focus-visible{outline:2px solid var(--blau,#1d2760);outline-offset:3px}\n@media(max-width:650px){.bn-kopf,.bn-zeile{flex-direction:column;align-items:stretch;gap:10px}.bn-form{grid-template-columns:1fr}.bn-kn{display:grid;grid-template-columns:1fr}.bn{padding:0 12px}.bn .pz-tc-k{width:100%;justify-content:center}}\n\n.bn-zeile.bn-kompakt{display:block}.bn-vorschlag{display:flex;align-items:center;justify-content:space-between;gap:20px;width:100%}.bn-vorschlag>div{min-width:0}.bn-alternativen{width:100%;margin-top:6px}.bn-alternativen>.bn-vorschlag{padding:12px 0;border-top:1px solid var(--linie,#d5d7df)}@media(max-width:650px){.bn-vorschlag{flex-direction:column;align-items:stretch;gap:10px}}\n";document.head.appendChild(s);})();
+/* Logo-Fassungen einer Präsentation: Original behalten, Bande und Ärmel getrennt vorbereiten. */
+const PD_LOGOWERK = (() => {
+  'use strict';
+  const MAX = 650000, DATEI_MAX = 2 * 1024 * 1024;
+  const bild = s => typeof s === 'string' && s.length <= 900000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(s);
+  const text = s => String(s || '').replace(/[^\S\n]+/g, ' ').trim().slice(0, 40);
+  function raster(img, max) {
+    const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    if (!(w > 0 && h > 0) || w > 16000 || h > 16000 || w * h > 16000000) throw new Error('Das Bild ist zu groß. Bitte verkleinere es auf höchstens 16 Millionen Pixel.');
+    let faktor = Math.min(1, max / Math.max(w, h));
+    for (let n = 0; n < 7; n++) {
+      const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w * faktor)); c.height = Math.max(1, Math.round(h * faktor));
+      const ctx = c.getContext('2d'); if (!ctx) throw new Error('Die Bildvorschau ist hier nicht verfügbar. Bitte öffne die App erneut.');
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(img, 0, 0, c.width, c.height);
+      const png = c.toDataURL('image/png'); if (png.length <= MAX) return { png, breite:c.width, hoehe:c.height };
+      faktor *= .72;
+    }
+    throw new Error('Das Bild lässt sich nicht ausreichend verkleinern. Bitte nutze eine kleinere Vorlage.');
+  }
+  function laden(src) {
+    return new Promise((ok, nein) => {
+      if (!bild(src)) return nein(new Error('Bitte nutze ein PNG-, JPG- oder WebP-Bild.'));
+      const img = new Image(); img.decoding = 'async';
+      img.onload = () => ok(img); img.onerror = () => nein(new Error('Das Bild ist nicht lesbar. Bitte wähle eine andere Datei.')); img.src = src;
+    });
+  }
+  async function lesen(f) {
+    if (!f || !/^image\/(png|jpeg|webp)$/.test(f.type)) throw new Error('Bitte wähle ein PNG-, JPG- oder WebP-Bild.');
+    if (!(f.size > 0 && f.size <= DATEI_MAX)) throw new Error('Bitte nutze ein Bild mit höchstens 2 MB.');
+    const src = await new Promise((ok, nein) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => nein(new Error('Die Datei lässt sich nicht öffnen.')); r.readAsDataURL(f); });
+    // Neu zeichnen: Dateimetadaten und andere Containerinhalte werden nicht übernommen.
+    return raster(await laden(src), 900);
+  }
+  async function fassung(src, art, max) {
+    if (!bild(src)) throw new Error('Bitte hinterlege zuerst ein PNG-, JPG- oder WebP-Original.');
+    if (art === 'original') return raster(await laden(src), max);
+    if (typeof LOGO === 'undefined') throw new Error('Die Logo-Aufbereitung ist gerade nicht verfügbar. Bitte lade die App neu.');
+    const c = await LOGO.variante(src, art === 'frei' ? 'original' : art);
+    return raster(c, max);
+  }
+  function einrichten(M, d) {
+    if (!M || !M.querySelector('#pdLv')) return null;
+    const oeffner=document.activeElement;
+    const mk = d.passung && d.passung.marke && typeof d.passung.marke === 'object' ? d.passung.marke : {};
+    let original = d.logo || '', aktiv = 'druck', dirty = false, originalNeu = false, originalNr = 0, originalAuftrag = null;
+    const zustand = {
+      druck:{quelle:original, png:mk.logo || null, art:'original', max:900, nr:0, auftrag:null, fehler:''},
+      aermel:{quelle:original, png:mk.trikot || null, art:'original', max:900, nr:0, auftrag:null, fehler:''}
+    };
+    const W = document.createElement('details'); W.className = 'pd130'; W.id = 'pdLogoWerk';
+    W.innerHTML = '<summary>Logo für Bande und Ärmel aufbereiten</summary><div class="pd130-in">'
+      + '<p class="pd130-hinweis">Das Original bleibt erhalten. Du kannst für die Bande und den Ärmel eigene Fassungen vorbereiten. Die Änderungen gelten für diese Präsentation.</p>'
+      + '<div class="pd130-wahl" role="group" aria-label="Logo-Fassung"><button type="button" data-pd130="original">Original</button><button type="button" data-pd130="druck">Bande</button><button type="button" data-pd130="aermel">Ärmel</button></div>'
+      + '<div class="pd130-vorschauen"><figure class="pd130-marine"><div><img alt="Logo auf Marine" hidden></div><figcaption>Auf Marine</figcaption></figure><figure class="pd130-weiss"><div><img alt="Logo auf Weiß" hidden></div><figcaption>Auf Weiß</figcaption></figure></div>'
+      + '<p class="pd130-stand" role="status" aria-live="polite"></p>'
+      + '<div class="pd130-regler"><label>Fassung<select data-pd130-art><option value="original">Originalfarben, Hintergrund behalten</option><option value="frei">Originalfarben, Hintergrund entfernen</option><option value="weiss">Weiß, Hintergrund entfernen</option><option value="schwarz">Schwarz, Hintergrund entfernen</option></select></label>'
+      + '<label>Größte Bildkante<select data-pd130-max><option value="900">Bis 900 Pixel</option><option value="600">Bis 600 Pixel</option></select></label></div>'
+      + '<div class="pd130-aktionen"><button type="button" class="btn ghost" data-pd130-fit>Einpassen</button><button type="button" class="btn ghost" data-pd130-reset>Auf Original zurücksetzen</button></div>'
+      + '<label class="pd130-datei">Eigene Fassung laden<input type="file" accept="image/png,image/jpeg,image/webp" data-pd130-datei><small>PNG, JPG oder WebP, höchstens 2 MB</small></label>'
+      + '<label class="pd130-name">Schriftzug neben dem Zeichen<textarea rows="2" maxlength="40" data-pd130-name></textarea><small>Nur ergänzen, wenn der Firmenname im Logo fehlt. Leer lassen, wenn das Logo den Namen bereits enthält.</small></label>'
+      + '<p class="pd130-hinweis">Die Vorschau zeigt Farben und Zuschnitt. Eine größere Originaldatei liefert schärfere Drucke. Mit „Speichern“ unten werden auch diese Fassungen übernommen. Bestehende Verträge und Bildfreigaben ändern sich dadurch nicht.</p></div>';
+    M.querySelector('#pdLv').insertAdjacentElement('afterend', W);
+    const es = sel => W.querySelector(sel), ausgabe = es('.pd130-stand');
+    const name = es('[data-pd130-name]'); name.value = text(mk.name);
+    const lebendig = () => W.isConnected && M.contains(W) && (!document.getElementById('overlay') || document.getElementById('overlay').classList.contains('open'));
+    let fokusBeobachter=null;
+    const fokusEnde=()=>{document.removeEventListener?.('keydown',fokusTaste,true);fokusBeobachter?.disconnect();if(!document.getElementById('overlay')?.classList.contains('open')&&oeffner?.isConnected&&!M.contains(oeffner))oeffner.focus?.({preventScroll:true});};
+    function fokusTaste(ev){
+      if(!lebendig()){fokusEnde();return;}if(ev.key!=='Tab')return;
+      const fs=[...M.querySelectorAll('button,input,select,textarea,summary,a[href],[tabindex]')].filter(x=>!x.disabled&&x.tabIndex>=0&&x.getClientRects().length);
+      if(!fs.length)return;const a=document.activeElement,f=fs[0],l=fs[fs.length-1];
+      if(!M.contains(a)){ev.preventDefault();(ev.shiftKey?l:f).focus();}
+      else if(ev.shiftKey&&a===f){ev.preventDefault();l.focus();}else if(!ev.shiftKey&&a===l){ev.preventDefault();f.focus();}
+    }
+    document.addEventListener?.('keydown',fokusTaste,true);
+    if(typeof MutationObserver!=='undefined'){fokusBeobachter=new MutationObserver(()=>{if(!lebendig())fokusEnde();});fokusBeobachter.observe(document.getElementById('overlay')||M,{attributes:true,childList:true,subtree:true});}
+    function sagen(s, fehler) { if (!lebendig()) return; ausgabe.textContent = s; ausgabe.classList.toggle('fehler', !!fehler); }
+    function anzeigen() {
+      if (!lebendig()) return;
+      const z = zustand[aktiv], src = aktiv === 'original' ? original : z.png || z.quelle || original;
+      W.querySelectorAll('[data-pd130]').forEach(b => { const an = b.dataset.pd130 === aktiv; b.setAttribute('aria-pressed', String(an)); b.classList.toggle('an', an); });
+      W.querySelectorAll('.pd130-vorschauen img').forEach(img => {
+        const ok = bild(src); img.hidden = !ok; if (ok) img.src = src; else img.removeAttribute('src');
+      });
+      const orig = aktiv === 'original';
+      ['[data-pd130-art]','[data-pd130-max]','[data-pd130-fit]','[data-pd130-reset]','[data-pd130-datei]'].forEach(s => { es(s).disabled = orig; });
+      if (z) { es('[data-pd130-art]').value = z.art; es('[data-pd130-max]').value = String(z.max); }
+      sagen(orig ? (bild(original) ? 'Das Original wird durch die Aufbereitung nicht verändert.' : 'Wähle oben im Feld „Logo“ zuerst eine Bilddatei.')
+        : z.fehler || (z.auftrag ? 'Bereite Fassung vor …' : z.png ? 'Eigene Fassung für ' + (aktiv === 'druck' ? 'die Bande.' : 'den Ärmel.') : 'Für diese Ansicht gilt bisher das Original.'), !!(z && z.fehler));
+    }
+    function erzeugen(k) {
+      const z = zustand[k], nr = ++z.nr; z.fehler = '';
+      const job = fassung(z.quelle || original, z.art, z.max).then(r => {
+        if (!lebendig() || nr !== z.nr) return;
+        z.png = r.png; z.auftrag = null; dirty = true;
+        if (aktiv === k) { anzeigen(); sagen(r.breite + ' × ' + r.hoehe + ' Pixel, als PNG vorbereitet.'); }
+      }).catch(e => { if (!lebendig() || nr !== z.nr) return; z.auftrag = null; z.fehler = e.message || 'Die Fassung konnte nicht vorbereitet werden.'; if (aktiv === k) anzeigen(); });
+      z.auftrag = job; if (aktiv === k) anzeigen(); return job;
+    }
+    W.querySelectorAll('[data-pd130]').forEach(b => b.onclick = () => { aktiv = b.dataset.pd130; anzeigen(); });
+    es('[data-pd130-art]').onchange = e => { if (aktiv === 'original') return; zustand[aktiv].art = e.target.value; erzeugen(aktiv); };
+    es('[data-pd130-max]').onchange = e => { if (aktiv === 'original') return; zustand[aktiv].max = +e.target.value === 600 ? 600 : 900; erzeugen(aktiv); };
+    es('[data-pd130-fit]').onclick = () => { if (aktiv !== 'original') erzeugen(aktiv); };
+    es('[data-pd130-reset]').onclick = () => {
+      if (aktiv === 'original') return; const z = zustand[aktiv]; ++z.nr; z.auftrag = null; z.png = null; z.quelle = original; z.art = 'original'; z.max = 900; z.fehler = ''; dirty = true; anzeigen();
+    };
+    es('[data-pd130-datei]').onchange = async e => {
+      const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f || aktiv === 'original') return;
+      const k = aktiv, z = zustand[k], nr = ++z.nr; z.fehler = '';
+      const job = lesen(f).then(r => { if (!lebendig() || nr !== z.nr) return; z.quelle = r.png; z.art = 'original'; z.png = r.png; z.auftrag = null; dirty = true; if (aktiv === k) anzeigen(); })
+        .catch(err => { if (!lebendig() || nr !== z.nr) return; z.auftrag = null; z.fehler = err.message || 'Das Bild lässt sich nicht öffnen.'; if (aktiv === k) anzeigen(); });
+      z.auftrag = job; anzeigen();
+    };
+    name.oninput = () => { dirty = true; };
+    anzeigen();
+    return {
+      originalDatei(f) {
+        const nr = ++originalNr;
+        const job = lesen(f).then(r => {
+          if (!lebendig() || nr !== originalNr) throw new Error('Die Bildauswahl wurde inzwischen geändert.');
+          original = r.png; originalNeu = true;
+          Object.values(zustand).forEach(z => { ++z.nr; z.auftrag = null; z.quelle = original; z.png = null; z.art = 'original'; z.max = 900; z.fehler = ''; });
+          dirty = true; anzeigen(); return original;
+        }).finally(() => { if (nr === originalNr) originalAuftrag = null; });
+        originalAuftrag = job; return job;
+      },
+      async ergaenzen(p) {
+        while (originalAuftrag || Object.values(zustand).some(z => z.auftrag)) {
+          await Promise.all([originalAuftrag,...Object.values(zustand).map(z => z.auftrag)].filter(Boolean));
+        }
+        if (!lebendig()) throw new Error('Das Bearbeitungsfenster wurde geschlossen. Es wurde nichts gespeichert.');
+        const fehler = Object.keys(zustand).find(k => zustand[k].fehler);
+        if (fehler) { aktiv=fehler; W.open=true; anzeigen(); W.querySelector('[data-pd130="'+fehler+'"]')?.focus?.(); throw new Error((fehler==='aermel'?'Ärmel':'Bande')+': '+zustand[fehler].fehler); }
+        if (!dirty) return p;
+        const nm = text(name.value); if (/[–—]/.test(nm)) throw new Error('Bitte nutze im Schriftzug ein Komma oder einen Doppelpunkt statt eines Gedankenstrichs.');
+        if (originalNeu) p.logo = original;
+        p.passung = p.passung || {}; p.passung.marke = { logo:zustand.druck.png || null, trikot:zustand.aermel.png || null, name:nm };
+        return p;
+      }
+    };
+  }
+  return { einrichten, lesen, fassung, bild };
+})();
+
+/* Trikots getrennt abrechnen: Mengen bestätigen oder einen eigenen, in Textform
+   belegten Endbetrag festhalten. Der ursprüngliche Vertrag bleibt unverändert. */
+const S131 = (() => {
+  let folge = 0, fokusStop = null;
+  const e = s => svEsc(String(s == null ? '' : s));
+  const geld = n => (+n || 0).toLocaleString('de-DE', {minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+  const datum = s => /^\d{4}-\d{2}-\d{2}/.test(String(s || '')) ? String(s).slice(8,10)+'.'+String(s).slice(5,7)+'.'+String(s).slice(0,4) : '';
+  const fehler = er => {const t=String(er&&er.message||er||'');if(/Edge Function|Functions(?:Http|Relay|Fetch)Error|Relay Error/i.test(t))return 'Das PDF ist gerade nicht verfügbar. Bitte versuche es erneut.';return !t||/fetch|load failed|network|connection|timeout|abort|typeerror/i.test(t)?'Die Verbindung ist gerade weg. Deine Angaben bleiben stehen. Bitte versuche es erneut.':t;};
+  function cent(s){
+    s=String(s||'').trim(); if(/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(s))s=s.replace(/\./g,'');
+    const m=/^(\d{1,6})(?:[,.](\d{1,2}))?$/.exec(s); if(!m)return null;
+    const n=+m[1]*100+ +(m[2]||'').padEnd(2,'0');return n<=10000000?n:null;
+  }
+  function knopf(v){
+    if(!v || v.k!=='neu' || +v.abrechnung_fassung!==1)return '';
+    const da=(v.rechnungen||[]).some(r=>r.gruppe==='trikot') || v.trikot_abrechnungsstand?.status==='kostenfrei';
+    return '<button type="button" class="btn ghost s131-start" data-trikot-abrechnung="'+e(v.id)+'">'+(da?'Trikotabrechnung ansehen':'Trikots getrennt abrechnen')+'</button>';
+  }
+  function karte(v,h){
+    if(!v || v.k!=='neu' || +v.abrechnung_fassung!==1)return h;
+    const s=v.trikot_abrechnungsstand||{},rs=v.rechnungen||[],r=rs.find(x=>x.gruppe==='trikot');
+    const fertig=s.status==='kostenfrei'||s.status==='rechnung'||!!r,kostenfrei=s.status==='kostenfrei';
+    const richtwert=+v.trikot_netto||0,ist=kostenfrei?0:Number.isFinite(+s.netto)&&s.netto!=null?+s.netto:r?+r.netto:richtwert;
+    const trikot=fertig?ist:richtwert,jahr=+v.netto_jahr||0;
+    const hatGesamt=v.netto_gesamt!=null&&Number.isFinite(+v.netto_gesamt),standard=hatGesamt?Math.max(0,Math.round((+v.netto_gesamt-richtwert)*100)/100):null;
+    const betrag=[];
+    if(jahr>0)betrag.push('<span>'+geld(jahr)+' netto je Saison</span>');
+    else if(standard>0)betrag.push('<span>Übrige Leistungen: '+geld(standard)+' netto</span>');
+    betrag.push('<span>'+(kostenfrei?'Trikots: kostenfrei abgeschlossen':fertig?'Trikots: '+geld(trikot)+' netto, getrennt abgerechnet':'Trikots später: ca. '+geld(trikot)+' netto')+'</span>');
+    if(standard>0)betrag.push('<span class="s131-kartengesamt">'+(fertig?'Gesamtbetrag':'Voraussichtlicher Gesamtbetrag')+': '+geld(standard+trikot)+' netto über die Laufzeit</span>');
+    h=h.replace(/(<dt>Betrag<\/dt><dd>)[\s\S]*?(<\/dd>)/,(_,a,z)=>a+'<div class="s131-kartenbetrag">'+betrag.join('')+'</div>'+z);
+    h=h.replace(/(<dt>Zahlung<\/dt><dd>)([\s\S]*?)(<\/dd>)/,(_,a,b,z)=>{
+      if(!rs.length&&jahr===0)b=standard>0?'<span class="vt-leer">Noch keine Rechnung für die übrigen Leistungen</span>':'';
+      const stand=kostenfrei?'Trikots kostenfrei abgeschlossen. Kein offener Trikotbetrag.':fertig?'Trikots sind getrennt abgerechnet.':'Trikotrechnung folgt nach bestätigter Stückzahl.';
+      return a+b+'<p class="s131-kartenstand">'+stand+'</p>'+z;
+    });
+    const k=knopf(v);return k?h.replace('<footer>','<div class="s131-akte">'+k+'</div><footer>'):h;
+  }
+  function binden(B,fertig){if(B)B.querySelectorAll('[data-trikot-abrechnung]').forEach(b=>{b.onclick=()=>oeffnen(b.dataset.trikotAbrechnung,fertig);});}
+  async function oeffnen(id,fertig){
+    if(!id)return;const oeffner=document.activeElement;if(fokusStop)fokusStop();const token=++folge;
+    const M=svModal('<div class="s131" data-s131="'+token+'"><h2>Trikotabrechnung</h2><p role="status">Lade den Vertrag …</p></div>');
+    const aktuell=()=>M.querySelector('[data-s131="'+token+'"]') && document.getElementById('overlay')?.classList.contains('open');
+    const wurzel=()=>M.querySelector('[data-s131]');
+    // Nur dieser Dialog fängt Tab ab. Bei Schließen oder ersetztem Inhalt
+    // verschwinden Listener und Beobachter, bevor ein anderes Modal sie erbt.
+    function aufraeumen(){M.removeEventListener('keydown',tasten);beobachter.disconnect();if(fokusStop===aufraeumen)fokusStop=null;
+      if(!document.getElementById('overlay')?.classList.contains('open')){const ziel=oeffner?.isConnected?oeffner:[...(document.querySelectorAll?.('[data-trikot-abrechnung]')||[])].find(b=>b.dataset.trikotAbrechnung===id);ziel?.focus?.({preventScroll:true});}}
+    function tasten(ev){
+      if(!aktuell()){aufraeumen();return;}
+      if(ev.key!=='Tab'||ev.altKey||ev.ctrlKey||ev.metaKey)return;
+      const L=[...M.querySelectorAll('a[href],button,input,select,textarea,[tabindex]')].filter(x=>x.tabIndex>=0&&!x.disabled&&!x.matches(':disabled')&&!x.closest('[hidden],[inert]')&&x.getClientRects().length&& !['hidden','collapse'].includes(getComputedStyle(x).visibility));
+      ev.preventDefault();
+      if(!L.length){oben(wurzel());return;}
+      const i=L.indexOf(document.activeElement),ziel=i<0?(ev.shiftKey?L.length-1:0):(i+(ev.shiftKey?-1:1)+L.length)%L.length;
+      L[ziel].focus();
+    }
+    const beobachter=new MutationObserver(()=>{if(!aktuell())aufraeumen();});
+    beobachter.observe(M,{childList:true});
+    const overlay=document.getElementById('overlay');if(overlay)beobachter.observe(overlay,{attributes:true,attributeFilter:['class']});
+    M.addEventListener('keydown',tasten);fokusStop=aufraeumen;oben(wurzel());
+    async function laden(){try{const d=await svtRpc('partner_trikot_abrechnung',{p_vertrag:id});if(aktuell())zeigen(d);}
+      catch(er){if(aktuell()){wurzel().innerHTML='<h2>Trikotabrechnung</h2><p class="s131-fehler" role="alert">'+e(fehler(er))+'</p><button type="button" class="btn" data-s131-nochmal>Erneut laden</button>';M.querySelector('[data-s131-nochmal]').onclick=laden;oben(wurzel());}}}
+    async function nachSpeichern(){if(!aktuell())return;if(typeof PE!=='undefined')PE.d=null;await laden();if(typeof fertig==='function')await fertig();}
+    function oben(B){const o=document.getElementById('overlay'),h=B.querySelector('h2');if(o)o.scrollTop=0;if(h){h.tabIndex=-1;h.focus?.({preventScroll:true});}}
+    function pdfLaden(bytes,name){const bin=atob(bytes),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);spoDownload(new Blob([u],{type:'application/pdf'}),name||'Trikotvereinbarung.pdf');}
+    function pdfBinden(B,a){
+      const b=B.querySelector('[data-s131-vereinbarung-pdf]');if(!b)return;
+      b.onclick=async()=>{b.disabled=true;const H=B.querySelector('[data-s131-fehler]');H.textContent='';
+        try{const d=await svtRpc('vertrag_pdf',{p_id:a.pdf});if(aktuell())pdfLaden(d.data,d.name);}
+        catch(er){if(aktuell())H.textContent=fehler(er);}finally{if(aktuell())b.disabled=false;}};
+    }
+    function zeigen(d){
+      const B=wurzel(),r=d.rechnung,f=d.freigabe,a=d.vereinbarung;
+      const kann=+d.fassung===1 && d.status==='aktiv' && d.pflegen && !f && (+d.netto>0 || !!a);
+      const vereinbaren=+d.fassung===1 && d.status==='aktiv' && d.pflegen && !f;
+      const zeilen=(d.positionen||[]).map(p=>{const ap=a?.positionen.find(m=>+m.nr===+p.nr),fm=f?.mengen.find(m=>+m.nr===+p.nr);
+        return '<div class="s131-position"><div><b>'+e(p.titel)+'</b>'+(p.mannschaft_name||p.mannschaft?'<span>'+e(p.mannschaft_name||p.mannschaft)+'</span>':'')
+          +'<span>Richtwert im Vertrag: '+geld(p.netto)+' netto</span>'+(ap?'<span>Eigener vereinbarter Endbetrag: '+geld(ap.netto_cent/100)+' netto</span>':'')+'</div>'
+          +(f?'<p>'+e(fm?.stueckzahl||'')+' Kleidungsstücke</p>':'<label>Stückzahl<input type="number" inputmode="numeric" min="1" max="999" step="1" required '+(ap?'readonly value="'+e(ap.stueckzahl)+'" ':'')+'data-s131-menge="'+e(p.nr)+'" aria-label="Stückzahl '+e(p.titel+(p.mannschaft_name?', '+p.mannschaft_name:''))+'"></label>')+'</div>';}).join('');
+      B.innerHTML='<h2>Trikotabrechnung</h2><p class="msub">'+e(d.firma)+'<br>'+e(d.nr)+'</p>'
+        +(+d.fassung!==1?'<p>Dieser Vertrag behält seine bisherige Abrechnung. Seine unterschriebenen Bedingungen bleiben unverändert.</p>'
+          :a?'<p>Für die Abrechnung gilt die eigene Endpreisvereinbarung vom '+datum(a.am)+'. Der ursprüngliche Vertrag bleibt unverändert.</p>'
+          :'<p>Bestätige die tatsächlichen Stückzahlen anhand der Bestellung. Ohne eigene Endpreisvereinbarung gelten die Beträge aus dem Vertrag. Die Stückzahl allein ändert den Preis nicht.</p>')
+        +(a?'<div class="s131-vereinbarung"><b>Eigene Vereinbarung, Fassung '+e(a.nummer)+'</b><p>'+e(a.beleg)+'</p><button type="button" class="btn ghost" data-s131-vereinbarung-pdf>Vereinbarung als PDF</button></div>':'')
+        +'<form data-s131-form><div class="s131-positionen">'+zeilen+'</div><p class="s131-summe"><span>'+(!f&&!a?'Trikots, voraussichtlich netto':'Trikots, netto')+'</span><b>'+geld(d.netto)+'</b></p>'
+        +(+d.ust_satz>0?'<p class="s131-summe"><span>Umsatzsteuer '+e(d.ust_satz)+' %</span><span>'+geld(Math.round((+d.brutto- +d.netto)*100)/100)+'</span></p>':'')
+        +'<p class="s131-summe s131-gesamt"><span>'+((f?.kostenfrei || a&&+d.netto===0)?'Kostenfrei':!f&&!a?'Voraussichtlicher Rechnungsbetrag':!f&&a?'Vereinbarter Endbetrag, brutto':'Rechnungsbetrag')+'</span><b>'+geld(d.brutto)+'</b></p>'
+        +(f?.kostenfrei?'<div class="s131-beleg"><b>Kostenfrei abgeschlossen</b><p>Der eigene vereinbarte Endbetrag beträgt 0 Euro. Es gibt keine Rechnung und keine Zahlungsaufforderung.</p></div>'
+          :r?'<div class="s131-beleg"><b>'+e(r.nr)+'</b><p>'+(r.status==='bezahlt'?'Bezahlt.':r.status==='storniert'?'Storniert.':'Angelegt am '+datum(r.datum)+', zahlbar bis '+datum(r.faellig)+'.')+'</p>'
+            +(f?'<p>Stückzahlen bestätigt am '+datum(f.am)+'. Beleg: '+e(f.beleg)+'</p>':'')+'<p>Versand und Zahlung pflegst du wie bisher im Rechnungsbereich.</p>'
+            +(r.status!=='storniert'?'<button type="button" class="btn" data-s131-pdf>Rechnung als PDF</button>':'')+'</div>'
+          :!kann?'<p>'+(!(+d.netto>0)&&+d.fassung===1?'Ohne Zahlungsbetrag ist keine Rechnung erforderlich. Eine eigene kostenfreie Endpreisvereinbarung kannst du mit PDF-Beleg festhalten.':d.status!=='aktiv'?'Die Abrechnung kann erst nach der Annahme durch den Verein entstehen.':'Die Mengenfreigabe übernimmt die Person mit Vertragsrecht.')+'</p>'
+          :'<div class="s131-felder"><label>Datum der Mengenbestätigung<input type="date" name="am" min="'+e(d.fruehestes_datum)+'" max="'+e(d.heute)+'" required '+(a?'readonly value="'+e(a.am)+'"':'')+'></label>'
+            +'<label>Beleg zur Stückzahl<textarea name="beleg" rows="3" minlength="5" maxlength="500" required '+(a?'readonly':'')+' placeholder="Zum Beispiel: freigegebene Stückliste oder Bestellung mit Datum">'+(a?e(a.beleg):'')+'</textarea></label></div>'
+            +'<label class="s131-check"><input type="checkbox" name="bestaetigt" required><span>'+(a?'Ich habe die eigene Vereinbarung und ihre Stückzahlen geprüft.':'Ich habe die Stückzahlen anhand dieses Belegs geprüft. Ohne eigene Preisvereinbarung gelten die Beträge aus dem Vertrag.')+'</span></label>'
+            +'<p>'+(a&&+d.netto===0?'Die kostenfreie Abrechnung erstellt keine Rechnung und keine Zahlungsaufforderung.':'Die Anlage verschickt noch keine Rechnung.')+'</p><button type="submit" class="btn" data-s131-speichern>'+(a&&+d.netto===0?'Kostenfreie Abrechnung festhalten':'Eigene Trikotrechnung anlegen')+'</button>')
+        +'<p class="s131-fehler" role="alert" data-s131-fehler></p></form>'
+        +(vereinbaren?'<div class="s131-anderer-preis"><p>Der tatsächliche Endbetrag weicht vom Richtwert ab? Halte die mit dem Partner in Textform vereinbarte Summe als eigene Vereinbarung mit PDF-Beleg fest.</p><button type="button" class="btn ghost" data-s131-vereinbaren>'+(a?'Neue Endpreisvereinbarung festhalten':'Anderen Endbetrag vereinbaren')+'</button></div>':'');
+      B.querySelectorAll('[data-s131-menge]').forEach(x=>{if(!kann)x.disabled=true;});pdfBinden(B,a);
+      const av=B.querySelector('[data-s131-vereinbaren]');if(av)av.onclick=()=>vereinbarungZeigen(d);
+      const pdf=B.querySelector('[data-s131-pdf]');if(pdf)pdf.onclick=async()=>{pdf.disabled=true;const H=B.querySelector('[data-s131-fehler]');H.textContent='';
+        try{const {data,error}=await SVB.sb.functions.invoke('partner-deck',{body:{rechnung:r.id,nurPdf:true}});if(error)throw error;if(!data?.pdf)throw new Error(data?.fehler||'Das PDF ist gerade nicht verfügbar.');if(aktuell())pdfLaden(data.pdf,data.name||r.nr+'.pdf');}
+        catch(er){if(aktuell())H.textContent=fehler(er);}finally{if(aktuell())pdf.disabled=false;}};
+      const F=B.querySelector('[data-s131-form]');F.onsubmit=async ev=>{ev.preventDefault();if(!kann||!F.reportValidity())return;const save=F.querySelector('[data-s131-speichern]');if(save.disabled)return;
+        const H=F.querySelector('[data-s131-fehler]');H.textContent='';save.disabled=true;
+        try{const mengen=[...F.querySelectorAll('[data-s131-menge]')].map(x=>({nr:+x.dataset.s131Menge,stueckzahl:+x.value}));
+          await svtRpc('partner_trikot_rechnung_anlegen',{p:{vertrag:id,stand:d.stand,mengen,am:F.elements.am.value,beleg:F.elements.beleg.value,bestaetigt:F.elements.bestaetigt.checked,vereinbarung:a?.id||null}});await nachSpeichern();}
+        catch(er){if(aktuell()){H.textContent=fehler(er);save.disabled=false;}}};
+      oben(B);
+    }
+    function vereinbarungZeigen(d){
+      const B=wurzel(),a=d.vereinbarung;
+      B.innerHTML='<h2>Eigene Endpreisvereinbarung</h2><p class="msub">'+e(d.firma)+'<br>'+e(d.nr)+'</p><p>Der ursprüngliche Vertrag bleibt unverändert. Hier hältst du die mit dem Partner in Textform vereinbarten Stückzahlen und Endbeträge fest. Der PDF-Beleg wird privat bei diesem Vertrag abgelegt.</p>'
+        +(a?'<p>Die bisherige Fassung bleibt erhalten. Eine neue Fassung gilt erst nach ihrem Speichern für die noch offene Abrechnung.</p>':'')
+        +'<form data-s131-vereinbarung-form><div class="s131-positionen">'+(d.positionen||[]).map(p=>{const ap=a?.positionen.find(m=>+m.nr===+p.nr);return '<div class="s131-preis-position" data-s131-preis="'+e(p.nr)+'"><div><b>'+e(p.titel)+'</b>'+(p.mannschaft_name||p.mannschaft?'<span>'+e(p.mannschaft_name||p.mannschaft)+'</span>':'')+'<span>Richtwert im Vertrag: '+geld(p.netto)+' netto</span></div>'
+          +'<label>Stückzahl<input type="number" inputmode="numeric" min="1" max="999" step="1" name="menge" required value="'+e(ap?.stueckzahl||'')+'"></label><label>Vereinbarter Endbetrag netto, Euro<input type="text" inputmode="decimal" name="betrag" required value="'+e((ap?ap.netto_cent/100:+p.netto).toFixed(2).replace('.',','))+'"></label></div>';}).join('')+'</div>'
+        +'<div class="s131-felder"><label>Datum der eigenen Vereinbarung<input type="date" name="am" required min="'+e(d.fruehestes_datum)+'" max="'+e(d.heute)+'"></label>'
+        +'<label>Vereinbarung benennen<textarea name="beleg" rows="3" minlength="5" maxlength="500" required placeholder="Zum Beispiel: bestätigte Bestellung vom …"></textarea></label>'
+        +'<label>PDF-Beleg der Textformvereinbarung<input type="file" name="pdf" accept="application/pdf,.pdf" required><span class="s131-klein">Höchstens 6 MB. Stückzahlen und Endbeträge müssen daraus hervorgehen.</span></label></div>'
+        +'<label class="s131-check"><input type="checkbox" name="textform" required><span>Mit dem Partner in Textform vereinbart. Ich habe Stückzahlen und Endbeträge anhand dieses PDF-Belegs geprüft.</span></label>'
+        +'<p>Die Fassung wird fest abgelegt. Dabei entstehen noch keine Rechnung und keine Mail. Auch 0 Euro braucht diese bestätigte eigene Vereinbarung.</p>'
+        +'<div class="s131-aktionen"><button type="submit" class="btn" data-s131-vereinbarung-speichern>Vereinbarung fest ablegen</button><button type="button" class="btn ghost" data-s131-zurueck>Zur Mengenbestätigung</button></div><p role="alert" class="s131-fehler" data-s131-fehler></p></form>';
+      B.querySelector('[data-s131-zurueck]').onclick=()=>zeigen(d);
+      oben(B);
+      const F=B.querySelector('[data-s131-vereinbarung-form]');F.onsubmit=async ev=>{ev.preventDefault();if(!F.reportValidity())return;const save=F.querySelector('[data-s131-vereinbarung-speichern]');if(save.disabled)return;
+        const H=F.querySelector('[data-s131-fehler]');H.textContent='';
+        const positionen=[];for(const row of F.querySelectorAll('[data-s131-preis]')){const n=cent(row.querySelector('[name=betrag]').value);if(n===null){H.textContent='Bitte jeden Endbetrag als Eurobetrag mit höchstens zwei Nachkommastellen eintragen, zum Beispiel 650,00.';return;}positionen.push({nr:+row.dataset.s131Preis,stueckzahl:+row.querySelector('[name=menge]').value,netto_cent:n});}
+        const file=F.elements.pdf.files[0];if(!file||file.size<100||file.size>6000000){H.textContent='Bitte einen PDF-Beleg mit höchstens 6 MB wählen.';return;}
+        const p={vertrag:id,stand:d.stand,positionen,am:F.elements.am.value,beleg:F.elements.beleg.value,textform:F.elements.textform.checked,name:file.name};
+        F.querySelectorAll('input,textarea,button').forEach(x=>{x.disabled=true;});
+        try{p.b64=await new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=()=>reject(new Error('Der PDF-Beleg ließ sich nicht lesen.'));r.onload=()=>resolve(String(r.result).split(',')[1]||'');r.readAsDataURL(file);});
+          if(!aktuell())return;await svtRpc('partner_trikot_vereinbaren',{p});await nachSpeichern();}
+        catch(er){if(aktuell()){H.textContent=fehler(er);F.querySelectorAll('input,textarea,button').forEach(x=>{x.disabled=false;});}}
+      };
+    }
+    await laden();
+  }
+  return {knopf,karte,binden,oeffnen};
+})();
+if(typeof vtKarte==='function'){
+  const s131Karte=vtKarte;vtKarte=function(v){return S131.karte(v,s131Karte.apply(this,arguments));};
+}
+if(typeof vtZeigen==='function'){
+  const s131Zeigen=vtZeigen;vtZeigen=function(B){const r=s131Zeigen.apply(this,arguments);S131.binden(B,async()=>{await vtLaden(true);if(B&&B.isConnected&&SPO.view==='vertraege')vtZeigen(B);});return r;};
+}
+
+/* Interne Konditionen. Der Parent zeigt den Einstieg nur mit Vertragsrecht.
+   Die RPC prüft das Recht und berechnet alle Preise erneut. Keine eigene Anmeldung. */
+(function(){
+  'use strict';
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const euro=n=>(+n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  let offen=null;
+  function oeffnen(o){
+    if(!o||typeof o.rpc!=='function'||typeof o.code!=='string')return null;
+    if(offen){offen.element.querySelector('.pk132-zu')?.focus();return offen;}
+    const katalog=(o.katalog||[]).filter(l=>l&&l.aktiv!==false&&l.preis!=null&&!['spende','sonstiges'].includes(l.art));
+    const teams=(o.mannschaften||[]).filter(m=>m&&m.aktiv!==false);
+    const L=k=>katalog.find(l=>l.key===k);
+    let zeilen=(o.positionen||[]).map(p=>({key:p.key,mannschaft:p.mannschaft||null,menge:+p.menge||1,nachlass:+p.nachlass||0,zusaetzlich:!!(p.zusaetzlich||p.zusatzpaket)}));
+    let zu=false,busy=false;
+    const zuvor=document.activeElement,altOverflow=document.body.style.overflow;
+    const hintergrund=document.createElement('div');hintergrund.className='pk132-hintergrund';
+    hintergrund.innerHTML='<section class="pk132" role="dialog" aria-modal="true" aria-labelledby="pk132Titel"><header><div><p>Nur für das Partner-Team</p><h2 id="pk132Titel">Konditionen im Termin</h2></div><button type="button" class="pk132-zu" aria-label="Konditionen schließen">Schließen</button></header><div class="pk132-in"><p class="pk132-hilfe">Leg die Auswahl und den Nachlass je Leistung fest. Die Firma kann diese Konditionen 14 Tage lang über ihren Link übernehmen.</p><div class="pk132-zeit"><label>Laufzeit<select id="pk132Saisons">'+[1,2,3,4,5].map(n=>'<option value="'+n+'">'+n+' '+(n===1?'Saison':'Saisons')+'</option>').join('')+'</select></label><label>Beginn<input type="date" id="pk132Beginn"></label></div><div class="pk132-zeilen"></div><div class="pk132-dazu"><label for="pk132Leistung">Weitere Leistung</label><div><select id="pk132Leistung"><option value="">Bitte wählen</option>'+katalog.map(l=>'<option value="'+esc(l.key)+'">'+esc(l.titel)+'</option>').join('')+'</select><button type="button" id="pk132Dazu">Hinzufügen</button></div></div><label class="pk132-check"><input type="checkbox" id="pk132Auto"> Saisonleistungen laufen nach der gewählten Laufzeit von selbst weiter</label><p class="pk132-gratis" hidden>Die Saisonleistungen sind vollständig geschenkt. Sie enden nach der gewählten Laufzeit und verlängern sich nicht automatisch.</p><div class="pk132-summe" aria-live="polite"></div><p class="pk132-fehler" role="alert" hidden></p></div><footer><p>Mit dem Speichern wird noch kein Vertrag geschlossen und keine Nachricht verschickt.</p><div><button type="button" id="pk132Abbrechen">Abbrechen</button><button type="button" id="pk132Speichern">Konditionen speichern</button></div></footer></section>';
+    document.body.appendChild(hintergrund);document.body.style.overflow='hidden';
+    const $=s=>hintergrund.querySelector(s);
+    $('#pk132Saisons').value=String(Math.max(1,Math.min(5,+o.saisons||1)));
+    $('#pk132Beginn').value=String(o.beginn||'').slice(0,10);$('#pk132Auto').checked=!!o.auto_verlaengerung;
+    function schliessen(){if(zu||busy)return;zu=true;document.removeEventListener('keydown',taste,true);hintergrund.remove();document.body.style.overflow=altOverflow;if(zuvor&&zuvor.isConnected)zuvor.focus();if(offen&&offen.element===hintergrund)offen=null;if(typeof o.geschlossen==='function'){try{o.geschlossen();}catch(e){}}}
+    function fehler(t){const e=$('.pk132-fehler');e.hidden=!t;e.textContent=t||'';if(t)e.scrollIntoView({block:'nearest'});}
+    function berechnung(){
+      const s=+$('#pk132Saisons').value,rab=s>=3?10:s===2?5:0;
+      const pk=['p1896','premium','club','supporter'].find(k=>zeilen.some(p=>p.key===k));
+      let jahr=0,einmal=0,hatSaison=false;
+      const positionen=zeilen.map(p=>{const l=L(p.key);if(!l)return Object.assign({},p,{fehlt:true});
+        let cent=Math.round(+l.preis*100);if(l.key==='sotd')cent=Math.max(0,cent-(pk==='club'?2000:['premium','p1896'].includes(pk)?4000:0));
+        const nc=Math.round((+p.nachlass||0)*100),einzelCent=Math.round(cent*(10000-nc)/10000),saisonal=l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art);
+        const summeCent=Math.round(einzelCent*(+p.menge||1)*(saisonal?100-rab:100)/100);
+        if(saisonal){hatSaison=true;jahr+=summeCent;}else einmal+=summeCent;
+        return Object.assign({},p,{basis:cent/100,einzel:einzelCent/100,summe:summeCent/100,saisonal});});
+      return{positionen,netto_jahr:jahr/100,einmalig:einmal/100,netto_gesamt:(jahr*s+einmal)/100,hat_saison:hatSaison,gratis_saison:hatSaison&&jahr===0,rabatt:rab};
+    }
+    function summe(){const c=berechnung(),gratis=$('.pk132-gratis'),auto=$('#pk132Auto');
+      gratis.hidden=!c.gratis_saison;auto.disabled=c.gratis_saison||busy;if(c.gratis_saison)auto.checked=false;
+      $('.pk132-summe').innerHTML=(c.hat_saison?'<div><span>Je Saison, netto'+(c.rabatt&&c.netto_jahr>0?' einschließlich '+c.rabatt+' % Laufzeitvorteil':'')+'</span><b>'+euro(c.netto_jahr)+'</b></div>':'')+(c.einmalig?'<div><span>Einmalige Leistungen, netto</span><b>'+euro(c.einmalig)+'</b></div>':'')+'<div class="pk132-gesamt"><span>Gesamt über die Laufzeit, netto</span><b>'+euro(c.netto_gesamt)+'</b></div>';
+      c.positionen.forEach((p,i)=>{const e=$('[data-pk132betrag="'+i+'"]');if(e)e.textContent=(['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend'].includes(p.key)?'ca. ':'')+euro(p.summe)+(p.saisonal?' je Saison':'');});}
+    function render(){
+      const pkAnzahl=zeilen.filter(p=>L(p.key)?.art==='paket').length;
+      $('.pk132-zeilen').innerHTML=zeilen.length?zeilen.map((p,i)=>{const l=L(p.key)||{};
+        return '<article class="pk132-zeile"><div class="pk132-zeilenkopf"><h3>'+esc(l.titel||p.key)+'</h3><button type="button" data-pk132weg="'+i+'" aria-label="'+esc(l.titel||p.key)+' entfernen">Entfernen</button></div><div class="pk132-felder">'+(l.je_mannschaft?'<label>Mannschaft<select data-pk132team="'+i+'"><option value="">Bitte wählen</option>'+teams.filter(m=>l.bereich!=='jugend'||m.art==='jugend').map(m=>'<option value="'+esc(m.id)+'"'+(m.id===p.mannschaft?' selected':'')+'>'+esc(m.name||m.id)+'</option>').join('')+'</select></label>':'')+(['stueck','spieltag'].includes(l.einheit)?'<label>Menge<input type="number" min="1" max="99" step="1" data-pk132menge="'+i+'" value="'+p.menge+'"></label>':'')+'<label>Individueller Nachlass<input type="number" min="0" max="100" step="0.01" inputmode="decimal" data-pk132nach="'+i+'" value="'+p.nachlass+'"><span>Prozent</span></label></div>'+(l.art==='paket'&&pkAnzahl>1?'<label class="pk132-check"><input type="checkbox" data-pk132zusatz="'+i+'"'+(p.zusaetzlich?' checked':'')+'> Als zusätzliches Paket genehmigen</label>':'')+'<p class="pk132-betrag" data-pk132betrag="'+i+'"></p></article>';}).join(''):'<p class="pk132-leer">Füge zuerst die gewünschte Leistung hinzu.</p>';
+      hintergrund.querySelectorAll('[data-pk132weg]').forEach(b=>b.onclick=()=>{const i=+b.dataset.pk132weg;zeilen.splice(i,1);render();const n=$('[data-pk132weg="'+Math.min(i,zeilen.length-1)+'"]')||$('#pk132Leistung');n.focus();});
+      hintergrund.querySelectorAll('[data-pk132nach]').forEach(f=>f.oninput=()=>{zeilen[+f.dataset.pk132nach].nachlass=f.value===''?0:+f.value;summe();});
+      hintergrund.querySelectorAll('[data-pk132menge]').forEach(f=>f.oninput=()=>{zeilen[+f.dataset.pk132menge].menge=f.value===''?0:+f.value;summe();});
+      hintergrund.querySelectorAll('[data-pk132team]').forEach(f=>f.onchange=()=>{zeilen[+f.dataset.pk132team].mannschaft=f.value||null;});
+      hintergrund.querySelectorAll('[data-pk132zusatz]').forEach(f=>f.onchange=()=>{zeilen[+f.dataset.pk132zusatz].zusaetzlich=f.checked;});
+      summe();
+    }
+    $('#pk132Dazu').onclick=()=>{const key=$('#pk132Leistung').value,l=L(key);if(!l){fehler('Wähl zuerst eine Leistung.');return;}
+      if(!l.je_mannschaft&&zeilen.some(p=>p.key===key)){fehler('Diese Leistung steht schon in der Auswahl.');return;}
+      if(zeilen.length>=24){fehler('In eine Auswahl passen höchstens 24 Leistungen.');return;}
+      zeilen.push({key,mannschaft:null,menge:1,nachlass:0,zusaetzlich:l.art==='paket'&&zeilen.some(p=>L(p.key)?.art==='paket')});$('#pk132Leistung').value='';fehler('');render();const i=zeilen.length-1;($('[data-pk132team="'+i+'"]')||$('[data-pk132nach="'+i+'"]')).focus();};
+    $('#pk132Saisons').onchange=summe;$('#pk132Auto').onchange=summe;
+    $('.pk132-zu').onclick=schliessen;$('#pk132Abbrechen').onclick=schliessen;
+    function taste(e){if(zu)return;if(e.key==='Escape'){e.preventDefault();e.stopPropagation();schliessen();return;}
+      if(e.key==='Tab'){const a=[...hintergrund.querySelectorAll('button,input,select')].filter(x=>!x.disabled&&x.getClientRects().length);if(!a.length)return;const f=a[0],l=a[a.length-1];if(!hintergrund.contains(document.activeElement)){e.preventDefault();(e.shiftKey?l:f).focus();}else if(e.shiftKey&&document.activeElement===f){e.preventDefault();l.focus();}else if(!e.shiftKey&&document.activeElement===l){e.preventDefault();f.focus();}}}
+    document.addEventListener('keydown',taste,true);
+    $('#pk132Speichern').onclick=async()=>{if(busy)return;fehler('');
+      const c=berechnung(),saisons=+$('#pk132Saisons').value,beginn=$('#pk132Beginn').value;
+      if(!zeilen.length||zeilen.some(p=>!L(p.key))){fehler('Bitte wähl mindestens eine verfügbare Leistung.');return;}
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(beginn)){fehler('Bitte trag den Vertragsbeginn ein.');$('#pk132Beginn').focus();return;}
+      if(zeilen.some(p=>!Number.isFinite(p.nachlass)||p.nachlass<0||p.nachlass>100||Math.abs(Math.round(p.nachlass*100)-p.nachlass*100)>0.0000001)){fehler('Bitte trag den Nachlass mit höchstens zwei Nachkommastellen von 0 bis 100 ein.');return;}
+      if(zeilen.some(p=>!Number.isInteger(p.menge)||p.menge<1||p.menge>99)){fehler('Bitte prüf die Mengen von 1 bis 99.');return;}
+      if(zeilen.some(p=>L(p.key).je_mannschaft&&!p.mannschaft)){fehler('Bitte wähl zu jeder Mannschaftsleistung die Mannschaft.');return;}
+      const pk=zeilen.filter(p=>L(p.key).art==='paket');if(pk.length>1&&pk.filter(p=>!p.zusaetzlich).length!==1){fehler('Lass genau eine Partnerstufe als Grundpaket stehen und kennzeichne die weiteren als zusätzliches Paket.');return;}
+      const p={positionen:zeilen.map(x=>({key:x.key,mannschaft:x.mannschaft,menge:x.menge,nachlass:x.nachlass,zusaetzlich:x.zusaetzlich})),saisons,beginn,auto_verlaengerung:c.gratis_saison?false:$('#pk132Auto').checked};
+      busy=true;hintergrund.querySelectorAll('button,input,select').forEach(e=>e.disabled=true);const b=$('#pk132Speichern');b.textContent='Speichert …';b.setAttribute('aria-busy','true');
+      let snapshot;try{snapshot=await o.rpc('partner_konditionen_setzen',{p_code:o.code,p});if(!snapshot||!snapshot.id)throw new Error('Die Bestätigung fehlt. Bitte prüf den Stand vor einem neuen Versuch.');}
+      catch(e){busy=false;hintergrund.querySelectorAll('button,input,select').forEach(x=>x.disabled=false);b.textContent='Konditionen speichern';b.removeAttribute('aria-busy');summe();fehler(e.message||'Das Speichern hat nicht geklappt. Deine Auswahl bleibt stehen.');return;}
+      busy=false;schliessen();if(typeof o.gespeichert==='function'){try{await o.gespeichert(snapshot);}catch(e){if(typeof window.kToast==='function')window.kToast('Konditionen gespeichert. Lade die Präsentation neu, um sie zu übernehmen.');}}
+    };
+    render();$('.pk132-zu').focus();offen={element:hintergrund,schliessen};return offen;
+  }
+  window.PD_KONDITIONEN={oeffnen};
+})();
+
+(function(){var s=document.createElement('style');s.textContent=".bn{border:1px solid var(--linie,#bcc0cf);border-radius:12px;background:var(--papier,#fff);padding:0 16px;margin-top:18px;color:var(--ink,#1d2760)}.bn>summary{min-height:52px;display:flex;align-items:center;font-weight:700;cursor:pointer;font-size:16px}.bn-in{padding:10px 0 20px}.bn-kopf{display:flex;justify-content:space-between;align-items:start;gap:20px}.bn h3{font-size:21px;margin:0}.bn h4{font-size:17px;margin:0 0 8px}.bn p{font-size:14px;margin:8px 0 14px}.bn-kopf p{margin-top:5px}.bn-gruppe{border-top:1px solid var(--linie,#cdd0dc);padding-top:20px;margin-top:20px}.bn-zeile{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 0;border-top:1px solid var(--linie,#d5d7df)}.bn-zeile:first-of-type{border-top:0}.bn-zeile>div:first-child{min-width:0}.bn-zeile b{font-size:16px;overflow-wrap:anywhere}.bn-zeile span,.bn-zeile small{display:block;font-size:13px;line-height:1.6;color:var(--ink2,#4e536a)}.bn-kn{display:flex;flex-wrap:wrap;gap:7px}.bn-zeile details{font-size:13px}.bn-zeile summary,.bn-log summary{min-height:44px;display:flex;align-items:center;cursor:pointer}.bn-hinweis{padding:14px 16px;margin:16px 0;border-left:3px solid #e8741f;background:var(--papier,#fff)}.bn-hinweis p{margin:4px 0 0}.bn-log{font-size:13px;border-top:1px solid var(--linie,#cdd0dc);margin:18px 0 8px}.bn-form{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.bn-check{display:flex;align-items:center;gap:10px;font-size:14px;min-height:44px}.bn-check input{flex:0 0 20px;width:20px;height:20px;accent-color:#1d2760}.bn button{min-height:44px}.bn-form input,.bn-form select{min-height:44px}.bn :focus-visible{outline:2px solid var(--blau,#1d2760);outline-offset:3px}\n@media(max-width:650px){.bn-kopf,.bn-zeile{flex-direction:column;align-items:stretch;gap:10px}.bn-form{grid-template-columns:1fr}.bn-kn{display:grid;grid-template-columns:1fr}.bn{padding:0 12px}.bn .pz-tc-k{width:100%;justify-content:center}}\n\n.bn-zeile.bn-kompakt{display:block}.bn-vorschlag{display:flex;align-items:center;justify-content:space-between;gap:20px;width:100%}.bn-vorschlag>div{min-width:0}.bn-alternativen{width:100%;margin-top:6px}.bn-alternativen>.bn-vorschlag{padding:12px 0;border-top:1px solid var(--linie,#d5d7df)}@media(max-width:650px){.bn-vorschlag{flex-direction:column;align-items:stretch;gap:10px}}\n.pd130{margin:16px 0 22px;border:1px solid var(--line,#c7cbd3);border-radius:12px;overflow:hidden;background:var(--card,#fff);color:var(--ink,#182345)}\n.pd130 summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:12px 14px;cursor:pointer;font-weight:700;font-size:14px;list-style:none}\n.pd130 summary::after{content:'';width:8px;height:8px;flex:none;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg)}.pd130[open] summary::after{transform:rotate(225deg)}\n.pd130 summary:focus-visible,.pd130 button:focus-visible,.pd130 select:focus-visible,.pd130 textarea:focus-visible,.pd130 input:focus-visible{outline:3px solid var(--accent,#215dba);outline-offset:3px}\n.pd130-in{padding:0 14px 16px}.pd130-hinweis{font-size:13px;line-height:1.5;margin:0 0 14px;color:var(--ink2,#48536b)}\n.pd130-wahl{display:flex;gap:4px;padding:4px;border:1px solid var(--line,#c7cbd3);border-radius:9px;margin-bottom:12px}\n.pd130-wahl button{flex:1;min-width:0;min-height:44px;padding:8px 6px;border:0;border-radius:5px;color:inherit;background:transparent;font:inherit;font-size:14px;cursor:pointer}\n.pd130-wahl button.an{background:#182345;color:#fff;font-weight:700}\n.pd130-vorschauen{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pd130-vorschauen figure{margin:0;border:1px solid #bbc3d2;border-radius:8px;overflow:hidden}\n.pd130-vorschauen figure>div{height:128px;padding:14px;display:flex;align-items:center;justify-content:center}.pd130-vorschauen img{display:block;max-width:100%;max-height:100%;object-fit:contain}.pd130-vorschauen img[hidden]{display:none}\n.pd130-marine>div{background:#182345}.pd130-weiss>div{background:#fff}.pd130-vorschauen figcaption{padding:7px 10px;font-size:12px;background:var(--card,#fff);border-top:1px solid var(--line,#c7cbd3)}\n.pd130-stand{min-height:40px;margin:10px 0;font-size:13px;line-height:1.5;color:var(--ink2,#48536b)}.pd130-stand.fehler{color:var(--bad,#b42318);font-weight:600}\n.pd130-regler{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px}.pd130-regler label,.pd130-datei,.pd130-name{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:600}\n.pd130 select,.pd130 textarea,.pd130 input[type=file]{width:100%;max-width:100%;min-height:44px;border:1px solid var(--line,#aeb7c7);border-radius:7px;padding:10px;background:var(--card,#fff);color:inherit;font:inherit;font-size:14px;box-sizing:border-box}\n.pd130 textarea{resize:vertical;min-height:72px}.pd130 small{font-size:12px;line-height:1.45;font-weight:400;color:var(--ink2,#48536b)}\n.pd130-aktionen{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.pd130-aktionen button{min-height:44px;font-size:13px;white-space:normal;flex:1}\n.pd130-datei,.pd130-name{margin:14px 0}.pd130 input[type=file]::file-selector-button{min-height:44px;margin-right:8px;font:inherit;border:0;border-radius:4px;padding:5px 9px;background:#182345;color:#fff;cursor:pointer}\n.pd130 :disabled{opacity:.55;cursor:default}\n@media(max-width:540px){.pd130-in{padding-right:10px;padding-left:10px}.pd130-regler{grid-template-columns:1fr}.pd130-vorschauen figure>div{height:108px;padding:10px}.pd130-aktionen{flex-direction:column}.pd130-aktionen button{width:100%}}\n/* Die Mengenfreigabe ergänzt die bestehende Vertragsakte in beiden Farbschemata. */\n.s131{max-width:680px;margin:0 auto;background:var(--card);color:var(--ink);font-size:15px;line-height:1.5;}\n.s131 h2{margin:0 0 8px;font-size:24px;line-height:1.2;}\n.s131 .msub{margin:0 0 18px;color:var(--ink2);overflow-wrap:anywhere;}\n.s131 p{margin:10px 0;}\n.s131-positionen{display:grid;gap:12px;margin:20px 0;border-top:1px solid var(--line);}\n.s131-position{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);}\n.s131-position>div{min-width:0;overflow-wrap:anywhere;}\n.s131-position b,.s131-position span{display:block;}\n.s131-position span{font-size:13px;color:var(--ink2);margin-top:3px;}\n.s131 label{display:grid;gap:5px;font-size:14px;font-weight:600;}\n.s131 input[type=number],.s131 input[type=date],.s131 input[type=text],.s131 textarea{box-sizing:border-box;max-width:100%;width:100%;min-height:44px;font:inherit;font-size:16px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;padding:10px;}\n.s131 input:focus-visible,.s131 textarea:focus-visible,.s131 .btn:focus-visible{outline:3px solid var(--blue,#2f8bef);outline-offset:3px;}\n.s131-felder{display:grid;gap:16px;margin:20px 0;}\n.s131 .s131-check{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;font-weight:400;min-height:44px;cursor:pointer;}\n.s131 .s131-check input{width:22px;height:22px;margin:2px 0;}\n.s131-summe{display:flex;justify-content:space-between;gap:16px;font-size:14px;}\n.s131-summe>:first-child{min-width:0;}.s131-summe>:last-child{white-space:nowrap;flex-shrink:0;}\n.s131-gesamt{font-size:17px;padding-top:12px;border-top:1px solid var(--line);}\n.s131 .btn,.s131-start{min-height:44px;white-space:normal;text-align:left;max-width:100%;}\n.s131-beleg{border-top:1px solid var(--line);padding-top:15px;margin-top:18px;overflow-wrap:anywhere;}\n.s131-fehler{color:var(--bad);font-size:14px;overflow-wrap:anywhere;}\n.s131-fehler:empty{display:none;}\n.s131-akte{display:flex;flex-wrap:wrap;gap:8px;}\n.s131-kartenbetrag{display:grid;gap:6px;}\n.s131-kartengesamt{color:var(--ink2);}\n.s131-kartenstand{margin:8px 0 0;color:var(--ink2);font-size:13px;line-height:1.5;}\n.s131-kartenstand:only-child{margin-top:0;}\n.s131-vereinbarung,.s131-anderer-preis{margin:18px 0;padding:14px;border:1px solid var(--line);border-radius:10px;overflow-wrap:anywhere;}\n.s131-klein{font-size:13px;font-weight:400;color:var(--ink2);}\n.s131-preis-position{display:grid;grid-template-columns:100px minmax(0,1fr);gap:12px;padding:16px 0;border-bottom:1px solid var(--line);}\n.s131-preis-position>div{grid-column:1/-1;min-width:0;overflow-wrap:anywhere;}\n.s131-preis-position b,.s131-preis-position span{display:block;}\n.s131-preis-position span{font-size:13px;color:var(--ink2);}\n.s131-aktionen{display:flex;flex-wrap:wrap;gap:10px;}\n.s131 input[readonly],.s131 textarea[readonly]{border-style:dashed;}\n.s131 input[type=file]{display:block;max-width:100%;min-height:44px;font:inherit;padding:8px 0;}\n.s131-felder label{min-width:0;}\n@media(max-width:430px){.s131-position{grid-template-columns:minmax(0,1fr);gap:10px;}.s131-position label{grid-template-columns:1fr 100px;align-items:center;}.s131-position p{margin:0;}.s131{font-size:14px;}}\n.pk132-hintergrund{position:fixed;inset:0;z-index:2147483500;display:grid;place-items:center;padding:24px;background:rgba(6,13,34,.72);color:#142143;font-family:inherit;box-sizing:border-box}\n.pk132-hintergrund *{box-sizing:border-box}.pk132{width:min(820px,100%);max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);display:flex;flex-direction:column;background:#f7f4ee;border:1px solid #b7bbc3;border-radius:16px;box-shadow:0 16px 60px rgba(0,0,0,.25);overflow:hidden}\n.pk132 header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:24px 24px 18px;border-bottom:1px solid #d2d1ce}.pk132 header p{margin:0 0 5px;font-size:13px;color:#4d566a}.pk132 h2{margin:0;font-size:25px;line-height:1.2}.pk132 h3{margin:0;font-size:17px;line-height:1.35}.pk132 button,.pk132 input,.pk132 select{font:inherit;color:inherit;min-height:44px;font-size:15px}.pk132 button{cursor:pointer;border:1px solid #a9adb6;border-radius:7px;background:#fff;padding:10px 14px;font-weight:600}.pk132 button:focus-visible,.pk132 input:focus-visible,.pk132 select:focus-visible{outline:3px solid #345ac6;outline-offset:3px}.pk132 button:disabled{opacity:.65;cursor:wait}.pk132-in{padding:20px 24px;overflow:auto;overscroll-behavior:contain}.pk132-hilfe{margin:0 0 20px;font-size:15px;line-height:1.55;color:#424d63}.pk132-zeit,.pk132-felder{display:flex;gap:16px;flex-wrap:wrap}.pk132 label{font-size:14px;font-weight:600;display:block;line-height:1.4}.pk132 label>input:not([type=checkbox]),.pk132 label>select{display:block;margin-top:6px;width:100%;border:1px solid #a9adb6;border-radius:6px;background:#fff;padding:10px 12px}.pk132-zeit>label{flex:1;min-width:150px}.pk132-zeilen{display:grid;gap:14px;margin:20px 0}.pk132-zeile{padding:18px;background:#fff;border:1px solid #c9cbd0;border-radius:10px}.pk132-zeilenkopf{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:14px}.pk132-zeilenkopf button{font-size:13px;flex-shrink:0}.pk132-felder>label{flex:1;min-width:130px}.pk132-felder>label>span{font-size:12px;font-weight:400;color:#4d566a;display:block;margin-top:3px}.pk132-betrag{text-align:right;font-weight:700;margin:12px 0 0;font-variant-numeric:tabular-nums}.pk132-dazu{margin-bottom:20px}.pk132-dazu>div{display:flex;gap:10px;margin-top:6px}.pk132-dazu select{min-width:0;flex:1;border:1px solid #a9adb6;background:#fff;border-radius:6px;padding:10px}.pk132 .pk132-check{display:flex;align-items:center;gap:10px;font-weight:400;min-height:44px;margin-top:10px}.pk132-check input{margin:0;flex:0 0 22px;width:22px;accent-color:#17274f}.pk132-gratis{font-size:14px;line-height:1.55;background:#e8edf6;padding:14px;border-radius:7px}.pk132-summe{margin-top:20px;padding-top:16px;border-top:1px solid #c6c8cc;font-variant-numeric:tabular-nums}.pk132-summe>div{display:flex;justify-content:space-between;align-items:baseline;gap:18px;font-size:14px;margin-bottom:10px}.pk132-summe b{white-space:nowrap}.pk132-gesamt{font-size:16px!important}.pk132-fehler{color:#9a2325;background:#fff0ef;border:1px solid #d39b99;padding:13px;border-radius:7px;font-size:14px;line-height:1.45}.pk132 footer{color:#142143;padding:16px 24px 20px;border-top:1px solid #d2d1ce;background:#f7f4ee}.pk132 footer p{font-size:13px;line-height:1.4;color:#4d566a;margin:0 0 14px}.pk132 footer>div{display:flex;justify-content:flex-end;gap:10px}.pk132 #pk132Speichern{background:#17274f;border-color:#17274f;color:#fff}.pk132-leer{color:#4d566a;font-size:15px}.pk132 [hidden]{display:none!important}\n@media(max-width:600px){.pk132-hintergrund{padding:10px}.pk132{max-height:calc(100vh - 20px);max-height:calc(100dvh - 20px);border-radius:10px}.pk132 header{padding:18px 16px;gap:12px}.pk132 h2{font-size:22px}.pk132-zu{font-size:13px!important;padding:9px!important}.pk132-in{padding:18px 16px}.pk132-zeile{padding:14px}.pk132-zeilenkopf{gap:8px}.pk132-zeilenkopf button{padding:8px 10px}.pk132-zeit,.pk132-felder{gap:12px}.pk132-zeit>label{min-width:120px}.pk132 footer{padding:16px}.pk132 footer>div{flex-wrap:wrap}.pk132 footer button{flex:1}.pk132-dazu>div{flex-wrap:wrap}.pk132-dazu select{flex-basis:100%}}\n@media(prefers-reduced-motion:reduce){.pk132-hintergrund *{scroll-behavior:auto!important}}\n";document.head.appendChild(s);})();
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm128css'; s.textContent="/* Beta 0.99.93 · Spieltagsstudio: Kommunikationsassistent. Gehört in die dunkle Fläche des Spieltags (svm127.css), Farben wieder als var(--name, #farbe). */\n.ka-ein{margin:22px 0 0;padding:16px;border-radius:14px;background:var(--sgn2,#0B1A31);border:1px solid var(--sgl,#22345A)}\n.ka-ein h3{margin:0 0 4px;font-family:'Anton',sans-serif;font-weight:400;font-size:26px;text-transform:uppercase;letter-spacing:.01em;color:var(--sgp,#F6F6F2)}\n.ka-ein textarea,.ka-t textarea{display:block;width:100%;box-sizing:border-box;margin:10px 0 0;padding:11px 12px;border-radius:10px;border:1px solid var(--sgl,#22345A);background:var(--sgn,#041127);color:var(--sgp,#F6F6F2);font:inherit;font-size:16px;line-height:1.4;resize:vertical;min-height:84px}\n.ka-ein .btn,.ka-box .btn{display:inline-flex;align-items:center;gap:8px}\n.ka-ein .btn svg,.ka-t .btn svg{width:16px;height:16px}\n.ka-ein [aria-pressed=\"true\"]{border-color:var(--sgo,#FF8731);color:var(--sgo,#FF8731)}\n.ka-dat{cursor:pointer}\n#kaLos{margin-left:auto;min-width:88px;justify-content:center}\n.ka-liste{display:flex;flex-wrap:wrap;gap:8px}\n.ka-chip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:44px;padding:7px 12px;border-radius:10px;border:1px solid var(--sgl,#22345A);background:var(--sgn,#041127);color:var(--sgp,#F6F6F2);font:inherit;cursor:pointer;text-align:left;max-width:100%}\n.ka-chip b{font-size:14px;font-weight:600}\n.ka-chip span{font-size:11.5px;color:var(--sgg,#AAB5C8)}\n.ka-weg{list-style:none;display:flex;gap:6px;margin:0 0 14px;padding:0;overflow-x:auto;scrollbar-width:none}\n.ka-weg li button{min-height:44px;padding:0 13px;border-radius:999px;border:1px solid var(--sgl,#22345A);background:transparent;color:var(--sgg,#AAB5C8);font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;cursor:pointer}\n.ka-weg li.an button{background:var(--sgb,#2F8BEF);border-color:var(--sgb,#2F8BEF);color:var(--sgw,#fff)}\n.ka-weg li button[disabled]{opacity:.4;cursor:default}\n.ka-box{max-width:720px}\n.ka-box select,#kaNeuFeld{width:100%;min-height:44px;padding:0 11px;border-radius:9px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:15px;box-sizing:border-box}\n.ka-ang{display:grid;gap:8px;margin:4px 0 0}\n.ka-zeile{display:grid;grid-template-columns:minmax(0,1fr) auto 44px;gap:6px 8px;align-items:end;padding:8px 10px;border-radius:10px;background:var(--sgn2,#0B1A31);border-left:4px solid var(--sgq,#3E5480)}\n.ka-zeile.pruef{border-left-color:var(--sgo,#FF8731);grid-template-columns:minmax(0,1fr) 44px}\n.ka-zeile label>span{display:block;margin:0 0 4px;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sgg,#AAB5C8)}\n.ka-q{align-self:center;font-size:11.5px;padding:3px 9px;border-radius:999px;background:var(--sgq3,#16294A);color:var(--sgh,#C7D0DF);white-space:nowrap}\n.ka-q.vor{background:var(--sgq4,#1B3A66);color:var(--sgb2,#9CC8FF)}\n.ka-q.warn{background:var(--sgo2,#4A2A12);color:var(--sgo3,#FFB98A)}\n.ka-zeile.pruef .ka-ok{grid-column:1/2;grid-row:2}\n.ka-zeile.pruef .ka-q{grid-column:2/3;grid-row:2;justify-self:end}\n.ka-zeile.pruef .sg-weg{grid-column:2/3;grid-row:1}\n.ka-fragen{padding:12px 12px 2px;border-radius:12px;background:var(--sgn2,#0B1A31);border-left:4px solid var(--sgo,#FF8731)}\n.ka-rg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0 0}\n.ka-r{display:flex;flex-direction:column;text-align:left;padding:10px;border-radius:14px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:inherit;font:inherit;cursor:pointer;min-width:0}\n.ka-r.on,.ka-r:hover{border-color:var(--sgb,#2F8BEF)}\n.ka-r b{margin:10px 2px 3px;font-family:'Anton',sans-serif;font-weight:400;font-size:17px;text-transform:uppercase;letter-spacing:.02em;line-height:1.15}\n.ka-warum{margin:0 2px;font-size:12.5px;line-height:1.35;color:var(--sgg,#AAB5C8)}\n.ka-bild[data-fmt=\"story\"]{aspect-ratio:9/16;max-width:320px}\n.ka-bild[data-fmt=\"aushang\"]{aspect-ratio:1080/1527}\n.ka-fmt{margin:0 0 10px}\n.ka-t{position:relative}\n.ka-t textarea{margin:0;font-size:14.5px}\n.ka-t .btn{margin:6px 0 0}\n@media(max-width:480px){.ka-zeile{grid-template-columns:minmax(0,1fr) 44px}.ka-zeile .ka-q{grid-column:1/2;grid-row:2;justify-self:start}.ka-zeile.pruef .ka-q{grid-column:2/3}}\n"; document.head.appendChild(s); }catch(e){} })();
 (function(){ try{ const s=document.createElement('style'); s.id='svm120css'; s.textContent="/* Beta 0.99.70 · Partner: Reiter in vier Gruppen, darunter die Seiten der Gruppe */\n#panel-sponsoring .s120-grp{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;min-width:0;}\n#panel-sponsoring .s120-tabs{display:flex;gap:6px;flex:1 1 0;min-width:0;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;padding-right:26px!important;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);overflow-x:auto;scrollbar-width:none;padding:2px 0;}\n#panel-sponsoring .s120-tabs::-webkit-scrollbar{display:none;}\n#panel-sponsoring .s120-tabs button{flex:none;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:rgba(148,163,196,.07);color:var(--ink2);font:inherit;font-weight:800;font-size:15px;white-space:nowrap;cursor:pointer;}\n#panel-sponsoring .s120-tabs button.on{background:var(--s120a,#8fc9ec);border-color:var(--s120a,#8fc9ec);color:var(--s120t,#141b47);}\nhtml[data-theme=\"hell\"] #panel-sponsoring .s120-tabs button.on{background:var(--s120ah,#1d2760);border-color:var(--s120ah,#1d2760);color:var(--s120th,#fff);}\n#panel-sponsoring .s120-tabs button:focus-visible,#panel-sponsoring .s120-start:focus-visible{outline:3px solid var(--pa-or,#e8741f);outline-offset:2px;}\n#panel-sponsoring .s120-tabs button[hidden],#panel-sponsoring .spo-seg button[hidden],#panel-sponsoring .spo-seg[hidden]{display:none!important;}\n#panel-sponsoring .s120-start{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px;border-radius:999px;background:var(--pa-knopf,#b8540c);color:var(--s120w,#fff);font-weight:800;font-size:14.5px;text-decoration:none;white-space:nowrap;}\n#panel-sponsoring .s120-start svg{width:17px;height:17px;}\n/* zweite Reihe: ruhige Textreiter mit Strich, damit die Ebenen klar sind */\n#panel-sponsoring .spo-top.s120 .svt-seg.spo-seg{gap:2px;padding:0;border-bottom:1px solid var(--line);}\n#panel-sponsoring .spo-top.s120 .spo-seg button{min-height:42px;padding:0 13px!important;border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--ink3);font-size:14.5px!important;margin-bottom:-1px;}\n#panel-sponsoring .spo-top.s120 .spo-seg button.on{background:none!important;border-color:transparent!important;border-bottom-color:var(--pa-or,#e8741f)!important;color:var(--ink)!important;}\n@media (max-width:560px){ #panel-sponsoring .s120-start span{display:none;} #panel-sponsoring .s120-start{padding:0 13px;} #panel-sponsoring .s120-tabs button{padding:0 13px;font-size:14px;} #panel-sponsoring .s120-grp{gap:8px;} #panel-sponsoring .s120-tabs button[data-kurz]{font-size:0;} #panel-sponsoring .s120-tabs button[data-kurz]::after{content:attr(data-kurz);font-size:14px;} }\n"; document.head.appendChild(s); }catch(e){} })();

@@ -659,7 +659,7 @@ window.BANDENRAUM=(()=>{
     function zustand(){const py=-p.z-50,k=ansichtBereich,dx=p.x-kl(p.x,-STADION.G/2,STADION.G/2);let a=Math.atan2(py,p.x-(k==='west'?-1:1)*STADION.G/2);if(k==='west'&&a<0)a+=2*Math.PI;
       const s=k==='nord'?(dx?Math.sign(dx)*(STADION.G/2+STADION.NORD*Math.atan2(Math.abs(dx),-py)):p.x):k==='sued'?-p.x:STADION.RB*(a-(k==='west'?Math.PI:0));
       const q=linienPunkt(s,k),abstand=Math.hypot(p.x-q.x,py-q.y);return {x:p.x,y:1.65,z:p.z,blick:p.blick,neigung:p.neigung,abstand,s,planX:p.x,planY:py};}
-    function kameraSetzen(){if(!kamera)return;const f=Math.min(p.ueberblick?72:43.5,2*Math.atan(Math.tan((p.ueberblick?36:40)*Math.PI/180)/kamera.aspect)*180/Math.PI);
+    function kameraSetzen(){if(!kamera)return;const f=Math.min(p.ueberblick?80:43.5,2*Math.atan(Math.tan((p.ueberblick?36:40)*Math.PI/180)/kamera.aspect)*180/Math.PI);
       if(Math.abs(kamera.fov-f)>.001){kamera.fov=f;kamera.updateProjectionMatrix();}cv.dataset.bildwinkel=f.toFixed(2);
       const co=Math.cos(p.neigung);kamera.position.set(-p.x,1.65,p.z);
       kamera.lookAt(-p.x-Math.sin(p.blick)*co,1.65+Math.sin(p.neigung),p.z+Math.cos(p.blick)*co);
@@ -770,7 +770,7 @@ window.BANDENRAUM=(()=>{
     function rundblick(){if(!lebt)return;tasten.clear();const F=window.STADIONFOTO,f=F?.FOTOS?.find(f=>f.id==='nord'),ref=F?.REF||{x:45,y:35},d=f&&F.strahl(f,f.breite/2,f.hoehe/2);
       p=begrenzen({x:ref.x,y:1.65,z:-ref.y-50,blick:d?Math.atan2(d.x,-d.y):-43.7*Math.PI/180,neigung:d?Math.atan2(d.h,Math.hypot(d.x,d.y)):-1.2*Math.PI/180},G);anfordern();opt.onMove?.(zustand());}
     function vereinsheim(){if(!lebt)return;tasten.clear();p=begrenzen({x:20,y:1.65,z:-75,blick:Math.PI,neigung:.035},G);anfordern();opt.onMove?.(zustand());}
-    function anlagenblick(){if(!lebt)return;tasten.clear();p=begrenzen({x:88,y:1.65,z:-50,blick:-111*Math.PI/180,neigung:-.025,ueberblick:true},G);anfordern();opt.onMove?.(zustand());}
+    function anlagenblick(){if(!lebt)return;tasten.clear();p=begrenzen({x:88,y:1.65,z:-50,blick:-114*Math.PI/180,neigung:-.025,ueberblick:true},G);anfordern();opt.onMove?.(zustand());}
     function eingaben(){cv.style.touchAction='none';if(altIndex===null)cv.setAttribute('tabindex','0');
       const zugeordnet=k=>['w','a','s','d','q','e','arrowup','arrowdown','arrowleft','arrowright'].includes(k);
       event(cv,'keydown',e=>{const k=e.key.toLowerCase();if(e.target!==cv)return;if(k==='home'){e.preventDefault();reset();return;}if(!zugeordnet(k))return;e.preventDefault();tasten.add(k);anfordern();});

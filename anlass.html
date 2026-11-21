@@ -491,6 +491,13 @@ html.bereit .foto-karte{opacity:1}
 .fragen .bremsen{margin-inline:auto;margin-top:10px}
 .regie{position:absolute;z-index:60;left:10px;right:10px;bottom:calc(var(--fuss) + env(safe-area-inset-bottom,0px) + 6px);max-width:430px;margin-left:auto;background:#fff8d6;color:#2b2200;padding:14px 16px 16px;box-shadow:0 30px 50px -18px #000;font-size:14px;line-height:1.35;transform:translateY(20px) scale(.97);opacity:0;visibility:hidden;transition:.35s cubic-bezier(.2,.9,.3,1.2);max-height:calc(100% - 84px - var(--fuss));overflow-y:auto}
 .regie.da{transform:none;opacity:1;visibility:visible}
+.regie-konditionen{display:block;width:100%;min-height:44px;padding:11px 13px;margin:14px 0;border:1px solid #2b2200;text-align:left;font:700 14px/1.35 var(--t);background:#fff;color:#2b2200}
+.regie-konditionen[hidden],.konditionen-hinweis[hidden]{display:none}
+.regie-konditionen:focus-visible{outline:3px solid var(--navy);outline-offset:3px}
+.konditionen-hinweis{font:600 14px/1.4 var(--t);margin:10px 0 14px;padding:10px 12px;background:var(--papier);color:var(--tinte);border-left:3px solid var(--or)}
+.konditionen-zeile{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px dashed #9c9a92;font:500 14px/1.4 var(--t)}
+.konditionen-zeile:first-child{border-top:0}.konditionen-zeile>span{min-width:0;overflow-wrap:anywhere}.konditionen-zeile>b{flex:none;text-align:right;white-space:nowrap}
+.konditionen-zeile small{display:block;font:500 12px/1.4 var(--t);margin-top:3px}.tk-konditionen .tk-in{gap:0}.tk-konditionen h3{font-size:clamp(30px,7vw,44px)}
 .regie h4{margin:0 0 8px;font:700 13px/1 var(--t);letter-spacing:.14em;text-transform:uppercase;color:#8a5a00;display:flex;justify-content:space-between;align-items:center}
 .regie h4 button{font:800 22px/1 var(--d);padding:2px 6px;color:#8a5a00}
 .regie .satz{font:700 22px/1.12 var(--h);margin-bottom:10px}

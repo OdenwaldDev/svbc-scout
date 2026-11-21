@@ -39,9 +39,9 @@
     catch(e){ const x=new Error('Die Verbindung ist gerade weg. Deine Angaben bleiben stehen. Versuch es gleich noch einmal.'); x.netz=true; throw x; }
     finally{ clearTimeout(to); }
     if(r.status===401&&t&&!nochmal&&!T){ ohneToken=true; return rpc(fn,body,ms,true); }   // Sitzung aus der App ungültig: der Link gilt auch ohne
-    const j=await r.json().catch(()=>null);
+    let j=null, kaputt=false; try{ j=await r.json(); }catch(e){ kaputt=true; }
     // Gateway 5xx oder kaputte Antwort: Der Server kann trotzdem fertig geworden sein. Wie ein Netzabbruch behandeln, damit beim nächsten Tipp derselbe Schlüssel gilt
-    if(r.status>=500||r.status===0||(r.ok&&j===null&&r.status!==204)){ const x=new Error('Wir können gerade nicht erkennen, ob deine Angaben angekommen sind. Bitte ändere nichts und drück in einer Minute noch einmal denselben Knopf. Doppelt wird dabei nichts angelegt.'); x.netz=true; x.unklar=true; x.status=r.status; throw x; }
+    if(r.status>=500||r.status===0||(r.ok&&(kaputt||(j===null&&r.status!==204&&fn!=='partner_konditionen_lesen')))){ const x=new Error('Wir können gerade nicht erkennen, ob deine Angaben angekommen sind. Bitte ändere nichts und drück in einer Minute noch einmal denselben Knopf. Doppelt wird dabei nichts angelegt.'); x.netz=true; x.unklar=true; x.status=r.status; throw x; }
     if(!r.ok){ const eigen=j&&['P0001','42501'].includes(j.code)&&j.message, x=new Error(eigen||'Das hat gerade nicht geklappt. Deine Angaben bleiben stehen. Versuch es gleich noch einmal oder schreib uns kurz.'); x.status=r.status; throw x; } return j; }
   // Kurze Meldung unten; vorgelesen wird sie über eine feste Live-Region (frisch eingefügte werden auf iOS oft verschluckt)
   let toastT=0;
@@ -111,20 +111,22 @@
     return best?{id:best.id,off:Math.round(oben-best.t)}:null; }
   function merken(){ const st=ablage(); if(!st||!D)return;
     const fe=fertig(), F0=fe?{firma:S.F.firma,anrede:S.F.anrede,ansprech:S.F.ansprech,email:S.F.email}:S.F;
-    try{ st.setItem(SKEY,JSON.stringify({t:Date.now(),korb:S.korb,wl:S.wl,saisons:S.saisons,start:S.start,startWahl:!!S.startWahl,auto:S.auto,rmonat:S.rmonat||null,F:F0,herz:[...S.herz],ziele:[...S.ziele],budget:S.budget,team:S.team,ergebnis:demo()||!S.ergebnis?null:Object.assign({},S.ergebnis,{spendeBody:undefined}),angebot:S.angebot||null,pos:stelle(),antw:!!S.antw,idem:S.idem,bankZeit:S.bankZeit||0,idemOffen:S.idemOffen||null,nenn:S.nennStand||null,nennOffen:!!S.nennOffen,uid})); }catch(e){} }
+    try{ st.setItem(SKEY,JSON.stringify({t:Date.now(),korb:S.korb,wl:S.wl,saisons:S.saisons,start:S.start,startWahl:!!S.startWahl,auto:S.auto,rmonat:S.rmonat||null,F:F0,herz:[...S.herz],ziele:[...S.ziele],budget:S.budget,team:S.team,ergebnis:demo()||!S.ergebnis?null:Object.assign({},S.ergebnis,{spendeBody:undefined}),angebot:S.angebot||null,konditionen:S.konditionen||null,reiseNeu:!!S.reiseNeu,pos:stelle(),antw:!!S.antw,idem:S.idem,bankZeit:S.bankZeit||0,idemOffen:S.idemOffen||null,nenn:S.nennStand||null,nennOffen:!!S.nennOffen,uid})); }catch(e){} }
   function vergessen(){ const st=ablage(); try{ st&&st.removeItem(SKEY); }catch(e){} }
   function zurueckholen(){ const st=ablage(); if(!st)return false; let j=null; try{ j=JSON.parse(st.getItem(SKEY)||'null'); }catch(e){}
     if(!j||!(Date.now()-j.t<14*864e5))return false;
     if(j.ergebnis)delete j.ergebnis.spendeBody;
     const ang=j.angebot&&j.angebot.nr&&D.angebot&&D.angebot.nr===j.angebot.nr?j.angebot:null;
+    const kondAktiv=j.konditionen?.id&&j.konditionen.id===D.konditionen?.id&&+j.saisons===+D.konditionen.saisons;
     const ok=e=>e&&lk(e.key)&&(e.key==='spende'||e.key==='sonstiges'?T||e.key==='spende'||!!(ang&&e.ang):true);
     const mOk=e=>!lk(e.key).je_mannschaft||M.some(m=>m.id===e.mannschaft), vorher=(j.korb||[]).filter(ok).length+(j.wl||[]).filter(w=>lk(w.key)).length;
     S.korb=(j.korb||[]).filter(ok).filter(mOk); S.wl=(j.wl||[]).filter(w=>lk(w.key)).filter(mOk);
-    if(S.korb.length+S.wl.length<vorher)setTimeout(()=>toast('Eine Mannschaft aus eurer Auswahl spielt in dieser Saison nicht mehr. Bitte wähl eine andere.'),900); S.saisons=[1,2,3].includes(j.saisons)||(ang&&j.saisons>=1&&j.saisons<=5)?j.saisons:1; S.angebot=ang; S.standZeit=+j.t||0; if(j.antw)S.antw=true; S.pos=j.pos&&/^[a-z0-9-]+$/.test(j.pos.id||'')?j.pos:null;
-    if(!ang)S.korb.forEach(e=>{ if(e.ang){ delete e.ang; if(!T&&lk(e.key).preis!=null)e.preis=null; } }); S.start=j.start==='naechste'?'naechste':'jetzt'; S.startWahl=typeof j.startWahl==='boolean'?j.startWahl:S.start==='naechste'; S.auto=!!j.auto; S.rmonat=+j.rmonat>=1&&+j.rmonat<=12?+j.rmonat:null;
+    if(S.korb.length+S.wl.length<vorher)setTimeout(()=>toast('Eine Mannschaft aus eurer Auswahl spielt in dieser Saison nicht mehr. Bitte wähl eine andere.'),900); S.saisons=[1,2,3].includes(j.saisons)||((ang||kondAktiv)&&j.saisons>=1&&j.saisons<=5)?j.saisons:1; S.angebot=ang; S.standZeit=+j.t||0; if(j.antw)S.antw=true; S.pos=j.pos&&/^[a-z0-9-]+$/.test(j.pos.id||'')?j.pos:null;
+    if(!ang)S.korb.forEach(e=>{ if(e.ang){ delete e.ang; if(!T&&lk(e.key).preis!=null)e.preis=null; } }); S.start=j.start==='naechste'?'naechste':j.start==='vereinbart'&&(ang||kondAktiv)?'vereinbart':'jetzt'; S.startWahl=typeof j.startWahl==='boolean'?j.startWahl:S.start==='naechste'; S.auto=!!j.auto; S.rmonat=+j.rmonat>=1&&+j.rmonat<=12?+j.rmonat:null;
+    if(ang&&ang.beginn&&ang.sig===angebotSig()){const h=iso(new Date());S.start=startArt(ang.beginn>h?ang.beginn:h);ang.sig=angebotSig();}
     Object.keys(j.F||{}).forEach(k=>{ if(j.F[k])S.F[k]=String(j.F[k]).slice(0,120); });
     (j.herz||[]).forEach(z=>WELT[z]&&S.herz.add(z)); (j.ziele||[]).forEach(z=>S.ziele.add(z)); if(j.budget)S.budget=j.budget; if(j.team&&M.some(m=>m.id===j.team))S.team=j.team;
-    S.ergebnis=j.ergebnis||null; S.idem=j.idem||null; S.bankZeit=+j.bankZeit||0; if(j.nenn==='ja'||j.nenn==='nein'){ S.nennStand=j.nenn; S.nenn=j.nenn==='ja'; } S.nennOffen=!!j.nennOffen;
+    S.reiseNeu=!!j.reiseNeu; S.ergebnis=j.ergebnis||null; S.idem=j.idem||null; S.bankZeit=+j.bankZeit||0; if(j.nenn==='ja'||j.nenn==='nein'){ S.nennStand=j.nenn; S.nenn=j.nenn==='ja'; } S.nennOffen=!!j.nennOffen;
     if(S.ergebnis&&['angebot','warteliste'].includes(S.ergebnis.art)&&Date.now()-j.t>30*60e3){ if(S.ergebnis.art==='angebot')S.weg='vertrag'; S.ergebnis=null; S.idem=null; } S.idemOffen=j.idemOffen&&j.idemOffen.idem&&Date.now()-(+j.idemOffen.zeit||j.t)<30*60e3?j.idemOffen:null; uid=Math.max(+j.uid||0,...S.korb.map(e=>+e.id||0),0);
     return S.korb.length>0||S.wl.length>0; }
 
@@ -147,6 +149,7 @@
       else app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Link nicht mehr aktiv</h2><p>${esc(e.message)}</p>${kontaktHtml('Melde dich kurz, dann schicken wir dir einen neuen Link.')}</div>`;
       return; }
     L=filtern(D.leistungen||[]); M=D.mannschaften||[]; T=!!D.team; exklusivSperre();
+    try{ D.konditionen=demo()?null:await rpc('partner_konditionen_lesen',{p_code:code}); }catch(e){ app.innerHTML='<div class="leer-hinweis"><h2 class="g">Konditionen gerade nicht erreichbar</h2><p>Bitte lade die Seite noch einmal, damit die vereinbarten Preise sicher stimmen.</p><button type="button" class="knopf-w" id="kondNochmal">Noch einmal laden</button></div>'; $('#kondNochmal').onclick=laden; return; }
     const dk=D.deck||{}, pt=D.partner||{};
     const pp=dk.passung||{}; ((pt.ziele||[]).length?pt.ziele:pp.ziele||[]).forEach(z=>S.ziele.add(z)); ((pt.interessen||[]).length?pt.interessen:pp.herz||[]).forEach(z=>{ if(WELT[z])S.herz.add(z); }); if(pt.budget)S.budget=pt.budget; if((pt.ziele||[]).length||(pt.interessen||[]).length||pt.budget)S.antw=true;   // früher schon beantwortet
     S.F={firma:dk.firma||'',anrede:dk.anrede||'',ansprech:dk.ansprech||'',email:dk.email||'',telefon:'',strasse:'',plz:'',ort:'',ustid:''};
@@ -169,10 +172,19 @@
     const angNeuer=A0&&(!wieder||new Date(A0.erstellt_am||0).getTime()>(S.standZeit||0));
     if(A0&&!S.ergebnis&&!S.angebot&&angNeuer&&!(D.abschluss&&D.abschluss.art==='vertrag'&&String(D.abschluss.am||'')>String(A0.erstellt_am||''))){
       const korb0=A0.positionen.filter(p=>p.key!=='spende'&&lk(p.key)).map(p=>{ const l=lk(p.key), ein=p.einzel!=null?+p.einzel:null;
-        return {id:++uid,key:p.key,mannschaft:p.mannschaft||null,menge:+p.menge||1,preis:l.preis==null||(ein!=null&&ein!==+l.preis)?ein:null,text:p.text||'',naechste:false,ang:true}; });
+        return {id:++uid,key:p.key,mannschaft:p.mannschaft||null,menge:+p.menge||1,preis:l.preis==null||(ein!=null&&ein!==+l.preis)?ein:null,text:p.text||'',naechste:false,ang:true,fest:!!p.fest,nachlass:+p.nachlass||0,basis:p.basis,zusatzpaket:!!p.zusatzpaket}; });
       const ab0=String(A0.beginn||'').slice(0,10);
-      if(korb0.length){ const sp0=S.korb.filter(e=>e.key==='spende'); S.korb=korb0.concat(sp0); S.saisons=+A0.saisons>=1&&+A0.saisons<=5?+A0.saisons:1; S.auto=!!A0.auto; S.start=ab0>iso(new Date())&&ab0===String(D.naechste_saison).slice(0,10)?'naechste':'jetzt'; S.startWahl=true; S.weg='vertrag';
-        S.angebot={nr:A0.nr,beginn:ab0}; S.angebot.sig=angebotSig(); S.trotz=true; ausAngebot=A0; } }
+      if(korb0.length){ const sp0=S.korb.filter(e=>e.key==='spende'); S.korb=korb0.concat(sp0); S.saisons=+A0.saisons>=1&&+A0.saisons<=5?+A0.saisons:1; S.auto=!!A0.auto; S.start=startArt(ab0>iso(new Date())?ab0:iso(new Date())); S.startWahl=true; S.weg='vertrag';
+        S.angebot={nr:A0.nr,beginn:ab0,abrechnung_fassung:+A0.abrechnung_fassung||0,konditionen_id:A0.konditionen_id||null}; S.angebot.sig=angebotSig(); S.trotz=true; ausAngebot=A0; } }
+    if(!S.angebot&&!S.ergebnis&&D.konditionen){
+      const alt=(()=>{ try{return JSON.parse(ablage()?.getItem(SKEY)||'null');}catch(e){return null;} })();
+      const bleibt=alt?.konditionen?.id===D.konditionen.id&&auswahlSig(S.korb,S.saisons)===auswahlSig(D.konditionen.positionen,D.konditionen.saisons);
+      if(!wieder||bleibt)konditionenUebernehmen(D.konditionen,false);
+    }
+    if(!S.konditionen&&S.korb.some(e=>e.kond)){
+      S.korb=S.korb.filter(e=>!(e.kond&&e.zusatzpaket)); S.korb.forEach(e=>{if(e.kond){e.preis=null;delete e.kond;delete e.fest;delete e.nachlass;delete e.basis;delete e.zusatzpaket;}});
+      setTimeout(()=>toast('Die früheren Konditionen gelten für diese Auswahl nicht mehr. Bitte prüf die angezeigten Preise.'),0);
+    }
     if(S.angebot)S.trotz=true;   // offenes Angebot: der Vertrag steht im Abschluss, auch wenn über den Link schon eine Spende kam
     // 0.99.85: Marke der Firma für die Präsentation zum Durchklicken (der Rahmen liest sie, sobald der Titel steht)
     { const mk0=marke(); window.PD_MARKE=dk.logo||mk0.logo?{logo:dk.logo||mk0.logo,druck:mk0.logo||null,trikot:mk0.trikot||null,name:mk0.name||''}:null; }
@@ -203,7 +215,9 @@
     const eig=(A0.vertraege||[]).find(x=>x.nr===R.nr)||(A0.nr===R.nr?A0:null);
     if(eig){ if(eig.am)R.unterschrieben_am=R.unterschrieben_am||eig.am; R.gegengezeichnet_am=eig.gegengezeichnet_am||null; if(eig.status)R.status=eig.status; }
     if(A0.nr===R.nr&&!R.klauseln&&A0.klauseln)R.klauseln=A0.klauseln;
-    const eigen=rs.filter(x=>x.vertrag===R.nr&&x.art!=='spende'), off=eigen.find(x=>x.status==='offen'), bez=eigen.find(x=>x.status==='bezahlt');
+    const eigen=rs.filter(x=>x.vertrag===R.nr&&x.art!=='spende'), standard=eigen.filter(x=>x.gruppe!=='trikot'), off=standard.find(x=>x.status==='offen'), bez=standard.find(x=>x.status==='bezahlt');
+    R.rechnungen=eigen; if(R.rechnung&&R.rechnung.gruppe==='trikot')R.rechnung=null;
+    if(A0.nr===R.nr){ R.abrechnung_fassung=+A0.abrechnung_fassung||0; R.trikot_netto=+A0.trikot_netto||0; R.trikot_abrechnungsstand=A0.trikot_abrechnungsstand||null; }
     if(off)R.rechnung=Object.assign({},R.rechnung||{},off); else if(bez)R.rechnung=Object.assign({},R.rechnung||{},bez);
     if(R.rechnung&&!R.bank&&A0.bank)R.bank=A0.bank; if(A0.nr===R.nr){ if(!R.beginn&&A0.beginn)R.beginn=A0.beginn; if(!R.ende&&A0.ende)R.ende=A0.ende; }
     if(R.spende&&R.spende.nr){ const sx=rs.find(x=>x.vertrag===R.spende.nr); if(sx)R.spende.rechnung=Object.assign({},R.spende.rechnung||{},sx); } }
@@ -618,7 +632,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const vor=sel?a.getBoundingClientRect().top:null; fn();
     if(sel){ const n=document.querySelector(sel); if(n){ const d=n.getBoundingClientRect().top-vor; if(Math.abs(d)>1)window.scrollTo({top:window.scrollY+d,behavior:'instant'}); } } }
   // Untere Leiste: die Summe läuft mit, sobald etwas gewählt ist (außer im Abschluss selbst und neben der Seitenspalte am großen Bildschirm)
-  function leiste(){ let L0=$('#leiste'); if(!L0){ L0=document.createElement('div'); L0.id='leiste'; L0.className='leiste'; L0.setAttribute('role','region'); L0.setAttribute('aria-label','Eure Auswahl');
+  function leiste(){ konditionenAktionen(); let L0=$('#leiste'); if(!L0){ L0=document.createElement('div'); L0.id='leiste'; L0.className='leiste'; L0.setAttribute('role','region'); L0.setAttribute('aria-label','Eure Auswahl');
       L0.innerHTML='<div class="lz"><b id="lzS"></b><small id="lzN"></small></div><button type="button">Zum Abschluss</button>'; document.body.appendChild(L0); L0.querySelector('button').onclick=()=>zu('baukasten'); }
     const c=S.korb.length?rechnung():null;
     if(c){ const lz=$('#lzS'), txt=c.netto_jahr+c.einmalig>0?eur(c.netto_jahr+c.einmalig)+(S.start==='naechste'||spaeterBeginn()?' netto in der ersten Saison':' netto in dieser Saison'):'Deine Spende: '+eur(c.spende);
@@ -846,7 +860,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     if(!n&&!offen.length){ Object.assign(S,vorher); return null; }
     nachKorb(true);
     return {n,offen}; }
-  window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='fertig'||!e.data.wahl)return; const r=ausReise(e.data.wahl); if(!r)return;
+  window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='fertig'||!e.data.wahl)return; const r=ausReiseMitKonditionen(e.data.wahl); if(!r)return;
     setTimeout(()=>{ if(r.n)zu('baukasten'); toast(r.n?'Eure Auswahl aus der Präsentation ist schon eingetragen.'+(r.offen.length?' Für '+r.offen.join(' und ')+' wählt ihr hier noch die Mannschaft.':''):'Für '+r.offen.join(' und ')+' wählt ihr hier noch die Mannschaft.'); },450); }catch(x){} });
   function klickLeistung(key,m,wie){ m=m||null; const l=lk(key)||{};
     if(wie==='weg'){ S.korb=S.korb.filter(e=>!(e.key===key&&(e.mannschaft||null)===m)); if(S.start==='naechste'&&!S.startWahl&&!S.korb.some(e=>e.naechste)){ S.start='jetzt'; } ansage(l.titel+' ist nicht mehr gewählt.'); }
@@ -858,21 +872,91 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // ---------- Baukasten ----------
   function posFuerServer(){ return S.korb.map(e=>{ const l=lk(e.key), o={key:e.key,menge:e.menge}; if(e.mannschaft)o.mannschaft=e.mannschaft;
       if(l&&(l.art==='spende'||l.art==='sonstiges'||l.preis==null))o.preis=e.preis; else if((TV()||e.ang)&&e.preis!=null&&e.preis!=='')o.preis=+e.preis;
+      if((e.ang||e.kond)&&e.preis!=null){o.preis=+e.preis; if(e.fest)o.fest=true; if(e.nachlass!=null)o.nachlass=+e.nachlass; if(e.basis!=null)o.basis=+e.basis; if(e.zusatzpaket)o.zusatzpaket=true;}
       if(e.text)o.text=e.text; if(e.zweck)o.zweck=e.zweck; return o; }); }
-  function rechnung(){ return PLIB.rechnen(posFuerServer(),L,S.saisons); }
+  function abrechnungFassung(){ if(fertig())return +S.ergebnis.abrechnung_fassung||0; return S.angebot?(+S.angebot.abrechnung_fassung||0):S.korb.some(e=>CA_KEYS.includes(e.key))?1:0; }
+  const rechenOpt=()=>({abrechnung_fassung:abrechnungFassung()});
+  const hatTrikot=c=>c.abrechnung_fassung===1&&c.positionen.some(p=>CA_KEYS.includes(p.key));
+  function rechnung(){ return PLIB.rechnen(posFuerServer(),L,S.saisons,rechenOpt()); }
   function faelligAm(){ return [beginn(),iso(new Date(Date.now()+14*864e5))].sort()[1]; }
   const spaeterBeginn=()=>beginn()>iso(new Date());
   const rgSofort=()=>{ const V=D.verein||{}; return !(ust()>0)||!!(V.steuernr||V.ustid); };   // ohne Steuernummer legt der Server die Rechnung erst später an
-  function beginn(){ if(S.angebot&&S.angebot.beginn&&S.start!=='naechste'){ const h=iso(new Date()); return S.angebot.beginn>h?S.angebot.beginn:h; } return S.start==='naechste'?String(D.naechste_saison).slice(0,10):iso(new Date()); }
-  function ende(c){ if(!(c.netto_jahr>0))return null; return endeNach(S.saisons); }
+  function startArt(d){ return d===String(D.naechste_saison).slice(0,10)?'naechste':d===iso(new Date())?'jetzt':'vereinbart'; }
+  function beginn(){ if(S.start==='vereinbart'){if(S.konditionen?.beginn)return S.konditionen.beginn;if(S.angebot?.beginn)return S.angebot.beginn;} return S.start==='naechste'?String(D.naechste_saison).slice(0,10):iso(new Date()); }
+  function ende(c){ if(!c.hat_saison)return null; return endeNach(S.saisons); }
   function endeNach(n){ const b=new Date(beginn()+'T12:00:00'), y=b.getMonth()>=6?b.getFullYear():b.getFullYear()-1; return iso(new Date(y+n,5,30,12)); }
   const saisonJahr=()=>{ const b=new Date(beginn()+'T12:00:00'); return b.getMonth()>=6?b.getFullYear():b.getFullYear()-1; };
   // Angebot: solange das Paket genau so bleibt, gelten Preise und Laufzeit aus dem Angebot
   const angebotSig=()=>JSON.stringify([S.korb.filter(e=>e.key!=='spende').map(e=>[e.key,e.mannschaft||null,+e.menge||1,e.preis==null||e.preis===''?null:+e.preis]),S.saisons,S.start,!!S.auto]);
-  function angebotPruefen(){ if(!S.angebot||angebotSig()===S.angebot.sig)return;
-    const sonder=S.korb.some(e=>e.ang&&(e.preis!=null||e.key==='sonstiges')); S.korb=S.korb.filter(e=>!(e.ang&&e.key==='sonstiges'&&!T));
-    S.korb.forEach(e=>{ if(e.ang){ const l=lk(e.key); if(!T&&l&&l.preis!=null)e.preis=null; delete e.ang; } }); S.angebot=null; if(S.saisons>3)S.saisons=3;
+  function angebotPruefen(){ konditionenPruefen(); if(!S.angebot||angebotSig()===S.angebot.sig)return;
+    const sonder=S.korb.some(e=>e.ang&&(e.preis!=null||e.key==='sonstiges')); S.korb=S.korb.filter(e=>!(e.ang&&(e.zusatzpaket||e.key==='sonstiges'&&!T)));
+    S.korb.forEach(e=>{ if(e.ang){ const l=lk(e.key); if(!T&&l&&l.preis!=null)e.preis=null; delete e.ang; delete e.fest; delete e.nachlass; delete e.basis; delete e.zusatzpaket; } }); S.angebot=null; if(S.saisons>3)S.saisons=3; if(S.start==='vereinbart')S.start='jetzt'; konditionenSenden();
     if(sonder)setTimeout(()=>toast('Eure Auswahl weicht jetzt vom Angebot ab. Es gelten die Preise von dieser Seite.'),300); }
+  function ausReiseMitKonditionen(w){
+    if(!S.reiseNeu||!w||S.ergebnis)return ausReise(w);
+    const alt=S.korb, sp=alt.filter(e=>e.key==='spende'); S.korb=[];
+    const r=ausReise(w); if(!r){S.korb=alt;return null;} S.korb=S.korb.concat(sp); S.reiseNeu=false; return r;
+  }
+  function auswahlSig(pos,saisons){ return JSON.stringify([(pos||[]).filter(e=>e.key!=='spende').map(e=>[e.key,e.mannschaft||null,+e.menge||1]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))),+saisons||1]); }
+  function konditionenSenden(){
+    const f=$('#reiseRahmen'); let k=S.konditionen&&D.konditionen?Object.assign({},D.konditionen,{abrechnung_fassung:abrechnungFassung()}):null;
+    if(S.angebot&&D.angebot?.nr===S.angebot.nr){const c=rechnungVertrag();k=Object.assign({},c,{id:'angebot:'+S.angebot.nr,quelle:'angebot',beginn:beginn(),ende:ende(c),auto_verlaengerung:!!S.auto,gratis_saison:c.hat_saison&&c.netto_jahr===0});}
+    f?.contentWindow?.postMessage({reise:'konditionen',konditionen:k},location.origin);
+  }
+  function konditionenUebernehmen(k,zeigen){
+    if(!k||!Array.isArray(k.positionen)||!k.positionen.length||k.positionen.some(e=>!lk(e.key)||lk(e.key).je_mannschaft&&!M.some(m=>m.id===e.mannschaft)))return false;
+    const sp=S.korb.filter(e=>e.key==='spende');
+    S.korb=k.positionen.map(e=>({id:++uid,key:e.key,mannschaft:e.mannschaft||null,menge:+e.menge||1,preis:+e.einzel,text:e.text||'',nachlass:+e.nachlass||0,basis:e.basis,fest:!!e.fest,zusatzpaket:!!e.zusatzpaket,kond:true,naechste:false})).concat(sp);
+    S.saisons=+k.saisons; S.auto=!!k.auto_verlaengerung;
+    S.start=startArt(String(k.beginn).slice(0,10)); S.startWahl=true;
+    S.angebot=null; S.reiseNeu=false; S.konditionen={id:k.id,beginn:String(k.beginn).slice(0,10)}; S.konditionen.sig=angebotSig(); S.trotz=true;
+    konditionenSenden(); if(zeigen){merken();katalog();korb();toast('Die vereinbarten Konditionen sind übernommen.');} return true;
+  }
+  function konditionenPruefen(){
+    if(!S.konditionen)return;
+    const k=D.konditionen, abgelaufen=!k||k.id!==S.konditionen.id||String(k.gueltig_bis).slice(0,10)<iso(new Date());
+    if(!abgelaufen&&S.konditionen.sig===angebotSig())return;
+    S.korb=S.korb.filter(e=>!(e.kond&&e.zusatzpaket));
+    S.korb.forEach(e=>{if(e.kond){e.preis=null;delete e.kond;delete e.fest;delete e.nachlass;delete e.basis;delete e.zusatzpaket;}});
+    S.konditionen=null; if(S.start==='vereinbart')S.start='jetzt'; if(S.saisons>3)S.saisons=3; konditionenSenden();
+    setTimeout(()=>toast(abgelaufen?'Die vereinbarten Konditionen sind nicht mehr gültig. Bitte lass sie kurz bestätigen.':'Deine Auswahl ist geändert. Es gelten wieder die regulären Preise.'),0);
+  }
+  function konditionenAktionen(){
+    const sec=$('#baukasten'); if(!sec||!D)return;
+    let box=$('#pdKonditionen'); if(!box){box=document.createElement('div');box.id='pdKonditionen';box.className='pd-konditionen';sec.prepend(box);}
+    const edit=TV()&&D.vertrag_darf===true&&!fertig(), angebot=D.konditionen&&!S.konditionen&&!S.angebot&&!fertig();
+    box.hidden=!(edit||angebot||S.konditionen); if(box.hidden)return;
+    const stand=JSON.stringify([edit,!!angebot,S.konditionen?.id||null]);if(box.dataset?.stand===stand)return;if(box.dataset)box.dataset.stand=stand;
+    box.innerHTML=(S.konditionen?'<p>Vereinbarte Konditionen gelten für diese Auswahl. Bei einer Änderung gelten wieder die regulären Preise.</p>':'')+(angebot?'<button type="button" class="knopf-w" id="pdKondUebernehmen">Vereinbarte Auswahl übernehmen</button>':'')+(edit?'<button type="button" class="knopf-w" id="pdKondBearbeiten">Konditionen im Termin</button>':'');
+    const u=$('#pdKondUebernehmen');if(u)u.onclick=()=>konditionenUebernehmen(D.konditionen,true);
+    const e=$('#pdKondBearbeiten');if(e)e.onclick=()=>konditionenOeffnen();
+  }
+  function konditionenReisewahl(w){
+    if(!w||w.beginn!==String(D.naechste_saison).slice(0,10)||![1,2,3,4,5].includes(+w.saisons))return null;
+    const keys=[w.paket,...(Array.isArray(w.extras)?w.extras:[])].filter(k=>k&&k!=='keins');
+    const positionen=[...new Set(keys)].map(k=>lk(k)).filter(l=>l&&l.preis!=null&&!['spende','sonstiges'].includes(l.art)).map(l=>({key:l.key,mannschaft:l.je_mannschaft?(S.korb.find(e=>e.key===l.key)?.mannschaft||null):null,menge:1,nachlass:0}));
+    return {positionen,saisons:+w.saisons,beginn:w.beginn,auto:!!w.auto};
+  }
+  function konditionenOeffnen(w){
+    if(S.busy)return;
+    if(!TV()||D.vertrag_darf!==true||fertig()||!window.PD_KONDITIONEN)return;
+    const geschlossen=()=>$('#reiseRahmen')?.contentWindow?.postMessage({reise:'creator-zu'},location.origin);
+    const r=w&&!S.konditionen&&!S.angebot?konditionenReisewahl(w):null;
+    if(w&&!S.konditionen&&!S.angebot&&!r){toast('Die Auswahl aus der Präsentation ist nicht mehr aktuell. Bitte prüf Paket und Beginn.');geschlossen();return;}
+    window.PD_KONDITIONEN.oeffnen({code,positionen:r?r.positionen:posFuerServer().filter(e=>e.key!=='spende'),saisons:r?r.saisons:S.saisons,beginn:r?r.beginn:beginn(),auto_verlaengerung:r?r.auto:S.auto,katalog:L,mannschaften:M,rpc,geschlossen,gespeichert:k=>{D.konditionen=k;konditionenUebernehmen(k,true);}});
+  }
+  window.addEventListener('message',e=>{const f=$('#reiseRahmen');if(!f||e.source!==f.contentWindow||e.origin!==location.origin)return;
+    if(e.data?.reise==='bereit'){setTimeout(konditionenSenden,500);return;}
+    if(e.data?.reise==='konditionen-geaendert'){
+      if(S.busy)return;
+      if(S.konditionen){S.konditionen.sig='geaendert';konditionenPruefen();S.reiseNeu=true;merken();katalog();korb();}
+      else if(S.angebot){S.angebot.sig='geaendert';angebotPruefen();S.reiseNeu=true;merken();katalog();korb();}
+      return;
+    }
+    if(e.data?.reise!=='konditionen-oeffnen')return;
+    if(!TV()||D?.vertrag_darf!==true||fertig()){f.contentWindow?.postMessage({reise:'creator-zu'},location.origin);return;}
+    konditionenOeffnen(e.data.wahl);
+  });
   const nurSpende=()=>S.korb.length>0&&S.korb.every(e=>e.key==='spende');
   const fertig=()=>!!(S.ergebnis&&(S.ergebnis.art==='vertrag'||S.ergebnis.art==='spende'));
   const ust=()=>+((D.verein||{}).ust_satz)||0;
@@ -881,17 +965,18 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function fristDatum(c){ const e=ende(c); if(!e)return null; const d=new Date(e+'T12:00:00'); d.setMonth(d.getMonth()-3); d.setDate(d.getDate()+1); return iso(d); }
   // Spende und Leistungen gehören nicht auf einen Beleg: der Vertrag rechnet ohne Spende, die Spende bekommt ihre eigene Zusage
   const posOhneSpende=()=>posFuerServer().filter(o=>o.key!=='spende');
-  function rechnungVertrag(){ return PLIB.rechnen(posOhneSpende(),L,S.saisons); }
+  function rechnungVertrag(){ return PLIB.rechnen(posOhneSpende(),L,S.saisons,rechenOpt()); }
   // Eine Saison ohne Verlängerung oder nur Einmaliges: es gibt genau eine Rechnung, also nicht „erste“
-  const eineRg=c=>!(c.netto_jahr>0)||(S.saisons===1&&!S.auto);
+  const eineRg=c=>!hatTrikot(c)&&(!(c.netto_jahr>0)||(S.saisons===1&&!S.auto));
   function summeNeu(){
-    const Z=$('#summe'); if(!Z)return; const c=rechnung(), hatSaison=c.netto_jahr>0, R=ersteRechnung(c);
+    const Z=$('#summe'); if(!Z)return; const c=rechnung(), hatSaison=c.hat_saison, R=ersteRechnung(c);
     Z.hidden=!S.korb.length; Z.classList.remove('abr');
     Z.innerHTML=`${hatSaison?`<div><span>Je Saison</span><span>${eur(c.netto_jahr,true)}</span></div>`:''}
         ${c.einmalig?`<div class="z"><span>Einmalig</span><span>${eur(c.einmalig,true)}</span></div>`:''}
-        <div class="s"><span class="s-l">${hatSaison?`Gesamt über die Laufzeit${S.saisons>1?` (${S.saisons} Saisons${c.rabatt?', mit '+Math.round(c.rabatt*100)+' % Vorteil':''})`:''}`:'Gesamt'}, netto</span><b>${eur(c.netto_gesamt,true)}</b></div>
+        <div class="s"><span class="s-l">${hatTrikot(c)?'Voraussichtlicher Gesamtbetrag':hatSaison?`Gesamt über die Laufzeit${S.saisons>1?` (${S.saisons} Saisons${c.rabatt?', mit '+Math.round(c.rabatt*100)+' % Vorteil':''})`:''}`:'Gesamt'}, netto</span><b>${eur(c.netto_gesamt,true)}</b></div>
         ${hatSaison?`<div class="z"><span>Laufzeit</span><span>${datum(beginn())} bis ${datum(ende(c))}</span></div>`:''}
         ${R.netto>0?`<div class="er"><span class="er-k">${eineRg(rechnungVertrag())?'Rechnungsbetrag':'Erste Rechnung'}</span><div><span>Netto</span><span>${eur(R.netto,true)}</span></div>${ust()>0?`<div><span>Umsatzsteuer ${ust()} %</span><span>${eur(R.ust,true)}</span></div>`:''}<div class="b"><span>Brutto</span><span>${eur(R.brutto,true)}</span></div></div>`:''}
+        ${hatTrikot(c)?`<div class="sp-z2 trikot-rg"><span>Trikots und Ärmel, eigene Rechnung nach bestätigter Stückzahl</span><b>${eur(c.trikot_netto,true)} netto</b></div>`:''}
         ${c.spende?`<div class="sp-z2"><span>Deine Spende, getrennt abgerechnet und ohne Umsatzsteuer</span><b>${eur(c.spende,true)}</b></div>`:''}
         ${wirkungHtml(c)}
         <small>Preise netto${ust()>0?', zuzüglich '+ust()+' % Umsatzsteuer':''}. Den Laufzeitvorteil gibt es auf Partnerstufen, Banden und Patenschaften, die je Saison berechnet werden.</small>`;
@@ -931,7 +1016,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
         Z.hidden=false; Z.classList.add('abr');
         Z.innerHTML=R.art==='spende'?`${zl('Spendenzusage',esc(R.nr||''),'z')}<div class="s"><span class="s-l">Deine Spende</span><b>${eur(rg?rg.brutto:c.spende,true)}</b></div><small>Ohne Umsatzsteuer. Die Bankdaten stehen weiter unten.</small>`
           :`${zl('Vertrag',esc(R.nr||''))}${nj>0&&(R.ende||ende(rechnungVertrag()))?zl('Laufzeit',datum(R.beginn||beginn())+' bis '+datum(R.ende||ende(rechnungVertrag()))):''}
-          <small>${rg?(rg.status==='bezahlt'?'Die Rechnung ist bezahlt. Danke.':'Rechnung und Bankdaten stehen gleich darunter.'):rgWannR(R)?'Die Rechnung kommt '+rgWannR(R)+' per Mail, die Bankdaten stehen darauf.':fest(R)?'Die erste Rechnung kommt in den nächsten Tagen per Mail.':'Die Bankdaten stehen auf der Rechnung, die mit dem gegengezeichneten Vertrag kommt.'}</small>`;
+          <small>${rg?(rg.status==='bezahlt'?'Die Rechnung ist bezahlt. Danke.':'Rechnung und Bankdaten stehen gleich darunter.'):esc(rechnungsAusblick(R))}</small>`;
         // Das Foto passt zur Buchung: Stufe, Bande oder Erste zeigt die Erste, sonst die Jugend
         const jugB=vP.some(p=>p.mannschaft||/^(trikot_jugend|aufwaerm_jugend|baelle_jugend|trainer_jugend|team_jugend|zeltlager|ferienspiele|turnier)/.test(p.key)), ersteB=!jugB&&vP.some(p=>/^(supporter|club|premium|p1896|bande_|brust_|aermel_|matchball|sotd|tor_monat|highlights_|stream_)/.test(p.key)), alt0=Z.parentNode.querySelector('.bk-foto');
         const pol=ersteB?'<figure class="bk-foto"><img src="partner/hero.jpg" alt="Die Erste des SV/BSC Mörlenbach" loading="lazy" decoding="async" style="object-position:center 40%"><figcaption>Die Erste des SV/BSC Mörlenbach</figcaption></figure>'
@@ -942,7 +1027,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const fokus=document.activeElement&&K.contains(document.activeElement)?document.activeElement:null, fSel=fokus?(fokus.id?'#'+fokus.id:fokus.dataset.sa?`[data-sa="${fokus.dataset.sa}"]`:fokus.dataset.st?`[data-st="${fokus.dataset.st}"]`:fokus.dataset.sp?`[data-sp="${fokus.dataset.sp}"]`:null):null;
     const zeile=e=>{ const l=lk(e.key)||{}, p=c.positionen.find(x=>x.key===e.key&&(x.mannschaft||null)===(e.mannschaft||null))||{}, menge=['stueck','spieltag'].includes(l.einheit);
       return `<div class="kp" data-id="${e.id}"><div class="kp-n"><b>${esc(l.art==='sonstiges'&&e.text?e.text:l.titel)}</b><small>${esc([l.je_mannschaft?mn(e.mannschaft):'',e.naechste?'ab Saison '+saisonTxt(D.naechste_saison):'',PLIB.EINHEIT[l.einheit]||''].filter(Boolean).join(' · '))}</small></div>
-        <div class="kp-p">${eur(p.summe||0)}${p.rabatt?`<small>mit ${Math.round(p.rabatt*100)} % Laufzeitvorteil</small>`:''}</div>
+        <div class="kp-p">${eur(p.summe||0)}${PLIB.preisHinweis(p)?`<small>${esc(PLIB.preisHinweis(p))}</small>`:''}</div>
         <div class="kp-z">${l.je_mannschaft?`<select data-f="mannschaft" aria-label="Mannschaft">${M.map(m=>{ const f=l.frei_je?l.frei_je[m.id]:null, doppelt=m.id!==e.mannschaft&&imKorb(e.key,m.id), aus=m.id!==e.mannschaft&&(f===0||doppelt);
             return `<option value="${esc(m.id)}"${m.id===e.mannschaft?' selected':''}${aus?' disabled':''}>${esc(m.name)}${f===0&&m.id!==e.mannschaft?', vergeben':doppelt?', schon im Paket':''}</option>`; }).join('')}</select>`:''}
           ${menge?`<div class="menge"><button type="button" data-d="-1" aria-label="weniger">−</button><b aria-live="polite">${e.menge}</b><button type="button" data-d="1" aria-label="mehr">+</button></div>`:''}
@@ -953,12 +1038,12 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const basis=PLIB.rechnen(posOhneSpende(),L,1).netto_jahr, spar=n=>basis>0?' Das spart '+eur(Math.round(basis*n*(n>=3?.10:.05)*100)/100).replace(' ','\u00a0')+'.':'', fd=fristDatum(c), fristVorbei=!!(fd&&fd<iso(new Date())), en=ende(c), endeTxt=datum(en||endeNach(S.saisons));
     const spOffen=!!sp||leer||S.spendeAuf;
     K.innerHTML=`<h2 class="g">Eure Auswahl</h2>
-      <p class="lead">${leer&&!sp?'Noch leer. Nehmt oben ein Paket, Bausteine kommen nach Wunsch dazu.':'Legt noch die Laufzeit fest, dann geht es zum Abschluss.'}</p>${leer&&!sp?'<button type="button" class="knopf-w kurz" data-zu="pakete">Zu den Paketen</button>':''}
+      <p class="lead">${leer&&!sp?'Noch leer. Nehmt oben ein Paket, Bausteine kommen nach Wunsch dazu.':S.konditionen?'Die vereinbarte Auswahl steht. Prüft sie kurz, dann geht es zum Abschluss.':'Legt noch die Laufzeit fest, dann geht es zum Abschluss.'}</p>${leer&&!sp?'<button type="button" class="knopf-w kurz" data-zu="pakete">Zu den Paketen</button>':''}
       ${leer?'':`<div class="korb">${S.korb.filter(e=>e.key!=='spende').map(zeile).join('')}</div>`}
       ${S.wl.length?`<p class="wl-n">Vorgemerkt: ${esc(S.wl.map(w=>(lk(w.key)||{}).titel+(w.mannschaft?' ('+mn(w.mannschaft)+')':'')).join(', '))}</p>`:''}
       ${TV()?`<div class="sonst" id="sonst"><label>Sonstiges, im Termin vereinbart<input id="soT" maxlength="80" placeholder="z. B. Vereinsheim-Abend" enterkeyhint="next"></label><label>Preis netto<input id="soP" type="text" inputmode="decimal" enterkeyhint="done"></label><button type="button" id="soAdd">Dazu</button></div>`:''}
-      ${c.netto_jahr>0?`<div class="unter" id="laufzeit"><h3 id="lzK">Laufzeit</h3><div class="opts drei" role="radiogroup" aria-labelledby="lzK">${[[1,'1 Saison',S.auto?'Bis '+datum(endeNach(1))+', danach jedes Jahr neu.':'Endet am '+datum(endeNach(1))+' von selbst.'],[2,'2 Saisons','Preis fest bis '+datum(endeNach(2))+'.'+spar(2)],[3,'3 Saisons','Preis fest bis '+datum(endeNach(3))+'.'+spar(3)]].map(([n,t,s])=>`<button type="button" class="opt${S.saisons===n?' on':''}" data-sa="${n}" role="radio" aria-checked="${S.saisons===n}" tabindex="${S.saisons===n?0:-1}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>
-        <div class="opts" role="radiogroup" aria-label="Start">${[['jetzt','Ab sofort','Gleich los, bis zum '+datum((+String(D.saison).slice(0,4)+S.saisons)+'-06-30')+'.'],['naechste','Ab Saison '+saisonTxt(D.naechste_saison),'Los geht es am '+datum(String(D.naechste_saison).slice(0,10))+'. Zahlen müsst ihr erst zum Start.']].map(([k,t,s])=>{ const aus=k==='jetzt'&&naechsteDrin;
+      ${c.hat_saison?`<div class="unter" id="laufzeit"><h3 id="lzK">Laufzeit</h3><div class="opts drei${S.saisons>3?' pd-vier':''}" role="radiogroup" aria-labelledby="lzK">${[[1,'1 Saison',S.auto?'Bis '+datum(endeNach(1))+', danach jedes Jahr neu.':'Endet am '+datum(endeNach(1))+' von selbst.'],[2,'2 Saisons','Preis fest bis '+datum(endeNach(2))+'.'+spar(2)],[3,'3 Saisons','Preis fest bis '+datum(endeNach(3))+'.'+spar(3)],...(S.saisons>3?[[S.saisons,S.saisons+' Saisons','Vereinbart bis '+datum(endeNach(S.saisons))+'.']]:[])].map(([n,t,s])=>`<button type="button" class="opt${S.saisons===n?' on':''}" data-sa="${n}" role="radio" aria-checked="${S.saisons===n}" tabindex="${S.saisons===n?0:-1}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>
+        <div class="opts" role="radiogroup" aria-label="Start">${[['jetzt','Ab sofort','Gleich los, bis zum '+datum((+String(D.saison).slice(0,4)+S.saisons)+'-06-30')+'.'],['naechste','Ab Saison '+saisonTxt(D.naechste_saison),'Los geht es am '+datum(String(D.naechste_saison).slice(0,10))+'. Zahlen müsst ihr erst zum Start.'],...(S.start==='vereinbart'?[['vereinbart','Vereinbart ab '+datum(beginn()),'So steht der Beginn in eurer Vereinbarung.']]:[])].map(([k,t,s])=>{ const aus=k==='jetzt'&&naechsteDrin;
           return `<button type="button" class="opt${S.start===k?' on':''}" data-st="${k}" role="radio" aria-checked="${S.start===k}" tabindex="${S.start===k?0:-1}"${aus?' disabled':''}><b>${t}</b><small>${aus?'Ein Baustein ist erst ab '+saisonTxt(D.naechste_saison)+' frei':s}</small></button>`; }).join('')}</div>
         ${S.start==='jetzt'&&iso(new Date())>String(D.saison).slice(0,10)?`<p class="einmal lz-notiz">Berechnet wird die ganze Saison ${saisonTxt(D.saison)}, auch wenn sie schon läuft. Lieber mit einer neuen Saison anfangen? Dann oben „Ab Saison ${saisonTxt(D.naechste_saison)}“ wählen. Zahlen müsst ihr dann erst zum Start.${S.saisons===1&&basis>0?` Nehmt ihr zwei Saisons, seid ihr bis zum ${datum(endeNach(2))} dabei und spart ${eur(Math.round(basis*2*.05*100)/100).replace(' ','\u00a0')}.`:''}</p>`:''}
         <button type="button" class="sw${S.auto?' on':''}${fristVorbei?' aus':''}" id="swAuto" role="switch" aria-checked="${S.auto}"${fristVorbei?' aria-disabled="true"':''}><span>Automatisch verlängern<small>${fristVorbei?`Bei diesem Start ist die Kündigungsfrist dieser Saison schon vorbei. Mit zwei Saisons oder dem Start zur nächsten Saison lässt sich die Verlängerung einschalten.`:S.auto?`An. ${S.saisons>1?'Danach verlängert sich der Vertrag um je eine Saison, dann zum Preis ohne Laufzeitvorteil.':'Verlängert sich um je eine Saison.'} Kündigen geht bis zum ${fd?datum(fd):'31.03.'}, ${V.email?'eine Mail an '+esc(V.email)+' genügt':'eine kurze Mail genügt'}.`:`Aus. Der Vertrag endet am ${endeTxt} von selbst.`}</small></span><span class="schalter" aria-hidden="true"><i></i></span></button></div>`:leer?'':`<div class="unter"><h3>Laufzeit</h3><p class="einmal">Einmalige Leistung. Es gibt keine Laufzeit und nichts zu kündigen.</p></div>`}
@@ -1015,8 +1100,8 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // Nach der Unterschrift, aus der Antwort des Servers: „im August 2027“, wenn der Rechnungstag noch vor uns liegt, sonst leer
   function rgWannR(R){ const m=+(R&&R.rechnung_monat); if(!(m>=1&&m<=12)||!(+R.netto_jahr>0))return ''; const t=PLIB.rechnungTag(m,String(R.beginn||beginn()).slice(0,10));
     return t>iso(new Date())?'im '+PLIB.MONATE[+t.slice(5,7)-1]+' '+t.slice(0,4):''; }
-  function klauseln(c){ const keys=PLIB.klauselnFuer(c.positionen,L,{auto:S.auto,saisons:S.saisons}), e=ende(c), fd=fristDatum(c);
-    const w={zweck:ZWECK_VERTRAG[(S.korb.find(x=>x.key==='spende')||{}).zweck]||'seine Fußballabteilung',beginn:datum(beginn()),ende:e?datum(e):'Ende der Leistung',frist:3,frist_datum:fd?datum(fd):'drei Monate vor Ablauf',branche:(D.deck||{}).branche||'',mail:(D.verein||{}).email||'den Verein',rechnung:PLIB.rechnungSatz(rmonat(),beginn(),iso(new Date()))};
+  function klauseln(c){ const keys=PLIB.klauselnFuer(c.positionen,L,{auto:S.auto,saisons:S.saisons,abrechnung_fassung:c.abrechnung_fassung}), e=ende(c), fd=fristDatum(c);
+    const w={zweck:ZWECK_VERTRAG[(S.korb.find(x=>x.key==='spende')||{}).zweck]||'seine Fußballabteilung',beginn:datum(beginn()),ende:e?datum(e):'Ende der Leistung',frist:3,frist_datum:fd?datum(fd):'drei Monate vor Ablauf',branche:(D.deck||{}).branche||'',mail:(D.verein||{}).email||'den Verein',rechnung:PLIB.rechnungSatz(rmonat(),beginn(),iso(new Date())),trikot_abrechnung:hatTrikot(c),kostenfrei:c.netto_gesamt===0,nur_einmalig:c.netto_jahr===0&&c.netto_gesamt>0};
     return keys.map(k=>{ const kk=k==='spende'&&(D.verein||{}).gemeinnuetzig===false?'spende_ohne':k, [titel,text]=PLIB.klauselText(kk,w); return {key:kk,titel,text}; }); }
   // Ansprechpartner mit Gesicht: Menschen folgen Menschen, und aus WhatsApp heraus ist eine Mail ein Bruch.
   // Wer zu sehen ist, steht in der Vereinsdatei (Bild, Name, Funktion). Nummer und Mail kommen aus den Vereinsdaten
@@ -1055,12 +1140,24 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function nachTastatur(fn){ const vv=window.visualViewport; let los=false; const go=()=>{ if(los)return; los=true; if(vv)vv.removeEventListener('resize',go); fn(); };
     if(vv)vv.addEventListener('resize',go); setTimeout(go,350); }
   // Derselbe Link auf einem zweiten Gerät (typisch: unterschrieben am Handy, bezahlt am Rechner): alles zum Überweisen
-  function schonPartnerHtml(){ const a=D.abschluss, rs=a.rechnungen||[], offen=rs.filter(r=>r.status==='offen'), sp=a.art==='spende', beleg=offen.length&&offen.every(r=>r.art==='spende')?'die Spendenzusage':'die Rechnung';
+  function trikotStandText(v){
+    if(+v.abrechnung_fassung!==1||!(v.positionen||[]).some(p=>CA_KEYS.includes(p.key)))return '';
+    const s=v.trikot_abrechnungsstand||{};
+    if(s.status==='kostenfrei')return 'Trikots und Ärmel sind kostenfrei abgerechnet. Dafür gibt es keine Rechnung und keinen offenen Zahlbetrag.';
+    if(s.status==='rechnung')return 'Trikots und Ärmel sind getrennt abgerechnet. Maßgeblich ist der Endbetrag auf der Trikotrechnung.';
+    return 'Trikots und Ärmel werden getrennt abgerechnet, sobald der Verein die Stückzahlen bestätigt hat. Ein abweichender Endbetrag braucht eine eigene Vereinbarung.';
+  }
+  function standardEntgelt(v){return (v.positionen||[]).some(p=>p.key!=='spende'&&!(+v.abrechnung_fassung===1&&CA_KEYS.includes(p.key))&&+p.summe>0);}
+  function rechnungsAusblick(v){
+    if(!standardEntgelt(v))return trikotStandText(v)||'Aus diesem Vertrag entsteht kein Zahlbetrag.';
+    return rgWannR(v)?'Die Rechnung kommt '+rgWannR(v)+' per Mail, die Bankdaten stehen darauf.':fest(v)?'Die erste Rechnung kommt in den nächsten Tagen per Mail.':'Die Bankdaten stehen auf der Rechnung, die mit dem gegengezeichneten Vertrag kommt.';
+  }
+  function schonPartnerHtml(){ const a=D.abschluss, rs=a.rechnungen||[], offen=rs.filter(r=>r.status==='offen'&&+r.brutto>0), sp=a.art==='spende', beleg=offen.length&&offen.every(r=>r.art==='spende')?'die Spendenzusage':'die Rechnung';
     const fe=fest(a), satz=sp?`Über diesen Link hast du am ${datum(a.am)} eine Spende zugesagt (${esc(a.nr)}). Danke dafür.`:`Über diesen Link hast du am ${datum(a.am)} den Vertrag ${esc(a.nr)} unterschrieben.${fe?' Der Verein hat gegengezeichnet, der Vertrag ist geschlossen.':' Wir unterschreiben in den nächsten Tagen für den Verein, dann kommt alles per Mail.'}`;
-    const weiter=offen.length?(a.bank?` Hier findest du alles zum Überweisen, ${beleg} liegt auch in deiner Mail.`:` ${beleg==='die Rechnung'?'Die Rechnung':'Die Spendenzusage'} mit den Bankdaten liegt in deiner Mail.`):rs.length?' Alles ist bezahlt. Danke.':sp||fe?' Die Unterlagen haben wir dir per Mail geschickt.':'';
+    const weiter=offen.length?(a.bank?' Hier findest du alles zum Überweisen.':` Die Bankdaten stehen auf ${beleg==='die Rechnung'?'der Rechnung':'der Spendenzusage'}.`):rs.length?' Die hier aufgeführten Rechnungen sind bezahlt. Danke.':sp||fe?' Die Unterlagen erhältst du per Mail.':'';
     return `<h2 class="g">${sp?'Spende zugesagt':fe?'Schon Partner':'Deine Unterschrift ist bei uns'}</h2>
-      <p class="lead">${satz}${weiter}</p>
-      ${offen.length&&a.bank?`<div class="schon-zahl">${zahlBlock(offen.map(rg=>({titel:rg.art==='spende'?'Spende':'Rechnung',rg})),a.bank)}</div>`:''}
+      <p class="lead">${satz}${weiter}</p>${trikotStandText(a)?`<p class="hinweis">${esc(trikotStandText(a))}</p>`:''}
+      ${offen.length&&a.bank?`<div class="schon-zahl">${zahlBlock(offen.map(rg=>({titel:rg.art==='spende'?'Spende':rg.gruppe==='trikot'?'Trikotrechnung':'Rechnung',rg})),a.bank)}</div>`:''}
       <p class="lead" style="font-size:16px;margin-top:22px">${sp?'Partner werden geht zusätzlich. Dafür oben das Paket zusammenstellen.':'Wollt ihr noch etwas ergänzen? Stell es oben zusammen oder schreib uns kurz.'}</p>
       ${a.art!=='spende'&&Array.isArray(a.klauseln)&&a.klauseln.length?bedingungenHtml(a.klauseln):''}
       ${sprechenHtml()}<button type="button" class="textknopf" id="trotz">Noch etwas dazunehmen</button>`; }
@@ -1075,7 +1172,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     if(A.querySelector('#abForm')&&A.dataset.weg===String(S.weg)&&A.dataset.sp===String(sp)){ vertragNeu(); const sp0=A.querySelector('.sprechen'); if(sp0)sp0.outerHTML=sprechenHtml(); return; }
     A.dataset.weg=String(S.weg); A.dataset.sp=String(sp);
     const wahl=sp?'':`<div class="wahl2" role="group" aria-label="Wie möchtest du weitermachen?"><button type="button" data-weg="angebot" class="${S.weg==='angebot'?'on':''}" aria-pressed="${S.weg==='angebot'}"><b>Angebot per Mail</b><span>Ein unverbindliches Angebot als PDF. Die Preise halten wir 14 Tage für euch fest. Freie Plätze gehen nach der Reihenfolge der Unterschriften.</span></button>
-        <button type="button" data-weg="vertrag" class="haupt${S.weg==='vertrag'?' on':''}" aria-pressed="${S.weg==='vertrag'}"><b>Gleich unterschreiben</b><span>Du unterschreibst direkt hier. ${VS()?'Wir unterschreiben gleich mit, die Rechnung kommt per Mail.':'Nach unserer Unterschrift kommen Vertrag und Rechnung per Mail.'}</span></button></div>`;
+        <button type="button" data-weg="vertrag" class="haupt${S.weg==='vertrag'?' on':''}" aria-pressed="${S.weg==='vertrag'}"><b>Gleich unterschreiben</b><span>Du unterschreibst direkt hier. ${VS()?'Wir unterschreiben gleich mit. Den Vertrag bekommst du per Mail.':'Nach unserer Unterschrift bekommst du den Vertrag per Mail.'}</span></button></div>`;
     const form=(sp||S.weg)?`<form id="abForm" autocomplete="on" onsubmit="return false"><div class="felder">
         ${feldHtml('firma',sp?'Firma oder Name':'Unternehmen','text','organization',{cap:'words'})}${sp?'':'<p class="feld-tipp">Online unterschreiben ist für Unternehmen gedacht. Willst du als Privatperson Partner werden, sprich uns direkt an.</p>'}
         <div class="feld-name"><label for="fAnsprech">Dein Name</label><span style="display:flex;gap:6px"><select name="anrede" style="width:100px;flex:none" aria-label="Anrede"><option value="">Anrede</option>${['Frau','Herr'].map(a=>`<option${S.F.anrede===a?' selected':''}>${a}</option>`).join('')}</select><input name="ansprech" autocomplete="name" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="next" maxlength="80" value="${esc(S.F.ansprech||'')}" placeholder="Vor- und Nachname" id="fAnsprech"></span></div>
@@ -1108,7 +1205,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const fm=A.querySelector('#abForm'), upd=e=>{ if(e.target.name){ S.F[e.target.name]=e.target.value; merkenSpaeter(); } }; fm.addEventListener('input',upd); fm.addEventListener('change',upd); formTasten(fm);
     A.querySelector('#abGo').onclick=()=>senden('warteliste'); }
   // Einstieg mitten in der Saison: was berechnet wird und ab wann man etwas sieht (Bande und Logo erst nach Freigabe und Druck)
-  function mittenSatz(c){ if(!(c.netto_jahr>0)||S.start==='naechste'||!(iso(new Date())>String(D.saison).slice(0,10)))return '';
+  function mittenSatz(c){ if(!(c.netto_jahr>0)||S.start!=='jetzt'||!(iso(new Date())>String(D.saison).slice(0,10)))return '';
     if(spaeterBeginn())return `Der Vertrag beginnt am ${datum(beginn())}. Berechnet wird die ganze Saison ${saisonTxt(D.saison)}.`;
     const bande=c.positionen.some(p=>/^(club|premium|p1896|bande_)/.test(p.key)), logo=c.positionen.some(p=>/^(supporter|brust_|aermel_|trikot_|aufwaerm_)/.test(p.key));
     const sicht=bande?' Die Bande hängt nach eurer Freigabe und dem Druck.':logo?' Das Logo erscheint nach eurer Freigabe.':'';
@@ -1129,16 +1226,17 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const b1=PLIB.rechnen(posOhneSpende(),L,1).netto_jahr, mailG=V.email?'eine Mail an '+V.email+' genügt':'eine Mail genügt', sj=saisonJahr();
     const MN=PLIB.MONATE[rmonat()-1], t2=PLIB.rechnungTag(rmonat(),PLIB.rechnungTag(7,beginn()).slice(0,4)*1+1+'-07-01');
     const folge=['','','Für die zweite Saison kommt im '+MN+' '+t2.slice(0,4)+' eine Rechnung','Für die zweite und dritte Saison kommt jeweils im '+MN+' eine Rechnung','Für die zweite bis vierte Saison kommt jeweils im '+MN+' eine Rechnung','Für die zweite bis fünfte Saison kommt jeweils im '+MN+' eine Rechnung'][Math.min(5,S.saisons)]||'';
-    const kurzP=sp?[]:[VS()?'':'Mit deiner Unterschrift macht ihr uns ein verbindliches Angebot. Daran seid ihr vier Wochen gebunden. Meist unterschreiben wir in wenigen Tagen, dann gilt der Vertrag.',c.netto_jahr>0?(S.auto?`Der Vertrag läuft vom ${datum(beginn())} bis zum ${datum(e)}. Danach verlängert er sich um je eine Saison zu ${eur(b1,true)} netto. Kündigen geht bis zum ${fd?datum(fd):'31.03.'}, ${mailG}.`:`Der Vertrag läuft vom ${datum(beginn())} bis zum ${datum(e)} und endet dann von selbst.`):'Einmalige Leistung. Es gibt keine Laufzeit und nichts zu kündigen.',
+    const kurzP=sp?[]:[VS()?'':'Mit deiner Unterschrift macht ihr uns ein verbindliches Angebot. Daran seid ihr vier Wochen gebunden. Meist unterschreiben wir in wenigen Tagen, dann gilt der Vertrag.',c.hat_saison?(S.auto?`Der Vertrag läuft vom ${datum(beginn())} bis zum ${datum(e)}. Danach verlängert er sich um je eine Saison zu ${eur(b1,true)} netto. Kündigen geht bis zum ${fd?datum(fd):'31.03.'}, ${mailG}.`:`Der Vertrag läuft vom ${datum(beginn())} bis zum ${datum(e)} und endet dann von selbst.`):'Einmalige Leistung. Es gibt keine Laufzeit und nichts zu kündigen.',
       mittenSatz(c),
       R.netto>0&&rgSpaeter(c)?(eineRg(c)?'Die Rechnung':'Die erste Rechnung')+` über ${eur(R.brutto,true)} kommt im ${rgMonatJahr()} per Mail und ist 14 Tage nach Rechnungsdatum zahlbar.`+(eineRg(c)?' Weitere Rechnungen gibt es nicht.':''):R.netto>0?(eineRg(c)?'Die Rechnung':'Die erste Rechnung')+(VS()&&rgSofort()?` über ${eur(R.brutto,true)} kommt gleich per Mail und ist zahlbar bis zum ${datum(faelligAm())}.`:VS()?` über ${eur(R.brutto,true)} schicken wir in den nächsten Tagen per Mail. Zahlbar ist sie 14 Tage nach Rechnungsdatum.`:` über ${eur(R.brutto,true)} kommt mit dem gegengezeichneten Vertrag per Mail und ist 14 Tage nach Rechnungsdatum zahlbar${spaeterBeginn()?', frühestens zum Beginn':''}.`)+(eineRg(c)?' Weitere Rechnungen gibt es nicht.':''):'',
+      hatTrikot(c)?`Trikots und Ärmel rechnen wir getrennt nach bestätigter Stückzahl ab: ${eur(c.trikot_netto,true)} netto. Ein abweichender Endbetrag braucht eine eigene Vereinbarung.`:'',
       'Bevor etwas mit eurem Logo gedruckt wird, zeigen wir es euch.'].filter(Boolean);
     const kurzHtml=kurzP.length?`<div class="vt-kurz"><b>Das Wichtigste in Kürze</b><ul>${kurzP.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>`:'';
-    const tab=c.positionen.map(p=>{ const l=lk(p.key)||{}; return `<div><span>${esc(p.titel)}${p.mannschaft?', '+esc(mname(p.mannschaft)):''}${p.menge>1?', Menge '+p.menge:''}${p.rabatt?', '+Math.round(p.rabatt*100)+' % Vorteil':''}${l.art==='paket'&&widmung()&&!sp?`<small class="wid"><b>${esc(widmung().titel)}</b>${widmung().text?' '+esc(widmung().text):''}</small>`:''}${l.text&&!sp?`<small>${esc(l.text)}</small>`:''}</span><span>${eur(p.summe,true)}${p.einheit==='saison'?' / Saison':p.einheit==='einmalig'?' einmalig':''}</span></div>`; }).join('');
+    const tab=c.positionen.map(p=>{ const l=lk(p.key)||{}; return `<div><span>${esc(p.titel)}${p.mannschaft?', '+esc(mname(p.mannschaft)):''}${p.menge>1?', Menge '+p.menge:''}${PLIB.preisHinweis(p)?', '+esc(PLIB.preisHinweis(p)):''}${l.art==='paket'&&widmung()&&!sp?`<small class="wid"><b>${esc(widmung().titel)}</b>${widmung().text?' '+esc(widmung().text):''}</small>`:''}${l.text&&!sp?`<small>${esc(l.text)}</small>`:''}</span><span>${c.abrechnung_fassung===1&&CA_KEYS.includes(p.key)?'ca. ':''}${eur(p.summe,true)}${p.einheit==='saison'?' / Saison':p.einheit==='einmalig'?' einmalig':''}</span></div>`; }).join('');
     W.innerHTML=`<div class="vertrag" id="vertrag"><div class="vt-k"><div><b>${sp?'Spendenzusage':'Partnervertrag'}</b><small>${sp?'':(e?`Laufzeit ${datum(beginn())} bis ${datum(e)}${S.auto?', verlängert sich automatisch':''}`:'Einmalige Leistungen')}</small></div><img src="${WAPPEN}" width="320" height="182" alt=""></div>
       ${warSchon?'<div class="vt-neu" role="status">Du hast das Paket geändert. Bitte sieh dir den Vertrag noch einmal an und unterschreib neu.</div>':''}
       <div class="vt-p" id="vtKopf"></div>
-      <div class="vt-tab">${tab}${c.netto_jahr>0&&!eineRg(c)?`<div class="s"><span>Je Saison netto</span><span>${eur(c.netto_jahr,true)}</span></div>`:''}<div class="s"><span>${sp?'Gesamt':c.netto_jahr>0?'Gesamt über die Laufzeit':'Gesamt'}</span><span>${eur(c.netto_gesamt+(sp?c.spende:0),true)}${!sp&&c.netto_gesamt&&ust()>0?' zuzüglich Umsatzsteuer':''}</span></div>
+      <div class="vt-tab">${tab}${c.netto_jahr>0&&!eineRg(c)?`<div class="s"><span>Je Saison netto</span><span>${eur(c.netto_jahr,true)}</span></div>`:''}<div class="s"><span>${sp?'Gesamt':hatTrikot(c)?'Voraussichtlicher Gesamtbetrag':c.hat_saison?'Gesamt über die Laufzeit':'Gesamt'}</span><span>${eur(c.netto_gesamt+(sp?c.spende:0),true)}${!sp&&c.netto_gesamt&&ust()>0?' zuzüglich Umsatzsteuer':''}</span></div>
         ${!sp&&spBetrag?`<div class="sp-x"><span>${spXText(spBetrag)}</span></div>`:''}</div>
       ${kurzHtml}${kl.length?`<div class="vt-kl" aria-label="Vertragsbedingungen"><div class="vt-kl-k"><span>Bedingungen im Klartext</span><button type="button" id="klAlle">Alle aufklappen</button></div>${kl.map((k,i)=>`<details><summary><span class="h4">§ ${i+1} ${esc(k.titel)}</span></summary><p>${esc(k.text)}</p></details>`).join('')}</div>`:''}
       <div class="vt-u">
@@ -1182,7 +1280,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function seite(){ const X=$('#abSeite'); if(!X)return; if(S.ergebnis||!S.korb.length){ X.innerHTML=''; X.hidden=true; return; } X.hidden=false;
     const c=rechnungVertrag(), R=ersteRechnung(c), sp=rechnung().spende, mn=id=>(M.find(m=>m.id===id)||{}).name||id, e=ende(c);
     X.innerHTML=`<h3>Eure Auswahl</h3><ul>${c.positionen.map(p=>`<li><span>${esc(p.titel)}${p.mannschaft?`<small>${esc(mn(p.mannschaft))}</small>`:''}</span><b>${eur(p.summe,true)}</b></li>`).join('')}${sp?`<li><span>Spende<small>getrennt vom Vertrag</small></span><b>${eur(sp,true)}</b></li>`:''}</ul>
-      ${c.netto_jahr>0?`<p>Laufzeit ${datum(beginn())} bis ${datum(e)}${S.auto?', verlängert sich':''}</p>`:''}${R.netto>0?`<p class="s"><span>${eineRg(c)?'Rechnungsbetrag':'Erste Rechnung'}, netto</span><b>${eur(R.netto,true)}</b>${ust()>0?`<small>Mit Umsatzsteuer ${eur(R.brutto,true)}. Die ${eur(R.ust,true)} Umsatzsteuer könnt ihr in der Regel als Vorsteuer abziehen.</small>`:''}</p>`:''}
+      ${c.hat_saison?`<p>Laufzeit ${datum(beginn())} bis ${datum(e)}${S.auto?', verlängert sich':''}</p>`:''}${R.netto>0?`<p class="s"><span>${eineRg(c)?'Rechnungsbetrag':'Erste Rechnung'}, netto</span><b>${eur(R.netto,true)}</b>${ust()>0?`<small>Mit Umsatzsteuer ${eur(R.brutto,true)}. Die ${eur(R.ust,true)} Umsatzsteuer könnt ihr in der Regel als Vorsteuer abziehen.</small>`:''}</p>`:''}
       <button type="button" class="textknopf" data-zu="baukasten">Auswahl ändern</button>`; }
   function spXText(b){ const g=(D.verein||{}).gemeinnuetzig; return `Dazu sagst du uns eine Spende über ${eur(b,true)} zu. Die Spende gehört nicht zu diesem Vertrag, ist freiwillig und unverbindlich und bekommt eine eigene Bestätigung.${g===true?' Die Zuwendungsbestätigung schicken wir, sobald der Betrag da ist.':g===false?' Eine Zuwendungsbestätigung können wir dafür nicht ausstellen.':''}`; }
   function vertragKopf(){ const el=$('#vtKopf'); if(!el)return; const V=D.verein||{}, F=S.F;
@@ -1278,10 +1376,10 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
         if(r&&r.wiederholt&&offen&&offen.hash!==hash)r.geaendert=true; S.idemOffen=null; }
       else {
         // Im Vertrag steht keine Spende; sie bekommt danach ihre eigene Zusage mit eigenem Beleg, nur wenn eigens zugesagt
-        const pos=art==='vertrag'?posOhneSpende():posFuerServer(), c=PLIB.rechnen(pos,L,S.saisons);
+        const pos=art==='vertrag'?posOhneSpende():posFuerServer(), c=PLIB.rechnen(pos,L,S.saisons,rechenOpt());
         const hash=kurzHash(JSON.stringify([pos,S.saisons,S.start,S.auto])), offen=S.idemOffen&&S.idemOffen.art===art?S.idemOffen:null, idemX=offen?offen.idem:(S.idem+':'+art+':'+hash).slice(0,80);
         S.idemJetzt={art,idem:idemX,hash:offen?offen.hash:hash};
-        const body={art,positionen:pos,saisons:S.saisons,beginn:beginn(),auto_verlaengerung:S.auto,idem:idemX,klauseln:art==='vertrag'?klauseln(c):[],angebot_nr:art==='vertrag'&&S.angebot?S.angebot.nr:undefined,
+        const body={art,abrechnung_fassung:c.abrechnung_fassung,positionen:pos,saisons:S.saisons,beginn:beginn(),auto_verlaengerung:S.auto,idem:idemX,klauseln:art==='vertrag'?klauseln(c):[],angebot_nr:art==='vertrag'&&S.angebot?S.angebot.nr:undefined,konditionen_id:S.angebot?.konditionen_id||S.konditionen?.id||undefined,
           partner:Object.assign({},partner,art==='vertrag'?{befugt:true,unterschrift_art:pads.p&&pads.p.name?'getippt':'gezeichnet'}:{}),zustimmung:art!=='angebot'&&S.zust,interessen:[...S.herz],ziele:[...S.ziele],fragebogen:{budget:S.budget||null,quelle:'praesentation'},warteliste:S.wl};
         if(art==='vertrag'){ body.unterschrift_partner=padPng('p'); if(VS()){ body.unterschrift_verein=padPng('v'); body.unterzeichner=String(S.unterzeichner).trim(); body.unterzeichner_funktion=String(S.funktionV).trim(); } }
         r=demo()?await probeErgebnis(art,c):await rpc('partner_praesi_abschluss',{p_code:code,p:body},30000);
@@ -1319,16 +1417,16 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   const PROBE_BANK={name:'Sportverein Mörlenbach 1896 e.V.',iban:'DE00 XXXX XXXX XXXX XXXX XX',bic:'XXXXXXXX',probe:true};
   async function probeErgebnis(art,c){ const R=ersteRechnung(c);
     const zu=art==='vertrag'&&VS();   // über den Link: erst die Gegenzeichnung schließt den Vertrag, dann kommt die Rechnung
-    return probe({nr:(art==='angebot'?'AN':art==='spende'?'SP':'PV')+'-PROBE',positionen:c.positionen,ust_satz:ust(),status:art==='angebot'?'angebot':zu?'aktiv':'unterschrieben',klauseln:art==='vertrag'?klauseln(c):undefined,unterschrieben_am:new Date().toISOString(),gegengezeichnet_am:zu?new Date().toISOString():null,
-      rechnung:art==='angebot'||(art==='vertrag'&&!zu)?null:{nr:art==='spende'?'SP-PROBE':'RE-PROBE',art:art==='spende'?'spende':'rechnung',brutto:art==='spende'?c.spende:R.brutto,netto:R.netto,zweck:(art==='spende'?'Spende '+((S.korb.find(e=>e.key==='spende')||{}).zweck||'')+' SP-PROBE ':'RE-PROBE PV-PROBE ')+String(S.F.firma||'').trim(),faellig:S.start==='naechste'&&art!=='spende'?beginn():iso(new Date(Date.now()+14*864e5))},bank:art==='angebot'?null:PROBE_BANK}); }
+    return probe({abrechnung_fassung:c.abrechnung_fassung,trikot_netto:c.trikot_netto,netto_jahr:c.netto_jahr,netto_gesamt:c.netto_gesamt,saisons:c.saisons,beginn:beginn(),ende:ende(c),nr:(art==='angebot'?'AN':art==='spende'?'SP':'PV')+'-PROBE',positionen:c.positionen,ust_satz:ust(),status:art==='angebot'?'angebot':zu?'aktiv':'unterschrieben',klauseln:art==='vertrag'?klauseln(c):undefined,unterschrieben_am:new Date().toISOString(),gegengezeichnet_am:zu?new Date().toISOString():null,
+      rechnung:art==='angebot'||(art==='vertrag'&&(!zu||!(R.netto>0)))?null:{nr:art==='spende'?'SP-PROBE':'RE-PROBE',art:art==='spende'?'spende':'rechnung',brutto:art==='spende'?c.spende:R.brutto,netto:R.netto,zweck:(art==='spende'?'Spende '+((S.korb.find(e=>e.key==='spende')||{}).zweck||'')+' SP-PROBE ':'RE-PROBE PV-PROBE ')+String(S.F.firma||'').trim(),faellig:S.start==='naechste'&&art!=='spende'?beginn():iso(new Date(Date.now()+14*864e5))},bank:art==='angebot'?null:PROBE_BANK}); }
   // ---------- Danke, Rechnung, Girocode ----------
   function kopierZeile(t,wert,anzeige,probe,cls){ return `<div class="kz${cls?' '+cls:''}"><span>${t}</span><b>${esc(anzeige||wert)}</b><button type="button" ${probe?'data-probe="1"':`data-kopie="${esc(wert)}"`}>Kopieren</button></div>`; }
   // Ein ruhiger Bankblock: Empfänger und IBAN einmal, darunter je Zahlung Betrag, Zweck und Girocode
-  function zahlBlock(teile,bank,fuss){ teile=teile.filter(t=>t&&t.rg&&t.rg.status!=='bezahlt'); if(!teile.length)return '';
+  function zahlBlock(teile,bank,fuss){ teile=teile.filter(t=>t&&t.rg&&t.rg.status!=='bezahlt'&&+t.rg.brutto>0); if(!teile.length)return '';
     if(!bank)return teile.map(t=>`<p class="hinweis" style="font-size:16px">${t.titel} ${esc(t.rg.nr)} über ${eur(t.rg.brutto,true)} kommt mit den Bankdaten per Mail.</p>`).join('');
     const pr=!!bank.probe, handy=fein(), rgs=teile.filter(t=>t.rg.art!=='spende'), frist=rgs.map(t=>String(t.rg.faellig||'').slice(0,10)).filter(Boolean).sort()[0];
     return `<div class="zahlen"><div class="zahl-k"><b>${teile.length>1?'Überweisen':teile[0].rg.art==='spende'?'Spende überweisen':'Rechnung bezahlen'}</b>
-        <p>${frist?`Bitte bis zum ${datum(frist)} überweisen.`:'Überweisen kannst du, wann es passt.'} ${handy?'Tipp auf Kopieren und füg die Angaben in der Banking-App ein.':'Scann den Girocode mit der Banking-App, Betrag und Zweck sind schon eingetragen.'}${rgs.length?' Oder gib die Rechnung aus der Mail an eure Buchhaltung weiter.':''}</p>
+        <p>${frist?`Bitte bis zum ${datum(frist)} überweisen.`:'Überweisen kannst du, wann es passt.'} ${handy?'Tipp auf Kopieren und füg die Angaben in der Banking-App ein.':'Scann den Girocode mit der Banking-App, Betrag und Zweck sind schon eingetragen.'}${rgs.length?' Oder gib die Rechnung an eure Buchhaltung weiter.':''}</p>
         <div class="kzs">${kopierZeile('Empfänger',bank.name,'',pr)}${kopierZeile('IBAN',String(bank.iban).replace(/\s/g,''),pr?bank.iban:PLIB.ibanSchoen(bank.iban),pr,'iban')}</div></div>
       ${teile.map(t=>{ const rg=t.rg, sp=rg.art==='spende', gc=pr?null:PLIB.girocode({name:bank.name,iban:bank.iban,bic:bank.bic,betrag:rg.brutto,zweck:rg.zweck});
         return `<div class="zahl-t"><div class="zahl-l"><div class="zahl-tt">${teile.length>1?t.titel:''} <small>${sp?'Spendenzusage '+esc(rg.nr):'Nr. '+esc(rg.nr)} vom ${datum(rg.datum||iso(new Date()))}</small></div>
@@ -1362,12 +1460,14 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const gekauft=spende?'':dankSaetze(R.positionen||[]), tel=!!(R.tel||String(F.telefon||'').trim()), stufe=(R.positionen||[]).some(p=>['club','premium','p1896'].includes(p.key));
     // Wann unterschrieben wurde (vom Server), ob schon gegengezeichnet: der Text stimmt auch, wenn man die Seite Tage später öffnet
     const tagU=R.unterschrieben_am?iso(new Date(R.unterschrieben_am)):(R.am?iso(new Date(R.am)):iso(new Date())), heuteU=tagU===iso(new Date()), gegen=!!R.gegengezeichnet_am, fe=fest(R);
-    const keineRg=!rg&&(R.positionen||[]).some(p=>p.key!=='spende');
+    const hatTrikotR=+R.abrechnung_fassung===1&&(R.positionen||[]).some(p=>CA_KEYS.includes(p.key));
+    const standardOffen=(R.positionen||[]).some(p=>p.key!=='spende'&&(!hatTrikotR||!CA_KEYS.includes(p.key))&&+p.summe>0);
+    const keineRg=!rg&&standardOffen;
     // Eine Saison ohne Verlängerung oder nur Einmaliges: genau eine Rechnung
     const eRg=R.saisons!=null?(!(+R.netto_jahr>0)||(+R.saisons===1&&!R.auto_verlaengerung)):eineRg(rechnungVertrag()), rgW=eRg?'die Rechnung':'die erste Rechnung';
     const wer=String(V.vertreter||'').trim(), teamN=spende?[]:[...new Set((R.positionen||[]).filter(p=>p.mannschaft).map(p=>(M.find(m=>m.id===p.mannschaft)||{}).name||p.mannschaft))];
     const weg=spende?[['Zusage per Mail','Die Spendenzusage kommt gleich per Mail.'+(V.gemeinnuetzig===true?' Die Zuwendungsbestätigung folgt, sobald der Betrag da ist.':'')],['Wir sagen es weiter','Kinder und Trainer erfahren, wer ihnen geholfen hat. Willst du lieber nicht genannt werden, schreib uns kurz.'],['Am Platz','Schau gern bei einem Heimspiel oder samstags bei der Jugend vorbei.']]
-      :[[fe?(gegen&&!heuteU?'Der Vertrag ist fest':'Kopie per Mail'):'Gegenzeichnung',(fe?esc(gegen&&!heuteU?'Der Vertrag ist von beiden Seiten unterschrieben. Die Fassung mit beiden Unterschriften haben wir dir per Mail geschickt. ':'Der Vertrag mit beiden Unterschriften'+(rg?' und '+rgW+' kommen':' kommt')+' per Mail.'+(rg?' ':' '+(eRg?'Die Rechnung':'Die erste Rechnung')+(rgWannR(R)?' kommt '+rgWannR(R)+'. ':' folgt in den nächsten Tagen. '))):esc('Wir unterschreiben für den Verein, meist in wenigen Tagen. Ohne unsere Unterschrift nach vier Wochen seid ihr nicht mehr gebunden.')).trim(),1],
+      :[[fe?(gegen&&!heuteU?'Der Vertrag ist fest':'Kopie per Mail'):'Gegenzeichnung',(fe?esc(gegen&&!heuteU?'Der Vertrag ist von beiden Seiten unterschrieben. Die Fassung mit beiden Unterschriften haben wir dir per Mail geschickt. ':'Der Vertrag mit beiden Unterschriften'+(rg?' und '+rgW+' kommen':' kommt')+' per Mail.'+(rg?' ':' '+rechnungsAusblick(R)+' ')):esc('Wir unterschreiben für den Verein, meist in wenigen Tagen. Ohne unsere Unterschrift nach vier Wochen seid ihr nicht mehr gebunden.')).trim(),1],
         ...(teamN.length?[['Die Mannschaft erfährt es',`${fe?`Beim nächsten Training sagen wir ${undListe(teamN.map(n=>'der '+n))}, wer jetzt hinter ${teamN.length>1?'ihnen':'ihr'} steht.`:`Sobald der Vertrag gilt, sagen wir es ${undListe(teamN.map(n=>'der '+n))} beim nächsten Training.`} Gern machen wir ein gemeinsames Foto. Online nur mit Einverständnis der Eltern, ab 14 auch der Jugendlichen.`]]:[]),
         ['Logo',`Schickt uns euer Logo${V.email?' an <span class="mail">'+esc(V.email)+'</span>':''}, am besten die Datei eurer Druckerei. Vor dem Druck zeigen wir euch den Entwurf.`,1],
         ['Am Platz',esc((stufe?'Zum nächsten Partnerabend laden wir euch ein. Den Termin schicken wir, sobald er feststeht. ':'')+'Schaut gern bei einem Heimspiel oder samstags bei der Jugend vorbei. ')+(tel?esc('Außerdem rufen wir dich kurz an.'):esc('Lieber vorher sprechen? ')+(V.email?`<a href="${esc('mailto:'+V.email+'?subject='+encodeURIComponent('Rückruf: '+(F.firma||''))+'&body='+encodeURIComponent('Meine Nummer: '))}">Schick uns deine Nummer</a>, dann rufen wir an.`:'Schick uns deine Nummer, dann rufen wir an.')),1]];
@@ -1377,11 +1477,13 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       :fe?`Du hast am ${datum(tagU)} unterschrieben, und der Verein hat gegengezeichnet. Den Vertrag mit beiden Unterschriften${rg?' und '+rgW:''} haben wir an ${mail} geschickt${spZeile}.${keineRg?' '+(eRg?'Die Rechnung':'Die erste Rechnung')+(rgWannR(R)?' kommt '+rgWannR(R)+' per Mail.':' kommt in den nächsten Tagen per Mail.'):''}${rg&&rg.status==='bezahlt'?' Die Rechnung ist bezahlt. Danke.':''}`
       :`${heuteU?'':`Du hast am ${datum(tagU)} unterschrieben. `}Wir unterschreiben in den nächsten Tagen für den Verein, dann kommt alles per Mail an ${mail}.`;
     const freu=spende||!gekauft?'':`${fe?'Wie es weitergeht: ':'Sobald alles fest ist: '}${esc(gekauft)}${!fe&&spaet?` Beginn ist am ${datum(R.beginn||beginn())}.`:''}`;
-    const fuss=(spende||rg?'':`${sp2?'Zum Vertrag: ':''}${rgWannR(R)?(eRg?'Die Rechnung':'Die erste Rechnung')+' kommt '+rgWannR(R)+' per Mail, die Bankdaten stehen darauf.':fe?(eRg?'Die Rechnung':'Die erste Rechnung')+' kommt in den nächsten Tagen per Mail, die Bankdaten stehen darauf.':'Die Bankdaten stehen auf der Rechnung, die mit dem gegengezeichneten Vertrag kommt.'}`);
+    const fuss=(spende||rg||!standardOffen?'':`${sp2?'Zum Vertrag: ':''}${rgWannR(R)?(eRg?'Die Rechnung':'Die erste Rechnung')+' kommt '+rgWannR(R)+' per Mail, die Bankdaten stehen darauf.':fe?(eRg?'Die Rechnung':'Die erste Rechnung')+' kommt in den nächsten Tagen per Mail, die Bankdaten stehen darauf.':'Die Bankdaten stehen auf der Rechnung, die mit dem gegengezeichneten Vertrag kommt.'}`);
     const keineMail=`${rg&&R.bank&&!R.bank.probe?'Vertrag und Rechnung liegen der Mail auch als PDF bei. ':''}Keine Mail da? Schau bitte im Spam-Ordner nach${V.email?' oder schreib uns an <span class="mail">'+esc(V.email)+'</span>':''}.`;
-    const zb0=zahlBlock([{titel:spende?'Spende':'Rechnung',rg},sp2?{titel:'Spende',rg:sp2.rechnung}:null],R.bank||(sp2&&sp2.bank),(fuss?`<p class="hinweis bank-spaeter">${fuss}</p>`:'')+`<p class="hinweis">${keineMail}</p>`);
+    const zahlungen=spende?[{titel:'Spende',rg}]:(Array.isArray(R.rechnungen)&&R.rechnungen.length?R.rechnungen.map(rg=>({titel:rg.gruppe==='trikot'?'Trikotrechnung':'Rechnung',rg})):[{titel:'Rechnung',rg}]);
+    if(sp2)zahlungen.push({titel:'Spende',rg:sp2.rechnung});
+    const zb0=zahlBlock(zahlungen,R.bank||(sp2&&sp2.bank),(fuss?`<p class="hinweis bank-spaeter">${fuss}</p>`:'')+`<p class="hinweis">${keineMail}</p>`);
     A.innerHTML=`<div class="danke-raster"><div class="danke${los?' los':''}"><h2 class="danke-h" tabindex="-1">${spende?'Danke für deine Spende':fe?'Der Vertrag ist geschlossen':'Danke für deine Unterschrift'}</h2>
-      <p>${text}</p>${freu?`<p class="freu">${freu}</p>`:''}${R.fehlt_zweite&&!fe?'<p class="hinweis" style="color:var(--ink)">Für den Verein unterschreiben laut Satzung zwei Personen. Die zweite Unterschrift fehlt noch.</p>':''}<button type="button" class="textknopf" id="linkSichern">Diesen Link sichern</button>${R.geaendert?`<p class="hinweis" style="color:var(--ink)">${spende?`Deine erste Zusage war schon bei uns angekommen, bevor die Verbindung abbrach. Bei uns steht deshalb die Zusage ${esc(R.nr)} mit dem ersten Betrag. Willst du den Betrag ändern, schreib uns kurz.`:`Deine erste Unterschrift war schon bei uns angekommen, bevor die Verbindung abbrach. Bei uns liegt deshalb der Vertrag ${esc(R.nr)} in der ersten Fassung. Schick uns deine Änderung bitte kurz per Mail, dann passen wir den Vertrag an.`}</p>`:''}${probeHinweis}${((rg&&rg.status!=='bezahlt')||sp2)&&fein()?`<button type="button" class="textknopf" id="zurBank">${!rg?'Spende überweisen':spaet?'Bankdaten ansehen':'Rechnung und Bankdaten'}</button>`:''}
+      <p>${text}</p>${hatTrikotR?`<p class="hinweis">${esc(trikotStandText(R))}</p>`:''}${freu?`<p class="freu">${freu}</p>`:''}${R.fehlt_zweite&&!fe?'<p class="hinweis" style="color:var(--ink)">Für den Verein unterschreiben laut Satzung zwei Personen. Die zweite Unterschrift fehlt noch.</p>':''}<button type="button" class="textknopf" id="linkSichern">Diesen Link sichern</button>${R.geaendert?`<p class="hinweis" style="color:var(--ink)">${spende?`Deine erste Zusage war schon bei uns angekommen, bevor die Verbindung abbrach. Bei uns steht deshalb die Zusage ${esc(R.nr)} mit dem ersten Betrag. Willst du den Betrag ändern, schreib uns kurz.`:`Deine erste Unterschrift war schon bei uns angekommen, bevor die Verbindung abbrach. Bei uns liegt deshalb der Vertrag ${esc(R.nr)} in der ersten Fassung. Schick uns deine Änderung bitte kurz per Mail, dann passen wir den Vertrag an.`}</p>`:''}${probeHinweis}${((rg&&rg.status!=='bezahlt')||sp2)&&fein()?`<button type="button" class="textknopf" id="zurBank">${!rg?'Spende überweisen':spaet?'Bankdaten ansehen':'Rechnung und Bankdaten'}</button>`:''}
       <ol class="weg">${weg.map(x=>`<li><strong>${esc(x[0])}</strong><span>${x[2]?x[1]:esc(x[1])}</span></li>`).join('')}</ol></div>
       <div class="danke-r">${zb0||`<div class="danke-fuss">${fuss?`<p class="hinweis bank-spaeter">${fuss}</p>`:''}<p class="hinweis">${keineMail}</p></div>`}</div></div>
       ${spOffen?`<p class="sp-leise">Die Spende über ${eur(rechnung().spende,true)} haben wir weggelassen. Wenn du sie doch geben willst, geht das hier jederzeit. <button type="button" class="textknopf" id="spNochmal">Spende zusagen</button></p>`:''}

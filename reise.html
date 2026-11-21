@@ -491,6 +491,13 @@ html.bereit .foto-karte{opacity:1}
 .fragen .bremsen{margin-inline:auto;margin-top:10px}
 .regie{position:absolute;z-index:60;left:10px;right:10px;bottom:calc(var(--fuss) + env(safe-area-inset-bottom,0px) + 6px);max-width:430px;margin-left:auto;background:#fff8d6;color:#2b2200;padding:14px 16px 16px;box-shadow:0 30px 50px -18px #000;font-size:14px;line-height:1.35;transform:translateY(20px) scale(.97);opacity:0;visibility:hidden;transition:.35s cubic-bezier(.2,.9,.3,1.2);max-height:calc(100% - 84px - var(--fuss));overflow-y:auto}
 .regie.da{transform:none;opacity:1;visibility:visible}
+.regie-konditionen{display:block;width:100%;min-height:44px;padding:11px 13px;margin:14px 0;border:1px solid #2b2200;text-align:left;font:700 14px/1.35 var(--t);background:#fff;color:#2b2200}
+.regie-konditionen[hidden],.konditionen-hinweis[hidden]{display:none}
+.regie-konditionen:focus-visible{outline:3px solid var(--navy);outline-offset:3px}
+.konditionen-hinweis{font:600 14px/1.4 var(--t);margin:10px 0 14px;padding:10px 12px;background:var(--papier);color:var(--tinte);border-left:3px solid var(--or)}
+.konditionen-zeile{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px dashed #9c9a92;font:500 14px/1.4 var(--t)}
+.konditionen-zeile:first-child{border-top:0}.konditionen-zeile>span{min-width:0;overflow-wrap:anywhere}.konditionen-zeile>b{flex:none;text-align:right;white-space:nowrap}
+.konditionen-zeile small{display:block;font:500 12px/1.4 var(--t);margin-top:3px}.tk-konditionen .tk-in{gap:0}.tk-konditionen h3{font-size:clamp(30px,7vw,44px)}
 .regie h4{margin:0 0 8px;font:700 13px/1 var(--t);letter-spacing:.14em;text-transform:uppercase;color:#8a5a00;display:flex;justify-content:space-between;align-items:center}
 .regie h4 button{font:800 22px/1 var(--d);padding:2px 6px;color:#8a5a00}
 .regie .satz{font:700 22px/1.12 var(--h);margin-bottom:10px}
@@ -1385,6 +1392,7 @@ html.zeiger .spot{opacity:1}
     <div class="in">
       <p class="eyebrow auf">Partner sind bei uns ein Kreis, keine Liste</p>
       <h2 class="auf" style="--v:1">Wie wollt ihr <em>dabei sein?</em></h2>
+      <p class="konditionen-hinweis" data-konditionen-hinweis hidden role="status"></p>
       <div class="stufen auf" style="--v:2" data-frage="groesse">
         <button class="stf s3" type="button" data-w="3" aria-pressed="false"><b>Einer von acht</b><span>Ganz vorne. Einer je Branche.</span></button>
         <button class="stf s2" type="button" data-w="2" aria-pressed="false"><b>Vorne stehen</b><span>Bevorzugter Platz und alle Partnertreffen.</span></button>
@@ -1408,6 +1416,7 @@ html.zeiger .spot{opacity:1}
       </div>
       <div class="platz-r">
         <p class="eyebrow" id="tkUeber">Unser Vorschlag</p>
+        <p class="konditionen-hinweis" data-konditionen-hinweis hidden role="status"></p>
         <div style="margin-top:10px" id="tkBox"></div>
         <div class="platz-k">
           <button class="knopf" type="button" id="nehmB">Das passt. Weiter.</button>
@@ -1422,6 +1431,7 @@ html.zeiger .spot{opacity:1}
       <p class="eyebrow auf">Wenn ihr mögt, noch das</p>
       <h2 class="auf" style="--v:1">Vom <em>Schwarzen Brett.</em></h2>
       <p class="unter auf" style="--v:2" id="exUnter">Passt zu euren Antworten. Muss nicht sein.</p>
+      <p class="konditionen-hinweis" data-konditionen-hinweis hidden role="status"></p>
       <div class="brett auf" style="--v:3" id="exL"></div>
     </div>
   </section>
@@ -1432,6 +1442,7 @@ html.zeiger .spot{opacity:1}
       <div class="bon-k">
         <p class="eyebrow auf">Fast geschafft</p>
         <h2 class="auf" style="--v:1" id="bonH">Eine Saison <em>oder länger?</em></h2>
+        <p class="konditionen-hinweis" data-konditionen-hinweis hidden role="status"></p>
         <div class="lz auf" style="--v:2" data-frage="laufzeit">
           <button type="button" data-w="1" aria-pressed="true"><b>1</b><strong>Saison</strong></button>
           <button type="button" data-w="2" aria-pressed="false"><b>2</b><strong>Saisons</strong><span>5 % weniger</span></button>
@@ -1478,6 +1489,7 @@ html.zeiger .spot{opacity:1}
     <p class="satz" id="rSatz"></p>
     <div id="rBal"></div>
     <div class="emp" id="rEmp"></div>
+    <button type="button" class="regie-konditionen" id="konditionenB" hidden>Zusatzpaket und Nachlass festlegen</button>
     <label>Dein Satz über den Betrieb. Er steht dann unter dem Wimpel.<input id="rEigen" maxlength="90" placeholder="zum Beispiel: Seit 30 Jahren im Ort." autocomplete="off"></label>
   </aside>
 
@@ -1500,7 +1512,7 @@ window.REISE_TRIKOT=(()=>{
     if(bibliothekP)return bibliothekP;
     bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.113';
+      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.114';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); });
     }})().catch(e=>{bibliothekP=null;throw e;});
@@ -1748,11 +1760,11 @@ const GEWICHT=[4,4,3,3,2,2], ZAHLWORT=['','eine','zwei','drei','vier','fünf'];
 const DANN={kinder:'dann die Kinder',sehen:'dann gesehen werden',leute:'dann gute Leute',netz:'dann die Kontakte',zurueck:'dann etwas zurückgeben',vorn:'dann vorne dabei sein'};
 const BREMSE=[
   ['nutzen','Bringt uns das überhaupt was?','Neue Kunden können wir nicht versprechen. Was wir versprechen können: Euer Name steht dort, wo der Ort zusammenkommt. Und ihr gehört zu denen, die das möglich machen.'],
-  ['binden','Wie lange sind wir gebunden?','Bei Saisonleistungen wählt ihr eine, zwei oder drei Saisons. Auch das automatische Weiterlaufen könnt ihr ausschalten. Die gewählten Angaben stehen vor der Unterschrift noch einmal im Vertrag.'],
+  ['binden','Wie lange sind wir gebunden?','Die gewählte Laufzeit und das automatische Weiterlaufen stehen vor der Unterschrift noch einmal im Vertrag. Ohne automatische Verlängerung endet er zum vereinbarten Termin.'],
   ['arbeit','Wie viel Arbeit haben wir damit?','Fast keine. Wir brauchen euer Logo und einmal euer Okay. Den Rest machen wir.'],
   ['allein','Das entscheide ich nicht allein.','Gut so. Ihr bekommt alles schriftlich mit. Sagt uns, bis wann ihr gesprochen habt. Vorher melden wir uns nicht.'],
   ['geld','Gerade ist es knapp.','Dann drängen wir nicht. Es gibt auch kleine Wege, dabei zu sein. Oder ihr sagt uns, wann wir wieder fragen dürfen.'],
-  ['steuer','Gibt es eine Rechnung?','Ja, eine ordentliche Rechnung über Werbung, mit Umsatzsteuer.']
+  ['steuer','Gibt es eine Rechnung?','Für kostenpflichtige Leistungen bekommt ihr eine Rechnung. Kostenfreie Leistungen haben keinen Zahlbetrag.']
 ];
 
 /* ---------- Notizen fürs Gespräch: darf der Partner lesen, ohne sich benutzt zu fühlen ---------- */
@@ -1817,6 +1829,58 @@ const eigeneWahl=()=>S.groesse!=null&&!S.auto;
 const pIndex=()=>S.pi!=null?S.pi:(eigeneWahl()?S.groesse:regel());
 const pk=()=>{ const i=pIndex(); return i<0?'keins':ST[i]; };
 const kleinstBaustein=()=>KLEIN[reihe()[0]]||'baelle_jugend';
+
+/* ---------- Vereinbarte Konditionen: Anzeige eines vom Rahmen gelieferten Serverstands ---------- */
+let KONDITIONEN=null, KONDITIONEN_WAHL='', KONDITIONEN_HINWEIS='';
+const konditionenSignatur=()=>JSON.stringify([pk(),[...S.extras].sort(),S.laufzeit,!!S.verl]);
+const konditionenDatum=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)?s.slice(8,10)+'.'+s.slice(5,7)+'.'+s.slice(0,4):'';
+function konditionenSauber(k){
+  if(!k||typeof k!=='object'||Array.isArray(k)||typeof k.id!=='string'||!(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(k.id)||k.quelle==='angebot'&&/^angebot:[a-z0-9-]{1,80}$/i.test(k.id))||!Array.isArray(k.positionen)||!k.positionen.length||k.positionen.length>24)return null;
+  const betrag=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100000000;
+  if(!['netto_jahr','einmalig','netto_gesamt'].every(n=>betrag(k[n]))||!Number.isInteger(k.saisons)||k.saisons<1||k.saisons>5||typeof k.hat_saison!=='boolean'||typeof k.auto_verlaengerung!=='boolean'||!konditionenDatum(k.beginn))return null;
+  if(k.ende!=null&&!konditionenDatum(k.ende))return null;
+  if(k.positionen.some(p=>!p||typeof p!=='object'||typeof p.key!=='string'||!p.key.length||p.key.length>60||typeof p.titel!=='string'||p.titel.length>200||!betrag(p.summe)||!Number.isInteger(p.menge)||p.menge<1||p.menge>99||!['saison','einmalig','stueck','spieltag','frei'].includes(p.einheit)))return null;
+  return {id:k.id,positionen:k.positionen.map(p=>Object.assign({},p)),saisons:k.saisons,beginn:k.beginn,ende:k.ende||null,gueltig_bis:k.gueltig_bis||null,
+    netto_jahr:k.netto_jahr,einmalig:k.einmalig,netto_gesamt:k.netto_gesamt,hat_saison:k.hat_saison,auto_verlaengerung:k.auto_verlaengerung,gratis_saison:!!k.gratis_saison,quelle:k.quelle==='angebot'?'angebot':'termin',abrechnung_fassung:+k.abrechnung_fassung===1?1:0};
+}
+function konditionenInStand(){ if(!KONDITIONEN)return; const k=KONDITIONEN,p=k.positionen.find(x=>ST.includes(x.key)&&!x.zusatzpaket)||k.positionen.find(x=>ST.includes(x.key));
+  S.pi=p?ST.indexOf(p.key):-1;S.groesse=S.pi;S.auto=false;S.warKeins=!p;S.extras=new Set(k.positionen.filter(x=>EX[x.key]).map(x=>x.key));S.laufzeit=k.saisons;S.verl=k.auto_verlaengerung;
+  $$('[data-frage="groesse"] [data-w]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.w===S.groesse));
+  $$('[data-frage="laufzeit"] [data-w]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.w===S.laufzeit));
+  $('#autoB').setAttribute('aria-pressed','false');$('#kleinstB').setAttribute('aria-pressed',S.groesse===-1);
+  KONDITIONEN_WAHL=konditionenSignatur();
+}
+function konditionenHinweis(){ $$('[data-konditionen-hinweis]').forEach(e=>{e.hidden=!KONDITIONEN_HINWEIS;e.textContent=KONDITIONEN_HINWEIS;});
+  const b=$('#konditionenB');if(b)b.hidden=!(GERAHMT&&TERMIN);
+}
+function konditionenAnsicht(){konditionenHinweis();if(document.getElementById('tk'))tkZeig(false);if(ORD[S.i]==='bon')bonZeig(true);if(ORD[S.i]==='extras')exZeig();if(ORD[S.i]==='ja')$('#jaWas').textContent=wahlText();passe();}
+function konditionenSetz(raw){if(!GERAHMT)return false;const k=raw===null?null:konditionenSauber(raw);if(raw!==null&&!k)return false;
+  const hatte=!!KONDITIONEN;KONDITIONEN=k;KONDITIONEN_WAHL='';if(hatte&&!k&&S.laufzeit>3)S.laufzeit=3;
+  KONDITIONEN_HINWEIS=k?'Die vereinbarte Auswahl aus eurem '+(k.quelle==='angebot'?'Angebot':'Termin')+' ist übernommen.':hatte?'Es gelten wieder die Standardpreise.':'';
+  if(k)konditionenInStand();konditionenAnsicht();return true;
+}
+function konditionenNutzerPruefen(){if(!KONDITIONEN||konditionenSignatur()===KONDITIONEN_WAHL)return;
+  KONDITIONEN=null;KONDITIONEN_WAHL='';if(S.laufzeit>3)S.laufzeit=3;KONDITIONEN_HINWEIS='Auswahl geändert. Es gelten wieder die Standardpreise.';konditionenHinweis();
+  try{window.parent.postMessage({reise:'konditionen-geaendert'},location.origin);}catch(_){}
+}
+function konditionenText(p){return (p.menge>1?p.menge+' × ':'')+p.titel+(p.zusatzpaket?' (zusätzliches Paket)':'');}
+function konditionenDetail(p){const t=[];if(Number.isFinite(p.nachlass)&&p.nachlass>0)t.push(p.nachlass.toLocaleString('de-DE',{maximumFractionDigits:2})+' % individueller Nachlass');if(Number.isFinite(p.rabatt)&&p.rabatt>0&&p.einzel>0)t.push(Math.round(p.rabatt*100)+' % Laufzeitvorteil');return t.join(', ');}
+function konditionenTrikot(p){return KONDITIONEN?.abrechnung_fassung===1&&['trikot_jugend','aermel_erste','aermel_zweite','aermel_jugend'].includes(p.key);}
+function konditionenZeilen(){return KONDITIONEN.positionen.map(p=>'<div class="konditionen-zeile"><span>'+esc(konditionenText(p))+(konditionenDetail(p)?'<small>'+esc(konditionenDetail(p))+'</small>':'')+'</span><b>'+(konditionenTrikot(p)?'ca. ':'')+eur(p.summe,true)+'<small>'+(p.einheit==='saison'?'je Saison':'einmalig')+'</small></b></div>').join('');}
+function konditionenRechnung(){const k=KONDITIONEN,br=x=>Math.round(Math.round(x*100)*(100+USTP)/100)/100,trikot=k.positionen.filter(konditionenTrikot).reduce((s,p)=>s+p.summe,0),erste=Math.round((k.netto_jahr+k.einmalig-trikot)*100)/100;
+  return {z:k.positionen.map(p=>[konditionenText(p),p.summe,p.einheit==='saison'?'s':'e']),rab:0,ab:0,jahr:k.netto_jahr,einmal:k.einmalig,trikot,erste,ca:k.positionen.some(konditionenTrikot),voll:k.hat_saison,brutto:br(erste),jahrBrutto:br(k.netto_jahr)};
+}
+function konditionenTicket(){const k=KONDITIONEN;$('#tkUeber').textContent='Vereinbarte Auswahl'+(S.name?' · '+S.name:'');
+  $('#tkBox').innerHTML='<article class="tk tk-konditionen" id="tk"><div class="tk-kopf"><div><p class="tk-nr">Aus eurem '+(k.quelle==='angebot'?'Angebot':'Termin')+'</p><h3>Eure Auswahl</h3>'+(WIDMUNG?'<p class="tk-wid">'+esc(WIDMUNG.titel)+'</p>':'')+'</div></div><div class="tk-in">'+konditionenZeilen()+'<p class="klein">Preise netto.'+(k.hat_saison?' Vereinbart für '+k.saisons+' Saison'+(k.saisons===1?'':'s')+'.':'')+'</p></div></article>';
+  lochSetz();wimpelZeig();
+}
+function konditionenBon(){const k=KONDITIONEN,b=$('#bon'),sw=$('#swVerl');sw.hidden=!k.hat_saison||k.gratis_saison;sw.setAttribute('aria-checked',k.auto_verlaengerung);$('small',sw).textContent=k.auto_verlaengerung?'Nach der gewählten Laufzeit verlängert sich der Vertrag um je eine Saison.':'Aus. Nach der Laufzeit ist Schluss.';
+  b.innerHTML='<h3>SV/BSC Mörlenbach</h3><p class="mini">Vereinbarte Auswahl'+(S.name?'<br>'+esc(S.name):'')+'</p>'+konditionenZeilen()
+    +(k.hat_saison?'<div class="zl gr"><span>Je Saison</span><span>'+eur(k.netto_jahr,true)+'</span></div>':'')+(k.einmalig?'<div class="zl"><span>Einmalig</span><span>'+eur(k.einmalig,true)+'</span></div>':'')
+    +'<div class="zl gr"><span>Gesamt'+(k.hat_saison?' über '+k.saisons+' Saison'+(k.saisons===1?'':'s'):'')+'</span><span>'+(k.positionen.some(konditionenTrikot)?'ca. ':'')+eur(k.netto_gesamt,true)+'</span></div><p class="fuss">Preise netto. Alle genannten Nachlässe sind bereits enthalten.'+(k.hat_saison?' Laufzeit: '+esc(konditionenDatum(k.beginn))+(k.ende?' bis '+esc(konditionenDatum(k.ende)):'')+'.':'')+(k.positionen.some(konditionenTrikot)?' Trikots und Ärmel sind Richtwerte. Wir rechnen sie getrennt ab, sobald die Stückzahlen bestätigt sind. Ein anderer Endbetrag braucht eine eigene Vereinbarung.':'')+'</p>';
+}
+const konditionenB=$('#konditionenB');if(konditionenB)konditionenB.onclick=()=>{if(!GERAHMT||!TERMIN)return;clearInterval(szUhr);REISEFILM.sichtbar(false);window.parent.postMessage({reise:'konditionen-oeffnen',wahl:{paket:pk(),extras:[...S.extras],saisons:S.laufzeit,auto:!!S.verl,beginn:'2027-07-01'}},location.origin);};
+window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.reise==='konditionen')konditionenSetz(e.data.konditionen);});
 
 /* ---------- Marke (seit 0.99.85): das Logo der Firma an Bande, Trikot und Partnerwand ----------
    Albert, 18.11.2026: Die Firma soll sich selbst sehen, mit Logo, nicht nur mit getipptem Namen. „Logo nach links, rechts daneben
@@ -1944,7 +2008,7 @@ addEventListener('keydown',e=>{ if(e.defaultPrevented||e.altKey||e.ctrlKey||e.me
   if(e.key==='ArrowRight'){ e.preventDefault(); if(!e.repeat)vorB(); } if(e.key==='ArrowLeft'&&S.i>0){ e.preventDefault(); if(!e.repeat)zurueckB(); } if(e.key==='r'||e.key==='R')regieUm(); });
 
 function lob(id,text){ const b=$('#lob-'+id); if(!b)return; b.classList.remove('da'); setTimeout(()=>{ $('p',b).textContent=text; if(text){ b.classList.add('da'); setTimeout(()=>b.scrollIntoView({block:'nearest',behavior:ruhig?'auto':'smooth'}),120); } },160); }
-const neuRechnen=()=>{ S.pi=null; };
+const neuRechnen=()=>{ S.pi=null; konditionenNutzerPruefen(); };
 
 /* ---------- Station 1: Woher ---------- */
 $$('[data-frage="verb"] [data-w]').forEach(b=>b.onclick=()=>{ S.verb=b.dataset.w; neuRechnen();
@@ -2035,7 +2099,7 @@ function ratText(i,rg){ if(S.pi!=null||i>=rg||!(eigeneWahl()||i<0))return '';
   for(const k of S.antrieb){ const f=(FEHLT[HAUPT[k]]||[]).find(x=>x[0]>i&&x[0]<=rg); if(f){ satz='Für „'+ZITAT[k]+'“ '+f[1]+'. Im '+R.t+' gehört das dazu.'; break; } }
   if(!satz)satz='Nach euren Antworten passt auch der '+R.t+'. '+R.auch[0];
   return '<div class="rat"><p>'+satz+'</p><button type="button" id="ratB">Jetzt upgraden<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>'; }
-function tkZeig(wechsel){ const p=pk(), box=$('#tkBox'), i=pIndex(), rg=regel(); let h, ueber;
+function tkZeig(wechsel){ if(KONDITIONEN){konditionenTicket();return;} const p=pk(), box=$('#tkBox'), i=pIndex(), rg=regel(); let h, ueber;
   if(p==='keins'){ const k=kleinstBaustein(), x=EX[k]; S.extras=new Set([k]); S.warKeins=true; ueber='Unser Vorschlag für etwas Kleines';
     h='<article class="tk tk-keins'+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">Ohne Paket · ein einzelner Baustein</p><h3>'+x.t+ib(k,x.t).replace('data-i=','data-preis="1" data-i=')+'</h3></div><p class="tk-preis">'+(x.ca?'ca. ':'')+eur(exPreis(k))+'<small>'+x.e+', netto</small></p></div><div class="tk-in"><ul><li>'+x.k+'</li><li>Größer werden könnt ihr jederzeit.</li></ul>'+ratText(i,rg)+'</div></article>'; }
   else { if(S.warKeins){ S.extras.clear(); S.warKeins=false; }
@@ -2048,8 +2112,8 @@ function tkZeig(wechsel){ const p=pk(), box=$('#tkBox'), i=pIndex(), rg=regel();
       +(auch.length&&!(g.length>=3||(rat&&g.length>=2))?'<h4>'+(g.length?'Außerdem dabei':'Das ist dabei')+'</h4><ul>'+auch.map(x=>'<li>'+x+'</li>').join('')+'</ul>':'')+kind+rat+'</div></article>'; }
   box.innerHTML=h; lochSetz(); $('#tkUeber').textContent=ueber+(S.name?' · '+S.name:'');
   wimpelZeig();
-  const rb=$('#ratB'); if(rb)rb.onclick=()=>{ S.pi=rg; tkZeig(true); regieZeig(); };
-  const kb=$('#kindB'); if(kb)kb.onclick=()=>{ if(S.extras.has('baelle_jugend'))S.extras.delete('baelle_jugend'); else S.extras.add('baelle_jugend'); tkZeig(false); }; }
+  const rb=$('#ratB'); if(rb)rb.onclick=()=>{ S.pi=rg; konditionenNutzerPruefen(); tkZeig(true); regieZeig(); };
+  const kb=$('#kindB'); if(kb)kb.onclick=()=>{ if(S.extras.has('baelle_jugend'))S.extras.delete('baelle_jugend'); else S.extras.add('baelle_jugend'); konditionenNutzerPruefen(); tkZeig(false); }; }
 function lochSetz(){ const tk=$('#tk'); if(tk&&tk.offsetParent)tk.style.setProperty('--loch',$('.tk-in',tk).offsetTop+'px'); }
 $('#nehmB').onclick=()=>geh(S.i+1);
 $('#zeigB').onclick=()=>{ const s=szene('platz'); s.dataset.teil='2'; s.scrollTop=0; tkZeig(false); regieZeig(); };
@@ -2064,7 +2128,7 @@ function exWahl(){ const p=punkte(), paket=pk(), fest=paket==='keins'?kleinstBau
   for(const e of l){ if(aus.length>=3)break; if(aus.includes(e)||e.sc<8)continue; const b=e.best||'x'; if((zahl[b]||0)>=2)continue; zahl[b]=(zahl[b]||0)+1; aus.push(e); }
   return aus; }
 // Räumt Bausteine weg, die nicht mehr zu Paket und Antworten gehören (auch wenn das Brett übersprungen wird).
-function exPutzen(){ const ok=new Set(exWahl().map(e=>e.k)); if(pk()==='keins')ok.add(kleinstBaustein()); [...S.extras].forEach(k=>{ if(!ok.has(k))S.extras.delete(k); }); }
+function exPutzen(){ if(KONDITIONEN)return; const ok=new Set(exWahl().map(e=>e.k)); if(pk()==='keins')ok.add(kleinstBaustein()); [...S.extras].forEach(k=>{ if(!ok.has(k))S.extras.delete(k); }); }
 function exBild(k){ const x=EX[k], n=esc(S.name||'Euer Name');
   if(x.bild==='plakat')return '<div class="bild spieltag-klein" data-spieltag>'+spieltagHtml()+'</div>';
   if(x.bild==='bande')return '<div class="bild"><img src="partner/r-bande.webp" alt=""></div>';
@@ -2077,8 +2141,8 @@ function exZeig(hinweis){ exPutzen(); const l=exWahl(), paket=pk(), bandeHinweis
   if(bandeHinweis)h+='<div class="zt hinweis"><span class="tx"><span class="weil-t">Ehrlich gerechnet</span><b>Bande dazu?</b><p>Supporter plus eigene Bande kostet mehr als der Club Partner. Dort ist die Bande schon dabei.</p><button class="knopf dunkel" type="button" id="clubB">Zum Club Partner</button></span></div>';
   $('#exL').innerHTML=h; $('#exL').hidden=!h;
   $('#exUnter').textContent=hinweis||(h?'Passt zu euren Antworten. Muss nicht sein.':'Zu eurem Paket fehlt nichts. Mehr braucht es nicht.');
-  $$('#exL .zt[data-k]').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(S.extras.has(k))S.extras.delete(k); else S.extras.add(k); exZeig(); regieZeig(); });
-  const cb=$('#clubB'); if(cb)cb.onclick=()=>{ S.pi=1; exZeig('Jetzt Club Partner. Die Bande ist dabei.'); regieZeig(); }; passe(); }
+  $$('#exL .zt[data-k]').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(S.extras.has(k))S.extras.delete(k); else S.extras.add(k); konditionenNutzerPruefen(); exZeig(); regieZeig(); });
+  const cb=$('#clubB'); if(cb)cb.onclick=()=>{ S.pi=1; konditionenNutzerPruefen(); exZeig('Jetzt Club Partner. Die Bande ist dabei.'); regieZeig(); }; passe(); }
 
 
 /* ---------- Mehr dazu (0.99.75, Albert: kleine Info-Knöpfe an Paketen und Bausteinen, „dass man sich alles durchlesen kann“) ----------
@@ -2151,13 +2215,13 @@ $$('[data-frage="groesse"] [data-w]').forEach(b=>{ const k=ST[+b.dataset.w]; b.i
 const USTP=19;   // Umsatzsteuer in Prozent (mit dem Verein abgleichen)
 // 0.99.78 (R8): Trikots sind Circa-Beträge und bekommen eine eigene Rechnung, sobald die Stückzahl feststeht. Auf dem Zettel stehen sie
 // deshalb getrennt (trikot), die Summe der ersten Saison nennt trotzdem alles zusammen.
-function rechne(){ const p=pk(), P=PAK[p]; let voll=P.p, einmal=0, trikot=0, ca=false; const z=p==='keins'?[]:[[P.t,P.p,'s']];
+function rechne(){ if(KONDITIONEN)return konditionenRechnung(); const p=pk(), P=PAK[p]; let voll=P.p, einmal=0, trikot=0, ca=false; const z=p==='keins'?[]:[[P.t,P.p,'s']];
   S.extras.forEach(k=>{ const x=EX[k], pr=exPreis(k); if(x.ca)ca=true; if(x.sais){ voll+=pr; z.push([x.t,pr,'s']); } else { einmal+=pr; if(x.ca)trikot+=pr; z.push([x.t+(x.ca?' (ca.)':''),pr,'e']); } });
   const rab=voll?(S.laufzeit>=3?.10:S.laufzeit===2?.05:0):0, ab=Math.round(voll*rab*100)/100, jahr=Math.round((voll-ab)*100)/100, erste=Math.round((jahr+einmal)*100)/100, br=x=>Math.round(Math.round(x*100)*(100+USTP)/100)/100;
   return {z,rab,ab,jahr,einmal,trikot,erste,ca,voll,brutto:br(erste),jahrBrutto:br(jahr)}; }
 const hatBande=()=>['club','premium','p1896'].includes(pk())||S.extras.has('bande_erste');
-function wahlText(){ const r=rechne(), p=pk(), ex=[...S.extras].map(k=>EX[k].t).join(', '); return (p==='keins'?ex:PAK[p].t+(ex?' und '+ex:''))+(r.voll?' · '+(S.laufzeit>1?S.laufzeit+' Saisons':'eine Saison'):''); }
-function bonZeig(schnell){ const r=rechne(), b=$('#bon'), sw=$('#swVerl'); sw.hidden=!r.voll; sw.setAttribute('aria-checked',S.verl); $('small',sw).textContent=S.verl?'Kündbar jedes Jahr bis 31. März.':'Aus. Nach der Laufzeit ist Schluss.';
+function wahlText(){ if(KONDITIONEN)return KONDITIONEN.positionen.map(konditionenText).join(', ')+(KONDITIONEN.hat_saison?' · '+KONDITIONEN.saisons+' Saison'+(KONDITIONEN.saisons===1?'':'s'):''); const r=rechne(), p=pk(), ex=[...S.extras].map(k=>EX[k].t).join(', '); return (p==='keins'?ex:PAK[p].t+(ex?' und '+ex:''))+(r.voll?' · '+(S.laufzeit>1?S.laufzeit+' Saisons':'eine Saison'):''); }
+function bonZeig(schnell){ if(KONDITIONEN){konditionenBon();return;} const r=rechne(), b=$('#bon'), sw=$('#swVerl'); sw.hidden=!r.voll; sw.setAttribute('aria-checked',S.verl); $('small',sw).textContent=S.verl?'Nach der gewählten Laufzeit verlängert sich der Vertrag um je eine Saison.':'Aus. Nach der Laufzeit ist Schluss.';
   b.innerHTML='<h3>SV/BSC Mörlenbach</h3><p class="mini">Für'+(S.name?'<br>'+esc(S.name):' euch')+'</p>'
     +r.z.map(x=>'<div class="zl"><span>'+x[0]+'</span><span>'+eur(x[1])+'</span></div>').join('')
     +(r.rab?'<div class="zl rab"><span>'+S.laufzeit+' Saisons, '+Math.round(r.rab*100)+' % weniger</span><span>−'+eur(r.ab,true)+'</span></div>':'')
@@ -2168,8 +2232,8 @@ function bonZeig(schnell){ const r=rechne(), b=$('#bon'), sw=$('#swVerl'); sw.hi
     +'<p class="fuss">Preise netto.'+(hatBande()?' Bande: Druck exkl., Montage inkl.':'')+(r.trikot?' Trikots rechnen wir getrennt ab, sobald die Stückzahl feststeht.':'')+'</p>'
     +'<span class="stempel">Preis fest</span>';
   if(S.laufzeit>1&&r.voll)setTimeout(()=>$('.stempel',b).style.setProperty('--st',1),schnell?200:650); }
-$('#swVerl').onclick=()=>{ S.verl=!S.verl; bonZeig(true); regieZeig(); };
-$$('[data-frage="laufzeit"] [data-w]').forEach(b=>b.onclick=()=>{ S.laufzeit=+b.dataset.w; $$('[data-frage="laufzeit"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x===b)); lob('laufzeit',LOB.laufzeit[S.laufzeit]); bonZeig(true); regieZeig(); });
+$('#swVerl').onclick=()=>{ S.verl=!S.verl; konditionenNutzerPruefen(); bonZeig(true); regieZeig(); };
+$$('[data-frage="laufzeit"] [data-w]').forEach(b=>b.onclick=()=>{ S.laufzeit=+b.dataset.w; konditionenNutzerPruefen(); $$('[data-frage="laufzeit"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x===b)); lob('laufzeit',LOB.laufzeit[S.laufzeit]); bonZeig(true); regieZeig(); });
 
 /* ---------- Gute Fragen: liegen bereit, drängen sich nicht auf ---------- */
 $('#bremsen').innerHTML=BREMSE.map(b=>'<button class="br" type="button" data-b="'+b[0]+'" aria-expanded="false">'+b[1]+'</button><div class="br-a"><div><p>'+b[2]+'</p></div></div>').join('');
@@ -2180,7 +2244,7 @@ $('#fragB').onclick=()=>$('#fragen').classList.add('da'); $('#fragX').onclick=()
 const tag=n=>{ const d=new Date(); d.setDate(d.getDate()+n); return d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'}); };
 const LEUTE='<div class="leute"><div><img src="partner/r-ansprech-sven.jpg" alt=""><img src="partner/r-ansprech-tobias.jpg" alt=""><img src="partner/r-ansprech-albert.jpg" alt=""></div><p><b>Sven Schill, Tobias Jäger, Albert Klee</b>Eure drei Ansprechpartner. Büro SV Mörlenbach: <span style="white-space:nowrap;user-select:all">06209 5290</span></p></div>';
 const chips=(id,l)=>'<div class="wk" id="'+id+'">'+l.map(x=>'<button class="zeile" type="button" data-t="'+esc(x[1])+'">'+x[0]+'</button>').join('')+'</div>';
-const zettel=(e,h,zeile,schritte,extra,ohneMit)=>'<div class="zettel"><p class="eyebrow">'+e+'</p><h3>'+h+'</h3>'+(zeile?'<p class="wahl-z">'+zeile+'</p>':'')+(extra||'')+(schritte?'<ol>'+schritte.map(x=>Array.isArray(x)?'<li><span id="'+x[0]+'">'+x[1]+'</span></li>':'<li><span>'+x+'</span></li>').join('')+'</ol>':'')+(zeile&&!ohneMit?'<button class="zeile" type="button" id="mitB">Zettel mitnehmen</button>':'')+LEUTE+'</div><button class="zeile leise" type="button" id="nochmalB">Noch einmal von vorn</button>';
+const zettel=(e,h,zeile,schritte,extra,ohneMit)=>'<div class="zettel"><p class="eyebrow">'+e+'</p><h3>'+h+'</h3>'+(zeile?'<p class="wahl-z">'+esc(zeile)+'</p>':'')+(extra||'')+(schritte?'<ol>'+schritte.map(x=>Array.isArray(x)?'<li><span id="'+x[0]+'">'+x[1]+'</span></li>':'<li><span>'+x+'</span></li>').join('')+'</ol>':'')+(zeile&&!ohneMit?'<button class="zeile" type="button" id="mitB">Zettel mitnehmen</button>':'')+LEUTE+'</div><button class="zeile leise" type="button" id="nochmalB">Noch einmal von vorn</button>';
 function mitgeben(b){ const t='SV/BSC Mörlenbach\n'+(S.name?S.name+'\n':'')+wahlText()+(S.wann?'\n'+S.wann:'')+'\nBüro SV Mörlenbach: 06209 5290', kopier=()=>{ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{ b.textContent='Kopiert. Fügt es ein, wo ihr wollt.'; }).catch(()=>{ b.textContent='Am besten den Zettel abfotografieren.'; }); };
   if(navigator.share)navigator.share({text:t}).catch(kopier); else kopier(); }
 function finalZeig(h,ohneApp){ $('#jaVor').hidden=true; const n=$('#jaNach'); n.hidden=false; n.innerHTML=h+(IM_RAHMEN&&!ohneApp?'<button class="knopf" type="button" id="weiterAppB">Zu Paketen und Vertrag</button>':''); n.classList.toggle('zwei',!!$('.zettel',n)); const k=document.createElement('div'); k.className='f-k'; [...n.children].forEach(x=>{ if(!x.classList.contains('zettel')&&x.id!=='nochmalB')k.appendChild(x); }); n.insertBefore(k,n.firstChild);
@@ -2213,7 +2277,7 @@ function jaNein(){ finalZeig('<p class="eyebrow">Danke für eure Zeit</p><h2>In 
 $$('[data-ja]').forEach(b=>b.onclick=()=>{ S.ja=b.dataset.ja; S.weg=null; S.wann=''; ({dabei:jaDabei,nein:jaNein})[S.ja](); });
 function vonVorn(){ S=neu(); wK=-1; $('#und').hidden=true; $('#kleinstB').setAttribute('aria-pressed','false'); $$('[aria-pressed]').forEach(x=>{ if(x.id!=='tonB')x.setAttribute('aria-pressed','false'); }); $('[data-frage="laufzeit"] [data-w="1"]').setAttribute('aria-pressed','true');
   $$('.lob').forEach(l=>l.classList.remove('da')); $$('.saetze').forEach(x=>x.classList.remove('gewaehlt')); $$('.sz-bild').forEach(x=>x.classList.remove('an')); $$('.bk .st').forEach(x=>x.textContent=''); $$('#bremsen .br').forEach(x=>{ x.setAttribute('aria-expanded','false'); x.classList.remove('klar','bleibt'); }); $('#jahrIn').value=''; $('#rEigen').value='';
-  S.i=ORD.length-1; setzName(''); $('#nameIn').value=S.name; GEMERKT=null; $('#wieder').hidden=true; $('#startF').hidden=false; geh(0); }
+  S.i=ORD.length-1; setzName(''); konditionenInStand(); $('#nameIn').value=S.name; GEMERKT=null; $('#wieder').hidden=true; $('#startF').hidden=false; geh(0); }
 
 /* ---------- Beim Betreten / nach dem Schnitt ---------- */
 const REIN={
@@ -2222,8 +2286,8 @@ const REIN={
   groesse:()=>grBild(),
   platz:()=>{ szene('platz').dataset.teil=S.rueck?'2':'1'; gehoertZeig(); tkZeig(false); },
   extras:()=>exZeig(),
-  bon:()=>{ exPutzen(); const r=rechne(); if(!r.voll)S.laufzeit=1; $$('[data-frage="laufzeit"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.w===S.laufzeit)); $('.lz').hidden=!r.voll; $('#bonH').innerHTML=r.voll?'Eine Saison <em>oder länger?</em>':'Euer <em>Zettel.</em>';
-    bonZeig(false); const l=$('#lob-laufzeit'); l.hidden=!r.voll; $('p',l).textContent=LOB.laufzeit[S.laufzeit]; l.classList.add('da'); },
+  bon:()=>{ exPutzen(); const r=rechne(); if(!r.voll&&!KONDITIONEN)S.laufzeit=1; $$('[data-frage="laufzeit"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.w===S.laufzeit)); $('.lz').hidden=!r.voll; $('#bonH').innerHTML=r.voll?'Eine Saison <em>oder länger?</em>':'Euer <em>Zettel.</em>';
+    bonZeig(false); const l=$('#lob-laufzeit'); l.hidden=!r.voll; $('p',l).textContent=LOB.laufzeit[S.laufzeit]||S.laufzeit+' Saisons vereinbart.'; l.classList.add('da'); },
   ja:()=>{ S.ja=null; S.weg=null; S.wann=''; $('#jaVor').hidden=false; const n=$('#jaNach'); n.hidden=true; n.innerHTML=''; n.classList.remove('fest'); $('#fragen').classList.remove('da'); $('#jaWas').textContent=wahlText(); }
 };
 const AUF={
@@ -2287,7 +2351,7 @@ let notizAlt='';
 function reiseMelden(){ try{ const n=reiseNotiz(); if(!n||n===notizAlt||window.parent===window)return; notizAlt=n; window.parent.postMessage({reise:'notiz',notiz:n},location.origin); }catch(e){} }
 // Die Wahl geht nur mit, wenn die Firma Ja gesagt hat. Vorher ist das Paket nur ein Vorschlag und darf nicht in den Vertrag rutschen.
 function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz(),
-  wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],saisons:S.laufzeit,auto:!!S.verl,beginn:'2027-07-01'}:null},location.origin); }catch(e){} }
+  wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],saisons:S.laufzeit,auto:!!S.verl,beginn:KONDITIONEN?KONDITIONEN.beginn:'2027-07-01'}:null},location.origin); }catch(e){} }
 /* ---------- Speichern, Spur und Wiederkommen (0.99.76, R12, R15, R17) ----------
    Der Rahmen in partner.html kennt den persönlichen Link und spricht mit dem Server (partner_reise_stand, partner_reise_merken).
    Die Reise selbst kennt weder Schlüssel noch Adresse: Sie schickt nur Nachrichten an den Rahmen. Ohne Rahmen wird nichts gespeichert.
@@ -2310,7 +2374,7 @@ F.addEventListener('pointerdown',e=>{ if(!MERKT||klZahl>=400)return; const b=e.t
 // Stand aus dem Speicher in die Reise legen: Antworten, Auswahl und alle gedrückten Knöpfe
 function standSetz(st){ const n=neu(); S=n; S.name=String(FIRMA!==null?FIRMA:(st.name||'')); ['verb','platz','jahr','wann'].forEach(k=>{ if(st[k])S[k]=st[k]; });
   S.antrieb=(st.antrieb||[]).filter(a=>HAUPT[a]); S.skeptisch=!!st.skeptisch&&!S.antrieb.length; S.auto=!!st.auto; if(st.groesse!=null&&!S.auto)S.groesse=+st.groesse; if(st.pi!=null)S.pi=+st.pi;
-  S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins';
+  S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins'; konditionenInStand();
   $('#nameIn').value=S.name; setzName(S.name);
   $$('[data-frage="verb"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===S.verb)); $('[data-frage="verb"]').classList.toggle('gewaehlt',!!S.verb); verbBild(S.verb); $('#und').hidden=!S.verb; $('#jahrIn').value=S.jahr||'';
   $$('[data-frage="platz"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===S.platz));
@@ -2322,7 +2386,7 @@ function wiederZeig(){ const st=GEMERKT, w=$('#wieder'); if(!st||!w||S.i!==0)ret
   w.hidden=false; $('#startF').hidden=true; const los=()=>{ w.hidden=true; if(!ton&&tonGemerkt()!=='0')tonSetz(true); };
   $('#wWeiter').onclick=()=>{ los(); standSetz(st); geh(ziel); };
   $('#wVorn').onclick=()=>{ los(); standSetz(st); geh(1); };
-  $('#wNeu').onclick=()=>{ w.hidden=true; $('#startF').hidden=false; GEMERKT=null; const n=S.name; S=neu(); setzName(n); merken(); $('#nameIn').focus(); }; }
+  $('#wNeu').onclick=()=>{ w.hidden=true; $('#startF').hidden=false; GEMERKT=null; const n=S.name; S=neu(); setzName(n); konditionenInStand(); merken(); $('#nameIn').focus(); }; }
 window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origin!==location.origin||!e.data||e.data.reise!=='marke')return;
   const ok=u=>typeof u==='string'&&u.length<900000&&/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(u);
   if(!ok(e.data.bande)||!ok(e.data.trikot)||typeof e.data.original!=='string'||e.data.original.length>900000||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(e.data.original))return;
@@ -2337,7 +2401,7 @@ window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origi
   if(e.data.identitaet)return;
   WIDMUNG=null;
   if(e.data.widmung&&typeof e.data.widmung.titel==='string'&&e.data.widmung.titel.trim()){ WIDMUNG={titel:e.data.widmung.titel.trim().slice(0,120),text:String(e.data.widmung.text||'').trim().slice(0,800)}; if(document.getElementById("tk")){ try{ tkZeig(); }catch(_){} } }
-  MERKT=!!e.data.merken; TERMIN=!!e.data.termin; html.classList.toggle('termin',TERMIN);
+  MERKT=!!e.data.merken; TERMIN=!!e.data.termin; html.classList.toggle('termin',TERMIN); konditionenHinweis();
   GEMERKT=null;
   if(e.data.stand&&typeof e.data.stand==='object'){ GEMERKT=Object.assign({},e.data.stand,{_am:e.data.am||null}); wiederZeig(); } }catch(x){} });
 if(navigator.webdriver)Object.assign(window.REISE_PRUEF,{marke:()=>MARKE,merken:()=>merken(),modus:()=>({termin:TERMIN,merkt:MERKT,sid:SID}),sek:()=>szSek,ticket:pi=>{ S.pi=pi; tkZeig(); return $('#tkBox').innerHTML; }});

@@ -472,17 +472,21 @@ PLIB.eur=(n,dez)=>{ const r=Math.round((+n||0)*100)/100; return r.toLocaleString
 // Partner des Tages richtet sich nach dem Paket in der Auswahl (höchstes gilt): Club 20 €, Premium und 1896 Partner 40 € unter dem Grundpreis (189 / 169 / 149 €).
 PLIB.sotdPreis=function(l,pos){ const k=(pos||[]).map(e=>e&&e.key), pk=['p1896','premium','club','supporter'].find(x=>k.includes(x)), b=+l.preis;
   return pk==='club'?Math.max(0,b-20):pk==='premium'||pk==='p1896'?Math.max(0,b-40):b; };
-PLIB.rechnen=function(pos,leistungen,saisons){
-  const s=Math.max(1,Math.min(5,+saisons||1)), rab=s>=3?.10:s===2?.05:0; let jahr=0,einmal=0,spende=0; const aus=[];
+PLIB.TRIKOT_KEYS=['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend'];
+PLIB.rechnen=function(pos,leistungen,saisons,opt){
+  const s=Math.max(1,Math.min(5,+saisons||1)), rab=s>=3?.10:s===2?.05:0, fassung=+(opt&&opt.abrechnung_fassung)===1?1:0;
+  let jahr=0,einmal=0,spende=0,trikot=0,saisonPos=0,mitRab=false; const aus=[];
   (pos||[]).forEach(e=>{ const l=leistungen.find(x=>x.key===e.key); if(!l)return; const menge=Math.max(1,Math.min(99,+e.menge||1));
     const einzel=(l.art==='spende'||l.art==='sonstiges'||l.preis==null||e.preis!=null&&e.preis!=='')?(+e.preis||0):(l.key==='sotd'?PLIB.sotdPreis(l,pos):+l.preis);
-    let summe;
-    if(l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art)){ summe=Math.round(einzel*menge*(1-rab)*100)/100; jahr+=summe; }
+    let summe; const saison=l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art), rp=saison&&!e.fest?rab:0;
+    if(saison){ summe=Math.round(einzel*menge*(1-rp)*100)/100; jahr+=summe; saisonPos++; if(rp>0)mitRab=true; }
     else if(l.art==='spende'){ summe=einzel*menge; spende+=summe; }
-    else { summe=einzel*menge; einmal+=summe; }
-    aus.push(Object.assign({},e,{titel:l.art==='sonstiges'&&e.text?e.text:l.titel,einzel,menge,summe,einheit:l.einheit,rabatt:l.einheit==='saison'?rab:0})); });
-  return {positionen:aus,saisons:s,rabatt:rab,netto_jahr:Math.round(jahr*100)/100,einmalig:Math.round(einmal*100)/100,spende:Math.round(spende*100)/100,
-    netto_gesamt:Math.round((jahr*s+einmal)*100)/100,erste_rechnung:Math.round((jahr+einmal)*100)/100};
+    else { summe=einzel*menge; einmal+=summe; if(fassung&&PLIB.TRIKOT_KEYS.includes(l.key))trikot+=summe; }
+    aus.push(Object.assign({},e,{titel:l.art==='sonstiges'&&e.text?e.text:l.titel,einzel,menge,summe,einheit:l.einheit,rabatt:rp})); });
+  return {positionen:aus,saisons:s,rabatt:saisonPos&&!mitRab?0:rab,hat_saison:saisonPos>0,abrechnung_fassung:fassung,
+    netto_jahr:Math.round(jahr*100)/100,einmalig:Math.round(einmal*100)/100,spende:Math.round(spende*100)/100,
+    trikot_netto:Math.round(trikot*100)/100,standard_einmalig:Math.round((einmal-trikot)*100)/100,
+    netto_gesamt:Math.round((jahr*s+einmal)*100)/100,erste_rechnung:Math.round((jahr+einmal-trikot)*100)/100};
 };
 
 // ---------- Rechnungsmonat (seit 0.99.81) ----------
@@ -522,6 +526,9 @@ PLIB.KLAUSELN={
   spende:['Spende','Die Spendenzusage ist eine freiwillige Absicht, keine rechtliche Verpflichtung. Sie ist von allen Leistungen des Vereins unabhängig: Der Verein erbringt dafür keine Gegenleistung, und an gebuchten Leistungen ändert sich nichts, wenn die Spende ausbleibt. Der Verein setzt sie für {zweck} ein. Eine Zuwendungsbestätigung stellt der Verein nach Zahlungseingang aus, soweit er als gemeinnützig anerkannt ist und die steuerlichen Voraussetzungen vorliegen.'],
   spende_ohne:['Spende','Die Spendenzusage ist eine freiwillige Absicht, keine rechtliche Verpflichtung. Sie ist von allen Leistungen des Vereins unabhängig: Der Verein erbringt dafür keine Gegenleistung, und an gebuchten Leistungen ändert sich nichts, wenn die Spende ausbleibt. Der Verein setzt sie für {zweck} ein. Eine Zuwendungsbestätigung kann der Verein dafür nicht ausstellen.']
 };
+PLIB.KLAUSELN.trikot_abrechnung=['Getrennte Trikotrechnung','Trikots und Ärmel rechnen wir getrennt ab, sobald die Stückzahlen feststehen und der Verein sie bestätigt hat. Die Beträge in der Leistungsübersicht sind Richtwerte. Ohne eine eigene Vereinbarung bleiben diese Beträge maßgeblich. Einen abweichenden Endbetrag vereinbaren Verein und Partner anhand der Stückzahlen in Textform. Die Stückzahl allein ändert den Preis nicht.'];
+PLIB.KOSTENFREI_TEXT='Die Leistungen aus der Leistungsübersicht sind für die vereinbarte Laufzeit kostenfrei. Es fällt kein Zahlbetrag an. Der Verein stellt dafür keine Rechnung. Eine spätere Vergütung braucht eine eigene Vereinbarung zwischen Verein und Partner in Textform.';
+PLIB.preisHinweis=function(p){ return [p&&+p.nachlass>0?(+p.nachlass).toLocaleString('de-DE',{maximumFractionDigits:2})+' % Nachlass':'',p&&+p.rabatt>0&&+p.einzel>0?Math.round(+p.rabatt*100)+' % Laufzeitvorteil':''].filter(Boolean).join(', '); };
 PLIB.klauselnFuer=function(pos,leistungen,opt){
   opt=opt||{}; const keys=(pos||[]).map(p=>p.key), L=k=>leistungen.find(x=>x.key===k)||{}, bereiche=new Set(keys.map(k=>L(k).bereich));
   const nurSpende=keys.length&&keys.every(k=>k==='spende');
@@ -530,6 +537,7 @@ PLIB.klauselnFuer=function(pos,leistungen,opt){
   const k=['gegenstand',saisonal?(opt.auto?'laufzeit_auto':'laufzeit_fest'):'laufzeit_einmal',saisonal?'verguetung':'verguetung_einmal','werbemittel'];
   if(keys.some(x=>/^(club|premium|p1896|bande_)/.test(x)))k.push('bande');
   if(keys.some(x=>/^(brust_|aermel_|trikot_|aufwaerm_)/.test(x)))k.push('trikot');
+  if(+opt.abrechnung_fassung===1&&keys.some(x=>PLIB.TRIKOT_KEYS.includes(x)))k.push('trikot_abrechnung');
   if(bereiche.has('jugend')||keys.some(x=>['zeltlager','ferienspiele'].includes(x)))k.push('jugend');
   if(keys.includes('p1896'))k.push('exklusiv');
   if(bereiche.has('events')||keys.some(x=>['matchball','sotd'].includes(x)))k.push('events');
@@ -541,7 +549,13 @@ PLIB.klauselnFuer=function(pos,leistungen,opt){
   return k;
 };
 PLIB.klauselText=function(key,w){ const K=PLIB.KLAUSELN[key]; if(!K)return null; w=w||{};
-  let t=K[1]; if(key==='exklusiv'&&!w.branche)t='Der Verein nimmt in der Laufzeit keinen weiteren Partner aus derselben Branche wie der Partner in dieselbe Partnerstufe auf.';
+  let t=K[1]; if(w.kostenfrei===true&&['verguetung','verguetung_einmal'].includes(key))return [K[0],PLIB.KOSTENFREI_TEXT];
+  if(w.nur_einmalig===true&&key==='verguetung')t=PLIB.KLAUSELN.verguetung_einmal[1];
+  if(key==='exklusiv'&&!w.branche)t='Der Verein nimmt in der Laufzeit keinen weiteren Partner aus derselben Branche wie der Partner in dieselbe Partnerstufe auf.';
+  if(w.trikot_abrechnung){
+    if(key==='verguetung')t=t.replace('Einmalige Leistungen stehen in der ersten Rechnung.','Andere einmalige Leistungen stehen in der ersten Rechnung.');
+    if(key==='verguetung_einmal'||w.nur_einmalig===true&&key==='verguetung')t=t.replace('Die Rechnung stellt der Verein, sobald der Vertrag geschlossen ist.','Für andere einmalige Leistungen stellt der Verein die Rechnung, sobald der Vertrag geschlossen ist. Trikots und Ärmel werden nach bestätigter Stückzahl getrennt abgerechnet.');
+  }
   return [K[0],t.replace(/\{(\w+)\}/g,(m,n)=>w[n]!=null&&w[n]!==''?w[n]:'…')]; };
 
 // ---------- Girocode (EPC069-12, Version 002) ----------
@@ -568,7 +582,7 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   const doc=new jsPDF({unit:'pt',format:'a4'}), W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), L=56;
   const navy=[20,27,71], or=[232,116,31], grau=[100,104,120], tinte=[20,24,36];
   const pz=s=>String(s==null?'':s).replace(/[−–—]/g,'-').replace(/[„“”]/g,'"');
-  const t=(s,x,y,o)=>doc.text(pz(s),x,y,o||{});
+  const t=(s,x,y,o)=>doc.text(Array.isArray(s)?s.map(pz):pz(s),x,y,o||{});
   doc.setFillColor(...navy); doc.rect(0,0,W,8,'F'); doc.setFillColor(...or); doc.rect(0,8,W,3,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...grau); t((vd.name||'SV/BSC Mörlenbach').toUpperCase(),L,44);
   doc.setFont('helvetica','normal'); t([vd.abteilung,vd.strasse,vd.ort].filter(Boolean).join(' · '),L,57);
@@ -581,11 +595,14 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   // Leistungszeitraum wie auf der Rechnung aus der Mail: je Saison bis zum Saisonende, sonst Leistung ab Beginn
   const iso=d=>String(d||'').slice(0,10), saisonEnde=(von,bis)=>{ const d=new Date(iso(von)+'T12:00:00'), y=d.getMonth()>=6?d.getFullYear()+1:d.getFullYear(), e=y+'-06-30'; return bis&&iso(bis)<e?iso(bis):e; };
   const von=iso(R.zeit_von||(V&&V.beginn)||R.datum), bis=R.zeit_bis||saisonEnde(von,V&&V.ende);
+  const fortsetzen=()=>{doc.addPage();doc.setFillColor(...navy);doc.rect(0,0,W,8,'F');doc.setFillColor(...or);doc.rect(0,8,W,3,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...grau);t((vd.name||'SV/BSC Mörlenbach').toUpperCase(),L,44);doc.setFont('helvetica','normal');t('Nr. '+R.nr+' · Fortsetzung',L,60);y=98;doc.setFontSize(10);doc.setTextColor(...tinte);};
   y=262; doc.setDrawColor(220,214,204); doc.line(L,y-14,W-L,y-14);
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...grau); t('LEISTUNG',L,y); t('BETRAG',W-L,y,{align:'right'}); y+=18;
   doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...tinte);
-  (R.positionen||[]).forEach(p=>{ const z=doc.splitTextToSize(pz(p.titel+(p.mannschaft?', '+p.mannschaft:'')+(p.menge>1?', '+p.menge+' ×':'')+(p.rabatt?', Laufzeitvorteil '+Math.round(p.rabatt*100)+' %':'')+(p.key==='spende'||p.einheit==='frei'?'':p.einheit==='saison'?', Leistungszeitraum '+datum(von)+' bis '+datum(bis):', Leistung ab '+datum(von))),W-2*L-110);
+  (R.positionen||[]).forEach(p=>{ const z=doc.splitTextToSize(pz(p.titel+(p.mannschaft?', '+p.mannschaft:'')+(p.menge>1?', '+p.menge+' ×':'')+(PLIB.preisHinweis(p)?', '+PLIB.preisHinweis(p):'')+(p.stueckzahl?', bestätigte Stückzahl '+p.stueckzahl:'')+(p.endbetrag_vereinbart?', Endbetrag vereinbart am '+datum(p.vereinbarung_am)+', ursprünglicher Richtwert '+PLIB.eur(p.ursprung_summe,true):'')+(p.key==='spende'||p.einheit==='frei'?'':p.einheit==='saison'?', Leistungszeitraum '+datum(von)+' bis '+datum(bis):', Leistung ab '+datum(von))),W-2*L-110);
+    if(y+14*z.length+6>H-74)fortsetzen();
     t(z,L,y); t(PLIB.eur(p.summe,true),W-L,y,{align:'right'}); y+=14*z.length+6; });
+  if(y+270>H-74)fortsetzen();
   doc.line(L,y,W-L,y); y+=18;
   const sum=(a,b,fett)=>{ doc.setFont('helvetica',fett?'bold':'normal'); doc.setFontSize(fett?11.5:10); t(a,W-L-200,y); t(b,W-L,y,{align:'right'}); y+=17; };
   if(R.art!=='spende'){ sum('Netto',PLIB.eur(R.netto,true)); if(+R.ust_satz>0)sum('Umsatzsteuer '+(+R.ust_satz)+' %',PLIB.eur(Math.round((R.brutto-R.netto)*100)/100,true)); }
@@ -605,9 +622,10 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   if(M){ const s=104, m=s/(M.n+8), x0=W-L-16-s, y0=y+12; doc.setFillColor(255,255,255); doc.rect(x0,y0,s,s,'F'); doc.setFillColor(0,0,0);
     for(let r=0;r<M.n;r++)for(let c=0;c<M.n;c++)if(M.dark(r,c))doc.rect(x0+(c+4)*m,y0+(r+4)*m,m+.15,m+.15,'F');
     doc.setFontSize(7); doc.setTextColor(...grau); t('Mit der Banking-App scannen',x0+s/2,y0+s+10,{align:'center'}); }
+  for(let seite=1;seite<=doc.internal.getNumberOfPages();seite++){doc.setPage(seite);
   doc.setFontSize(7); doc.setTextColor(...grau);
   t([vd.name,vd.register,vd.steuernr?'St.-Nr. '+vd.steuernr:'',vd.ustid?'USt-IdNr. '+vd.ustid:'',vd.finanzamt?'Finanzamt '+vd.finanzamt:''].filter(Boolean).join(' · '),L,H-36);
-  t([vd.email,vd.web].filter(Boolean).join(' · '),L,H-24);
+  t([vd.email,vd.web].filter(Boolean).join(' · '),L,H-24);}
   return doc;
 };
 

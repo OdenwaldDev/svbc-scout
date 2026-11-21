@@ -131,7 +131,7 @@ function pdLogo(file){ return new Promise((ok,no)=>{ if(!file)return ok(null); i
 
 function pdForm(d,vor){
   const x=d||Object.assign({firma:'',kurzname:'',anrede:'',ansprech:'',email:'',adresse:'',branche:'',web:'',logo_hell:true,passung:{},empfehlung:'',notiz:'',aktiv:true},vor||{}); const P=x.passung||{};
-  let logo=undefined;
+  let logo=undefined, logoAuftrag=null, logoNr=0, logoFehler='';
   const M=svModal(`<div class="og-form pd-f"><h2>${d?'Präsentation bearbeiten':SVI('cards')+' Neue Präsentation'}</h2>
     <p class="note">Was hier steht, sieht die Firma. Sachlich, konkret, per Du. Keine Werbesprüche.</p>
     <div class="pd-g"><label class="og-fl">Firma (vollständig)<input id="pdFi" maxlength="120" value="${svEsc(x.firma)}" placeholder="Muster GmbH"></label>
@@ -143,7 +143,7 @@ function pdForm(d,vor){
       <label class="og-fl">Branche<input id="pdBr" maxlength="80" value="${svEsc(x.branche||'')}"></label>
       <label class="og-fl">Website<input id="pdWe" maxlength="200" value="${svEsc(x.web||'')}" placeholder="https://"></label></div>
     <label class="og-fl">Weitere Namen für die Suche<input id="pdSu" maxlength="240" value="${svEsc(P.suchnamen||'')}" placeholder="Marken, Abkürzungen oder frühere Namen"></label>
-    <label class="og-fl">Logo<input type="file" id="pdLo" accept="image/*"></label><label class="jutog"><input type="checkbox" id="pdLd"${x.logo_hell===false?' checked':''}> Logo ist weiß oder hell (auf dunklem Grund zeigen)</label><div class="pd-lv" id="pdLv">${d&&d.logo?'Logo ist hinterlegt. Neues Bild ersetzt es.':'Noch kein Logo. Am besten PNG mit transparentem Hintergrund.'}</div>
+    <label class="og-fl">Logo<input type="file" id="pdLo" accept="image/png,image/jpeg,image/webp"></label><label class="jutog"><input type="checkbox" id="pdLd"${x.logo_hell===false?' checked':''}> Logo ist weiß oder hell (auf dunklem Grund zeigen)</label><div class="pd-lv" id="pdLv">${d&&d.logo?'Logo ist hinterlegt. Neues Bild ersetzt es.':'Noch kein Logo. Am besten PNG mit transparentem Hintergrund.'}</div>
     <label class="og-fl">Empfehlung<select id="pdEmpf"><option value="">keine</option>${Object.keys(PD_ST).map(k=>`<option value="${k}"${x.empfehlung===k?' selected':''}>${PD_ST[k]}</option>`).join('')}</select></label>
     <h3 class="pd-h">Widmung am Paket</h3>
     <label class="og-fl">Unterüberschrift<input id="pdWi" maxlength="90" value="${svEsc(P.widmung||'')}" placeholder="z.B. Für sportliche Wettkämpfe in der Saisonvorbereitung"></label>
@@ -159,16 +159,25 @@ function pdForm(d,vor){
     <label class="og-fl">Notiz fürs Team (sieht die Firma nicht)<textarea id="pdNo" rows="2" maxlength="1000">${svEsc(x.notiz||'')}</textarea></label>
     ${d?`<label class="jutog"><input type="checkbox" id="pdAk"${x.aktiv?' checked':''}> Link ist aktiv</label>`:''}
     <div class="btnrow sbact"><button class="btn" type="button" id="pdSave">${SVI('check')} Speichern</button><button class="btn ghost" type="button" onclick="closeOverlay()">Abbrechen</button></div></div>`);
-  M.querySelector('#pdLo').onchange=async e=>{ const f=e.target.files&&e.target.files[0]; const lv=M.querySelector('#pdLv'); lv.textContent='Bereite Logo vor …';
-    try{ logo=await pdLogo(f); lv.innerHTML=`<img src="${logo}" alt="Logo-Vorschau"><span>${Math.round(logo.length*0.75/1024)} KB, Ränder abgeschnitten</span>`; }catch(err){ lv.textContent='⚠️ '+err.message; logo=undefined; } };
+  const werk=typeof PD_LOGOWERK!=='undefined'?PD_LOGOWERK.einrichten(M,x):null;
+  const offen=()=>M.isConnected&&(!document.getElementById('overlay')||document.getElementById('overlay').classList.contains('open'));
+  M.querySelector('#pdLo').onchange=async e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return;
+    const nr=++logoNr, lv=M.querySelector('#pdLv'); logoFehler=''; lv.textContent='Bereite Logo vor …';
+    const job=(async()=>{ try{ const neu=await (werk?werk.originalDatei(f):pdLogo(f)); if(nr!==logoNr||!offen())return;
+        logo=neu; lv.innerHTML=`<img src="${svEsc(logo)}" alt="Logo-Vorschau"><span>${Math.round(logo.length*0.75/1024)} KB, als PNG vorbereitet</span>`;
+      }catch(err){ if(nr!==logoNr||!offen())return; logoFehler=err.message||'Das Logo lässt sich nicht vorbereiten.'; lv.textContent=logoFehler; logo=undefined;
+      }finally{ if(nr===logoNr)logoAuftrag=null; } })(); logoAuftrag=job; await job;
+  };
   const sv=M.querySelector('#pdSave'); sv.onclick=()=>paEinmal(sv,async()=>{
+    try{ while(logoAuftrag){ const laufend=logoAuftrag; await laufend; if(logoAuftrag===laufend)logoAuftrag=null; } if(!offen())return; if(logoFehler)throw new Error(logoFehler); }
+    catch(e){ kToast(e.message||'Das Logo lässt sich nicht speichern.'); return; }
     const v=id=>(M.querySelector(id)||{}).value||'';
     const p={id:d?d.id:null,firma:v('#pdFi'),kurzname:v('#pdKu'),anrede:v('#pdAn'),ansprech:v('#pdAp'),email:v('#pdEm'),adresse:v('#pdAd'),branche:v('#pdBr'),web:v('#pdWe'),empfehlung:v('#pdEmpf'),notiz:v('#pdNo'),
       passung:{suchnamen:v('#pdSu').trim(),widmung:v('#pdWi').trim(),widmung_text:v('#pdWt').trim(),titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
         fakten:v('#pdFa').split('\n').map(s=>s.split('|')).filter(a=>a.length>=2&&a[0].trim()).map(a=>({z:a[0].trim().slice(0,12),t:a.slice(1).join('|').trim().slice(0,80)})).slice(0,4)}};
     p.logo_hell=!M.querySelector('#pdLd').checked; if(logo){ p.logo=logo; p.passung.marke=null; } if(d)p.aktiv=M.querySelector('#pdAk').checked;
     if(/[–—]/.test(JSON.stringify(p.passung))){ kToast('Bitte keine Gedankenstriche, lieber Komma oder Doppelpunkt'); return; }
-    try{ const r=await svtRpc('partner_deck_speichern',{p}); PD.d=null; closeOverlay(); kToast('✓ Präsentation gespeichert');
+    try{ if(werk)await werk.ergaenzen(p); if(!offen())return; const r=await svtRpc('partner_deck_speichern',{p}); PD.d=null; closeOverlay(); kToast('✓ Präsentation gespeichert');
       if(!d){ try{ await navigator.clipboard.writeText(pdLink(r.code,r.kurz)); kToast('✓ Gespeichert, Link ist kopiert'); }catch(e){} }
       SPO.view='decks'; if(svCurTab()!=='sponsoring')goTab('sponsoring'); else spoRender(); }
     catch(e){ kToast('⚠️ '+e.message); } },'Speichert …');

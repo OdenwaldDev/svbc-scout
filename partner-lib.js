@@ -2340,17 +2340,21 @@ PLIB.eur=(n,dez)=>{ const r=Math.round((+n||0)*100)/100; return r.toLocaleString
 // Partner des Tages richtet sich nach dem Paket in der Auswahl (höchstes gilt): Club 20 €, Premium und 1896 Partner 40 € unter dem Grundpreis (189 / 169 / 149 €).
 PLIB.sotdPreis=function(l,pos){ const k=(pos||[]).map(e=>e&&e.key), pk=['p1896','premium','club','supporter'].find(x=>k.includes(x)), b=+l.preis;
   return pk==='club'?Math.max(0,b-20):pk==='premium'||pk==='p1896'?Math.max(0,b-40):b; };
-PLIB.rechnen=function(pos,leistungen,saisons){
-  const s=Math.max(1,Math.min(5,+saisons||1)), rab=s>=3?.10:s===2?.05:0; let jahr=0,einmal=0,spende=0; const aus=[];
+PLIB.TRIKOT_KEYS=['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend'];
+PLIB.rechnen=function(pos,leistungen,saisons,opt){
+  const s=Math.max(1,Math.min(5,+saisons||1)), rab=s>=3?.10:s===2?.05:0, fassung=+(opt&&opt.abrechnung_fassung)===1?1:0;
+  let jahr=0,einmal=0,spende=0,trikot=0,saisonPos=0,mitRab=false; const aus=[];
   (pos||[]).forEach(e=>{ const l=leistungen.find(x=>x.key===e.key); if(!l)return; const menge=Math.max(1,Math.min(99,+e.menge||1));
     const einzel=(l.art==='spende'||l.art==='sonstiges'||l.preis==null||e.preis!=null&&e.preis!=='')?(+e.preis||0):(l.key==='sotd'?PLIB.sotdPreis(l,pos):+l.preis);
-    let summe;
-    if(l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art)){ summe=Math.round(einzel*menge*(1-rab)*100)/100; jahr+=summe; }
+    let summe; const saison=l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art), rp=saison&&!e.fest?rab:0;
+    if(saison){ summe=Math.round(einzel*menge*(1-rp)*100)/100; jahr+=summe; saisonPos++; if(rp>0)mitRab=true; }
     else if(l.art==='spende'){ summe=einzel*menge; spende+=summe; }
-    else { summe=einzel*menge; einmal+=summe; }
-    aus.push(Object.assign({},e,{titel:l.art==='sonstiges'&&e.text?e.text:l.titel,einzel,menge,summe,einheit:l.einheit,rabatt:l.einheit==='saison'?rab:0})); });
-  return {positionen:aus,saisons:s,rabatt:rab,netto_jahr:Math.round(jahr*100)/100,einmalig:Math.round(einmal*100)/100,spende:Math.round(spende*100)/100,
-    netto_gesamt:Math.round((jahr*s+einmal)*100)/100,erste_rechnung:Math.round((jahr+einmal)*100)/100};
+    else { summe=einzel*menge; einmal+=summe; if(fassung&&PLIB.TRIKOT_KEYS.includes(l.key))trikot+=summe; }
+    aus.push(Object.assign({},e,{titel:l.art==='sonstiges'&&e.text?e.text:l.titel,einzel,menge,summe,einheit:l.einheit,rabatt:rp})); });
+  return {positionen:aus,saisons:s,rabatt:saisonPos&&!mitRab?0:rab,hat_saison:saisonPos>0,abrechnung_fassung:fassung,
+    netto_jahr:Math.round(jahr*100)/100,einmalig:Math.round(einmal*100)/100,spende:Math.round(spende*100)/100,
+    trikot_netto:Math.round(trikot*100)/100,standard_einmalig:Math.round((einmal-trikot)*100)/100,
+    netto_gesamt:Math.round((jahr*s+einmal)*100)/100,erste_rechnung:Math.round((jahr+einmal-trikot)*100)/100};
 };
 
 // ---------- Rechnungsmonat (seit 0.99.81) ----------
@@ -2390,6 +2394,9 @@ PLIB.KLAUSELN={
   spende:['Spende','Die Spendenzusage ist eine freiwillige Absicht, keine rechtliche Verpflichtung. Sie ist von allen Leistungen des Vereins unabhängig: Der Verein erbringt dafür keine Gegenleistung, und an gebuchten Leistungen ändert sich nichts, wenn die Spende ausbleibt. Der Verein setzt sie für {zweck} ein. Eine Zuwendungsbestätigung stellt der Verein nach Zahlungseingang aus, soweit er als gemeinnützig anerkannt ist und die steuerlichen Voraussetzungen vorliegen.'],
   spende_ohne:['Spende','Die Spendenzusage ist eine freiwillige Absicht, keine rechtliche Verpflichtung. Sie ist von allen Leistungen des Vereins unabhängig: Der Verein erbringt dafür keine Gegenleistung, und an gebuchten Leistungen ändert sich nichts, wenn die Spende ausbleibt. Der Verein setzt sie für {zweck} ein. Eine Zuwendungsbestätigung kann der Verein dafür nicht ausstellen.']
 };
+PLIB.KLAUSELN.trikot_abrechnung=['Getrennte Trikotrechnung','Trikots und Ärmel rechnen wir getrennt ab, sobald die Stückzahlen feststehen und der Verein sie bestätigt hat. Die Beträge in der Leistungsübersicht sind Richtwerte. Ohne eine eigene Vereinbarung bleiben diese Beträge maßgeblich. Einen abweichenden Endbetrag vereinbaren Verein und Partner anhand der Stückzahlen in Textform. Die Stückzahl allein ändert den Preis nicht.'];
+PLIB.KOSTENFREI_TEXT='Die Leistungen aus der Leistungsübersicht sind für die vereinbarte Laufzeit kostenfrei. Es fällt kein Zahlbetrag an. Der Verein stellt dafür keine Rechnung. Eine spätere Vergütung braucht eine eigene Vereinbarung zwischen Verein und Partner in Textform.';
+PLIB.preisHinweis=function(p){ return [p&&+p.nachlass>0?(+p.nachlass).toLocaleString('de-DE',{maximumFractionDigits:2})+' % Nachlass':'',p&&+p.rabatt>0&&+p.einzel>0?Math.round(+p.rabatt*100)+' % Laufzeitvorteil':''].filter(Boolean).join(', '); };
 PLIB.klauselnFuer=function(pos,leistungen,opt){
   opt=opt||{}; const keys=(pos||[]).map(p=>p.key), L=k=>leistungen.find(x=>x.key===k)||{}, bereiche=new Set(keys.map(k=>L(k).bereich));
   const nurSpende=keys.length&&keys.every(k=>k==='spende');
@@ -2398,6 +2405,7 @@ PLIB.klauselnFuer=function(pos,leistungen,opt){
   const k=['gegenstand',saisonal?(opt.auto?'laufzeit_auto':'laufzeit_fest'):'laufzeit_einmal',saisonal?'verguetung':'verguetung_einmal','werbemittel'];
   if(keys.some(x=>/^(club|premium|p1896|bande_)/.test(x)))k.push('bande');
   if(keys.some(x=>/^(brust_|aermel_|trikot_|aufwaerm_)/.test(x)))k.push('trikot');
+  if(+opt.abrechnung_fassung===1&&keys.some(x=>PLIB.TRIKOT_KEYS.includes(x)))k.push('trikot_abrechnung');
   if(bereiche.has('jugend')||keys.some(x=>['zeltlager','ferienspiele'].includes(x)))k.push('jugend');
   if(keys.includes('p1896'))k.push('exklusiv');
   if(bereiche.has('events')||keys.some(x=>['matchball','sotd'].includes(x)))k.push('events');
@@ -2409,7 +2417,13 @@ PLIB.klauselnFuer=function(pos,leistungen,opt){
   return k;
 };
 PLIB.klauselText=function(key,w){ const K=PLIB.KLAUSELN[key]; if(!K)return null; w=w||{};
-  let t=K[1]; if(key==='exklusiv'&&!w.branche)t='Der Verein nimmt in der Laufzeit keinen weiteren Partner aus derselben Branche wie der Partner in dieselbe Partnerstufe auf.';
+  let t=K[1]; if(w.kostenfrei===true&&['verguetung','verguetung_einmal'].includes(key))return [K[0],PLIB.KOSTENFREI_TEXT];
+  if(w.nur_einmalig===true&&key==='verguetung')t=PLIB.KLAUSELN.verguetung_einmal[1];
+  if(key==='exklusiv'&&!w.branche)t='Der Verein nimmt in der Laufzeit keinen weiteren Partner aus derselben Branche wie der Partner in dieselbe Partnerstufe auf.';
+  if(w.trikot_abrechnung){
+    if(key==='verguetung')t=t.replace('Einmalige Leistungen stehen in der ersten Rechnung.','Andere einmalige Leistungen stehen in der ersten Rechnung.');
+    if(key==='verguetung_einmal'||w.nur_einmalig===true&&key==='verguetung')t=t.replace('Die Rechnung stellt der Verein, sobald der Vertrag geschlossen ist.','Für andere einmalige Leistungen stellt der Verein die Rechnung, sobald der Vertrag geschlossen ist. Trikots und Ärmel werden nach bestätigter Stückzahl getrennt abgerechnet.');
+  }
   return [K[0],t.replace(/\{(\w+)\}/g,(m,n)=>w[n]!=null&&w[n]!==''?w[n]:'…')]; };
 
 // ---------- Girocode (EPC069-12, Version 002) ----------
@@ -2436,7 +2450,7 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   const doc=new jsPDF({unit:'pt',format:'a4'}), W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), L=56;
   const navy=[20,27,71], or=[232,116,31], grau=[100,104,120], tinte=[20,24,36];
   const pz=s=>String(s==null?'':s).replace(/[−–—]/g,'-').replace(/[„“”]/g,'"');
-  const t=(s,x,y,o)=>doc.text(pz(s),x,y,o||{});
+  const t=(s,x,y,o)=>doc.text(Array.isArray(s)?s.map(pz):pz(s),x,y,o||{});
   doc.setFillColor(...navy); doc.rect(0,0,W,8,'F'); doc.setFillColor(...or); doc.rect(0,8,W,3,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...grau); t((vd.name||'SV/BSC Mörlenbach').toUpperCase(),L,44);
   doc.setFont('helvetica','normal'); t([vd.abteilung,vd.strasse,vd.ort].filter(Boolean).join(' · '),L,57);
@@ -2449,11 +2463,14 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   // Leistungszeitraum wie auf der Rechnung aus der Mail: je Saison bis zum Saisonende, sonst Leistung ab Beginn
   const iso=d=>String(d||'').slice(0,10), saisonEnde=(von,bis)=>{ const d=new Date(iso(von)+'T12:00:00'), y=d.getMonth()>=6?d.getFullYear()+1:d.getFullYear(), e=y+'-06-30'; return bis&&iso(bis)<e?iso(bis):e; };
   const von=iso(R.zeit_von||(V&&V.beginn)||R.datum), bis=R.zeit_bis||saisonEnde(von,V&&V.ende);
+  const fortsetzen=()=>{doc.addPage();doc.setFillColor(...navy);doc.rect(0,0,W,8,'F');doc.setFillColor(...or);doc.rect(0,8,W,3,'F');doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...grau);t((vd.name||'SV/BSC Mörlenbach').toUpperCase(),L,44);doc.setFont('helvetica','normal');t('Nr. '+R.nr+' · Fortsetzung',L,60);y=98;doc.setFontSize(10);doc.setTextColor(...tinte);};
   y=262; doc.setDrawColor(220,214,204); doc.line(L,y-14,W-L,y-14);
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...grau); t('LEISTUNG',L,y); t('BETRAG',W-L,y,{align:'right'}); y+=18;
   doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...tinte);
-  (R.positionen||[]).forEach(p=>{ const z=doc.splitTextToSize(pz(p.titel+(p.mannschaft?', '+p.mannschaft:'')+(p.menge>1?', '+p.menge+' ×':'')+(p.rabatt?', Laufzeitvorteil '+Math.round(p.rabatt*100)+' %':'')+(p.key==='spende'||p.einheit==='frei'?'':p.einheit==='saison'?', Leistungszeitraum '+datum(von)+' bis '+datum(bis):', Leistung ab '+datum(von))),W-2*L-110);
+  (R.positionen||[]).forEach(p=>{ const z=doc.splitTextToSize(pz(p.titel+(p.mannschaft?', '+p.mannschaft:'')+(p.menge>1?', '+p.menge+' ×':'')+(PLIB.preisHinweis(p)?', '+PLIB.preisHinweis(p):'')+(p.stueckzahl?', bestätigte Stückzahl '+p.stueckzahl:'')+(p.endbetrag_vereinbart?', Endbetrag vereinbart am '+datum(p.vereinbarung_am)+', ursprünglicher Richtwert '+PLIB.eur(p.ursprung_summe,true):'')+(p.key==='spende'||p.einheit==='frei'?'':p.einheit==='saison'?', Leistungszeitraum '+datum(von)+' bis '+datum(bis):', Leistung ab '+datum(von))),W-2*L-110);
+    if(y+14*z.length+6>H-74)fortsetzen();
     t(z,L,y); t(PLIB.eur(p.summe,true),W-L,y,{align:'right'}); y+=14*z.length+6; });
+  if(y+270>H-74)fortsetzen();
   doc.line(L,y,W-L,y); y+=18;
   const sum=(a,b,fett)=>{ doc.setFont('helvetica',fett?'bold':'normal'); doc.setFontSize(fett?11.5:10); t(a,W-L-200,y); t(b,W-L,y,{align:'right'}); y+=17; };
   if(R.art!=='spende'){ sum('Netto',PLIB.eur(R.netto,true)); if(+R.ust_satz>0)sum('Umsatzsteuer '+(+R.ust_satz)+' %',PLIB.eur(Math.round((R.brutto-R.netto)*100)/100,true)); }
@@ -2473,9 +2490,10 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   if(M){ const s=104, m=s/(M.n+8), x0=W-L-16-s, y0=y+12; doc.setFillColor(255,255,255); doc.rect(x0,y0,s,s,'F'); doc.setFillColor(0,0,0);
     for(let r=0;r<M.n;r++)for(let c=0;c<M.n;c++)if(M.dark(r,c))doc.rect(x0+(c+4)*m,y0+(r+4)*m,m+.15,m+.15,'F');
     doc.setFontSize(7); doc.setTextColor(...grau); t('Mit der Banking-App scannen',x0+s/2,y0+s+10,{align:'center'}); }
+  for(let seite=1;seite<=doc.internal.getNumberOfPages();seite++){doc.setPage(seite);
   doc.setFontSize(7); doc.setTextColor(...grau);
   t([vd.name,vd.register,vd.steuernr?'St.-Nr. '+vd.steuernr:'',vd.ustid?'USt-IdNr. '+vd.ustid:'',vd.finanzamt?'Finanzamt '+vd.finanzamt:''].filter(Boolean).join(' · '),L,H-36);
-  t([vd.email,vd.web].filter(Boolean).join(' · '),L,H-24);
+  t([vd.email,vd.web].filter(Boolean).join(' · '),L,H-24);}
   return doc;
 };
 
@@ -3384,4 +3402,83 @@ const BANDENWAHL = (() => {
       d.querySelector('#bwNochmal')?.addEventListener('click',() => { schliessen(); void oeffnen(opt); }); }
   }
   return {oeffnen,rang,bestandRang,klasse,modalOeffnen,logoQuelle};
+})();
+
+/* Interne Konditionen. Der Parent zeigt den Einstieg nur mit Vertragsrecht.
+   Die RPC prüft das Recht und berechnet alle Preise erneut. Keine eigene Anmeldung. */
+(function(){
+  'use strict';
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const euro=n=>(+n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+  let offen=null;
+  function oeffnen(o){
+    if(!o||typeof o.rpc!=='function'||typeof o.code!=='string')return null;
+    if(offen){offen.element.querySelector('.pk132-zu')?.focus();return offen;}
+    const katalog=(o.katalog||[]).filter(l=>l&&l.aktiv!==false&&l.preis!=null&&!['spende','sonstiges'].includes(l.art));
+    const teams=(o.mannschaften||[]).filter(m=>m&&m.aktiv!==false);
+    const L=k=>katalog.find(l=>l.key===k);
+    let zeilen=(o.positionen||[]).map(p=>({key:p.key,mannschaft:p.mannschaft||null,menge:+p.menge||1,nachlass:+p.nachlass||0,zusaetzlich:!!(p.zusaetzlich||p.zusatzpaket)}));
+    let zu=false,busy=false;
+    const zuvor=document.activeElement,altOverflow=document.body.style.overflow;
+    const hintergrund=document.createElement('div');hintergrund.className='pk132-hintergrund';
+    hintergrund.innerHTML='<section class="pk132" role="dialog" aria-modal="true" aria-labelledby="pk132Titel"><header><div><p>Nur für das Partner-Team</p><h2 id="pk132Titel">Konditionen im Termin</h2></div><button type="button" class="pk132-zu" aria-label="Konditionen schließen">Schließen</button></header><div class="pk132-in"><p class="pk132-hilfe">Leg die Auswahl und den Nachlass je Leistung fest. Die Firma kann diese Konditionen 14 Tage lang über ihren Link übernehmen.</p><div class="pk132-zeit"><label>Laufzeit<select id="pk132Saisons">'+[1,2,3,4,5].map(n=>'<option value="'+n+'">'+n+' '+(n===1?'Saison':'Saisons')+'</option>').join('')+'</select></label><label>Beginn<input type="date" id="pk132Beginn"></label></div><div class="pk132-zeilen"></div><div class="pk132-dazu"><label for="pk132Leistung">Weitere Leistung</label><div><select id="pk132Leistung"><option value="">Bitte wählen</option>'+katalog.map(l=>'<option value="'+esc(l.key)+'">'+esc(l.titel)+'</option>').join('')+'</select><button type="button" id="pk132Dazu">Hinzufügen</button></div></div><label class="pk132-check"><input type="checkbox" id="pk132Auto"> Saisonleistungen laufen nach der gewählten Laufzeit von selbst weiter</label><p class="pk132-gratis" hidden>Die Saisonleistungen sind vollständig geschenkt. Sie enden nach der gewählten Laufzeit und verlängern sich nicht automatisch.</p><div class="pk132-summe" aria-live="polite"></div><p class="pk132-fehler" role="alert" hidden></p></div><footer><p>Mit dem Speichern wird noch kein Vertrag geschlossen und keine Nachricht verschickt.</p><div><button type="button" id="pk132Abbrechen">Abbrechen</button><button type="button" id="pk132Speichern">Konditionen speichern</button></div></footer></section>';
+    document.body.appendChild(hintergrund);document.body.style.overflow='hidden';
+    const $=s=>hintergrund.querySelector(s);
+    $('#pk132Saisons').value=String(Math.max(1,Math.min(5,+o.saisons||1)));
+    $('#pk132Beginn').value=String(o.beginn||'').slice(0,10);$('#pk132Auto').checked=!!o.auto_verlaengerung;
+    function schliessen(){if(zu||busy)return;zu=true;document.removeEventListener('keydown',taste,true);hintergrund.remove();document.body.style.overflow=altOverflow;if(zuvor&&zuvor.isConnected)zuvor.focus();if(offen&&offen.element===hintergrund)offen=null;if(typeof o.geschlossen==='function'){try{o.geschlossen();}catch(e){}}}
+    function fehler(t){const e=$('.pk132-fehler');e.hidden=!t;e.textContent=t||'';if(t)e.scrollIntoView({block:'nearest'});}
+    function berechnung(){
+      const s=+$('#pk132Saisons').value,rab=s>=3?10:s===2?5:0;
+      const pk=['p1896','premium','club','supporter'].find(k=>zeilen.some(p=>p.key===k));
+      let jahr=0,einmal=0,hatSaison=false;
+      const positionen=zeilen.map(p=>{const l=L(p.key);if(!l)return Object.assign({},p,{fehlt:true});
+        let cent=Math.round(+l.preis*100);if(l.key==='sotd')cent=Math.max(0,cent-(pk==='club'?2000:['premium','p1896'].includes(pk)?4000:0));
+        const nc=Math.round((+p.nachlass||0)*100),einzelCent=Math.round(cent*(10000-nc)/10000),saisonal=l.einheit==='saison'&&['paket','flaeche','patenschaft'].includes(l.art);
+        const summeCent=Math.round(einzelCent*(+p.menge||1)*(saisonal?100-rab:100)/100);
+        if(saisonal){hatSaison=true;jahr+=summeCent;}else einmal+=summeCent;
+        return Object.assign({},p,{basis:cent/100,einzel:einzelCent/100,summe:summeCent/100,saisonal});});
+      return{positionen,netto_jahr:jahr/100,einmalig:einmal/100,netto_gesamt:(jahr*s+einmal)/100,hat_saison:hatSaison,gratis_saison:hatSaison&&jahr===0,rabatt:rab};
+    }
+    function summe(){const c=berechnung(),gratis=$('.pk132-gratis'),auto=$('#pk132Auto');
+      gratis.hidden=!c.gratis_saison;auto.disabled=c.gratis_saison||busy;if(c.gratis_saison)auto.checked=false;
+      $('.pk132-summe').innerHTML=(c.hat_saison?'<div><span>Je Saison, netto'+(c.rabatt&&c.netto_jahr>0?' einschließlich '+c.rabatt+' % Laufzeitvorteil':'')+'</span><b>'+euro(c.netto_jahr)+'</b></div>':'')+(c.einmalig?'<div><span>Einmalige Leistungen, netto</span><b>'+euro(c.einmalig)+'</b></div>':'')+'<div class="pk132-gesamt"><span>Gesamt über die Laufzeit, netto</span><b>'+euro(c.netto_gesamt)+'</b></div>';
+      c.positionen.forEach((p,i)=>{const e=$('[data-pk132betrag="'+i+'"]');if(e)e.textContent=(['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend'].includes(p.key)?'ca. ':'')+euro(p.summe)+(p.saisonal?' je Saison':'');});}
+    function render(){
+      const pkAnzahl=zeilen.filter(p=>L(p.key)?.art==='paket').length;
+      $('.pk132-zeilen').innerHTML=zeilen.length?zeilen.map((p,i)=>{const l=L(p.key)||{};
+        return '<article class="pk132-zeile"><div class="pk132-zeilenkopf"><h3>'+esc(l.titel||p.key)+'</h3><button type="button" data-pk132weg="'+i+'" aria-label="'+esc(l.titel||p.key)+' entfernen">Entfernen</button></div><div class="pk132-felder">'+(l.je_mannschaft?'<label>Mannschaft<select data-pk132team="'+i+'"><option value="">Bitte wählen</option>'+teams.filter(m=>l.bereich!=='jugend'||m.art==='jugend').map(m=>'<option value="'+esc(m.id)+'"'+(m.id===p.mannschaft?' selected':'')+'>'+esc(m.name||m.id)+'</option>').join('')+'</select></label>':'')+(['stueck','spieltag'].includes(l.einheit)?'<label>Menge<input type="number" min="1" max="99" step="1" data-pk132menge="'+i+'" value="'+p.menge+'"></label>':'')+'<label>Individueller Nachlass<input type="number" min="0" max="100" step="0.01" inputmode="decimal" data-pk132nach="'+i+'" value="'+p.nachlass+'"><span>Prozent</span></label></div>'+(l.art==='paket'&&pkAnzahl>1?'<label class="pk132-check"><input type="checkbox" data-pk132zusatz="'+i+'"'+(p.zusaetzlich?' checked':'')+'> Als zusätzliches Paket genehmigen</label>':'')+'<p class="pk132-betrag" data-pk132betrag="'+i+'"></p></article>';}).join(''):'<p class="pk132-leer">Füge zuerst die gewünschte Leistung hinzu.</p>';
+      hintergrund.querySelectorAll('[data-pk132weg]').forEach(b=>b.onclick=()=>{const i=+b.dataset.pk132weg;zeilen.splice(i,1);render();const n=$('[data-pk132weg="'+Math.min(i,zeilen.length-1)+'"]')||$('#pk132Leistung');n.focus();});
+      hintergrund.querySelectorAll('[data-pk132nach]').forEach(f=>f.oninput=()=>{zeilen[+f.dataset.pk132nach].nachlass=f.value===''?0:+f.value;summe();});
+      hintergrund.querySelectorAll('[data-pk132menge]').forEach(f=>f.oninput=()=>{zeilen[+f.dataset.pk132menge].menge=f.value===''?0:+f.value;summe();});
+      hintergrund.querySelectorAll('[data-pk132team]').forEach(f=>f.onchange=()=>{zeilen[+f.dataset.pk132team].mannschaft=f.value||null;});
+      hintergrund.querySelectorAll('[data-pk132zusatz]').forEach(f=>f.onchange=()=>{zeilen[+f.dataset.pk132zusatz].zusaetzlich=f.checked;});
+      summe();
+    }
+    $('#pk132Dazu').onclick=()=>{const key=$('#pk132Leistung').value,l=L(key);if(!l){fehler('Wähl zuerst eine Leistung.');return;}
+      if(!l.je_mannschaft&&zeilen.some(p=>p.key===key)){fehler('Diese Leistung steht schon in der Auswahl.');return;}
+      if(zeilen.length>=24){fehler('In eine Auswahl passen höchstens 24 Leistungen.');return;}
+      zeilen.push({key,mannschaft:null,menge:1,nachlass:0,zusaetzlich:l.art==='paket'&&zeilen.some(p=>L(p.key)?.art==='paket')});$('#pk132Leistung').value='';fehler('');render();const i=zeilen.length-1;($('[data-pk132team="'+i+'"]')||$('[data-pk132nach="'+i+'"]')).focus();};
+    $('#pk132Saisons').onchange=summe;$('#pk132Auto').onchange=summe;
+    $('.pk132-zu').onclick=schliessen;$('#pk132Abbrechen').onclick=schliessen;
+    function taste(e){if(zu)return;if(e.key==='Escape'){e.preventDefault();e.stopPropagation();schliessen();return;}
+      if(e.key==='Tab'){const a=[...hintergrund.querySelectorAll('button,input,select')].filter(x=>!x.disabled&&x.getClientRects().length);if(!a.length)return;const f=a[0],l=a[a.length-1];if(!hintergrund.contains(document.activeElement)){e.preventDefault();(e.shiftKey?l:f).focus();}else if(e.shiftKey&&document.activeElement===f){e.preventDefault();l.focus();}else if(!e.shiftKey&&document.activeElement===l){e.preventDefault();f.focus();}}}
+    document.addEventListener('keydown',taste,true);
+    $('#pk132Speichern').onclick=async()=>{if(busy)return;fehler('');
+      const c=berechnung(),saisons=+$('#pk132Saisons').value,beginn=$('#pk132Beginn').value;
+      if(!zeilen.length||zeilen.some(p=>!L(p.key))){fehler('Bitte wähl mindestens eine verfügbare Leistung.');return;}
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(beginn)){fehler('Bitte trag den Vertragsbeginn ein.');$('#pk132Beginn').focus();return;}
+      if(zeilen.some(p=>!Number.isFinite(p.nachlass)||p.nachlass<0||p.nachlass>100||Math.abs(Math.round(p.nachlass*100)-p.nachlass*100)>0.0000001)){fehler('Bitte trag den Nachlass mit höchstens zwei Nachkommastellen von 0 bis 100 ein.');return;}
+      if(zeilen.some(p=>!Number.isInteger(p.menge)||p.menge<1||p.menge>99)){fehler('Bitte prüf die Mengen von 1 bis 99.');return;}
+      if(zeilen.some(p=>L(p.key).je_mannschaft&&!p.mannschaft)){fehler('Bitte wähl zu jeder Mannschaftsleistung die Mannschaft.');return;}
+      const pk=zeilen.filter(p=>L(p.key).art==='paket');if(pk.length>1&&pk.filter(p=>!p.zusaetzlich).length!==1){fehler('Lass genau eine Partnerstufe als Grundpaket stehen und kennzeichne die weiteren als zusätzliches Paket.');return;}
+      const p={positionen:zeilen.map(x=>({key:x.key,mannschaft:x.mannschaft,menge:x.menge,nachlass:x.nachlass,zusaetzlich:x.zusaetzlich})),saisons,beginn,auto_verlaengerung:c.gratis_saison?false:$('#pk132Auto').checked};
+      busy=true;hintergrund.querySelectorAll('button,input,select').forEach(e=>e.disabled=true);const b=$('#pk132Speichern');b.textContent='Speichert …';b.setAttribute('aria-busy','true');
+      let snapshot;try{snapshot=await o.rpc('partner_konditionen_setzen',{p_code:o.code,p});if(!snapshot||!snapshot.id)throw new Error('Die Bestätigung fehlt. Bitte prüf den Stand vor einem neuen Versuch.');}
+      catch(e){busy=false;hintergrund.querySelectorAll('button,input,select').forEach(x=>x.disabled=false);b.textContent='Konditionen speichern';b.removeAttribute('aria-busy');summe();fehler(e.message||'Das Speichern hat nicht geklappt. Deine Auswahl bleibt stehen.');return;}
+      busy=false;schliessen();if(typeof o.gespeichert==='function'){try{await o.gespeichert(snapshot);}catch(e){if(typeof window.kToast==='function')window.kToast('Konditionen gespeichert. Lade die Präsentation neu, um sie zu übernehmen.');}}
+    };
+    render();$('.pk132-zu').focus();offen={element:hintergrund,schliessen};return offen;
+  }
+  window.PD_KONDITIONEN={oeffnen};
 })();
