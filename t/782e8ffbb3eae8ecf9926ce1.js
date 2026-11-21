@@ -665,8 +665,10 @@ const S1_LKEY={A:'KLA',B:'KLB',C:'KLC',D:'KLD',D1:'KLD',D2:'KLD',KOL:'KOL',GL:'G
 const S1_BSTAT={offen:'offen',suche:'in Suche',shortlist:'Shortlist',entschieden:'entschieden',erledigt:'erledigt',verworfen:'verworfen'};
 const S1_AKTIV=['offen','suche','shortlist'];
 
-function s1LigaKey(p){ const l=String((p&&p.cur&&p.cur.sub)||(p&&p.liga)||''); return S1_LKEY[l]||(V1K.LIGA[l]?l:null); }
-function s1Liga(p){ const k=s1LigaKey(p); return k?V1K.LIGA[k]:String((p&&p.liga)||''); }
+function s1LigaKeys(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; const l=String((L&&L.liga)||(p&&p.liga)||''); return [...new Set(l.split('/').map(x=>S1_LKEY[x]||(V1K.LIGA[x]?x:null)).filter(Boolean))]; }
+function s1LigaKey(p){ return s1LigaKeys(p)[0]||null; }
+function s1Liga(p){ const K=s1LigaKeys(p); return K.length?K.map(k=>V1K.LIGA[k]).join(' / '):String((p&&p.liga)||''); }
+function s1Club(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; return (L&&L.club)||(p&&p.club)||''; }
 function s1Extern(p){ return p&&svScoutInScope(p)&&!p.own&&!sv4Team(p)&&!p.verzicht; }
 function s1AttrLaden(){ if(S1.attr)return Promise.resolve(); if(S1.attrP)return S1.attrP;
   S1.attrP=(async()=>{ try{ S1.attr=(await v1Rpc('rating_v1_attribute'))||{}; }catch(e){ S1.attr={}; } S1.attrP=null; })(); return S1.attrP; }
@@ -690,7 +692,7 @@ function s1Krit(b){
 }
 function s1Sp(p){ const w=k1W(p.id), a=(S1.attr&&S1.attr[p.id])||null;
   return {id:p.id,name:p.name,pos:p.pos,pos2:p.pos2||[],alter:k1Alter(p),fuss:p.fuss,ca:w.ca??null,p24:w.p24??null,sicherheit:w.sicherheit||null,form:w.form??null,
-    rolle:w.rolle||null,signale:w.signale||[],attr:a,club:p.club||'',liga:s1Liga(p),km:p.km??null,p}; }
+    rolle:w.rolle||null,signale:w.signale||[],attr:a,club:s1Club(p),liga:s1Liga(p),km:p.km??null,p}; }
 function s1Transfer(p,k){
   const C=(typeof crmOf==='function'&&crmOf(p))||{}, w=k1W(p.id);
   let aussage=(k&&k.interesse)||null, am=(k&&k.aussage_am)||null;

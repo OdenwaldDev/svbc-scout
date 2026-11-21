@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.115', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.116', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -2210,7 +2210,7 @@ function appInit(){
 function svScoutInScope(p){
  if(!p)return false;
  if(p.own||p.isJugend||(typeof sv4Team==='function'&&['1','2','A','B'].includes(sv4Team(p))))return true;
- const gl=l=>l==='GL'||l==='herren-gruppenliga-darmstadt';
+ const gl=l=>l==='GL'||(/(^|-)gruppenliga(-|$)/.test(l)&&!/(junior|jugend)/.test(l));
  const names=new Set(['SV Fürth','FC Fürth','FSG Riedrode','Tvgg. Lorsch','SC Olympia Lorsch','TSV Rot-Weiss Auerbach','TSV Rot-Weiß Auerbach','TSV Auerbach','TSV Höchst']);
  const clubOk=r=>["sv-fuerth", "fc-fuerth", "fsg-riedrode", "tsv-hoechst", "tvgg-lorsch", "sc-olympia-lorsch", "tsv-rot-weiss-auerbach"].includes(r.club_slug)||[87768, 23257, 39284, 26305, 87762, 87761, 87773].includes(Number(r.team_id))||names.has(r.verein||r.mannschaft||r.club);
  const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], season=typeof klaSk==='function'?klaSk('cur'):null;
@@ -7665,7 +7665,7 @@ function pf4Build(id){
   const pos2=(p.pos2||[]).filter(x=>x!==p.pos);
   const kxk=typeof kxOf==='function'?kxOf(p.id):null, ortKm=kxk&&kxk.lat!=null?sv4Km(kxk.lat,kxk.lon):null;
   const bezCls={intern:'ok',verpflichtet:'ok',kontaktiert:'info',shortlist:'info',kandidat:'info',beobachtet:'mut',nein:'bad',extern:'mut'}[B.k]||'mut';
-  const club=(p.cur&&p.cur.club)||p.club, liga=p.isJugend?(p.kurz||p.staffel||'Jugend'):(LIGA_NAME[ligaBase((p.cur&&p.cur.sub)||p.liga)]||p.liga);
+  const jetzt=typeof svLigaJetzt==='function'?svLigaJetzt(p):null, club=(jetzt&&jetzt.club)||p.club, liga=p.isJugend?(p.kurz||p.staffel||'Jugend'):svLigaText(p);
   const root=document.createElement('div'); root.className='pf4';
   root.innerHTML=`<section class="pf4-head">
       <div class="pf4-ava"></div>
@@ -7902,7 +7902,7 @@ const SC4_ZP={sofort:'Sofort',winter:'Winter',sommer:'Sommer'};
 /* ---------- Weniger Tags: Liga + wichtigster Status ---------- */
 { const _bd4=badges; badges=function(p){
   try{
-    const C=crmOf(p); let h=`<span class="badge b-${p.liga}">${p.liga==='JUG'?(p.sub||'Jugend'):(p.liga==='KOL'?'KOL':p.liga+'-Klasse')}</span>`;
+    const C=crmOf(p); let h=`<span class="badge">${sv4Esc(p.isJugend?(p.sub||'Jugend'):svLigaText(p))}</span>`;
     const t=sv4Team(p); if(t)h+=`<span class="badge b-own">${t==='1'?'SV/BSC':t==='2'?'SV/BSC II':'SV/BSC Jgd.'}</span>`;
     else if(C.s==='lat'&&crmDue(p))h+=`<span class="badge b-crml">⏰ fällig</span>`;
     else if(C.c)h+=`<span class="badge b-crmc">📞 kontaktiert</span>`;
@@ -7923,7 +7923,7 @@ const SC4_ZP={sofort:'Sofort',winter:'Winter',sommer:'Sommer'};
     return `<div class="row r4" data-id="${p.id}">
       <div class="rankn ${i<3?'top':''}">${i+1}</div>${avaHtml(p)}
       <div class="rmain"><div class="pname">${sv4Esc(p.name)} ${badges(p)}</div>
-        <div class="pmeta"><span>${sv4Esc((p.cur&&p.cur.club)||p.club)}</span><span class="pm4-pos">${sv4Esc(svPosTxt(p)||'?')}</span>${p.alter!=null?`<span><b>${p.alter}${p.alterCa||!p.geb?'~':''}</b> J.</span>`:''}
+        <div class="pmeta"><span>${sv4Esc((svLigaJetzt(p)||{}).club||p.club)}</span><span class="pm4-pos">${sv4Esc(svPosTxt(p)||'?')}</span>${p.alter!=null?`<span><b>${p.alter}${p.alterCa||!p.geb?'~':''}</b> J.</span>`:''}
           ${a.y?`<span class="pm4-s">${sv4Esc(a.y)}: ${ein(a)}${tw?'':` · <b>${a.tore!=null?a.tore:'–'}</b> T`}</span>`:''}${b?`<span class="pm4-s">${sv4Esc(b.y)}: ${ein(b)}${tw?'':` · <b>${b.tore!=null?(b.belegt?'≥':'')+b.tore:'–'}</b> T`}</span>`:''}
           ${tw&&s.gaTxt?`<span class="pm4-s">GT/Sp. <b>${sv4Esc(s.gaTxt.split(' ')[0])}</b> (Team)</span>`:''}
           ${p.km!=null&&!sv4Team(p)?`<span>${p.km} km</span>`:''}${W?`<span title="Wechsel-Index: Heuristik aus öffentlichen Signalen, keine Wahrscheinlichkeit">🔁 <b>${W.w}</b></span>`:''}</div>${extra}</div>
@@ -7958,7 +7958,7 @@ if(typeof rdRender==='function'){ const _rr4=rdRender; rdRender=function(){
     if(t){ t.innerHTML=SC4_RF.map(([k,l])=>`<button class="${F===k?'on':''}" data-rf4="${k}">${l}</button>`).join(''); t.querySelectorAll('[data-rf4]').forEach(b=>b.onclick=()=>{ VR.rf=b.dataset.rf4; rdRender(); }); }
     P.querySelectorAll('.rdit').forEach(it=>{ const id=(it.querySelector('[data-svp]')||{}).dataset?.svp; const p=id&&sv4P(id); if(!p||it.querySelector('.rd4p'))return;
       const s=scores(p), W=!p.own&&typeof wscoreSafe==='function'?wscoreSafe(p):null, E=sv4Einsatz(p).seasons[0];
-      const d=document.createElement('div'); d.className='rd4p'; d.innerHTML=`<span>${sv4Esc((p.cur&&p.cur.club)||p.club)} · ${sv4Esc(svPosTxt(p)||'?')}${p.alter!=null?' · '+p.alter+' J.':''}${E?' · '+sv4Esc(E.y)+': '+(E.sp!=null?E.sp+'/'+E.teamSp+' Sp.':E.teamSp+' Team-Sp.'):''}</span><b style="color:${tierColor(s.total)}">MScore ${Math.round(s.total)}</b>${W?`<b>🔁 ${W.w}</b>`:''}`;
+      const d=document.createElement('div'); d.className='rd4p'; d.innerHTML=`<span>${sv4Esc((svLigaJetzt(p)||{}).club||p.club)} · ${sv4Esc(svPosTxt(p)||'?')}${p.alter!=null?' · '+p.alter+' J.':''}${E?' · '+sv4Esc(E.y)+': '+(E.sp!=null?E.sp+'/'+E.teamSp+' Sp.':E.teamSp+' Team-Sp.'):''}</span><b style="color:${tierColor(s.total)}">MScore ${Math.round(s.total)}</b>${W?`<b>🔁 ${W.w}</b>`:''}`;
       (it.querySelector('.tra-b')||it).appendChild(d);
       if(!p.own&&typeof sc2Btns==='function'&&!it.querySelector('.sc2b')){ const bb=document.createElement('div'); bb.innerHTML=sc2Btns(p,true); const x=bb.firstElementChild; if(x){ (it.querySelector('.tra-b')||it).appendChild(x); sc2Wire(it,()=>rdRender()); } const st=it.querySelector('.rdstar'); if(st)st.remove(); } });
   }catch(e){ console.warn('Radar 4.0',e); }
@@ -8013,7 +8013,7 @@ function sc4Detail(b){
   const sug=sc4Cands(b,6), intern=sc4Intern(b);
   const prof=[pr.alter_von||pr.alter_bis?`Alter ${pr.alter_von||'?'}–${pr.alter_bis||'?'}`:'',pr.fuss?pr.fuss:'',pr.liga_min?`mind. ${LIGA_NAME[pr.liga_min]||pr.liga_min}`:'',pr.km_max?`bis ${pr.km_max} km`:'',pr.rolle?sv4Esc(pr.rolle):'',pr.jugend?'inkl. A-Jugend':''].filter(Boolean);
   const row=x=>{ const p=sv4P(x.player_id); if(!p)return ''; const s=scores(p), E=sv4Eye(p.id), W=typeof wscoreSafe==='function'&&!p.isJugend?wscoreSafe(p):null;
-    return `<div class="bk4r s-${x.status}"><button type="button" class="kr4-n" data-svp="${sv4Esc(p.id)}"><b>${sv4Esc(p.name)}</b><small>${sv4Esc((p.cur&&p.cur.club)||p.club)} · ${sv4Esc(svPosTxt(p)||'')}${p.alter!=null?' · '+p.alter+' J.':''}${x.quelle!=='manuell'?' · via '+sv4Esc(x.quelle):''}</small></button>
+    return `<div class="bk4r s-${x.status}"><button type="button" class="kr4-n" data-svp="${sv4Esc(p.id)}"><b>${sv4Esc(p.name)}</b><small>${sv4Esc((svLigaJetzt(p)||{}).club||p.club)} · ${sv4Esc(svPosTxt(p)||'')}${p.alter!=null?' · '+p.alter+' J.':''}${x.quelle!=='manuell'?' · via '+sv4Esc(x.quelle):''}</small></button>
       <span class="kr4-o" style="color:${tierColor(s.total)}">${Math.round(s.total)}</span>${W?`<span class="bk4w" title="Wechsel-Index: Heuristik, keine Wahrscheinlichkeit">🔁 ${W.w}</span>`:'<span></span>'}<span class="bk4e" title="Eye-Tests">${E?'👁 '+E.n:'👁 –'}</span>
       <select data-bks="${sv4Esc(p.id)}" aria-label="Status">${SC4_ST.concat([['verworfen','Verworfen']]).map(([k,t])=>`<option value="${k}"${x.status===k?' selected':''}>${t}</option>`).join('')}</select></div>`; };
   return `<div class="card bd4d" id="bd4D"><div class="kd4-lh"><h3>${sv4Esc(b.titel)}</h3><div class="btnrow"><button class="btn sm ghost" data-bedit>${SVI('sliders')} Bearbeiten</button>${K.length>1?`<button class="btn sm ghost" data-bcmp>${SVI('chart')} Vergleichen</button>`:''}</div></div>
@@ -8023,7 +8023,7 @@ function sc4Detail(b){
     <h5 class="bd4h">Kandidaten <i>${K.length}</i></h5>
     ${K.length?`<div class="bk4l">${SC4_ST.concat([['verworfen','']]).map(([k])=>K.filter(x=>x.status===k).map(row).join('')).join('')}</div>`:'<p class="note">Noch keine Kandidaten: aus den Vorschlägen übernehmen, per KI-Auftrag suchen oder im Spielermarkt bei einem Spieler „+ Bedarf“ tippen.</p>'}
     ${intern.length?`<h5 class="bd4h">Interne Lösung prüfen</h5><div class="sg4">${intern.map(({p,q})=>`<button type="button" class="sg4c" data-badd="${sv4Esc(p.id)}" data-bq="${q}"><b>${sv4Esc(p.name)}</b><span>${q==='zweite'?'2. Mannschaft':'A-Jugend'} · ${sv4Esc(svPosTxt(p)||'')} · ${Math.round(scores(p).total)}</span><i>+ prüfen</i></button>`).join('')}</div>`:''}
-    <h5 class="bd4h">Vorschläge nach Suchprofil</h5>${sug.length?`<div class="sg4">${sug.map(p=>{ const W=typeof wscoreSafe==='function'&&!p.isJugend?wscoreSafe(p):null; return `<button type="button" class="sg4c" data-badd="${sv4Esc(p.id)}" data-bq="manuell"><b>${sv4Esc(p.name)}</b><span>${sv4Esc((p.cur&&p.cur.club)||p.club)} · ${p.alter!=null?p.alter+' J. · ':''}${Math.round(scores(p).total)}${W?' · 🔁 '+W.w:''}</span><i>+ Kandidat</i></button>`; }).join('')}</div>`:'<p class="note small">Keine weiteren Treffer mit diesem Profil.</p>'}
+    <h5 class="bd4h">Vorschläge nach Suchprofil</h5>${sug.length?`<div class="sg4">${sug.map(p=>{ const W=typeof wscoreSafe==='function'&&!p.isJugend?wscoreSafe(p):null; return `<button type="button" class="sg4c" data-badd="${sv4Esc(p.id)}" data-bq="manuell"><b>${sv4Esc(p.name)}</b><span>${sv4Esc((svLigaJetzt(p)||{}).club||p.club)} · ${p.alter!=null?p.alter+' J. · ':''}${Math.round(scores(p).total)}${W?' · 🔁 '+W.w:''}</span><i>+ Kandidat</i></button>`; }).join('')}</div>`:'<p class="note small">Keine weiteren Treffer mit diesem Profil.</p>'}
     <h5 class="bd4h">KI-Scouting-Aufträge</h5>
     <div class="bj4">${jobs.map(j=>`<button type="button" class="sc2j s-${j.status}" data-job4="${j.id}"><b>${sv4Esc(j.titel||'Auftrag')}</b><span>${{wartet:'⏳ wartet',laeuft:'⚙️ läuft …',fertig:'✓ fertig',fehler:'⚠️ Fehler'}[j.status]||j.status} · ${sv4D(j.created_at)}</span></button>${j.status==='fertig'&&j.ergebnis&&(j.ergebnis.kandidaten||[]).length?`<button type="button" class="lk4" data-jtake="${j.id}">⤵ ${(j.ergebnis.kandidaten||[]).length} Treffer als Kandidaten übernehmen</button>`:''}`).join('')}
       <button type="button" class="btn sm" data-bjob>${SVI('search')} Scouts losschicken (KI-Auftrag)</button></div>
@@ -12141,19 +12141,19 @@ function svLigaJetzt(p){
   if(!p)return null;
   const alt=svLigaCode(p.liga);
   if(p.isJugend)return {liga:alt,jetzt:true,quelle:'app',club:p.club};
-  if(svCurGilt(p.cur))return {liga:svLigaCode(p.cur.liga),jetzt:true,quelle:p.cur.season?'Datenbestand '+p.cur.season:'Spieldaten',club:p.cur.club||p.club,rank:p.cur.rank,teamCount:p.cur.teamCount};
-  const cs=(typeof DATA!=='undefined'&&DATA&&DATA.season)||'2627';
-  const cl=typeof clubFor==='function'?clubFor(p.club):null, s=cl&&cl['s'+cs];
-  if(s&&s.liga)return {liga:svLigaCode(s.liga),jetzt:true,quelle:'verein',club:p.club,rank:s.platz};
   // FuPa, laufende Saison: nur belegte Mannschaftszugehörigkeit (Kader oder Einsätze), mehrere Mannschaften bleiben mehrere
   const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], k=K&&typeof klaSk==='function'&&K[klaSk('cur')];
   if(k&&k.belegt){ const codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)).filter(Boolean))];
     if(codes.length)return {liga:codes.join('/'),jetzt:true,quelle:'FuPa '+(k.kaderBelegt?'Kader':'Einsätze'),club:k.mannschaft||p.club,mehrere:codes.length>1||(k.basis||[]).length>1}; }
+  if(svCurGilt(p.cur))return {liga:svLigaCode(p.cur.liga),jetzt:true,quelle:p.cur.season?'Datenbestand '+p.cur.season:'Spieldaten',club:p.cur.club||p.club,rank:p.cur.rank,teamCount:p.cur.teamCount};
+  const cs=(typeof DATA!=='undefined'&&DATA&&DATA.season)||'2627';
+  const cl=typeof clubFor==='function'?clubFor(p.club):null, s=cl&&cl['s'+cs];
+  if(s&&s.liga)return {liga:svLigaCode(s.liga),jetzt:true,quelle:'verein',club:p.club,rank:s.platz};
   const s0=cl&&cl.s2526;
   return {liga:alt,jetzt:false,quelle:'alt',club:p.club,auf:!!(s0&&s0.platz!=null&&s0.platz<=2&&alt!=='D')}; }
 function svLigaHinweis(L){ return L&&!L.jetzt?'Stand 25/26'+(L.auf?', vermutlich aufgestiegen':''):''; }
 function svLigaName(l){ return (typeof LIGA_NAME!=='undefined'&&LIGA_NAME[l])||l||'unbekannt'; }
-function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?svLigaName(L.liga)+' ('+h+')':svLigaName(L.liga); }
+function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?L.liga.split('/').map(svLigaName).join(' / ')+' ('+h+')':L.liga.split('/').map(svLigaName).join(' / '); }
 function svLigaZeile(p){ const L=svLigaJetzt(p); return (L&&L.club||p.club||'')+' · '+svLigaText(p); }
 
 // Wechselchance: Liga und Tabellenplatz der laufenden Saison; Gründe aus der Vorsaison sind als 25/26 gekennzeichnet. MScore bleibt unverändert.
@@ -12177,8 +12177,8 @@ const SVL_VS=/Spielzeit|Teamspielen|Teamtore|Torschützenkönig/;
 
 // Suche: der Ligafilter nutzt die aktuelle Liga (nicht die der Vorsaison)
 if(typeof visible==='function'){ const _vL=visible; visible=function(){
-  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt&&L.liga!==p.liga){ alt.push([p,p.liga]); p.liga=L.liga; } }); }catch(e){}
-  try{ return _vL.apply(this,arguments); } finally{ alt.forEach(([p,l])=>{ p.liga=l; }); } }; }
+  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt){ alt.push([p,p.liga,p.club]); p.liga=L.liga.split('/').find(l=>activeLigen.has(l))||L.liga; p.club=L.club||p.club; } }); }catch(e){}
+  try{ return _vL.apply(this,arguments); } finally{ alt.forEach(([p,l,c])=>{ p.liga=l;p.club=c; }); } }; }
 
 // Startseite: Verein und Liga der laufenden Saison
 { const _rhL=renderHome; renderHome=function(){ const r=_rhL.apply(this,arguments);
@@ -12192,7 +12192,7 @@ if(typeof visible==='function'){ const _vL=visible; visible=function(){
   try{ const p=players.find(x=>x.id===id); const m=document.querySelector('#modal .msub'); if(p&&m&&!p.isJugend){
       const L=svLigaJetzt(p), h=svLigaHinweis(L);
       const platz=L.jetzt?(L.rank!=null?' · Platz '+L.rank+(L.teamCount?'/'+L.teamCount:''):''):(p.rank!=null?' · Platz '+p.rank+'/'+p.teamCount+' in 25/26':'');
-      if(m.textContent.startsWith(p.club+' · '))m.textContent=(L.club||p.club)+' · '+svLigaName(L.liga)+(h?' ('+h+')':'')+platz+(p.km!=null?' · '+p.km+' km':''); } }catch(e){}
+      if(m.textContent.startsWith(p.club+' · '))m.textContent=(L.club||p.club)+' · '+L.liga.split('/').map(svLigaName).join(' / ')+(h?' ('+h+')':'')+platz+(p.km!=null?' · '+p.km+' km':''); } }catch(e){}
   return r; }; }
 
 /* =====================================================================
@@ -18684,6 +18684,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.116',v:'0.99.116',datum:'2026-11-21',titel:'Aktueller Verein im Scouting',kurz:'Liga, Vereinsname und Suchfilter verwenden dieselbe aktuelle Zugehörigkeit.',punkte:[{ic:'i',t:'Wechsel richtig einordnen',d:'Markt und Profil zeigen den aktuellen Kader, ersatzweise belegte Einsätze. Mehrere Mannschaften bleiben sichtbar. Frühere Saisonstatistiken bleiben erhalten. Gruppenliga-Spieler außerhalb unseres Gebiets werden auch bei anderen Gruppenliga-Staffeln ausgeblendet.',r:'scout'}]},
   {id:'0.99.115',v:'0.99.115',datum:'2026-11-21',titel:'Scouting in unserem Gebiet',kurz:'In der Gruppenliga konzentriert sich die Spielersuche auf Bergstraße und Odenwald.',
     punkte:[{ic:'i',t:'Passende Vereine im Blick',d:'Gruppenliga-Spieler anderer Kreise erscheinen nicht mehr in Suche, Kandidatenlisten und automatischen Scout-Vorschlägen. Eigene Spieler, Jugend und die unteren Ligen bleiben erhalten. Bisherige Notizen und Statistiken bleiben gespeichert.',r:'scout'}]},
   {id:'0.99.114',v:'0.99.114',datum:'2026-11-21',titel:'Vereinbarungen im Partnerflow',kurz:'Nachlässe bleiben bis zum Abschluss nachvollziehbar. Trikots werden nach bestätigter Stückzahl getrennt abgerechnet.',
@@ -22848,8 +22849,10 @@ const S1_LKEY={A:'KLA',B:'KLB',C:'KLC',D:'KLD',D1:'KLD',D2:'KLD',KOL:'KOL',GL:'G
 const S1_BSTAT={offen:'offen',suche:'in Suche',shortlist:'Shortlist',entschieden:'entschieden',erledigt:'erledigt',verworfen:'verworfen'};
 const S1_AKTIV=['offen','suche','shortlist'];
 
-function s1LigaKey(p){ const l=String((p&&p.cur&&p.cur.sub)||(p&&p.liga)||''); return S1_LKEY[l]||(V1K.LIGA[l]?l:null); }
-function s1Liga(p){ const k=s1LigaKey(p); return k?V1K.LIGA[k]:String((p&&p.liga)||''); }
+function s1LigaKeys(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; const l=String((L&&L.liga)||(p&&p.liga)||''); return [...new Set(l.split('/').map(x=>S1_LKEY[x]||(V1K.LIGA[x]?x:null)).filter(Boolean))]; }
+function s1LigaKey(p){ return s1LigaKeys(p)[0]||null; }
+function s1Liga(p){ const K=s1LigaKeys(p); return K.length?K.map(k=>V1K.LIGA[k]).join(' / '):String((p&&p.liga)||''); }
+function s1Club(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; return (L&&L.club)||(p&&p.club)||''; }
 function s1Extern(p){ return p&&svScoutInScope(p)&&!p.own&&!sv4Team(p)&&!p.verzicht; }
 function s1AttrLaden(){ if(S1.attr)return Promise.resolve(); if(S1.attrP)return S1.attrP;
   S1.attrP=(async()=>{ try{ S1.attr=(await v1Rpc('rating_v1_attribute'))||{}; }catch(e){ S1.attr={}; } S1.attrP=null; })(); return S1.attrP; }
@@ -22873,7 +22876,7 @@ function s1Krit(b){
 }
 function s1Sp(p){ const w=k1W(p.id), a=(S1.attr&&S1.attr[p.id])||null;
   return {id:p.id,name:p.name,pos:p.pos,pos2:p.pos2||[],alter:k1Alter(p),fuss:p.fuss,ca:w.ca??null,p24:w.p24??null,sicherheit:w.sicherheit||null,form:w.form??null,
-    rolle:w.rolle||null,signale:w.signale||[],attr:a,club:p.club||'',liga:s1Liga(p),km:p.km??null,p}; }
+    rolle:w.rolle||null,signale:w.signale||[],attr:a,club:s1Club(p),liga:s1Liga(p),km:p.km??null,p}; }
 function s1Transfer(p,k){
   const C=(typeof crmOf==='function'&&crmOf(p))||{}, w=k1W(p.id);
   let aussage=(k&&k.interesse)||null, am=(k&&k.aussage_am)||null;
@@ -23092,7 +23095,7 @@ function s1BedarfKnopf(p){ const b=s1BedarfFuer(p); if(!b)return ''; const drin=
 function s1Markt(){
   const f=S1.mf, q=String(f.q||'').trim().toLowerCase();
   let L=players.filter(p=>s1Extern(p)&&!p.isJugend&&k1W(p.id).ca!=null).map(s1Sp)
-    .filter(s=>!f.pos||V1K.passung(s,f.pos)>=.8).filter(s=>!f.liga||s1LigaKey(s.p)===f.liga).filter(s=>!f.alter||(s.alter!=null&&s.alter<=+f.alter))
+    .filter(s=>!f.pos||V1K.passung(s,f.pos)>=.8).filter(s=>!f.liga||s1LigaKeys(s.p).includes(f.liga)).filter(s=>!f.alter||(s.alter!=null&&s.alter<=+f.alter))
     .filter(s=>!q||s.name.toLowerCase().includes(q)||String(s.club).toLowerCase().includes(q));
   const k=S1.msort.k, d=S1.msort.d, val=s=>k==='name'?s.name:k==='alter'?(s.alter??99):k==='sicherheit'?({hoch:3,mittel:2,niedrig:1}[s.sicherheit]||0):(s[k]??-1);
   L.sort((a,b)=>{ const x=val(a),y=val(b); return (x<y?-1:x>y?1:0)*d||a.name.localeCompare(b.name,'de'); });

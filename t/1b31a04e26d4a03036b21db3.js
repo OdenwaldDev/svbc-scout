@@ -570,7 +570,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.115', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.116', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -681,7 +681,7 @@ function appInit(){
 function svScoutInScope(p){
  if(!p)return false;
  if(p.own||p.isJugend||(typeof sv4Team==='function'&&['1','2','A','B'].includes(sv4Team(p))))return true;
- const gl=l=>l==='GL'||l==='herren-gruppenliga-darmstadt';
+ const gl=l=>l==='GL'||(/(^|-)gruppenliga(-|$)/.test(l)&&!/(junior|jugend)/.test(l));
  const names=new Set(['SV Fürth','FC Fürth','FSG Riedrode','Tvgg. Lorsch','SC Olympia Lorsch','TSV Rot-Weiss Auerbach','TSV Rot-Weiß Auerbach','TSV Auerbach','TSV Höchst']);
  const clubOk=r=>["sv-fuerth", "fc-fuerth", "fsg-riedrode", "tsv-hoechst", "tvgg-lorsch", "sc-olympia-lorsch", "tsv-rot-weiss-auerbach"].includes(r.club_slug)||[87768, 23257, 39284, 26305, 87762, 87761, 87773].includes(Number(r.team_id))||names.has(r.verein||r.mannschaft||r.club);
  const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], season=typeof klaSk==='function'?klaSk('cur'):null;

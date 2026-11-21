@@ -579,6 +579,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.116',v:'0.99.116',datum:'2026-11-21',titel:'Aktueller Verein im Scouting',kurz:'Liga, Vereinsname und Suchfilter verwenden dieselbe aktuelle Zugehörigkeit.',punkte:[{ic:'i',t:'Wechsel richtig einordnen',d:'Markt und Profil zeigen den aktuellen Kader, ersatzweise belegte Einsätze. Mehrere Mannschaften bleiben sichtbar. Frühere Saisonstatistiken bleiben erhalten. Gruppenliga-Spieler außerhalb unseres Gebiets werden auch bei anderen Gruppenliga-Staffeln ausgeblendet.',r:'scout'}]},
   {id:'0.99.115',v:'0.99.115',datum:'2026-11-21',titel:'Scouting in unserem Gebiet',kurz:'In der Gruppenliga konzentriert sich die Spielersuche auf Bergstraße und Odenwald.',
     punkte:[{ic:'i',t:'Passende Vereine im Blick',d:'Gruppenliga-Spieler anderer Kreise erscheinen nicht mehr in Suche, Kandidatenlisten und automatischen Scout-Vorschlägen. Eigene Spieler, Jugend und die unteren Ligen bleiben erhalten. Bisherige Notizen und Statistiken bleiben gespeichert.',r:'scout'}]},
   {id:'0.99.114',v:'0.99.114',datum:'2026-11-21',titel:'Vereinbarungen im Partnerflow',kurz:'Nachlässe bleiben bis zum Abschluss nachvollziehbar. Trikots werden nach bestätigter Stückzahl getrennt abgerechnet.',

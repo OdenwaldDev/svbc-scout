@@ -1512,7 +1512,7 @@ window.REISE_TRIKOT=(()=>{
     if(bibliothekP)return bibliothekP;
     bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.115';
+      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.116';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); });
     }})().catch(e=>{bibliothekP=null;throw e;});

@@ -7,8 +7,8 @@
 
 // Suche: der Ligafilter nutzt die aktuelle Liga (nicht die der Vorsaison)
 if(typeof visible==='function'){ const _vL=visible; visible=function(){
-  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt&&L.liga!==p.liga){ alt.push([p,p.liga]); p.liga=L.liga; } }); }catch(e){}
-  try{ return _vL.apply(this,arguments); } finally{ alt.forEach(([p,l])=>{ p.liga=l; }); } }; }
+  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt){ alt.push([p,p.liga,p.club]); p.liga=L.liga.split('/').find(l=>activeLigen.has(l))||L.liga; p.club=L.club||p.club; } }); }catch(e){}
+  try{ return _vL.apply(this,arguments); } finally{ alt.forEach(([p,l,c])=>{ p.liga=l;p.club=c; }); } }; }
 
 // Startseite: Verein und Liga der laufenden Saison
 { const _rhL=renderHome; renderHome=function(){ const r=_rhL.apply(this,arguments);
@@ -22,7 +22,7 @@ if(typeof visible==='function'){ const _vL=visible; visible=function(){
   try{ const p=players.find(x=>x.id===id); const m=document.querySelector('#modal .msub'); if(p&&m&&!p.isJugend){
       const L=svLigaJetzt(p), h=svLigaHinweis(L);
       const platz=L.jetzt?(L.rank!=null?' · Platz '+L.rank+(L.teamCount?'/'+L.teamCount:''):''):(p.rank!=null?' · Platz '+p.rank+'/'+p.teamCount+' in 25/26':'');
-      if(m.textContent.startsWith(p.club+' · '))m.textContent=(L.club||p.club)+' · '+svLigaName(L.liga)+(h?' ('+h+')':'')+platz+(p.km!=null?' · '+p.km+' km':''); } }catch(e){}
+      if(m.textContent.startsWith(p.club+' · '))m.textContent=(L.club||p.club)+' · '+L.liga.split('/').map(svLigaName).join(' / ')+(h?' ('+h+')':'')+platz+(p.km!=null?' · '+p.km+' km':''); } }catch(e){}
   return r; }; }
 
 /* =====================================================================

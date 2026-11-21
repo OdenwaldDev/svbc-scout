@@ -732,19 +732,19 @@ function svLigaJetzt(p){
   if(!p)return null;
   const alt=svLigaCode(p.liga);
   if(p.isJugend)return {liga:alt,jetzt:true,quelle:'app',club:p.club};
-  if(svCurGilt(p.cur))return {liga:svLigaCode(p.cur.liga),jetzt:true,quelle:p.cur.season?'Datenbestand '+p.cur.season:'Spieldaten',club:p.cur.club||p.club,rank:p.cur.rank,teamCount:p.cur.teamCount};
-  const cs=(typeof DATA!=='undefined'&&DATA&&DATA.season)||'2627';
-  const cl=typeof clubFor==='function'?clubFor(p.club):null, s=cl&&cl['s'+cs];
-  if(s&&s.liga)return {liga:svLigaCode(s.liga),jetzt:true,quelle:'verein',club:p.club,rank:s.platz};
   // FuPa, laufende Saison: nur belegte Mannschaftszugehörigkeit (Kader oder Einsätze), mehrere Mannschaften bleiben mehrere
   const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], k=K&&typeof klaSk==='function'&&K[klaSk('cur')];
   if(k&&k.belegt){ const codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)).filter(Boolean))];
     if(codes.length)return {liga:codes.join('/'),jetzt:true,quelle:'FuPa '+(k.kaderBelegt?'Kader':'Einsätze'),club:k.mannschaft||p.club,mehrere:codes.length>1||(k.basis||[]).length>1}; }
+  if(svCurGilt(p.cur))return {liga:svLigaCode(p.cur.liga),jetzt:true,quelle:p.cur.season?'Datenbestand '+p.cur.season:'Spieldaten',club:p.cur.club||p.club,rank:p.cur.rank,teamCount:p.cur.teamCount};
+  const cs=(typeof DATA!=='undefined'&&DATA&&DATA.season)||'2627';
+  const cl=typeof clubFor==='function'?clubFor(p.club):null, s=cl&&cl['s'+cs];
+  if(s&&s.liga)return {liga:svLigaCode(s.liga),jetzt:true,quelle:'verein',club:p.club,rank:s.platz};
   const s0=cl&&cl.s2526;
   return {liga:alt,jetzt:false,quelle:'alt',club:p.club,auf:!!(s0&&s0.platz!=null&&s0.platz<=2&&alt!=='D')}; }
 function svLigaHinweis(L){ return L&&!L.jetzt?'Stand 25/26'+(L.auf?', vermutlich aufgestiegen':''):''; }
 function svLigaName(l){ return (typeof LIGA_NAME!=='undefined'&&LIGA_NAME[l])||l||'unbekannt'; }
-function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?svLigaName(L.liga)+' ('+h+')':svLigaName(L.liga); }
+function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?L.liga.split('/').map(svLigaName).join(' / ')+' ('+h+')':L.liga.split('/').map(svLigaName).join(' / '); }
 function svLigaZeile(p){ const L=svLigaJetzt(p); return (L&&L.club||p.club||'')+' · '+svLigaText(p); }
 
 // Wechselchance: Liga und Tabellenplatz der laufenden Saison; Gründe aus der Vorsaison sind als 25/26 gekennzeichnet. MScore bleibt unverändert.

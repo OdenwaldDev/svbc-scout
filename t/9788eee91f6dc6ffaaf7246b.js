@@ -51,7 +51,7 @@ function s1BedarfKnopf(p){ const b=s1BedarfFuer(p); if(!b)return ''; const drin=
 function s1Markt(){
   const f=S1.mf, q=String(f.q||'').trim().toLowerCase();
   let L=players.filter(p=>s1Extern(p)&&!p.isJugend&&k1W(p.id).ca!=null).map(s1Sp)
-    .filter(s=>!f.pos||V1K.passung(s,f.pos)>=.8).filter(s=>!f.liga||s1LigaKey(s.p)===f.liga).filter(s=>!f.alter||(s.alter!=null&&s.alter<=+f.alter))
+    .filter(s=>!f.pos||V1K.passung(s,f.pos)>=.8).filter(s=>!f.liga||s1LigaKeys(s.p).includes(f.liga)).filter(s=>!f.alter||(s.alter!=null&&s.alter<=+f.alter))
     .filter(s=>!q||s.name.toLowerCase().includes(q)||String(s.club).toLowerCase().includes(q));
   const k=S1.msort.k, d=S1.msort.d, val=s=>k==='name'?s.name:k==='alter'?(s.alter??99):k==='sicherheit'?({hoch:3,mittel:2,niedrig:1}[s.sicherheit]||0):(s[k]??-1);
   L.sort((a,b)=>{ const x=val(a),y=val(b); return (x<y?-1:x>y?1:0)*d||a.name.localeCompare(b.name,'de'); });

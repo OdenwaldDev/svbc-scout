@@ -114,7 +114,7 @@ function pf4Build(id){
   const pos2=(p.pos2||[]).filter(x=>x!==p.pos);
   const kxk=typeof kxOf==='function'?kxOf(p.id):null, ortKm=kxk&&kxk.lat!=null?sv4Km(kxk.lat,kxk.lon):null;
   const bezCls={intern:'ok',verpflichtet:'ok',kontaktiert:'info',shortlist:'info',kandidat:'info',beobachtet:'mut',nein:'bad',extern:'mut'}[B.k]||'mut';
-  const club=(p.cur&&p.cur.club)||p.club, liga=p.isJugend?(p.kurz||p.staffel||'Jugend'):(LIGA_NAME[ligaBase((p.cur&&p.cur.sub)||p.liga)]||p.liga);
+  const jetzt=typeof svLigaJetzt==='function'?svLigaJetzt(p):null, club=(jetzt&&jetzt.club)||p.club, liga=p.isJugend?(p.kurz||p.staffel||'Jugend'):svLigaText(p);
   const root=document.createElement('div'); root.className='pf4';
   root.innerHTML=`<section class="pf4-head">
       <div class="pf4-ava"></div>
@@ -351,7 +351,7 @@ const SC4_ZP={sofort:'Sofort',winter:'Winter',sommer:'Sommer'};
 /* ---------- Weniger Tags: Liga + wichtigster Status ---------- */
 { const _bd4=badges; badges=function(p){
   try{
-    const C=crmOf(p); let h=`<span class="badge b-${p.liga}">${p.liga==='JUG'?(p.sub||'Jugend'):(p.liga==='KOL'?'KOL':p.liga+'-Klasse')}</span>`;
+    const C=crmOf(p); let h=`<span class="badge">${sv4Esc(p.isJugend?(p.sub||'Jugend'):svLigaText(p))}</span>`;
     const t=sv4Team(p); if(t)h+=`<span class="badge b-own">${t==='1'?'SV/BSC':t==='2'?'SV/BSC II':'SV/BSC Jgd.'}</span>`;
     else if(C.s==='lat'&&crmDue(p))h+=`<span class="badge b-crml">⏰ fällig</span>`;
     else if(C.c)h+=`<span class="badge b-crmc">📞 kontaktiert</span>`;
@@ -372,7 +372,7 @@ const SC4_ZP={sofort:'Sofort',winter:'Winter',sommer:'Sommer'};
     return `<div class="row r4" data-id="${p.id}">
       <div class="rankn ${i<3?'top':''}">${i+1}</div>${avaHtml(p)}
       <div class="rmain"><div class="pname">${sv4Esc(p.name)} ${badges(p)}</div>
-        <div class="pmeta"><span>${sv4Esc((p.cur&&p.cur.club)||p.club)}</span><span class="pm4-pos">${sv4Esc(svPosTxt(p)||'?')}</span>${p.alter!=null?`<span><b>${p.alter}${p.alterCa||!p.geb?'~':''}</b> J.</span>`:''}
+        <div class="pmeta"><span>${sv4Esc((svLigaJetzt(p)||{}).club||p.club)}</span><span class="pm4-pos">${sv4Esc(svPosTxt(p)||'?')}</span>${p.alter!=null?`<span><b>${p.alter}${p.alterCa||!p.geb?'~':''}</b> J.</span>`:''}
           ${a.y?`<span class="pm4-s">${sv4Esc(a.y)}: ${ein(a)}${tw?'':` · <b>${a.tore!=null?a.tore:'–'}</b> T`}</span>`:''}${b?`<span class="pm4-s">${sv4Esc(b.y)}: ${ein(b)}${tw?'':` · <b>${b.tore!=null?(b.belegt?'≥':'')+b.tore:'–'}</b> T`}</span>`:''}
           ${tw&&s.gaTxt?`<span class="pm4-s">GT/Sp. <b>${sv4Esc(s.gaTxt.split(' ')[0])}</b> (Team)</span>`:''}
           ${p.km!=null&&!sv4Team(p)?`<span>${p.km} km</span>`:''}${W?`<span title="Wechsel-Index: Heuristik aus öffentlichen Signalen, keine Wahrscheinlichkeit">🔁 <b>${W.w}</b></span>`:''}</div>${extra}</div>
@@ -407,7 +407,7 @@ if(typeof rdRender==='function'){ const _rr4=rdRender; rdRender=function(){
     if(t){ t.innerHTML=SC4_RF.map(([k,l])=>`<button class="${F===k?'on':''}" data-rf4="${k}">${l}</button>`).join(''); t.querySelectorAll('[data-rf4]').forEach(b=>b.onclick=()=>{ VR.rf=b.dataset.rf4; rdRender(); }); }
     P.querySelectorAll('.rdit').forEach(it=>{ const id=(it.querySelector('[data-svp]')||{}).dataset?.svp; const p=id&&sv4P(id); if(!p||it.querySelector('.rd4p'))return;
       const s=scores(p), W=!p.own&&typeof wscoreSafe==='function'?wscoreSafe(p):null, E=sv4Einsatz(p).seasons[0];
-      const d=document.createElement('div'); d.className='rd4p'; d.innerHTML=`<span>${sv4Esc((p.cur&&p.cur.club)||p.club)} · ${sv4Esc(svPosTxt(p)||'?')}${p.alter!=null?' · '+p.alter+' J.':''}${E?' · '+sv4Esc(E.y)+': '+(E.sp!=null?E.sp+'/'+E.teamSp+' Sp.':E.teamSp+' Team-Sp.'):''}</span><b style="color:${tierColor(s.total)}">MScore ${Math.round(s.total)}</b>${W?`<b>🔁 ${W.w}</b>`:''}`;
+      const d=document.createElement('div'); d.className='rd4p'; d.innerHTML=`<span>${sv4Esc((svLigaJetzt(p)||{}).club||p.club)} · ${sv4Esc(svPosTxt(p)||'?')}${p.alter!=null?' · '+p.alter+' J.':''}${E?' · '+sv4Esc(E.y)+': '+(E.sp!=null?E.sp+'/'+E.teamSp+' Sp.':E.teamSp+' Team-Sp.'):''}</span><b style="color:${tierColor(s.total)}">MScore ${Math.round(s.total)}</b>${W?`<b>🔁 ${W.w}</b>`:''}`;
       (it.querySelector('.tra-b')||it).appendChild(d);
       if(!p.own&&typeof sc2Btns==='function'&&!it.querySelector('.sc2b')){ const bb=document.createElement('div'); bb.innerHTML=sc2Btns(p,true); const x=bb.firstElementChild; if(x){ (it.querySelector('.tra-b')||it).appendChild(x); sc2Wire(it,()=>rdRender()); } const st=it.querySelector('.rdstar'); if(st)st.remove(); } });
   }catch(e){ console.warn('Radar 4.0',e); }
@@ -462,7 +462,7 @@ function sc4Detail(b){
   const sug=sc4Cands(b,6), intern=sc4Intern(b);
   const prof=[pr.alter_von||pr.alter_bis?`Alter ${pr.alter_von||'?'}–${pr.alter_bis||'?'}`:'',pr.fuss?pr.fuss:'',pr.liga_min?`mind. ${LIGA_NAME[pr.liga_min]||pr.liga_min}`:'',pr.km_max?`bis ${pr.km_max} km`:'',pr.rolle?sv4Esc(pr.rolle):'',pr.jugend?'inkl. A-Jugend':''].filter(Boolean);
   const row=x=>{ const p=sv4P(x.player_id); if(!p)return ''; const s=scores(p), E=sv4Eye(p.id), W=typeof wscoreSafe==='function'&&!p.isJugend?wscoreSafe(p):null;
-    return `<div class="bk4r s-${x.status}"><button type="button" class="kr4-n" data-svp="${sv4Esc(p.id)}"><b>${sv4Esc(p.name)}</b><small>${sv4Esc((p.cur&&p.cur.club)||p.club)} · ${sv4Esc(svPosTxt(p)||'')}${p.alter!=null?' · '+p.alter+' J.':''}${x.quelle!=='manuell'?' · via '+sv4Esc(x.quelle):''}</small></button>
+    return `<div class="bk4r s-${x.status}"><button type="button" class="kr4-n" data-svp="${sv4Esc(p.id)}"><b>${sv4Esc(p.name)}</b><small>${sv4Esc((svLigaJetzt(p)||{}).club||p.club)} · ${sv4Esc(svPosTxt(p)||'')}${p.alter!=null?' · '+p.alter+' J.':''}${x.quelle!=='manuell'?' · via '+sv4Esc(x.quelle):''}</small></button>
       <span class="kr4-o" style="color:${tierColor(s.total)}">${Math.round(s.total)}</span>${W?`<span class="bk4w" title="Wechsel-Index: Heuristik, keine Wahrscheinlichkeit">🔁 ${W.w}</span>`:'<span></span>'}<span class="bk4e" title="Eye-Tests">${E?'👁 '+E.n:'👁 –'}</span>
       <select data-bks="${sv4Esc(p.id)}" aria-label="Status">${SC4_ST.concat([['verworfen','Verworfen']]).map(([k,t])=>`<option value="${k}"${x.status===k?' selected':''}>${t}</option>`).join('')}</select></div>`; };
   return `<div class="card bd4d" id="bd4D"><div class="kd4-lh"><h3>${sv4Esc(b.titel)}</h3><div class="btnrow"><button class="btn sm ghost" data-bedit>${SVI('sliders')} Bearbeiten</button>${K.length>1?`<button class="btn sm ghost" data-bcmp>${SVI('chart')} Vergleichen</button>`:''}</div></div>
@@ -472,7 +472,7 @@ function sc4Detail(b){
     <h5 class="bd4h">Kandidaten <i>${K.length}</i></h5>
     ${K.length?`<div class="bk4l">${SC4_ST.concat([['verworfen','']]).map(([k])=>K.filter(x=>x.status===k).map(row).join('')).join('')}</div>`:'<p class="note">Noch keine Kandidaten: aus den Vorschlägen übernehmen, per KI-Auftrag suchen oder im Spielermarkt bei einem Spieler „+ Bedarf“ tippen.</p>'}
     ${intern.length?`<h5 class="bd4h">Interne Lösung prüfen</h5><div class="sg4">${intern.map(({p,q})=>`<button type="button" class="sg4c" data-badd="${sv4Esc(p.id)}" data-bq="${q}"><b>${sv4Esc(p.name)}</b><span>${q==='zweite'?'2. Mannschaft':'A-Jugend'} · ${sv4Esc(svPosTxt(p)||'')} · ${Math.round(scores(p).total)}</span><i>+ prüfen</i></button>`).join('')}</div>`:''}
-    <h5 class="bd4h">Vorschläge nach Suchprofil</h5>${sug.length?`<div class="sg4">${sug.map(p=>{ const W=typeof wscoreSafe==='function'&&!p.isJugend?wscoreSafe(p):null; return `<button type="button" class="sg4c" data-badd="${sv4Esc(p.id)}" data-bq="manuell"><b>${sv4Esc(p.name)}</b><span>${sv4Esc((p.cur&&p.cur.club)||p.club)} · ${p.alter!=null?p.alter+' J. · ':''}${Math.round(scores(p).total)}${W?' · 🔁 '+W.w:''}</span><i>+ Kandidat</i></button>`; }).join('')}</div>`:'<p class="note small">Keine weiteren Treffer mit diesem Profil.</p>'}
+    <h5 class="bd4h">Vorschläge nach Suchprofil</h5>${sug.length?`<div class="sg4">${sug.map(p=>{ const W=typeof wscoreSafe==='function'&&!p.isJugend?wscoreSafe(p):null; return `<button type="button" class="sg4c" data-badd="${sv4Esc(p.id)}" data-bq="manuell"><b>${sv4Esc(p.name)}</b><span>${sv4Esc((svLigaJetzt(p)||{}).club||p.club)} · ${p.alter!=null?p.alter+' J. · ':''}${Math.round(scores(p).total)}${W?' · 🔁 '+W.w:''}</span><i>+ Kandidat</i></button>`; }).join('')}</div>`:'<p class="note small">Keine weiteren Treffer mit diesem Profil.</p>'}
     <h5 class="bd4h">KI-Scouting-Aufträge</h5>
     <div class="bj4">${jobs.map(j=>`<button type="button" class="sc2j s-${j.status}" data-job4="${j.id}"><b>${sv4Esc(j.titel||'Auftrag')}</b><span>${{wartet:'⏳ wartet',laeuft:'⚙️ läuft …',fertig:'✓ fertig',fehler:'⚠️ Fehler'}[j.status]||j.status} · ${sv4D(j.created_at)}</span></button>${j.status==='fertig'&&j.ergebnis&&(j.ergebnis.kandidaten||[]).length?`<button type="button" class="lk4" data-jtake="${j.id}">⤵ ${(j.ergebnis.kandidaten||[]).length} Treffer als Kandidaten übernehmen</button>`:''}`).join('')}
       <button type="button" class="btn sm" data-bjob>${SVI('search')} Scouts losschicken (KI-Auftrag)</button></div>
