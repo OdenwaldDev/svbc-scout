@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon-64.png">
-<meta name="app-build" content="beta-0.99.122">
+<meta name="app-build" content="beta-0.99.123">
 <title>SV/BSC Sportzentrale</title>
 <script src="vendor/chart.umd.min.js?v=81ffafe13c37" async></script>
 <style>
@@ -431,6 +431,14 @@
 .vl-head>img{background:#eee8d8;border-radius:50%;padding:5px}
 
 .ss225 .ss225-actions{display:flex;flex-wrap:wrap;align-items:end;gap:8px}.ss225-locked .vl-medaille{filter:grayscale(1)}.ss225-locked{position:relative}.ss225-locked::after{content:'Noch gesperrt';display:block;font-size:13px;margin:6px 0}.ss225-proposal{border-left:3px solid #b68b45;padding:10px}.ss225 article{scroll-margin-top:24px;min-width:0}.ss225 li{margin:10px 0}.ss225 .btn{white-space:normal;overflow-wrap:anywhere}.ss225 select{min-width:0}.ss225 [data-ss-error]{min-height:24px}.ss225{padding-bottom:100px}
+
+/* Identisches Motiv je Skill, nur Metall, Rand und Stufenzeichen wechseln. */
+.ss227-tiers{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}
+.ss227-tiers .vl-medaille{width:clamp(52px,17vw,76px);height:auto}
+.ss225 fieldset{border:1px solid var(--line);border-radius:8px;padding:12px;margin:14px 0;min-width:0}
+.ss225 legend{font-weight:700;font-size:15px;padding:0 6px}
+.ss225 .ss227-check{display:flex;flex-direction:row;align-items:flex-start;gap:10px;min-height:44px;margin:12px 0;font-size:14px;cursor:pointer}
+.ss225 .ss227-check input{flex:0 0 24px;width:24px;min-height:24px;height:24px;margin:3px 0}
 </style>
 <style id="appCss">
 /* ===== App-Modus ===== */
@@ -4435,7 +4443,7 @@ a.kbtn{text-decoration:none;display:inline-block}
 
 
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
-<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.122", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
+<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.123", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
 <script src="vendor/supabase.js?v=dff1e545f4f3"></script>
 <script src="icons.js?v=2b264497e7cf"></script>
 <script src="boot.js?v=1d6601716449"></script>
