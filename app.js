@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.125', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.126', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18698,6 +18698,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.126',v:'0.99.126',datum:'2026-11-21',titel:'Bisherige Anzugpartner links',kurz:'Die vorhandenen Mölter-Zuordnungen bei E1, E2 und C2 stehen nur auf dem linken Ärmel.',punkte:[{ic:'i',t:'Rechte Ärmel wieder einzeln verfügbar',d:'Die alten rechten Doppeleinträge sind nach Sicherung bereinigt. Neuere Vergaben und vertragliche Belegungen bleiben geschützt.',r:'admin'}]},
   {id:'0.99.125',v:'0.99.125',datum:'2026-11-21',titel:'Ärmelpartner für Trainingsanzüge',kurz:'Im Partnerflow könnt ihr Trainingsanzüge ansehen und einen freien Ärmel je Mannschaft auswählen.',
    punkte:[{ic:'i',t:'Linker und rechter Ärmel getrennt',d:'Auf dem Schwarzen Brett stehen nur freie Anzugärmel zur Auswahl. Die Vorschau zeigt das eigene Logo in Schwarz auf dem weißen Ärmeleinsatz. Mannschaft und Seite bleiben beim Teilen erhalten.',r:'team'},{ic:'i',t:'Belegung der Trainingsanzüge',d:'Im Trikot-Creator siehst du die bisherigen Partner links, offene rechte Ärmel und angefragte Plätze. Die B-Jugend steht erst ab 2029 zur Verfügung. Die Preise gelten einmalig; Bekleidung wird getrennt abgerechnet.',r:'admin'}]},
   {id:'0.99.124',v:'0.99.124',datum:'2026-11-21',titel:'Große Logos auf den Banden',kurz:'Wortlogos stehen groß für sich. BB hat zwei getrennt bearbeitbare Bandenmotive.',punkte:[{ic:'i',t:'Eine klare Marke',d:'Steht der Firmenname schon im Logo, kommt kein zweiter Schriftzug dazu. Nur bei einem reinen Bildzeichen lässt sich der Name ergänzen. Internetadressen, Telefon und weitere Kontaktzeilen bleiben von der Bande herunter.',r:'admin'},{ic:'i',t:'Zwei Motive für BB',d:'Event links, das Original-BB mittig und Kreativ rechts. Daneben steht Mörlens mit seinem Originalschriftzug und Restobar & Patisserie. Beide Motive sind im persönlichen Flow auswählbar und getrennt gespeichert.',r:'admin'},{ic:'i',t:'Bestehende Entwürfe nachvollziehbar korrigiert',d:'Die Korrektur erhält Originaldateien, Druckeinstellungen und frühere Fassungen. Bearbeitung und Druckfreigabe bleiben getrennte Schritte.',r:'admin'}]},
