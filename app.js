@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.117', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.118', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -12166,7 +12166,8 @@ function svLigaJetzt(p){
   return {liga:alt,jetzt:false,quelle:'alt',club:p.club,auf:!!(s0&&s0.platz!=null&&s0.platz<=2&&alt!=='D')}; }
 function svLigaHinweis(L){ return L&&!L.jetzt?'Stand 25/26'+(L.auf?', vermutlich aufgestiegen':''):''; }
 function svLigaName(l){ const extra={'landesliga-rhein-neckar':'Landesliga Rhein-Neckar','herren-landesliga-ost-suedwest':'Landesliga Ost Südwest','unbekannt':'Liga unbekannt'}; return (typeof LIGA_NAME!=='undefined'&&LIGA_NAME[l])||extra[l]||(l?String(l).replace(/^herren-/, '').split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '):'Liga unbekannt'); }
-function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?L.liga.split('/').map(svLigaName).join(' / ')+' ('+h+')':L.liga.split('/').map(svLigaName).join(' / '); }
+function svLigaCodes(L){ return (typeof (L&&L.liga)==='string'&&L.liga.trim()?L.liga:'unbekannt').split('/').filter(Boolean); }
+function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?svLigaCodes(L).map(svLigaName).join(' / ')+' ('+h+')':svLigaCodes(L).map(svLigaName).join(' / '); }
 function svLigaZeile(p){ const L=svLigaJetzt(p); return (L&&L.club||p.club||'')+' · '+svLigaText(p); }
 
 // Wechselchance: Liga und Tabellenplatz der laufenden Saison; Gründe aus der Vorsaison sind als 25/26 gekennzeichnet. MScore bleibt unverändert.
@@ -12190,7 +12191,7 @@ const SVL_VS=/Spielzeit|Teamspielen|Teamtore|Torschützenkönig/;
 
 // Suche: der Ligafilter nutzt die aktuelle Liga (nicht die der Vorsaison)
 if(typeof visible==='function'){ const _vL=visible; visible=function(){
-  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt){ alt.push([p,p.liga,p.club]); p.liga=L.liga.split('/').filter(l=>typeof svScoutLigaErlaubt!=='function'||svScoutLigaErlaubt(p,l)).find(l=>activeLigen.has(l))||'__keine_passende_liga__'; p.club=L.club||p.club; } }); }catch(e){}
+  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt){ alt.push([p,p.liga,p.club]); p.liga=svLigaCodes(L).filter(l=>typeof svScoutLigaErlaubt!=='function'||svScoutLigaErlaubt(p,l)).find(l=>activeLigen.has(l))||'__keine_passende_liga__'; p.club=L.club||p.club; } }); }catch(e){}
   try{ return _vL.apply(this,arguments); } finally{ alt.forEach(([p,l,c])=>{ p.liga=l;p.club=c; }); } }; }
 
 // Startseite: Verein und Liga der laufenden Saison
@@ -12205,7 +12206,7 @@ if(typeof visible==='function'){ const _vL=visible; visible=function(){
   try{ const p=players.find(x=>x.id===id); const m=document.querySelector('#modal .msub'); if(p&&m&&!p.isJugend){
       const L=svLigaJetzt(p), h=svLigaHinweis(L);
       const platz=L.jetzt?(L.rank!=null?' · Platz '+L.rank+(L.teamCount?'/'+L.teamCount:''):''):(p.rank!=null?' · Platz '+p.rank+'/'+p.teamCount+' in 25/26':'');
-      if(m.textContent.startsWith(p.club+' · '))m.textContent=(L.club||p.club)+' · '+L.liga.split('/').map(svLigaName).join(' / ')+(h?' ('+h+')':'')+platz+(p.km!=null?' · '+p.km+' km':''); } }catch(e){}
+      if(m.textContent.startsWith(p.club+' · '))m.textContent=(L.club||p.club)+' · '+svLigaCodes(L).map(svLigaName).join(' / ')+(h?' ('+h+')':'')+platz+(p.km!=null?' · '+p.km+' km':''); } }catch(e){}
   return r; }; }
 
 /* =====================================================================
@@ -18697,6 +18698,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.118',v:'0.99.118',datum:'2026-11-21',titel:'Scouting lädt auch bei fehlender Liga',kurz:'Leere Ligaangaben bei Vereinswechseln blockieren die Spielersuche nicht mehr.',punkte:[{ic:'i',t:'Fehlende Angaben bleiben erkennbar',d:'Alle Ligaansichten behandeln fehlende Werte als unbekannt. Auch der Vereinswechsel-Abgleich behält die aktuelle Quellliga bei.',r:'scout'}]},
   {id:'0.99.117',v:'0.99.117',datum:'2026-11-21',titel:'Aktuelle Quellliga bleibt sichtbar',kurz:'Auch Landesliga und weitere Ligen werden ohne Rückfall auf alte Ligadaten angezeigt.',punkte:[{ic:'i',t:'Keine alte Liga als Ersatz',d:'Ist eine aktuelle Liga nicht als Suchkürzel hinterlegt, zeigen Markt und Profil ihre Quellenbezeichnung. Fehlende Ligaangaben heißen ausdrücklich unbekannt. Historische Statistiken bleiben erhalten. Auch Bestenliste, Moneyball und Suchvorschläge berücksichtigen das Scoutinggebiet.',r:'scout'}]},
   {id:'0.99.116',v:'0.99.116',datum:'2026-11-21',titel:'Aktueller Verein im Scouting',kurz:'Liga, Vereinsname und Suchfilter verwenden dieselbe aktuelle Zugehörigkeit.',punkte:[{ic:'i',t:'Wechsel richtig einordnen',d:'Markt und Profil zeigen den aktuellen Kader, ersatzweise belegte Einsätze. Mehrere Mannschaften bleiben sichtbar. Frühere Saisonstatistiken bleiben erhalten. Gruppenliga-Spieler außerhalb unseres Gebiets werden auch bei anderen Gruppenliga-Staffeln ausgeblendet.',r:'scout'}]},
   {id:'0.99.115',v:'0.99.115',datum:'2026-11-21',titel:'Scouting in unserem Gebiet',kurz:'In der Gruppenliga konzentriert sich die Spielersuche auf Bergstraße und Odenwald.',
@@ -22863,7 +22865,7 @@ const S1_LKEY={A:'KLA',B:'KLB',C:'KLC',D:'KLD',D1:'KLD',D2:'KLD',KOL:'KOL',GL:'G
 const S1_BSTAT={offen:'offen',suche:'in Suche',shortlist:'Shortlist',entschieden:'entschieden',erledigt:'erledigt',verworfen:'verworfen'};
 const S1_AKTIV=['offen','suche','shortlist'];
 
-function s1LigaKeys(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; const l=String((L&&L.liga)||(p&&p.liga)||''); return [...new Set(l.split('/').filter(x=>svScoutLigaErlaubt(p,x)).map(x=>S1_LKEY[x]||(V1K.LIGA[x]?x:null)).filter(Boolean))]; }
+function s1LigaKeys(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; const l=String(L?(L.liga||'unbekannt'):((p&&p.liga)||'')); return [...new Set(l.split('/').filter(x=>svScoutLigaErlaubt(p,x)).map(x=>S1_LKEY[x]||(V1K.LIGA[x]?x:null)).filter(Boolean))]; }
 function s1LigaKey(p){ return s1LigaKeys(p)[0]||null; }
 function s1Liga(p){ const K=s1LigaKeys(p); return typeof svLigaText==='function'?svLigaText(p):(K.length?K.map(k=>V1K.LIGA[k]).join(' / '):'Liga unbekannt'); }
 function s1Club(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; return (L&&L.club)||(p&&p.club)||''; }
@@ -36599,7 +36601,7 @@ function s116Wechsel(p){
   const alt=[p.club,p._cur116?(p._cur116.cur||{}).club:(p.cur||{}).club].filter(Boolean); if(!alt.length)return null;
   if(R.some(r=>alt.some(a=>s116GleicherVerein(a,r.verein||r.mannschaft))))return null;
   const n=v=>+v||0, h=R.slice().sort((x,y)=>(n(y.minuten)||n(y.einsaetze))-(n(x.minuten)||n(x.einsaetze)))[0];
-  return {von:alt[alt.length-1],nach:(h.verein||h.mannschaft)+(h.squad>1?' '+'I'.repeat(Math.min(3,h.squad)):''),alle:k.mannschaft,liga:typeof svlCode==='function'?svlCode(h.league):null,
+  return {von:alt[alt.length-1],nach:(h.verein||h.mannschaft)+(h.squad>1?' '+'I'.repeat(Math.min(3,h.squad)):''),alle:k.mannschaft,liga:(typeof svlCode==='function'?svlCode(h.league):null)||h.league||'unbekannt',
     einsaetze:k.einsaetze,kader:!!k.kaderBelegt,stand:k.geprueft?String(k.geprueft).slice(0,10):null}; }
 function s116VereinAnwenden(){ let n=0;
   try{ players.forEach(p=>{ const W=s116Wechsel(p);
@@ -36614,8 +36616,8 @@ function s116VereinAnwenden(){ let n=0;
 // Nach einem neuen Datenbestand sind die Spieler frisch überschrieben: Verein laut FuPa noch einmal anwenden
 { const _da116=svDatasetAnwenden; svDatasetAnwenden=function(){ const r=_da116.apply(this,arguments); try{ players.forEach(p=>{ delete p._cur116; delete p.fupaWechsel; }); s116VereinAnwenden(); }catch(e){} return r; }; }
 { const _lj116=svLigaJetzt; svLigaJetzt=function(p){ const W=p&&p.fupaWechsel; if(!W)return _lj116.apply(this,arguments);
-  const k=KLAW.by[p.id][klaSk('cur')], codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)).filter(Boolean))];
-  return {liga:codes.join('/')||W.liga,jetzt:true,quelle:'FuPa '+(W.kader?'Kader':'Einsätze'),club:W.alle||W.nach,mehrere:codes.length>1||(k.basis||[]).length>1}; }; }
+  const k=(KLAW.by[p.id]||{})[klaSk('cur')]||{}, codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)||r.league||'unbekannt'))];
+  return {liga:codes.join('/')||W.liga||'unbekannt',jetzt:true,quelle:'FuPa '+(W.kader?'Kader':'Einsätze'),club:W.alle||W.nach,mehrere:codes.length>1||(k.basis||[]).length>1}; }; }
 function s116WechselText(p){ const W=p.fupaWechsel; if(!W)return '';
   return `Laut FuPa spielt ${svFirst(p.name)} diese Saison bei ${W.alle||W.nach}${W.einsaetze?` (${W.einsaetze} ${W.einsaetze===1?'Einsatz':'Einsätze'}${W.kader?', steht dort im Kader':''})`:W.kader?' (steht dort im Kader)':''}. In unseren Stammdaten stand noch ${W.von}.`; }
 

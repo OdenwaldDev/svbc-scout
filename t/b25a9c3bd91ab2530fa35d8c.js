@@ -745,7 +745,8 @@ function svLigaJetzt(p){
   return {liga:alt,jetzt:false,quelle:'alt',club:p.club,auf:!!(s0&&s0.platz!=null&&s0.platz<=2&&alt!=='D')}; }
 function svLigaHinweis(L){ return L&&!L.jetzt?'Stand 25/26'+(L.auf?', vermutlich aufgestiegen':''):''; }
 function svLigaName(l){ const extra={'landesliga-rhein-neckar':'Landesliga Rhein-Neckar','herren-landesliga-ost-suedwest':'Landesliga Ost Südwest','unbekannt':'Liga unbekannt'}; return (typeof LIGA_NAME!=='undefined'&&LIGA_NAME[l])||extra[l]||(l?String(l).replace(/^herren-/, '').split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '):'Liga unbekannt'); }
-function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?L.liga.split('/').map(svLigaName).join(' / ')+' ('+h+')':L.liga.split('/').map(svLigaName).join(' / '); }
+function svLigaCodes(L){ return (typeof (L&&L.liga)==='string'&&L.liga.trim()?L.liga:'unbekannt').split('/').filter(Boolean); }
+function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?svLigaCodes(L).map(svLigaName).join(' / ')+' ('+h+')':svLigaCodes(L).map(svLigaName).join(' / '); }
 function svLigaZeile(p){ const L=svLigaJetzt(p); return (L&&L.club||p.club||'')+' · '+svLigaText(p); }
 
 // Wechselchance: Liga und Tabellenplatz der laufenden Saison; Gründe aus der Vorsaison sind als 25/26 gekennzeichnet. MScore bleibt unverändert.

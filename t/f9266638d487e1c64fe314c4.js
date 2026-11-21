@@ -1,3 +1,4 @@
+  c.globalCompositeOperation = 'lighter'; const r = hoch ? 26 : 30;
   K.forEach(k => { const x = k[1] / 1000 * W, y = k[2] / 1000 * Hh, g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, 'rgba(255,154,74,.55)'); g.addColorStop(.5, 'rgba(232,116,31,.22)'); g.addColorStop(1, 'rgba(232,116,31,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 6.3); c.fill(); });
   c.globalCompositeOperation = 'source-over'; }
 async function r122Blatt(deck){ let A; try{ A = await svtRpc('partner_reise_auswertung', { p_deck: deck }); }catch(e){ kToast('⚠️ ' + (e.message || e)); return; }

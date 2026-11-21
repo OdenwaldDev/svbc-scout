@@ -1556,7 +1556,7 @@ function s116Wechsel(p){
   const alt=[p.club,p._cur116?(p._cur116.cur||{}).club:(p.cur||{}).club].filter(Boolean); if(!alt.length)return null;
   if(R.some(r=>alt.some(a=>s116GleicherVerein(a,r.verein||r.mannschaft))))return null;
   const n=v=>+v||0, h=R.slice().sort((x,y)=>(n(y.minuten)||n(y.einsaetze))-(n(x.minuten)||n(x.einsaetze)))[0];
-  return {von:alt[alt.length-1],nach:(h.verein||h.mannschaft)+(h.squad>1?' '+'I'.repeat(Math.min(3,h.squad)):''),alle:k.mannschaft,liga:typeof svlCode==='function'?svlCode(h.league):null,
+  return {von:alt[alt.length-1],nach:(h.verein||h.mannschaft)+(h.squad>1?' '+'I'.repeat(Math.min(3,h.squad)):''),alle:k.mannschaft,liga:(typeof svlCode==='function'?svlCode(h.league):null)||h.league||'unbekannt',
     einsaetze:k.einsaetze,kader:!!k.kaderBelegt,stand:k.geprueft?String(k.geprueft).slice(0,10):null}; }
 function s116VereinAnwenden(){ let n=0;
   try{ players.forEach(p=>{ const W=s116Wechsel(p);
@@ -1571,8 +1571,8 @@ function s116VereinAnwenden(){ let n=0;
 // Nach einem neuen Datenbestand sind die Spieler frisch überschrieben: Verein laut FuPa noch einmal anwenden
 { const _da116=svDatasetAnwenden; svDatasetAnwenden=function(){ const r=_da116.apply(this,arguments); try{ players.forEach(p=>{ delete p._cur116; delete p.fupaWechsel; }); s116VereinAnwenden(); }catch(e){} return r; }; }
 { const _lj116=svLigaJetzt; svLigaJetzt=function(p){ const W=p&&p.fupaWechsel; if(!W)return _lj116.apply(this,arguments);
-  const k=KLAW.by[p.id][klaSk('cur')], codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)).filter(Boolean))];
-  return {liga:codes.join('/')||W.liga,jetzt:true,quelle:'FuPa '+(W.kader?'Kader':'Einsätze'),club:W.alle||W.nach,mehrere:codes.length>1||(k.basis||[]).length>1}; }; }
+  const k=(KLAW.by[p.id]||{})[klaSk('cur')]||{}, codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)||r.league||'unbekannt'))];
+  return {liga:codes.join('/')||W.liga||'unbekannt',jetzt:true,quelle:'FuPa '+(W.kader?'Kader':'Einsätze'),club:W.alle||W.nach,mehrere:codes.length>1||(k.basis||[]).length>1}; }; }
 function s116WechselText(p){ const W=p.fupaWechsel; if(!W)return '';
   return `Laut FuPa spielt ${svFirst(p.name)} diese Saison bei ${W.alle||W.nach}${W.einsaetze?` (${W.einsaetze} ${W.einsaetze===1?'Einsatz':'Einsätze'}${W.kader?', steht dort im Kader':''})`:W.kader?' (steht dort im Kader)':''}. In unseren Stammdaten stand noch ${W.von}.`; }
 
@@ -2132,4 +2132,3 @@ function r122Balken(S){ const sum = {}; S.forEach(s => Object.entries(s.szenen |
 function r122Waerme(cv, K, hoch){ const W = hoch ? 270 : 480, Hh = hoch ? 480 : 300, d = Math.min(2, window.devicePixelRatio || 1); cv.width = W * d; cv.height = Hh * d; cv.style.aspectRatio = W + '/' + Hh;
   const c = cv.getContext('2d'); c.scale(d, d); c.fillStyle = '#0c1235'; c.fillRect(0, 0, W, Hh); c.strokeStyle = 'rgba(243,245,250,.14)'; c.lineWidth = 1;
   for(let i = 1; i < 4; i++){ c.beginPath(); c.moveTo(0, Hh * i / 4); c.lineTo(W, Hh * i / 4); c.stroke(); }
-  c.globalCompositeOperation = 'lighter'; const r = hoch ? 26 : 30;
