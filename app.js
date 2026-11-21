@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.116', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.117', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -2227,6 +2227,18 @@ function svScoutInScope(p){
 
 // Home scouting suggestions share the same exclusion, without removing profiles.
 if(typeof crmHidden==='function'){const prior=crmHidden;crmHidden=function(p){return !svScoutInScope(p)||prior.apply(this,arguments);};}
+
+// Stored stars remain intact; only the active shortlist is filtered.
+renderShortlist=function(){const arr=sorted(players.filter(p=>p.star&&svScoutInScope(p)));$('#shortlist').innerHTML=arr.length?arr.map((p,i)=>rowHtml(p,i)).join(''):'<div class="empty">Keine Markierungen im aktuellen Scoutinggebiet.</div>';};
+
+// A permitted second team keeps the person, but must not admit a foreign GL membership into the GL filter.
+function svScoutLigaErlaubt(p,l){
+ if(l!=='GL'||p.own||p.isJugend)return true;
+ const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], sk=typeof klaSk==='function'?klaSk('cur'):null;
+ const rows=K&&K[sk]&&K[sk].zeilen||[], roster=rows.filter(r=>r.kader===true), basis=roster.length?roster:rows.filter(r=>Number(r.einsaetze)>0);
+ if(!basis.length)return svScoutInScope(p);
+ return basis.some(r=>/(^|-)gruppenliga(-|$)/.test(r.league)&&svScoutInScope({liga:'GL',club:r.verein||r.mannschaft,club_slug:r.club_slug,team_id:r.team_id}));
+}
 
 /* =====================================================================
    SV/BSC Scout v3 · Rollen, Supabase-Sync, Nutzerverwaltung, App-Shell
@@ -4622,7 +4634,7 @@ function rdSeen(){ try{ return localStorage.getItem('svbc-radar-seen')||''; }cat
 function rdMarkSeen(){ try{ localStorage.setItem('svbc-radar-seen',new Date().toISOString()); }catch(e){} vrBadge(); }
 function vrBadge(){ const s=rdSeen(), n=canScout()?VR.radar.filter(r=>r.created_at>s&&r.lvl!=='info').length:0; document.querySelectorAll('[data-cnt="radar"]').forEach(el=>{ el.textContent=n; el.style.display=n?'':'none'; }); }
 function rdChances(){
-  const own=p=>p.own, L=players.filter(p=>!own(p)&&p.cur&&p.cur.spiele>=3);
+  const own=p=>p.own, L=players.filter(p=>svScoutInScope(p)&&!own(p)&&p.cur&&p.cur.spiele>=3);
   const age=p=>p.alter!=null&&!p.alterCa?p.alter:null;
   const young=L.filter(p=>age(p)!=null&&age(p)<=21&&p.cur.tore>=3).sort((a,b)=>b.cur.tore/b.cur.spiele-a.cur.tore/a.cur.spiele).slice(0,10)
     .map(p=>({p,t:`${p.name} (${age(p)}) · ${p.cur.tore} Tore in ${p.cur.spiele} Spielen`,d:`${p.cur.club} · ${p.cur.sub||p.cur.liga}`}));
@@ -11554,11 +11566,12 @@ function bl93GA(club,sk,liga){
   const ga=s.gegentore/s.spiele; return {ga,avg,ratio:ga/avg,spiele:s.spiele};
 }
 function bl93Row(p,cfg){
+  if(!svScoutInScope(p))return null;
   const c=p.cur&&p.cur.spiele>0?p.cur:null, cur=BL93.saison==='cur';
   if(cur&&!c)return null;
-  const liga=cur?(c.sub||c.liga):(p.sub||p.liga), lv=ligaBase(liga); if(!LIGA_NAME[lv])return null;
+  const jetzt=cur?svLigaJetzt(p):null, liga=cur?((jetzt&&jetzt.liga)||'unbekannt'):(p.sub||p.liga), codes=liga.split('/').map(ligaBase).filter(l=>!cur||svScoutLigaErlaubt(p,l)), lv=(BL93.liga!=='alle'?codes.find(x=>x===BL93.liga):codes[0]); if(!LIGA_NAME[lv])return null;
   if(BL93.liga!=='alle'&&lv!==BL93.liga)return null;
-  const club=cur?(c.club||p.club):p.club, sk=cur?sv4S():'2526';
+  const club=cur?((jetzt&&jetzt.club)||c.club||p.club):p.club, sk=cur?sv4S():'2526';
   let teamSp=cur?c.spiele:p.teamSp, sp=null, q=null, min=null, tore=cur?(c.tore||0):(p.tore||0), vor=null, tT=cur?(c.tT||null):(p.tT||null), est=false, quelle='';
   if(cur){ const A=typeof sv94AppSpiele==='function'?sv94AppSpiele(p):null;
     if(A){ teamSp=A.G; sp=A.sp; min=A.min; q=min!=null?Math.min(1,min/(A.G*90)):Math.min(1,A.sp/A.G)*0.92; tore=A.tore; vor=A.ast; quelle='eure Spiele'; }
@@ -11603,7 +11616,7 @@ function bl93Render(){
   const cfg=BL93_POS[BL93.pos], SO=BL93_SORT[BL93.pos]; if(!SO.some(x=>x[0]===BL93.sort))BL93.sort=SO[0][0];
   const sd=SO.find(x=>x[0]===BL93.sort), desc=sd[2];
   const alt=a=>BL93.alter==='alle'||(a!=null&&(BL93.alter==='u23'?a<=23:BL93.alter==='u27'?a<=27:a>=28));
-  let R=players.filter(p=>!p.isJugend&&cfg.p.includes(p.pos)&&(BL93.eigene||!p.own)&&alt(p.alter)).map(p=>bl93Row(p,cfg)).filter(Boolean);
+  let R=players.filter(p=>svScoutInScope(p)&&!p.isJugend&&cfg.p.includes(p.pos)&&(BL93.eigene||!p.own)&&alt(p.alter)).map(p=>bl93Row(p,cfg)).filter(Boolean);
   const mitV=R.some(r=>r.vor!=null);
   const vK=r=>bl93Val(r,BL93.sort);
   R.sort((a,b)=>{ const x=vK(a),y=vK(b); if(x==null&&y==null)return b.st-a.st; if(x==null)return 1; if(y==null)return -1; return (desc?y-x:x-y)||(b.st-a.st); });
@@ -12116,7 +12129,7 @@ try{ if(typeof LIGA_NAME!=='undefined'&&!LIGA_NAME.VL)LIGA_NAME.VL='Verbandsliga
 const SVL_FUPA={'herren-gruppenliga-darmstadt':'GL','herren-kreisoberliga-bergstrasse':'KOL','kla-bergstrasse':'A','klb-bergstrasse':'B','klc-bergstrasse':'C','kreisliga-d-1-bergstrasse':'D','kld2-bergstrasse':'D'};
 function svLigaCode(l){ l=String(l||''); return /^D\d$/.test(l)?'D':l; }
 // Ligakürzel aus dem Quellen-Slug, auch für Ligen außerhalb der Suchauswahl (z. B. Verbandsliga Hessen Süd)
-function svlCode(l){ l=String(l||''); if(SVL_FUPA[l])return SVL_FUPA[l]; return /^kla-/.test(l)?'A':/^klb-/.test(l)?'B':/^klc-/.test(l)?'C':/^kld\d?-|^kreisliga-d/.test(l)?'D':/kreisoberliga/.test(l)?'KOL':/gruppenliga/.test(l)?'GL':/verbandsliga/.test(l)?'VL':/hessenliga/.test(l)?'HL':null; }
+function svlCode(l){ l=String(l||''); if(SVL_FUPA[l])return SVL_FUPA[l]; return (/^kla-/.test(l)||/(^|-)kreisliga-a(-|$)/.test(l))?'A':(/^klb-/.test(l)||/(^|-)kreisliga-b(-|$)/.test(l))?'B':(/^klc-/.test(l)||/(^|-)kreisliga-c(-|$)/.test(l))?'C':/^kld\d?-|^kreisliga-d/.test(l)?'D':/kreisoberliga/.test(l)?'KOL':/gruppenliga/.test(l)?'GL':/verbandsliga/.test(l)?'VL':/hessenliga/.test(l)?'HL':null; }
 // cur gilt nur für die laufende Saison: mit Saisonangabe genau diese, ohne Angabe nur mit Datenstand ab Saisonbeginn (1. Juli)
 function svCurGilt(c){ if(!c||!c.liga)return false; const s=svSaisonCur(); if(c.season)return c.season===s; return !!(c.stand&&c.stand>=s.slice(0,4)+'-07-01'); }
 function svSaisonCur(){ const s=(typeof DATA!=='undefined'&&DATA&&DATA.season)||'2627'; return '20'+s.slice(0,2)+'-'+s.slice(2); }
@@ -12143,8 +12156,8 @@ function svLigaJetzt(p){
   if(p.isJugend)return {liga:alt,jetzt:true,quelle:'app',club:p.club};
   // FuPa, laufende Saison: nur belegte Mannschaftszugehörigkeit (Kader oder Einsätze), mehrere Mannschaften bleiben mehrere
   const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], k=K&&typeof klaSk==='function'&&K[klaSk('cur')];
-  if(k&&k.belegt){ const codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)).filter(Boolean))];
-    if(codes.length)return {liga:codes.join('/'),jetzt:true,quelle:'FuPa '+(k.kaderBelegt?'Kader':'Einsätze'),club:k.mannschaft||p.club,mehrere:codes.length>1||(k.basis||[]).length>1}; }
+  if(k&&k.belegt){ const codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)||r.league||'unbekannt'))];
+    return {liga:codes.join('/')||'unbekannt',jetzt:true,quelle:'FuPa '+(k.kaderBelegt?'Kader':'Einsätze'),club:k.mannschaft||p.club,mehrere:codes.length>1||(k.basis||[]).length>1}; }
   if(svCurGilt(p.cur))return {liga:svLigaCode(p.cur.liga),jetzt:true,quelle:p.cur.season?'Datenbestand '+p.cur.season:'Spieldaten',club:p.cur.club||p.club,rank:p.cur.rank,teamCount:p.cur.teamCount};
   const cs=(typeof DATA!=='undefined'&&DATA&&DATA.season)||'2627';
   const cl=typeof clubFor==='function'?clubFor(p.club):null, s=cl&&cl['s'+cs];
@@ -12152,7 +12165,7 @@ function svLigaJetzt(p){
   const s0=cl&&cl.s2526;
   return {liga:alt,jetzt:false,quelle:'alt',club:p.club,auf:!!(s0&&s0.platz!=null&&s0.platz<=2&&alt!=='D')}; }
 function svLigaHinweis(L){ return L&&!L.jetzt?'Stand 25/26'+(L.auf?', vermutlich aufgestiegen':''):''; }
-function svLigaName(l){ return (typeof LIGA_NAME!=='undefined'&&LIGA_NAME[l])||l||'unbekannt'; }
+function svLigaName(l){ const extra={'landesliga-rhein-neckar':'Landesliga Rhein-Neckar','herren-landesliga-ost-suedwest':'Landesliga Ost Südwest','unbekannt':'Liga unbekannt'}; return (typeof LIGA_NAME!=='undefined'&&LIGA_NAME[l])||extra[l]||(l?String(l).replace(/^herren-/, '').split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '):'Liga unbekannt'); }
 function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?L.liga.split('/').map(svLigaName).join(' / ')+' ('+h+')':L.liga.split('/').map(svLigaName).join(' / '); }
 function svLigaZeile(p){ const L=svLigaJetzt(p); return (L&&L.club||p.club||'')+' · '+svLigaText(p); }
 
@@ -12177,7 +12190,7 @@ const SVL_VS=/Spielzeit|Teamspielen|Teamtore|Torschützenkönig/;
 
 // Suche: der Ligafilter nutzt die aktuelle Liga (nicht die der Vorsaison)
 if(typeof visible==='function'){ const _vL=visible; visible=function(){
-  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt){ alt.push([p,p.liga,p.club]); p.liga=L.liga.split('/').find(l=>activeLigen.has(l))||L.liga; p.club=L.club||p.club; } }); }catch(e){}
+  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt){ alt.push([p,p.liga,p.club]); p.liga=L.liga.split('/').filter(l=>typeof svScoutLigaErlaubt!=='function'||svScoutLigaErlaubt(p,l)).find(l=>activeLigen.has(l))||'__keine_passende_liga__'; p.club=L.club||p.club; } }); }catch(e){}
   try{ return _vL.apply(this,arguments); } finally{ alt.forEach(([p,l,c])=>{ p.liga=l;p.club=c; }); } }; }
 
 // Startseite: Verein und Liga der laufenden Saison
@@ -13039,7 +13052,7 @@ const suN2=s=>suN1(s).replace(/ae/g,'a').replace(/oe/g,'o').replace(/ue/g,'u');
 const suN3=s=>suN1(String(s||'').toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue'));
 function suIndex(){
   if(SU.idx&&SU.n===players.length)return SU.idx;
-  SU.idx=players.map(p=>{ const n1=suN1(p.name), c1=suN1(((p.cur&&p.cur.club)||p.club||''));
+  SU.idx=players.map(p=>{ const n1=suN1(p.name), c1=suN1(((svLigaJetzt(p)||{}).club||p.club||''));
     const n3=suN3(p.name); return {p,n1,n2:suN2(p.name),n3,w1:n1.split(' '),w2:suN2(p.name).split(' '),w3:n3.split(' '),c1,c2:suN2(c1)}; });
   SU.n=players.length; SU.sc.clear(); return SU.idx;
 }
@@ -13162,7 +13175,7 @@ function suAttach(inp,opt){
 function svSearchWire(){
   const box=document.getElementById('gSearchBox'), inp=document.getElementById('gSearch'), res=document.getElementById('gRes'); if(!inp)return;
   const shut=()=>{ box.classList.remove('mopen'); };
-  suAttach(inp,{pop:res,enterPicks:true,bereiche:true,onBereich:shut,pick:p=>{ inp.value=''; inp.blur(); shut(); openModal(p.id); },onEscape:()=>{ inp.value=''; inp.blur(); shut(); }});
+  suAttach(inp,{scope:svScoutInScope,pop:res,enterPicks:true,bereiche:true,onBereich:shut,pick:p=>{ inp.value=''; inp.blur(); shut(); openModal(p.id); },onEscape:()=>{ inp.value=''; inp.blur(); shut(); }});
   inp.addEventListener('blur',()=>setTimeout(shut,160));
   document.addEventListener('keydown',e=>{
     if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); svSearchOpen(); }
@@ -13175,7 +13188,7 @@ function suMarkt(){
   const q=document.getElementById('q'); if(!q||q.dataset.su)return;
   let t=null; const apply=v=>{ clearTimeout(t); query=String(v||'').toLowerCase(); renderList(); };
   q.oninput=null;
-  suAttach(q,{title:'Spieler',onInput:v=>{ clearTimeout(t); t=setTimeout(()=>apply(v),260); },onEnter:v=>apply(v),more:v=>apply(v),
+  suAttach(q,{scope:svScoutInScope,title:'Spieler',onInput:v=>{ clearTimeout(t); t=setTimeout(()=>apply(v),260); },onEnter:v=>apply(v),more:v=>apply(v),
     pick:p=>{ q.blur(); openModal(p.id); }});
 }
 
@@ -13260,7 +13273,7 @@ async function bfDirLoad(){
   (BF.dir||[]).forEach(p=>{ const n1=suN1(p.name), c1=suN1(p.club), n3=suN3(p.name); I.push({p,n1,n2:suN2(p.name),n3,w1:n1.split(' '),w2:suN2(p.name).split(' '),w3:n3.split(' '),c1,c2:suN2(c1)}); });
   SU.idx=I; SU.nf=BF.dir?BF.dir.length:-1; return I; }; }
 { const _sf19=suScore; suScore=function(p){ if(p&&p.fupa)return -1; return _sf19.apply(this,arguments); }; }
-{ const _fd19=suFind; suFind=function(q,opt){ opt=Object.assign({},opt||{}); const sc=opt.scope; if(!opt.fupa)opt.scope=p=>!p.fupa&&(!sc||sc(p)); else if(sc)opt.scope=p=>p.fupa||sc(p);
+{ const _fd19=suFind; suFind=function(q,opt){ opt=Object.assign({},opt||{}); const sc=opt.scope; if(!opt.fupa)opt.scope=p=>!p.fupa&&(!sc||sc(p)); else if(sc)opt.scope=p=>p.fupa?svScoutInScope(p):sc(p);
   const R=_fd19.call(this,q,opt);
   if(opt.fupa&&!opt.noScore)R.list.sort((a,b)=>(b.s-a.s)||((a.p.fupa?1:0)-(b.p.fupa?1:0))||((b.m??-1)-(a.m??-1)));
   return R; }; }
@@ -13268,7 +13281,7 @@ async function bfDirLoad(){
 /* ---------- Vorschläge: Wappen, Bild, FuPa-Kennzeichen, Blickfeld-Knopf ---------- */
 function bfCrest(club){ try{ return typeof scCrest==='function'?scCrest(club,'su-crest'):''; }catch(e){ return ''; } }
 suItem=function(p,q,i,sel,fz){
-  const club=p.fupa?p.club:((p.cur&&p.cur.club)||p.club||''), liga=p.fupa?(LIGA_NAME[p.liga]||p.liga):suLiga(p), key=p.id, on=bfFollowing(key);
+  const club=p.fupa?p.club:((svLigaJetzt(p)||{}).club||p.club||''), liga=p.fupa?(LIGA_NAME[p.liga]||p.liga):suLiga(p), key=p.id, on=bfFollowing(key);
   const stats=p.fupa?`${p.sp||0} Sp. · ${p.t||0} T.${p.season&&BF.cur&&p.season<BF.cur?' ('+p.season.slice(2,4)+'/'+p.season.slice(5)+')':''}`:(p.pos?svEsc(p.pos):'')+(p.alter!=null?' · '+p.alter:'');
   return `<div class="gi${i===sel?' sel':''}${p.fupa?' su-fupa':''}" role="option" aria-selected="${i===sel}" data-i="${i}">${p.fupa?`<div class="ava">${svEsc(svIni(p.name))}</div>`:avaHtml(p)}
     <div style="min-width:0;flex:1"><b>${q&&!fz?suMark(p.name,q):svEsc(p.name)}${p.own?' <i class="su-own">eigener</i>':''}${p.fupa?' <i class="su-fp">nur FuPa</i>':''}</b>
@@ -13342,7 +13355,7 @@ function bfRender(noLoad){
   const P=document.getElementById('panel-blick'); if(!P)return;
   if(!canScout()){ P.innerHTML='<div class="card"><div class="empty">Das Blickfeld gibt es für das Scouting-Team.</div></div>'; return; }
   if(!noLoad)bfRepLoad(); if(!BF.dir)bfDirLoad();
-  const L=BF.rep, n=L?L.length:0;
+  const L=BF.rep&&BF.rep.filter(x=>svScoutInScope(trP(x.key)||{id:x.key,liga:x.liga,club:x.club})), n=L?L.length:0;
   P.innerHTML=`<div class="card bf-top"><div class="bf-srch">${SVI('search')}<input type="search" id="bfq" placeholder="Spieler suchen und mit dem Auge ins Blickfeld nehmen" autocomplete="off" aria-label="Spieler fürs Blickfeld suchen"></div>
       <p class="note small">${n?`<b>${n}</b> Spieler in deinem Blickfeld. `:''}Montags kommt dein Wochenbericht mit allen Spielern hier. Nur du siehst diese Liste.</p></div>
     ${L==null?'<div class="card"><div class="empty">Lade dein Blickfeld …</div></div>':!n?'<div class="card"><div class="empty">Noch niemand im Blickfeld. Oben einen Namen tippen und auf das Auge drücken, oder im Spielerprofil auf „Ins Blickfeld“.</div></div>'
@@ -13352,7 +13365,7 @@ function bfRender(noLoad){
             <div class="bf-m"><b>${svEsc(x.name||x.key)}${x.key.startsWith('fupa:')?' <i class="su-fp">nur FuPa</i>':''}</b><span>${bfCrest(x.club)}${svEsc(x.club||'?')}${x.liga?' · '+svEsc(LIGA_NAME[x.liga]||x.liga):''}</span>
               <span>${x.da===false?'Saison: keine FuPa-Daten':`Saison ${x.sp??'–'} Sp. · ${x.mi!=null?x.mi.toLocaleString('de-DE')+' Min. · ':''}${x.t??'–'} T. · ${x.v??'–'} V.`}${T.platz?` · Team ${T.platz}. von ${T.teams||'?'}`:''}${x.alt?` · zuletzt ${svEsc(x.alt.season)}: ${x.alt.sp??'–'} Sp.`:''}</span></div>
             <div class="bf-r">${bfWoche(x)}<button type="button" class="lk4 mut" data-bfx="${svEsc(x.key)}" title="Aus dem Blickfeld nehmen">✕</button></div></div>`; }).join('')}</div></div>`; }).join('')}`;
-  const q=P.querySelector('#bfq'); if(q)suAttach(q,{title:'Spieler',recent:true,pick:(p,i)=>{ i.value=''; bfToggle(p.id,p.name); }});
+  const q=P.querySelector('#bfq'); if(q)suAttach(q,{scope:svScoutInScope,title:'Spieler',recent:true,pick:(p,i)=>{ i.value=''; bfToggle(p.id,p.name); }});
   P.querySelectorAll('.bf-c').forEach(c=>c.onclick=e=>{ if(e.target.closest('[data-bfx]'))return; const k=c.dataset.bfk; if(k.startsWith('fupa:'))bfFupaProfil(k.slice(5)); else openModal(k); });
   P.querySelectorAll('[data-bfx]').forEach(b=>b.onclick=async e=>{ e.stopPropagation(); if(!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent='Entfernen?'; return; }
     const x=(BF.rep||[]).find(r=>r.key===b.dataset.bfx); await bfToggle(b.dataset.bfx,x&&x.name); BF.rep=(BF.rep||[]).filter(r=>r.key!==b.dataset.bfx); bfRender(true); bfRepLoad(true); });
@@ -18684,6 +18697,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.117',v:'0.99.117',datum:'2026-11-21',titel:'Aktuelle Quellliga bleibt sichtbar',kurz:'Auch Landesliga und weitere Ligen werden ohne Rückfall auf alte Ligadaten angezeigt.',punkte:[{ic:'i',t:'Keine alte Liga als Ersatz',d:'Ist eine aktuelle Liga nicht als Suchkürzel hinterlegt, zeigen Markt und Profil ihre Quellenbezeichnung. Fehlende Ligaangaben heißen ausdrücklich unbekannt. Historische Statistiken bleiben erhalten. Auch Bestenliste, Moneyball und Suchvorschläge berücksichtigen das Scoutinggebiet.',r:'scout'}]},
   {id:'0.99.116',v:'0.99.116',datum:'2026-11-21',titel:'Aktueller Verein im Scouting',kurz:'Liga, Vereinsname und Suchfilter verwenden dieselbe aktuelle Zugehörigkeit.',punkte:[{ic:'i',t:'Wechsel richtig einordnen',d:'Markt und Profil zeigen den aktuellen Kader, ersatzweise belegte Einsätze. Mehrere Mannschaften bleiben sichtbar. Frühere Saisonstatistiken bleiben erhalten. Gruppenliga-Spieler außerhalb unseres Gebiets werden auch bei anderen Gruppenliga-Staffeln ausgeblendet.',r:'scout'}]},
   {id:'0.99.115',v:'0.99.115',datum:'2026-11-21',titel:'Scouting in unserem Gebiet',kurz:'In der Gruppenliga konzentriert sich die Spielersuche auf Bergstraße und Odenwald.',
     punkte:[{ic:'i',t:'Passende Vereine im Blick',d:'Gruppenliga-Spieler anderer Kreise erscheinen nicht mehr in Suche, Kandidatenlisten und automatischen Scout-Vorschlägen. Eigene Spieler, Jugend und die unteren Ligen bleiben erhalten. Bisherige Notizen und Statistiken bleiben gespeichert.',r:'scout'}]},
@@ -20994,7 +21008,7 @@ const RK43={offen:false};
 function rk43Liste(){
   if(typeof VR==='undefined'||!VR.atLoaded||typeof vrRanks!=='function')return null;
   const {L}=vrRanks();
-  return L.filter(x=>{ const p=x.pid&&trP(x.pid); return p&&!p.own&&x.tot.sp>=25&&!(typeof crmOf==='function'&&crmOf(p).s==='no'); })
+  return L.filter(x=>{ const p=x.pid&&trP(x.pid); return p&&svScoutInScope(p)&&!p.own&&x.tot.sp>=25&&!(typeof crmOf==='function'&&crmOf(p).s==='no'); })
     .sort((a,b)=>b.tot.sp-a.tot.sp).slice(0,12);
 }
 function rk43Html(){
@@ -22849,9 +22863,9 @@ const S1_LKEY={A:'KLA',B:'KLB',C:'KLC',D:'KLD',D1:'KLD',D2:'KLD',KOL:'KOL',GL:'G
 const S1_BSTAT={offen:'offen',suche:'in Suche',shortlist:'Shortlist',entschieden:'entschieden',erledigt:'erledigt',verworfen:'verworfen'};
 const S1_AKTIV=['offen','suche','shortlist'];
 
-function s1LigaKeys(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; const l=String((L&&L.liga)||(p&&p.liga)||''); return [...new Set(l.split('/').map(x=>S1_LKEY[x]||(V1K.LIGA[x]?x:null)).filter(Boolean))]; }
+function s1LigaKeys(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; const l=String((L&&L.liga)||(p&&p.liga)||''); return [...new Set(l.split('/').filter(x=>svScoutLigaErlaubt(p,x)).map(x=>S1_LKEY[x]||(V1K.LIGA[x]?x:null)).filter(Boolean))]; }
 function s1LigaKey(p){ return s1LigaKeys(p)[0]||null; }
-function s1Liga(p){ const K=s1LigaKeys(p); return K.length?K.map(k=>V1K.LIGA[k]).join(' / '):String((p&&p.liga)||''); }
+function s1Liga(p){ const K=s1LigaKeys(p); return typeof svLigaText==='function'?svLigaText(p):(K.length?K.map(k=>V1K.LIGA[k]).join(' / '):'Liga unbekannt'); }
 function s1Club(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; return (L&&L.club)||(p&&p.club)||''; }
 function s1Extern(p){ return p&&svScoutInScope(p)&&!p.own&&!sv4Team(p)&&!p.verzicht; }
 function s1AttrLaden(){ if(S1.attr)return Promise.resolve(); if(S1.attrP)return S1.attrP;
@@ -23123,7 +23137,7 @@ function s1Rueck(){
   const L=typeof rk43Liste==='function'?rk43Liste():null;
   if(L==null){ try{ if(typeof VR!=='undefined'&&!VR.atLoaded&&typeof vrLoadAllTime==='function'&&!S1._rkL){ S1._rkL=1; Promise.resolve(vrLoadAllTime()).then(()=>{ if(svCurTab()==='entdecken'&&S1.ent==='rueck')s1Entdecken(); }); } }catch(e){}
     return `<div class="card"><div class="empty">Vereinsstatistik wird geladen …</div></div>`; }
-  const R=L.map(x=>({x,p:sv4P(x.pid)})).filter(y=>y.p).map(y=>Object.assign(y,{s:s1Sp(y.p)}));
+  const R=L.map(x=>({x,p:sv4P(x.pid)})).filter(y=>y.p&&svScoutInScope(y.p)).map(y=>Object.assign(y,{s:s1Sp(y.p)}));
   return `<div class="card"><h3 class="trh">${SVI('refresh')} Rückkehrer <small>${R.length}</small></h3><p class="note small">Ehemalige mit vielen Spielen für uns, die jetzt woanders spielen. Mit aktueller Stärke und passendem offenen Bedarf.</p>
     ${R.map(({x,s})=>`<div class="s1-m">${s1Ca(s)}<div class="s1-mt"><b class="lnk" data-svp="${k1E(s.id)}">${k1E(s.name)}</b><small>${s1Unter(s)}</small><p>${x.tot.sp} Spiele für uns${s.p24!=null?` · in 24 Monaten ${s.p24}`:''}</p></div>
       <div class="s1-ma">${s1BedarfKnopf(s.p)}</div></div>`).join('')||'<p class="note">Keine Rückkehrer im Datenbestand.</p>'}</div>`;

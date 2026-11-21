@@ -506,7 +506,7 @@ const RK43={offen:false};
 function rk43Liste(){
   if(typeof VR==='undefined'||!VR.atLoaded||typeof vrRanks!=='function')return null;
   const {L}=vrRanks();
-  return L.filter(x=>{ const p=x.pid&&trP(x.pid); return p&&!p.own&&x.tot.sp>=25&&!(typeof crmOf==='function'&&crmOf(p).s==='no'); })
+  return L.filter(x=>{ const p=x.pid&&trP(x.pid); return p&&svScoutInScope(p)&&!p.own&&x.tot.sp>=25&&!(typeof crmOf==='function'&&crmOf(p).s==='no'); })
     .sort((a,b)=>b.tot.sp-a.tot.sp).slice(0,12);
 }
 function rk43Html(){

@@ -145,11 +145,12 @@ function bl93GA(club,sk,liga){
   const ga=s.gegentore/s.spiele; return {ga,avg,ratio:ga/avg,spiele:s.spiele};
 }
 function bl93Row(p,cfg){
+  if(!svScoutInScope(p))return null;
   const c=p.cur&&p.cur.spiele>0?p.cur:null, cur=BL93.saison==='cur';
   if(cur&&!c)return null;
-  const liga=cur?(c.sub||c.liga):(p.sub||p.liga), lv=ligaBase(liga); if(!LIGA_NAME[lv])return null;
+  const jetzt=cur?svLigaJetzt(p):null, liga=cur?((jetzt&&jetzt.liga)||'unbekannt'):(p.sub||p.liga), codes=liga.split('/').map(ligaBase).filter(l=>!cur||svScoutLigaErlaubt(p,l)), lv=(BL93.liga!=='alle'?codes.find(x=>x===BL93.liga):codes[0]); if(!LIGA_NAME[lv])return null;
   if(BL93.liga!=='alle'&&lv!==BL93.liga)return null;
-  const club=cur?(c.club||p.club):p.club, sk=cur?sv4S():'2526';
+  const club=cur?((jetzt&&jetzt.club)||c.club||p.club):p.club, sk=cur?sv4S():'2526';
   let teamSp=cur?c.spiele:p.teamSp, sp=null, q=null, min=null, tore=cur?(c.tore||0):(p.tore||0), vor=null, tT=cur?(c.tT||null):(p.tT||null), est=false, quelle='';
   if(cur){ const A=typeof sv94AppSpiele==='function'?sv94AppSpiele(p):null;
     if(A){ teamSp=A.G; sp=A.sp; min=A.min; q=min!=null?Math.min(1,min/(A.G*90)):Math.min(1,A.sp/A.G)*0.92; tore=A.tore; vor=A.ast; quelle='eure Spiele'; }
@@ -194,7 +195,7 @@ function bl93Render(){
   const cfg=BL93_POS[BL93.pos], SO=BL93_SORT[BL93.pos]; if(!SO.some(x=>x[0]===BL93.sort))BL93.sort=SO[0][0];
   const sd=SO.find(x=>x[0]===BL93.sort), desc=sd[2];
   const alt=a=>BL93.alter==='alle'||(a!=null&&(BL93.alter==='u23'?a<=23:BL93.alter==='u27'?a<=27:a>=28));
-  let R=players.filter(p=>!p.isJugend&&cfg.p.includes(p.pos)&&(BL93.eigene||!p.own)&&alt(p.alter)).map(p=>bl93Row(p,cfg)).filter(Boolean);
+  let R=players.filter(p=>svScoutInScope(p)&&!p.isJugend&&cfg.p.includes(p.pos)&&(BL93.eigene||!p.own)&&alt(p.alter)).map(p=>bl93Row(p,cfg)).filter(Boolean);
   const mitV=R.some(r=>r.vor!=null);
   const vK=r=>bl93Val(r,BL93.sort);
   R.sort((a,b)=>{ const x=vK(a),y=vK(b); if(x==null&&y==null)return b.st-a.st; if(x==null)return 1; if(y==null)return -1; return (desc?y-x:x-y)||(b.st-a.st); });
@@ -707,7 +708,7 @@ try{ if(typeof LIGA_NAME!=='undefined'&&!LIGA_NAME.VL)LIGA_NAME.VL='Verbandsliga
 const SVL_FUPA={'herren-gruppenliga-darmstadt':'GL','herren-kreisoberliga-bergstrasse':'KOL','kla-bergstrasse':'A','klb-bergstrasse':'B','klc-bergstrasse':'C','kreisliga-d-1-bergstrasse':'D','kld2-bergstrasse':'D'};
 function svLigaCode(l){ l=String(l||''); return /^D\d$/.test(l)?'D':l; }
 // Ligakürzel aus dem Quellen-Slug, auch für Ligen außerhalb der Suchauswahl (z. B. Verbandsliga Hessen Süd)
-function svlCode(l){ l=String(l||''); if(SVL_FUPA[l])return SVL_FUPA[l]; return /^kla-/.test(l)?'A':/^klb-/.test(l)?'B':/^klc-/.test(l)?'C':/^kld\d?-|^kreisliga-d/.test(l)?'D':/kreisoberliga/.test(l)?'KOL':/gruppenliga/.test(l)?'GL':/verbandsliga/.test(l)?'VL':/hessenliga/.test(l)?'HL':null; }
+function svlCode(l){ l=String(l||''); if(SVL_FUPA[l])return SVL_FUPA[l]; return (/^kla-/.test(l)||/(^|-)kreisliga-a(-|$)/.test(l))?'A':(/^klb-/.test(l)||/(^|-)kreisliga-b(-|$)/.test(l))?'B':(/^klc-/.test(l)||/(^|-)kreisliga-c(-|$)/.test(l))?'C':/^kld\d?-|^kreisliga-d/.test(l)?'D':/kreisoberliga/.test(l)?'KOL':/gruppenliga/.test(l)?'GL':/verbandsliga/.test(l)?'VL':/hessenliga/.test(l)?'HL':null; }
 // cur gilt nur für die laufende Saison: mit Saisonangabe genau diese, ohne Angabe nur mit Datenstand ab Saisonbeginn (1. Juli)
 function svCurGilt(c){ if(!c||!c.liga)return false; const s=svSaisonCur(); if(c.season)return c.season===s; return !!(c.stand&&c.stand>=s.slice(0,4)+'-07-01'); }
 function svSaisonCur(){ const s=(typeof DATA!=='undefined'&&DATA&&DATA.season)||'2627'; return '20'+s.slice(0,2)+'-'+s.slice(2); }
@@ -734,8 +735,8 @@ function svLigaJetzt(p){
   if(p.isJugend)return {liga:alt,jetzt:true,quelle:'app',club:p.club};
   // FuPa, laufende Saison: nur belegte Mannschaftszugehörigkeit (Kader oder Einsätze), mehrere Mannschaften bleiben mehrere
   const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], k=K&&typeof klaSk==='function'&&K[klaSk('cur')];
-  if(k&&k.belegt){ const codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)).filter(Boolean))];
-    if(codes.length)return {liga:codes.join('/'),jetzt:true,quelle:'FuPa '+(k.kaderBelegt?'Kader':'Einsätze'),club:k.mannschaft||p.club,mehrere:codes.length>1||(k.basis||[]).length>1}; }
+  if(k&&k.belegt){ const codes=[...new Set((k.basis||[]).map(r=>svlCode(r.league)||r.league||'unbekannt'))];
+    return {liga:codes.join('/')||'unbekannt',jetzt:true,quelle:'FuPa '+(k.kaderBelegt?'Kader':'Einsätze'),club:k.mannschaft||p.club,mehrere:codes.length>1||(k.basis||[]).length>1}; }
   if(svCurGilt(p.cur))return {liga:svLigaCode(p.cur.liga),jetzt:true,quelle:p.cur.season?'Datenbestand '+p.cur.season:'Spieldaten',club:p.cur.club||p.club,rank:p.cur.rank,teamCount:p.cur.teamCount};
   const cs=(typeof DATA!=='undefined'&&DATA&&DATA.season)||'2627';
   const cl=typeof clubFor==='function'?clubFor(p.club):null, s=cl&&cl['s'+cs];
@@ -743,7 +744,7 @@ function svLigaJetzt(p){
   const s0=cl&&cl.s2526;
   return {liga:alt,jetzt:false,quelle:'alt',club:p.club,auf:!!(s0&&s0.platz!=null&&s0.platz<=2&&alt!=='D')}; }
 function svLigaHinweis(L){ return L&&!L.jetzt?'Stand 25/26'+(L.auf?', vermutlich aufgestiegen':''):''; }
-function svLigaName(l){ return (typeof LIGA_NAME!=='undefined'&&LIGA_NAME[l])||l||'unbekannt'; }
+function svLigaName(l){ const extra={'landesliga-rhein-neckar':'Landesliga Rhein-Neckar','herren-landesliga-ost-suedwest':'Landesliga Ost Südwest','unbekannt':'Liga unbekannt'}; return (typeof LIGA_NAME!=='undefined'&&LIGA_NAME[l])||extra[l]||(l?String(l).replace(/^herren-/, '').split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '):'Liga unbekannt'); }
 function svLigaText(p){ const L=svLigaJetzt(p); if(!L)return ''; const h=svLigaHinweis(L); return h?L.liga.split('/').map(svLigaName).join(' / ')+' ('+h+')':L.liga.split('/').map(svLigaName).join(' / '); }
 function svLigaZeile(p){ const L=svLigaJetzt(p); return (L&&L.club||p.club||'')+' · '+svLigaText(p); }
 

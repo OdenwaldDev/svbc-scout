@@ -665,9 +665,9 @@ const S1_LKEY={A:'KLA',B:'KLB',C:'KLC',D:'KLD',D1:'KLD',D2:'KLD',KOL:'KOL',GL:'G
 const S1_BSTAT={offen:'offen',suche:'in Suche',shortlist:'Shortlist',entschieden:'entschieden',erledigt:'erledigt',verworfen:'verworfen'};
 const S1_AKTIV=['offen','suche','shortlist'];
 
-function s1LigaKeys(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; const l=String((L&&L.liga)||(p&&p.liga)||''); return [...new Set(l.split('/').map(x=>S1_LKEY[x]||(V1K.LIGA[x]?x:null)).filter(Boolean))]; }
+function s1LigaKeys(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; const l=String((L&&L.liga)||(p&&p.liga)||''); return [...new Set(l.split('/').filter(x=>svScoutLigaErlaubt(p,x)).map(x=>S1_LKEY[x]||(V1K.LIGA[x]?x:null)).filter(Boolean))]; }
 function s1LigaKey(p){ return s1LigaKeys(p)[0]||null; }
-function s1Liga(p){ const K=s1LigaKeys(p); return K.length?K.map(k=>V1K.LIGA[k]).join(' / '):String((p&&p.liga)||''); }
+function s1Liga(p){ const K=s1LigaKeys(p); return typeof svLigaText==='function'?svLigaText(p):(K.length?K.map(k=>V1K.LIGA[k]).join(' / '):'Liga unbekannt'); }
 function s1Club(p){ const L=typeof svLigaJetzt==='function'?svLigaJetzt(p):null; return (L&&L.club)||(p&&p.club)||''; }
 function s1Extern(p){ return p&&svScoutInScope(p)&&!p.own&&!sv4Team(p)&&!p.verzicht; }
 function s1AttrLaden(){ if(S1.attr)return Promise.resolve(); if(S1.attrP)return S1.attrP;

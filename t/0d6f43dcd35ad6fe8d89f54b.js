@@ -79,7 +79,7 @@ function s1Rueck(){
   const L=typeof rk43Liste==='function'?rk43Liste():null;
   if(L==null){ try{ if(typeof VR!=='undefined'&&!VR.atLoaded&&typeof vrLoadAllTime==='function'&&!S1._rkL){ S1._rkL=1; Promise.resolve(vrLoadAllTime()).then(()=>{ if(svCurTab()==='entdecken'&&S1.ent==='rueck')s1Entdecken(); }); } }catch(e){}
     return `<div class="card"><div class="empty">Vereinsstatistik wird geladen …</div></div>`; }
-  const R=L.map(x=>({x,p:sv4P(x.pid)})).filter(y=>y.p).map(y=>Object.assign(y,{s:s1Sp(y.p)}));
+  const R=L.map(x=>({x,p:sv4P(x.pid)})).filter(y=>y.p&&svScoutInScope(y.p)).map(y=>Object.assign(y,{s:s1Sp(y.p)}));
   return `<div class="card"><h3 class="trh">${SVI('refresh')} Rückkehrer <small>${R.length}</small></h3><p class="note small">Ehemalige mit vielen Spielen für uns, die jetzt woanders spielen. Mit aktueller Stärke und passendem offenen Bedarf.</p>
     ${R.map(({x,s})=>`<div class="s1-m">${s1Ca(s)}<div class="s1-mt"><b class="lnk" data-svp="${k1E(s.id)}">${k1E(s.name)}</b><small>${s1Unter(s)}</small><p>${x.tot.sp} Spiele für uns${s.p24!=null?` · in 24 Monaten ${s.p24}`:''}</p></div>
       <div class="s1-ma">${s1BedarfKnopf(s.p)}</div></div>`).join('')||'<p class="note">Keine Rückkehrer im Datenbestand.</p>'}</div>`;

@@ -570,7 +570,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.116', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.117', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -698,6 +698,18 @@ function svScoutInScope(p){
 
 // Home scouting suggestions share the same exclusion, without removing profiles.
 if(typeof crmHidden==='function'){const prior=crmHidden;crmHidden=function(p){return !svScoutInScope(p)||prior.apply(this,arguments);};}
+
+// Stored stars remain intact; only the active shortlist is filtered.
+renderShortlist=function(){const arr=sorted(players.filter(p=>p.star&&svScoutInScope(p)));$('#shortlist').innerHTML=arr.length?arr.map((p,i)=>rowHtml(p,i)).join(''):'<div class="empty">Keine Markierungen im aktuellen Scoutinggebiet.</div>';};
+
+// A permitted second team keeps the person, but must not admit a foreign GL membership into the GL filter.
+function svScoutLigaErlaubt(p,l){
+ if(l!=='GL'||p.own||p.isJugend)return true;
+ const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], sk=typeof klaSk==='function'?klaSk('cur'):null;
+ const rows=K&&K[sk]&&K[sk].zeilen||[], roster=rows.filter(r=>r.kader===true), basis=roster.length?roster:rows.filter(r=>Number(r.einsaetze)>0);
+ if(!basis.length)return svScoutInScope(p);
+ return basis.some(r=>/(^|-)gruppenliga(-|$)/.test(r.league)&&svScoutInScope({liga:'GL',club:r.verein||r.mannschaft,club_slug:r.club_slug,team_id:r.team_id}));
+}
 
 /* =====================================================================
    SV/BSC Scout v3 · Rollen, Supabase-Sync, Nutzerverwaltung, App-Shell

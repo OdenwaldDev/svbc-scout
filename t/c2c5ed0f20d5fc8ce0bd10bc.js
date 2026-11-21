@@ -202,7 +202,7 @@ function rdSeen(){ try{ return localStorage.getItem('svbc-radar-seen')||''; }cat
 function rdMarkSeen(){ try{ localStorage.setItem('svbc-radar-seen',new Date().toISOString()); }catch(e){} vrBadge(); }
 function vrBadge(){ const s=rdSeen(), n=canScout()?VR.radar.filter(r=>r.created_at>s&&r.lvl!=='info').length:0; document.querySelectorAll('[data-cnt="radar"]').forEach(el=>{ el.textContent=n; el.style.display=n?'':'none'; }); }
 function rdChances(){
-  const own=p=>p.own, L=players.filter(p=>!own(p)&&p.cur&&p.cur.spiele>=3);
+  const own=p=>p.own, L=players.filter(p=>svScoutInScope(p)&&!own(p)&&p.cur&&p.cur.spiele>=3);
   const age=p=>p.alter!=null&&!p.alterCa?p.alter:null;
   const young=L.filter(p=>age(p)!=null&&age(p)<=21&&p.cur.tore>=3).sort((a,b)=>b.cur.tore/b.cur.spiele-a.cur.tore/a.cur.spiele).slice(0,10)
     .map(p=>({p,t:`${p.name} (${age(p)}) · ${p.cur.tore} Tore in ${p.cur.spiele} Spielen`,d:`${p.cur.club} · ${p.cur.sub||p.cur.liga}`}));

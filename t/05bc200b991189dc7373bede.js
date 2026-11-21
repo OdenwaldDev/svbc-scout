@@ -7,7 +7,7 @@
 
 // Suche: der Ligafilter nutzt die aktuelle Liga (nicht die der Vorsaison)
 if(typeof visible==='function'){ const _vL=visible; visible=function(){
-  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt){ alt.push([p,p.liga,p.club]); p.liga=L.liga.split('/').find(l=>activeLigen.has(l))||L.liga; p.club=L.club||p.club; } }); }catch(e){}
+  const alt=[]; try{ players.forEach(p=>{ if(p.isJugend)return; const L=svLigaJetzt(p); if(L&&L.jetzt){ alt.push([p,p.liga,p.club]); p.liga=L.liga.split('/').filter(l=>typeof svScoutLigaErlaubt!=='function'||svScoutLigaErlaubt(p,l)).find(l=>activeLigen.has(l))||'__keine_passende_liga__'; p.club=L.club||p.club; } }); }catch(e){}
   try{ return _vL.apply(this,arguments); } finally{ alt.forEach(([p,l,c])=>{ p.liga=l;p.club=c; }); } }; }
 
 // Startseite: Verein und Liga der laufenden Saison
@@ -869,7 +869,7 @@ const suN2=s=>suN1(s).replace(/ae/g,'a').replace(/oe/g,'o').replace(/ue/g,'u');
 const suN3=s=>suN1(String(s||'').toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue'));
 function suIndex(){
   if(SU.idx&&SU.n===players.length)return SU.idx;
-  SU.idx=players.map(p=>{ const n1=suN1(p.name), c1=suN1(((p.cur&&p.cur.club)||p.club||''));
+  SU.idx=players.map(p=>{ const n1=suN1(p.name), c1=suN1(((svLigaJetzt(p)||{}).club||p.club||''));
     const n3=suN3(p.name); return {p,n1,n2:suN2(p.name),n3,w1:n1.split(' '),w2:suN2(p.name).split(' '),w3:n3.split(' '),c1,c2:suN2(c1)}; });
   SU.n=players.length; SU.sc.clear(); return SU.idx;
 }
@@ -992,7 +992,7 @@ function suAttach(inp,opt){
 function svSearchWire(){
   const box=document.getElementById('gSearchBox'), inp=document.getElementById('gSearch'), res=document.getElementById('gRes'); if(!inp)return;
   const shut=()=>{ box.classList.remove('mopen'); };
-  suAttach(inp,{pop:res,enterPicks:true,bereiche:true,onBereich:shut,pick:p=>{ inp.value=''; inp.blur(); shut(); openModal(p.id); },onEscape:()=>{ inp.value=''; inp.blur(); shut(); }});
+  suAttach(inp,{scope:svScoutInScope,pop:res,enterPicks:true,bereiche:true,onBereich:shut,pick:p=>{ inp.value=''; inp.blur(); shut(); openModal(p.id); },onEscape:()=>{ inp.value=''; inp.blur(); shut(); }});
   inp.addEventListener('blur',()=>setTimeout(shut,160));
   document.addEventListener('keydown',e=>{
     if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); svSearchOpen(); }
@@ -1005,7 +1005,7 @@ function suMarkt(){
   const q=document.getElementById('q'); if(!q||q.dataset.su)return;
   let t=null; const apply=v=>{ clearTimeout(t); query=String(v||'').toLowerCase(); renderList(); };
   q.oninput=null;
-  suAttach(q,{title:'Spieler',onInput:v=>{ clearTimeout(t); t=setTimeout(()=>apply(v),260); },onEnter:v=>apply(v),more:v=>apply(v),
+  suAttach(q,{scope:svScoutInScope,title:'Spieler',onInput:v=>{ clearTimeout(t); t=setTimeout(()=>apply(v),260); },onEnter:v=>apply(v),more:v=>apply(v),
     pick:p=>{ q.blur(); openModal(p.id); }});
 }
 
@@ -1090,7 +1090,7 @@ async function bfDirLoad(){
   (BF.dir||[]).forEach(p=>{ const n1=suN1(p.name), c1=suN1(p.club), n3=suN3(p.name); I.push({p,n1,n2:suN2(p.name),n3,w1:n1.split(' '),w2:suN2(p.name).split(' '),w3:n3.split(' '),c1,c2:suN2(c1)}); });
   SU.idx=I; SU.nf=BF.dir?BF.dir.length:-1; return I; }; }
 { const _sf19=suScore; suScore=function(p){ if(p&&p.fupa)return -1; return _sf19.apply(this,arguments); }; }
-{ const _fd19=suFind; suFind=function(q,opt){ opt=Object.assign({},opt||{}); const sc=opt.scope; if(!opt.fupa)opt.scope=p=>!p.fupa&&(!sc||sc(p)); else if(sc)opt.scope=p=>p.fupa||sc(p);
+{ const _fd19=suFind; suFind=function(q,opt){ opt=Object.assign({},opt||{}); const sc=opt.scope; if(!opt.fupa)opt.scope=p=>!p.fupa&&(!sc||sc(p)); else if(sc)opt.scope=p=>p.fupa?svScoutInScope(p):sc(p);
   const R=_fd19.call(this,q,opt);
   if(opt.fupa&&!opt.noScore)R.list.sort((a,b)=>(b.s-a.s)||((a.p.fupa?1:0)-(b.p.fupa?1:0))||((b.m??-1)-(a.m??-1)));
   return R; }; }
@@ -1098,7 +1098,7 @@ async function bfDirLoad(){
 /* ---------- Vorschläge: Wappen, Bild, FuPa-Kennzeichen, Blickfeld-Knopf ---------- */
 function bfCrest(club){ try{ return typeof scCrest==='function'?scCrest(club,'su-crest'):''; }catch(e){ return ''; } }
 suItem=function(p,q,i,sel,fz){
-  const club=p.fupa?p.club:((p.cur&&p.cur.club)||p.club||''), liga=p.fupa?(LIGA_NAME[p.liga]||p.liga):suLiga(p), key=p.id, on=bfFollowing(key);
+  const club=p.fupa?p.club:((svLigaJetzt(p)||{}).club||p.club||''), liga=p.fupa?(LIGA_NAME[p.liga]||p.liga):suLiga(p), key=p.id, on=bfFollowing(key);
   const stats=p.fupa?`${p.sp||0} Sp. · ${p.t||0} T.${p.season&&BF.cur&&p.season<BF.cur?' ('+p.season.slice(2,4)+'/'+p.season.slice(5)+')':''}`:(p.pos?svEsc(p.pos):'')+(p.alter!=null?' · '+p.alter:'');
   return `<div class="gi${i===sel?' sel':''}${p.fupa?' su-fupa':''}" role="option" aria-selected="${i===sel}" data-i="${i}">${p.fupa?`<div class="ava">${svEsc(svIni(p.name))}</div>`:avaHtml(p)}
     <div style="min-width:0;flex:1"><b>${q&&!fz?suMark(p.name,q):svEsc(p.name)}${p.own?' <i class="su-own">eigener</i>':''}${p.fupa?' <i class="su-fp">nur FuPa</i>':''}</b>
@@ -1172,7 +1172,7 @@ function bfRender(noLoad){
   const P=document.getElementById('panel-blick'); if(!P)return;
   if(!canScout()){ P.innerHTML='<div class="card"><div class="empty">Das Blickfeld gibt es für das Scouting-Team.</div></div>'; return; }
   if(!noLoad)bfRepLoad(); if(!BF.dir)bfDirLoad();
-  const L=BF.rep, n=L?L.length:0;
+  const L=BF.rep&&BF.rep.filter(x=>svScoutInScope(trP(x.key)||{id:x.key,liga:x.liga,club:x.club})), n=L?L.length:0;
   P.innerHTML=`<div class="card bf-top"><div class="bf-srch">${SVI('search')}<input type="search" id="bfq" placeholder="Spieler suchen und mit dem Auge ins Blickfeld nehmen" autocomplete="off" aria-label="Spieler fürs Blickfeld suchen"></div>
       <p class="note small">${n?`<b>${n}</b> Spieler in deinem Blickfeld. `:''}Montags kommt dein Wochenbericht mit allen Spielern hier. Nur du siehst diese Liste.</p></div>
     ${L==null?'<div class="card"><div class="empty">Lade dein Blickfeld …</div></div>':!n?'<div class="card"><div class="empty">Noch niemand im Blickfeld. Oben einen Namen tippen und auf das Auge drücken, oder im Spielerprofil auf „Ins Blickfeld“.</div></div>'
@@ -1182,7 +1182,7 @@ function bfRender(noLoad){
             <div class="bf-m"><b>${svEsc(x.name||x.key)}${x.key.startsWith('fupa:')?' <i class="su-fp">nur FuPa</i>':''}</b><span>${bfCrest(x.club)}${svEsc(x.club||'?')}${x.liga?' · '+svEsc(LIGA_NAME[x.liga]||x.liga):''}</span>
               <span>${x.da===false?'Saison: keine FuPa-Daten':`Saison ${x.sp??'–'} Sp. · ${x.mi!=null?x.mi.toLocaleString('de-DE')+' Min. · ':''}${x.t??'–'} T. · ${x.v??'–'} V.`}${T.platz?` · Team ${T.platz}. von ${T.teams||'?'}`:''}${x.alt?` · zuletzt ${svEsc(x.alt.season)}: ${x.alt.sp??'–'} Sp.`:''}</span></div>
             <div class="bf-r">${bfWoche(x)}<button type="button" class="lk4 mut" data-bfx="${svEsc(x.key)}" title="Aus dem Blickfeld nehmen">✕</button></div></div>`; }).join('')}</div></div>`; }).join('')}`;
-  const q=P.querySelector('#bfq'); if(q)suAttach(q,{title:'Spieler',recent:true,pick:(p,i)=>{ i.value=''; bfToggle(p.id,p.name); }});
+  const q=P.querySelector('#bfq'); if(q)suAttach(q,{scope:svScoutInScope,title:'Spieler',recent:true,pick:(p,i)=>{ i.value=''; bfToggle(p.id,p.name); }});
   P.querySelectorAll('.bf-c').forEach(c=>c.onclick=e=>{ if(e.target.closest('[data-bfx]'))return; const k=c.dataset.bfk; if(k.startsWith('fupa:'))bfFupaProfil(k.slice(5)); else openModal(k); });
   P.querySelectorAll('[data-bfx]').forEach(b=>b.onclick=async e=>{ e.stopPropagation(); if(!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent='Entfernen?'; return; }
     const x=(BF.rep||[]).find(r=>r.key===b.dataset.bfx); await bfToggle(b.dataset.bfx,x&&x.name); BF.rep=(BF.rep||[]).filter(r=>r.key!==b.dataset.bfx); bfRender(true); bfRepLoad(true); });
