@@ -35,13 +35,13 @@
     return null; }
   let ohneToken=false;
   async function rpc(fn,body,ms,nochmal){ const t=ohneToken?null:token(), ac=('AbortController' in window)?new AbortController():null, to=ac?setTimeout(()=>ac.abort(),ms||20000):0; let r;
-    try{ r=await fetch(C.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:C.anon,Authorization:'Bearer '+(t||C.anon)},body:JSON.stringify(body||{}),signal:ac?ac.signal:undefined}); }
+    try{ r=await fetch(C.url+'/rest/v1/rpc/'+fn,{method:'POST',keepalive:fn==='partner_teilen_fortsetzen'||fn==='partner_teilen_ereignis'||fn==='partner_reise_merken',headers:{'Content-Type':'application/json',apikey:C.anon,Authorization:'Bearer '+(t||C.anon)},body:JSON.stringify(body||{}),signal:ac?ac.signal:undefined}); }
     catch(e){ const x=new Error('Die Verbindung ist gerade weg. Deine Angaben bleiben stehen. Versuch es gleich noch einmal.'); x.netz=true; throw x; }
     finally{ clearTimeout(to); }
     if(r.status===401&&t&&!nochmal&&!T){ ohneToken=true; return rpc(fn,body,ms,true); }   // Sitzung aus der App ungültig: der Link gilt auch ohne
     let j=null, kaputt=false; try{ j=await r.json(); }catch(e){ kaputt=true; }
     // Gateway 5xx oder kaputte Antwort: Der Server kann trotzdem fertig geworden sein. Wie ein Netzabbruch behandeln, damit beim nächsten Tipp derselbe Schlüssel gilt
-    if(r.status>=500||r.status===0||(r.ok&&(kaputt||(j===null&&r.status!==204&&fn!=='partner_konditionen_lesen')))){ const x=new Error('Wir können gerade nicht erkennen, ob deine Angaben angekommen sind. Bitte ändere nichts und drück in einer Minute noch einmal denselben Knopf. Doppelt wird dabei nichts angelegt.'); x.netz=true; x.unklar=true; x.status=r.status; throw x; }
+    if(r.status>=500||r.status===0||(r.ok&&(kaputt||(j===null&&r.status!==204&&fn!=='partner_konditionen_lesen'&&fn!=='partner_teilen_lesen'&&fn!=='partner_reise_stand')))){ const x=new Error('Wir können gerade nicht erkennen, ob deine Angaben angekommen sind. Bitte ändere nichts und drück in einer Minute noch einmal denselben Knopf. Doppelt wird dabei nichts angelegt.'); x.netz=true; x.unklar=true; x.status=r.status; throw x; }
     if(!r.ok){ const eigen=j&&['P0001','42501'].includes(j.code)&&j.message, x=new Error(eigen||'Das hat gerade nicht geklappt. Deine Angaben bleiben stehen. Versuch es gleich noch einmal oder schreib uns kurz.'); x.status=r.status; throw x; } return j; }
   // Kurze Meldung unten; vorgelesen wird sie über eine feste Live-Region (frisch eingefügte werden auf iOS oft verschluckt)
   let toastT=0;
@@ -102,6 +102,26 @@
   function filtern(ls){ const ohne=((D&&D.deck&&D.deck.passung)||{}).ohne||[]; ls=KURZ?ls.filter(l=>l.bereich!=='zweite'):ls; return ohne.includes('trikot')?ls.filter(l=>!JUGEND_KLEIDUNG.includes(l.key)):ls; }
   let uid=0;
 
+  function teilenSnapshot(st){
+    let positionen=posFuerServer().filter(p=>!['spende','sonstiges'].includes(p.key)).map(p=>({key:p.key,menge:p.menge,mannschaft:p.mannschaft||null})),saisons=S.saisons,ab=beginn(),au=!!S.auto;
+    if(!positionen.length&&st?.ja==='dabei'){
+      const keys=[st.paket,...(Array.isArray(st.extras)?st.extras:[])].filter(k=>k&&k!=='keins');positionen=[...new Set(keys)].filter(k=>{const l=lk(k);return l&&!l.je_mannschaft&&!['spende','sonstiges'].includes(l.art)&&frei(l,null)!==0;}).map(key=>({key,menge:1}));
+      saisons=[1,2,3,4,5].includes(+st.laufzeit)?+st.laufzeit:1;ab=String(D.naechste_saison).slice(0,10);au=st.verl!==false;
+    }
+    return {stand:st||{},wahl:{positionen,saisons,beginn:ab,auto_verlaengerung:au,konditionen_id:S.konditionen?.id||null,angebot_nr:S.angebot?.nr||null},felder:Object.assign({},S.F)};
+  }
+  function teilenStandAnwenden(s){
+    const p=s?.snapshot;if(!p||typeof p!=='object')return false;
+    const f=p.felder||{};for(const k of ['firma','anrede','ansprech','email','telefon','strasse','plz','ort','ustid'])if(typeof f[k]==='string')S.F[k]=f[k].slice(0,120);
+    if(typeof f.adresse==='string'&&!f.strasse){const a=f.adresse.split(',').map(x=>x.trim());S.F.strasse=(a[0]||'').slice(0,120);if(a.length>1)S.F.ort=a.slice(1).join(', ').slice(0,120);}plzTrennen();
+    if(S.ergebnis)return true;
+    const w=p.wahl||{};S.korb=(Array.isArray(w.positionen)?w.positionen:[]).filter(e=>e&&lk(e.key)&&!['spende','sonstiges'].includes(lk(e.key).art)&&(!lk(e.key).je_mannschaft||M.some(m=>m.id===e.mannschaft))).map(e=>({id:++uid,key:e.key,mannschaft:e.mannschaft||null,menge:Math.max(1,Math.min(1000,+e.menge||1)),preis:null,text:'',naechste:false}));
+    S.saisons=[1,2,3,4,5].includes(+w.saisons)?+w.saisons:1;S.auto=!!w.auto_verlaengerung;S.start=startArt(String(w.beginn||'').slice(0,10));S.startWahl=true;S.angebot=null;S.konditionen=null;S.reiseNeu=false;S.standZeit=0;
+    if(!D.angebot&&D.konditionen&&w.konditionen_id===D.konditionen.id&&auswahlSig(S.korb,S.saisons)===auswahlSig(D.konditionen.positionen,D.konditionen.saisons)&&String(w.beginn||'').slice(0,10)===String(D.konditionen.beginn||'').slice(0,10)&&!!w.auto_verlaengerung===!!D.konditionen.auto_verlaengerung)konditionenUebernehmen(D.konditionen,false);
+    if(!D.angebot&&!S.konditionen){S.saisons=Math.min(3,S.saisons);if(S.start==='vereinbart')S.start='jetzt';}
+    return true;
+  }
+
   // ---------- Stand merken (Neuladen, Wechsel in die Banking-App, Link später nochmal öffnen) ----------
   const SKEY='pd-'+code;
   const ablage=()=>{ try{ return T?sessionStorage:localStorage; }catch(e){ return null; } };
@@ -157,10 +177,16 @@
     plzTrennen();
     S.unterzeichner=S.unterzeichner||''; S.funktionV=S.funktionV||D.gegenzeichnen_funktion||'';
     S.team=standardTeam();
+    let geteilt=null;
+    if(window.PD_TEILEN&&!demo()){
+      try{geteilt=await window.PD_TEILEN.vorbereiten({code,rpc,intern:()=>T,firma:()=>S.F.firma||dk.firma||'Eure Präsentation',email:()=>S.F.email||'',snapshot:teilenSnapshot,toast,studio:bandenEntwurfOeffnen});
+        if(geteilt?.angebot)D.angebot=Object.assign({},D.angebot?.nr===geteilt.angebot.nr?D.angebot:{},geteilt.angebot);else if(geteilt?.konditionen)D.konditionen=geteilt.konditionen;
+      }catch(e){$('#reiseRahmen')?.remove();document.documentElement.style.overflow='';app.innerHTML='<div class="leer-hinweis"><h2 class="g">Geteilter Stand gerade nicht erreichbar</h2><p>'+esc(e.message)+'</p><button type="button" class="knopf-w" id="teilenNochmal">Noch einmal laden</button></div>';$('#teilenNochmal').onclick=laden;return;}
+    }
     // Angebot mit Positionen, die es öffentlich nicht gibt (im Termin vereinbart): damit sie im Paket stehen können
     const A0=D.angebot&&Array.isArray(D.angebot.positionen)?D.angebot:null;
     if(A0&&!lk('sonstiges')&&A0.positionen.some(p=>p.key==='sonstiges'))L.push({key:'sonstiges',titel:'Sonstiges',art:'sonstiges',einheit:'einmalig',preis:null,bereich:'verein',je_mannschaft:false,ziele:[]});
-    const wieder=zurueckholen(); plzTrennen();
+    let wieder=zurueckholen();if(geteilt){wieder=teilenStandAnwenden(geteilt)||wieder;}plzTrennen();
     // Gespeichertes Ergebnis mit dem Server abgleichen: storniert oder ersetzt, dann nicht mehr als Danke zeigen
     if(S.ergebnis&&fertig()&&!demo()&&!(D.abschluss&&(D.abschluss.nrn||[D.abschluss.nr]).includes(S.ergebnis.nr))){ S.ergebnis=null; S.idem=null; vergessen(); }
     if(S.ergebnis&&fertig()&&!demo()&&D.abschluss)abgleichen();
@@ -190,6 +216,12 @@
     { const mk0=marke(); window.PD_MARKE=dk.logo||mk0.logo?{logo:dk.logo||mk0.logo,druck:mk0.logo||null,trikot:mk0.trikot||null,name:mk0.name||''}:null; }
     document.title='Partner werden · '+(dk.kurzname||dk.firma)+' · SV/BSC Mörlenbach';
     geruest(); fragen(); bereiche(); katalog(); korb(); abschluss(); kopfZahl();
+    if(window.PD_BANDENSTUDIO&&!demo()){
+      window.PD_BANDENSTUDIO.vorbereiten({code,rpc,intern:()=>T,logo:()=>window.PD_MARKE?.logo||dk.logo||null,toast,geaendert:()=>{if(BD.an)bdZeichnen();},geschlossen:()=>$('#reiseRahmen')?.contentWindow?.postMessage({reise:'creator-zu'},location.origin)}).catch(()=>{});
+      window.PD_BANDENSTUDIO.anbinden();
+    }
+    if(window.PD_TEILEN&&!demo())window.PD_TEILEN.starten();
+    if(geteilt?.bindung_abgelaufen)setTimeout(()=>toast('Eine frühere Preisbindung ist abgelaufen. Prüfe bitte die jetzt angezeigten Konditionen.'),700);
     auftrittStart();
     if(S.nennOffen&&S.ergebnis&&!demo())nennungSenden();
     partnerWand(); zieleStation();
@@ -306,7 +338,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
 <div class="sec bd" id="bande" role="region" aria-labelledby="bdH" hidden><div class="ww bd-raster">
   <div class="bd-kopf"><h3 class="nur-sr" id="bdH">So sieht deine Bande aus</h3>
     <p class="lead">${esc(kurz)} am Rand unseres Platzes, im selben ruhigen Look wie alle Banden bei uns. So sieht euch jeder bei jedem Heimspiel.</p></div>
-  <div class="bd-bw"><div class="bd-buehne" id="bdB"><canvas id="bdCv" role="img" aria-label="Eure Bande am Spielfeldrand"></canvas><div class="bd-laden" id="bdLaden">Eure Bande wird gestaltet …</div></div></div>
+  <div class="bd-bw"><div class="bd-buehne" id="bdB"><canvas id="bdCv" role="img" aria-label="Eure Bande am Spielfeldrand"></canvas><div class="bd-laden" id="bdLaden">Eure Bande wird gestaltet …</div><button type="button" class="bd-bearbeiten" id="bdBearbeiten" hidden>Bearbeiten</button></div><p class="bd-projekt-hinweis" id="bdProjektHinweis"></p><label class="bd-kundenfreigabe" hidden><input type="checkbox" id="bdKundeErlauben">Kunde darf Logo und Anordnung bearbeiten</label><p class="bd-projekt-hinweis" id="bdProjektBestand" hidden></p></div>
   <div class="bd-text"><div class="tk-seg" id="bdLay" role="group" aria-label="Gestaltung">${marke().name?'<button type="button" data-bdl="links">Logo und Schriftzug</button>':''}<button type="button" data-bdl="mitte">Logo groß</button><button type="button" data-bdl="claim">${esc((D.deck||{}).branche?'Logo und Branche':'Logo und Name')}</button></div>
     <div class="tk-seg" id="bdFmt" role="group" aria-label="Format"><button type="button" data-bdf="250x80">Einzelbande</button><button type="button" data-bdf="500x80">Doppelbande</button></div>
     <p class="bd-mass" id="bdMass"></p><button type="button" class="knopf-w" id="bdPlatzwahl">Platz in 3D auswählen</button><p id="bdWunsch" class="bd-mass" role="status"></p><p class="bd-frei" id="bdFrei"></p><div class="tk-passt" id="bdPasst" aria-live="polite"></div></div>
@@ -437,12 +469,14 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // Das Logo aus der Präsentation im Partner-CI (weiße Bande, Logo in Marine, ohne Vereinsabsender), live am Spielfeldrand.
   // Daten nur aus banden_oeffentlich (Zahl freier Plätze je Bereich), keine Namen anderer Partner, keine Kontaktdaten.
   const BD={d:null,an:false,beob:false,laden:null,layout:'mitte',format:'250x80',L:null,res:null};
+  function bandenEntwurfOeffnen(){if(!window.PD_BANDENSTUDIO||demo()){toast('Das Bandenstudio ist gerade nicht erreichbar. Bitte lade die Seite neu.');$('#reiseRahmen')?.contentWindow?.postMessage({reise:'creator-zu'},location.origin);return;}window.PD_BANDENSTUDIO.oeffnen();}
   function bdSpec(){ const dk=D.deck||{}, mk=marke(), nm=dk.kurzname||dk.firma||'', lg=mk.logo||dk.logo||null;
     if(mk.name&&!BD.layWahl)BD.layout='links';   // Logo links, Schriftzug rechts, solange niemand etwas anderes antippt
     const mit=!!mk.name&&BD.layout==='links';
     return {format:BD.format,stil:'ci',layout:BD.layout,firma:nm,name:mit?mk.name.replace(/\n/g,' '):nm,branche:dk.branche||'',web:dk.web||'',kontakt:true,nameAn:mit||!lg,logo:lg}; }
   async function bdZeichnen(){ const cv=$('#bdCv'); if(!cv||typeof BANDE==='undefined')return; const sp=bdSpec();
-    try{ BD.res=await BANDE.vorbereiten(sp,{basis:'partner/',wappen:'partner/svbsc.png'}); BD.L=BANDE.layout(sp,BD.res); BANDE.szene(cv,{haupt:{L:BD.L,res:BD.res}}); const L0=$('#bdLaden'); if(L0)L0.remove();
+    try{ const gespeichert=window.PD_BANDENSTUDIO&&!demo()?await window.PD_BANDENSTUDIO.textur():null;
+      if(gespeichert){BD.res=gespeichert.res;BD.L=gespeichert.L;BD.format=BD.L.format;}else{BD.res=await BANDE.vorbereiten(sp,{basis:'partner/',wappen:'partner/svbsc.png'});BD.L=BANDE.layout(sp,BD.res);}BANDE.szene(cv,{haupt:{L:BD.L,res:BD.res}}); const L0=$('#bdLaden'); if(L0)L0.remove();
       Object.assign(cv.dataset,{stil:BD.L.stil,layout:BD.L.layout,format:BD.L.format,logo:BD.res.logoBild?'1':'0',wappen:BD.L.ops.some(o=>o.rolle==='wappen')?'1':'0',name:BD.L.ops.some(o=>o.rolle==='name')?'1':'0'}); }
     catch(e){ const L0=$('#bdLaden'); if(L0)L0.textContent='Die Bande lässt sich auf diesem Gerät nicht zeigen.'; return; }
     document.querySelectorAll('[data-bdl]').forEach(b=>{ const an=b.dataset.bdl===BD.layout; b.classList.toggle('on',an); b.setAttribute('aria-pressed',String(an)); });
@@ -478,7 +512,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     else bandeAufbauen(); }
   function platzwahlOeffnen(paket){ if(!D||typeof BANDENWAHL==='undefined')return;
     const pk=S.korb.find(e=>/^(club|premium|p1896)$/.test(e.key));
-    return BANDENWAHL.oeffnen({rpc,code,build:C.build,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,logo:marke().logo||D.deck.logo||null,name:marke().name||null,
+    return BANDENWAHL.oeffnen({rpc,code,build:C.build,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,logo:marke().logo||D.deck.logo||null,name:marke().name||null,entwurfTextur:window.PD_BANDENSTUDIO&&!demo()?fmt=>window.PD_BANDENSTUDIO.textur(fmt):null,
       onSaved:w=>{ const el=$('#bdWunsch'); if(el)el.textContent=w?'Platzwunsch '+w.kennung+' ist gemerkt. Noch nicht reserviert.':'Der Platzwunsch ist zurückgenommen.'; },
       onClose:()=>{ const f=$('#reiseRahmen'); f?.contentWindow?.postMessage({reise:'creator-zu'},location.origin); }}); }
   async function aermelVorschau(startSeite){ if(!D||document.querySelector('.av'))return;

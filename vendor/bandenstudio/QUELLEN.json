@@ -1,0 +1,51 @@
+{
+  "hinweis": "Vendored Laufzeit aus offiziellen npm-Paketen, kein CDN. Fonts aus bereits im Projekt genutzten OFL-Dateien nach TrueType konvertiert. Keine Druckprofile enthalten.",
+  "pakete": [
+    {
+      "name": "pdf-lib",
+      "version": "1.17.1",
+      "quelle": "https://github.com/Hopding/pdf-lib",
+      "lizenz": "MIT",
+      "dateien": [
+        "pdf-lib.min.js"
+      ]
+    },
+    {
+      "name": "opentype.js",
+      "version": "1.3.4",
+      "quelle": "https://github.com/opentypejs/opentype.js",
+      "lizenz": "MIT",
+      "dateien": [
+        "opentype.min.js"
+      ]
+    },
+    {
+      "name": "svgpath",
+      "version": "2.6.0",
+      "quelle": "https://github.com/fontello/svgpath",
+      "lizenz": "MIT",
+      "hinweis": "esbuild 0.25.12, browser iife global BD_SVGPATH",
+      "dateien": [
+        "svgpath.js"
+      ]
+    },
+    {
+      "name": "lcms-wasm",
+      "version": "1.0.5",
+      "quelle": "https://github.com/mattdesl/lcms-wasm",
+      "lizenz": "MIT",
+      "hinweis": "ES-Modul auf .mjs umbenannt; WASM unverändert",
+      "dateien": [
+        "lcms.mjs",
+        "lcms.wasm"
+      ]
+    }
+  ],
+  "sha256": {
+    "lcms.mjs": "64a9de84e747063caf5fcf762285f6db04695177ed3e3409c616c7c5ceb47d2e",
+    "lcms.wasm": "dbcbee3fb3a49459a60bb6b29d6ab25fe7c219b0cc0c2b9579c0cc78f7390ddd",
+    "opentype.min.js": "c0f9c7ca85e18075a8819e5fe2dee6e1d535f9a2269f5314f36cce94a183adba",
+    "pdf-lib.min.js": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f",
+    "svgpath.js": "47bccd58c0501b14e3eb37623d7c198fb64a74db5149222a7340ff35119369c9"
+  }
+}

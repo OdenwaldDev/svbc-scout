@@ -200,6 +200,7 @@ html.bereit .foto-karte{opacity:1}
 .bande-name.mk img{flex:0 1 auto;min-width:0;height:86%;width:auto;max-width:46%;object-fit:contain;mix-blend-mode:multiply;opacity:.94}
 .bande-name.mk.nur img{height:auto;max-height:88%;max-width:90%}
 .bande-name.mk .mk-n{flex:0 1 auto;min-width:0;white-space:pre;font:800 40px/.92 var(--d);text-transform:uppercase;letter-spacing:.01em;color:#1d2760;mix-blend-mode:multiply;opacity:.94}
+.banden-entwurf{position:relative}.bande-name.bd-entwurf-gespeichert{display:block;padding:0}.bande-name.bd-entwurf-gespeichert img{display:block;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;background:#fff;opacity:1;mix-blend-mode:normal}.reise-bande-bearbeiten{position:absolute;right:12px;bottom:12px;min-height:44px;padding:10px 15px;border:1px solid #d4dbea;border-radius:12px;background:#fff;color:#1d2760;font:600 14px var(--t);box-shadow:0 3px 14px #101e3630;cursor:pointer}.reise-bande-bearbeiten:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.reise-bande-bearbeiten[hidden]{display:none}
 .trikot-name.mk{left:29%;width:42%;top:33%;height:23%}
 .trikot-name.mk img{width:100%;height:100%;object-fit:contain;opacity:.93;filter:drop-shadow(0 1px 1px rgba(0,0,20,.5))}
 .trikot-name.trikot-nah{inset:0;width:100%;height:100%;transform:none;display:block;background:#10182e}
@@ -492,6 +493,7 @@ html.bereit .foto-karte{opacity:1}
 .regie{position:absolute;z-index:60;left:10px;right:10px;bottom:calc(var(--fuss) + env(safe-area-inset-bottom,0px) + 6px);max-width:430px;margin-left:auto;background:#fff8d6;color:#2b2200;padding:14px 16px 16px;box-shadow:0 30px 50px -18px #000;font-size:14px;line-height:1.35;transform:translateY(20px) scale(.97);opacity:0;visibility:hidden;transition:.35s cubic-bezier(.2,.9,.3,1.2);max-height:calc(100% - 84px - var(--fuss));overflow-y:auto}
 .regie.da{transform:none;opacity:1;visibility:visible}
 .regie-konditionen{display:block;width:100%;min-height:44px;padding:11px 13px;margin:14px 0;border:1px solid #2b2200;text-align:left;font:700 14px/1.35 var(--t);background:#fff;color:#2b2200}
+#reiseTeilen{width:44px;height:44px;flex:none;display:grid;place-items:center;color:#fff;background:#041127;border:1px solid #fff7;border-radius:7px;margin-left:10px}#reiseTeilen svg{width:22px;height:22px}#reiseTeilen:focus-visible{outline:3px solid #fff;outline-offset:3px}.top #bewegungB{margin-left:auto;margin-right:8px}
 .regie-konditionen[hidden],.konditionen-hinweis[hidden]{display:none}
 .regie-konditionen:focus-visible{outline:3px solid var(--navy);outline-offset:3px}
 .konditionen-hinweis{font:600 14px/1.4 var(--t);margin:10px 0 14px;padding:10px 12px;background:var(--papier);color:var(--tinte);border-left:3px solid var(--or)}
@@ -1277,6 +1279,7 @@ html.zeiger .spot{opacity:1}
     <img class="wappen" id="wappen" src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach" width="480" height="273" draggable="false">
     <button id="bewegungB" class="film-knopf" type="button" hidden>Video pausieren</button>
     <button id="tonB" type="button" aria-pressed="false" aria-label="Ton an oder aus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16.5 9a4 4 0 0 1 0 6"/><path class="w2" d="M19 6.5a8 8 0 0 1 0 11"/><path class="x" d="M17 10l4 4M21 10l-4 4"/></svg></button>
+    <button id="reiseTeilen" type="button" aria-label="Diese Präsentation teilen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M7 11H5a1 1 0 0 0-1 1v8h16v-8a1 1 0 0 0-1-1h-2"/></svg></button>
   </header>
 
   <!-- 0 Vorspann -->
@@ -1490,6 +1493,7 @@ html.zeiger .spot{opacity:1}
     <div id="rBal"></div>
     <div class="emp" id="rEmp"></div>
     <button type="button" class="regie-konditionen" id="konditionenB" hidden>Zusatzpaket und Nachlass festlegen</button>
+    <button type="button" class="regie-konditionen" id="studioB" hidden>Bande gestalten</button>
     <label>Dein Satz über den Betrieb. Er steht dann unter dem Wimpel.<input id="rEigen" maxlength="90" placeholder="zum Beispiel: Seit 30 Jahren im Ort." autocomplete="off"></label>
   </aside>
 
@@ -1512,7 +1516,7 @@ window.REISE_TRIKOT=(()=>{
     if(bibliothekP)return bibliothekP;
     bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.118';
+      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.119';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); });
     }})().catch(e=>{bibliothekP=null;throw e;});
@@ -1804,6 +1808,14 @@ const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true;
 window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.reise==='creator-zu')REISEFILM.sichtbar(true);});
 let FIRMA=null, KONTEXT_BEREIT=!GERAHMT;
 let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
+const teilenB=$('#reiseTeilen');if(teilenB){teilenB.hidden=!GERAHMT;teilenB.onclick=()=>{if(!GERAHMT)return;REISEFILM.sichtbar(false);window.parent.postMessage({reise:'teilen-stand',stand:standJetzt()},location.origin);window.parent.postMessage({reise:'teilen-oeffnen'},location.origin);};}
+const studioB=$('#studioB');if(studioB)studioB.onclick=()=>{if(!GERAHMT||!TERMIN)return;REISEFILM.sichtbar(false);window.parent.postMessage({reise:'studio-oeffnen'},location.origin);};
+let teilenStandGeladen=false, NEUES_TEILEN=false;
+window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||!e.data)return;
+  if(e.data.reise==='teilen-zu'){REISEFILM.sichtbar(true);teilenB?.focus({preventScroll:true});return;}
+  if(e.data.reise!=='teilen-kontext')return;NEUES_TEILEN=true;klNeu.length=0;Object.keys(szSek).forEach(k=>delete szSek[k]);TERMIN=!!e.data.termin;MERKT=!!e.data.merken;html.classList.toggle('termin',TERMIN);if(studioB)studioB.hidden=!TERMIN;konditionenHinweis();
+  if(!teilenStandGeladen&&e.data.stand&&typeof e.data.stand==='object'){teilenStandGeladen=true;GEMERKT=Object.assign({},e.data.stand,{_am:e.data.am||null});wiederZeig();}
+});
 
 function punkte(){
   const p={herz:0,buehne:0,team:0,netz:0,ehre:0,heimat:0}, add=o=>{ for(const k in o)p[k]+=o[k]; };
@@ -1886,7 +1898,7 @@ window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===lo
    Albert, 18.11.2026: Die Firma soll sich selbst sehen, mit Logo, nicht nur mit getipptem Namen. „Logo nach links, rechts daneben
    die Typo.“ Der Rahmen in partner.html schickt die fertigen Fassungen (Marine für die Bande, Weiß fürs Trikot, Original für die
    Partnerwand). name steht nur dabei, wenn das Logo den Namen nicht selbst trägt. Ohne Rahmen oder ohne Logo bleibt der Name als Schrift. */
-var MARKE=null;
+var MARKE=null, BANDE_PROJEKT=null;
 let AERMEL_SEITE='aermel_r', TRIKOT_ANSICHT='ganz', TRIKOT_BILDER=null, TRIKOT_ANFRAGE=null, TRIKOT_FEHLER=false;
 function trikotHtml(){ return '<div class="bild trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem Ärmel"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Ärmel · Gestaltungsvorschau</small></div>'; }
 function trikotGanzHtml(){return '<div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div>';}
@@ -1920,8 +1932,11 @@ $$('[data-trikot-ansicht]').forEach(b=>b.onclick=()=>{TRIKOT_ANSICHT=b.dataset.t
 $$('[data-trikot-seite]').forEach(b=>b.onclick=()=>{AERMEL_SEITE=b.dataset.trikotSeite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
 window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||e.data?.reise!=='aermel-seite'||!['aermel_r','aermel_l'].includes(e.data.seite))return;
   AERMEL_SEITE=e.data.seite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
-function markeSetz(){ if(!MARKE)return; const bild=u=>'<img src="'+u+'" alt="">';
-  $$('.bande-name:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.classList.toggle('nur',!MARKE.name); b.innerHTML=bild(MARKE.bande)+(MARKE.name?'<span class="mk-n">'+esc(MARKE.name)+'</span>':''); });
+function markeSetz(){ const bild=u=>'<img src="'+u+'" alt="">';
+  if(BANDE_PROJEKT&&BANDE_PROJEKT.vorschau){$$('.bande-name').forEach(b=>{if(b.dataset.projekt!==String(BANDE_PROJEKT.version)){b.dataset.projekt=String(BANDE_PROJEKT.version);b.classList.add('bd-entwurf-gespeichert');b.classList.remove('mk','nur');b.innerHTML=bild(BANDE_PROJEKT.vorschau);}});}
+  else if(MARKE)$$('.bande-name:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.classList.toggle('nur',!MARKE.name); b.innerHTML=bild(MARKE.bande)+(MARKE.name?'<span class="mk-n">'+esc(MARKE.name)+'</span>':''); });
+  $$('.banden-entwurf').forEach(b=>{let btn=b.querySelector('[data-bande-bearbeiten]');if(!btn){btn=document.createElement('button');btn.type='button';btn.className='reise-bande-bearbeiten';btn.dataset.bandeBearbeiten='1';btn.textContent='Bearbeiten';btn.onclick=()=>{if(!GERAHMT||!BANDE_PROJEKT?.bearbeiten)return;clearInterval(szUhr);REISEFILM.sichtbar(false);window.parent.postMessage({reise:'bande-editor-oeffnen'},location.origin);};b.appendChild(btn);}btn.hidden=!GERAHMT||!BANDE_PROJEKT?.bearbeiten;});
+  if(!MARKE)return;
   $$('.kacheln .ich:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.innerHTML=bild(MARKE.original); });
   $$('.bande-name.mk:not(.nur)').forEach(b=>{ const t=$('.mk-n',b), im=$('img',b), h=b.clientHeight, w=b.clientWidth; if(!t||!h||!w)return;
     const zeilen=MARKE.name.split('\n').length; let fs=h*(zeilen>1?.4:.52); t.style.fontSize=fs+'px';
@@ -1991,7 +2006,7 @@ function geh(n){ if(n<0||n>=ORD.length||laeuft||n===S.i)return; if(ORD[n]==='ext
   else if(!ruhig){ F.classList.remove('wischt'); void F.offsetWidth; F.classList.add('wischt'); }
   setTimeout(()=>{ $$('.szene').forEach(s=>s.classList.remove('an','los','raus')); const s=szene(id); s.classList.add('an'); s.scrollTop=0;
     S.i=n; F.dataset.s=id; F.dataset.dicht=s.dataset.dicht||'0'; F.dataset.licht=s.dataset.licht||'0'; hgSetz(s.dataset.hg);
-    if(REIN[id])REIN[id](); routeZeig(); regieZeig(); passe(); },ruhig?0:(akt?430:300));
+    if(REIN[id])REIN[id](); routeZeig(); regieZeig(); passe(); if(GERAHMT)window.parent.postMessage({reise:'teilen-szene',szene:id},location.origin); },ruhig?0:(akt?430:300));
   setTimeout(()=>{ F.classList.remove('schnitt'); laeuft=false; const s=szene(id); requestAnimationFrame(()=>s.classList.add('los')); if(AUF[id])AUF[id](); setTimeout(()=>F.classList.remove('wischt'),400); },ruhig?30:(akt?1500:340));
 }
 function darfWeiter(){ const id=ORD[S.i];
@@ -2360,19 +2375,22 @@ function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.na
 const SZ_NAME={start:'Start',worum:'Worum es geht',verb:'Woher kennt ihr uns?',antrieb:'Was wäre euch wichtig?',buehne:'Euer Name am Platz',groesse:'Wie wollt ihr dabei sein?',platz:'Euer Platz',extras:'Schwarzes Brett',bon:'Zettel',ja:'Seid ihr dabei?'};
 const SID=(()=>{ try{ return crypto.randomUUID(); }catch(e){ return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g,()=>(Math.random()*16|0).toString(16)); } })();
 const T0=Date.now(), szSek={}, klNeu=[]; let klZahl=0, merkUhr=null, GEMERKT=null;
-setInterval(()=>{ if(MERKT&&!document.hidden){ const id=ORD[S.i]; szSek[id]=(szSek[id]||0)+1; } },1000);
-function standJetzt(){ const o={i:S.i,name:S.name,skeptisch:!!S.skeptisch,auto:!!S.auto,verl:!!S.verl,laufzeit:S.laufzeit,antrieb:S.antrieb.slice(),extras:[...S.extras],info:(S.info||[]).slice(),paket:pk()};
+setInterval(()=>{ if(MERKT&&!NEUES_TEILEN&&!document.hidden){ const id=ORD[S.i]; szSek[id]=(szSek[id]||0)+1; } },1000);
+function standJetzt(){ const o={i:S.i,name:S.name,skeptisch:!!S.skeptisch,auto:!!S.auto,verl:!!S.verl,laufzeit:S.laufzeit,antrieb:S.antrieb.slice(),extras:[...S.extras],info:(S.info||[]).slice(),paket:pk(),aermel:AERMEL_SEITE,eigen:String(S.eigen||'').slice(0,90)};
   ['verb','platz','jahr','ja','weg','wann'].forEach(k=>{ if(S[k])o[k]=S[k]; }); ['groesse','pi'].forEach(k=>{ if(S[k]!=null)o[k]=S[k]; }); return o; }
 function merken(){ clearTimeout(merkUhr); merkUhr=null; if(!MERKT)return;
   if(GEMERKT&&S.i===0&&$('#wieder')?.hidden===false)return; // Die Rückkehr-Auswahl hat den gespeicherten Stand noch nicht übernommen.
+  if(NEUES_TEILEN){try{window.parent.postMessage({reise:'merken',daten:{schritt:ORD[S.i],stand:standJetzt()}},location.origin);}catch(e){}return;}
   try{ window.parent.postMessage({reise:'merken',sitzung:SID,daten:{schritt:ORD[S.i],hoch:innerHeight>innerWidth,dauer_s:Math.round((Date.now()-T0)/1000),stand:standJetzt(),szenen:Object.assign({},szSek),klicks:klNeu.splice(0),info:(S.info||[]).slice()}},location.origin); }catch(e){} }
 function merkBald(){ if(!MERKT||merkUhr)return; merkUhr=setTimeout(merken,1800); }
 setInterval(()=>{ if(MERKT&&!document.hidden)merken(); },20000);
 addEventListener('pagehide',merken); document.addEventListener('visibilitychange',()=>{ if(document.hidden)merken(); });
-F.addEventListener('pointerdown',e=>{ if(!MERKT||klZahl>=400)return; const b=e.target.closest('.ib, button, .sa, .zt, .br, [role="button"]'), z=b?(b.dataset.i||b.dataset.w||b.dataset.k||b.dataset.ja||b.dataset.b||b.id||''):'';
+F.addEventListener('pointerdown',e=>{ if(!MERKT||NEUES_TEILEN||klZahl>=400)return; const b=e.target.closest('.ib, button, .sa, .zt, .br, [role="button"]'), z=b?(b.dataset.i||b.dataset.w||b.dataset.k||b.dataset.ja||b.dataset.b||b.id||''):'';
   klNeu.push([ORD[S.i],Math.max(0,Math.min(1000,Math.round(e.clientX/innerWidth*1000))),Math.max(0,Math.min(1000,Math.round(e.clientY/innerHeight*1000))),String(z).replace(/[^A-Za-z0-9_:.-]/g,'').slice(0,40)]); klZahl++; merkBald(); },{passive:true});
+F.addEventListener('click',e=>{if(!GERAHMT||!e.isTrusted||e.target.closest('#reiseTeilen,#regie'))return;const b=e.target.closest('button,input,select,summary,[role="button"]');if(!b)return;const id=ORD[S.i],aktion=b.closest('[data-trikot-vorschau],#reiseBande,#reiseAermel')?'3d':['groesse','bon'].includes(id)?'preis':b.matches('[data-k],[data-w],[data-ja]')?'auswahl':b.matches('.ib,.br')?'info':b.id==='zurB'?'zurueck':'weiter';window.parent.postMessage({reise:'teilen-stat',szene:id,aktion,vertraut:true},location.origin);},{passive:true});
 // Stand aus dem Speicher in die Reise legen: Antworten, Auswahl und alle gedrückten Knöpfe
 function standSetz(st){ const n=neu(); S=n; S.name=String(FIRMA!==null?FIRMA:(st.name||'')); ['verb','platz','jahr','wann'].forEach(k=>{ if(st[k])S[k]=st[k]; });
+  if(['aermel_r','aermel_l'].includes(st.aermel))AERMEL_SEITE=st.aermel;S.eigen=String(st.eigen||'').slice(0,90);const eigen=$('#rEigen');if(eigen)eigen.value=S.eigen;
   S.antrieb=(st.antrieb||[]).filter(a=>HAUPT[a]); S.skeptisch=!!st.skeptisch&&!S.antrieb.length; S.auto=!!st.auto; if(st.groesse!=null&&!S.auto)S.groesse=+st.groesse; if(st.pi!=null)S.pi=+st.pi;
   S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins'; konditionenInStand();
   $('#nameIn').value=S.name; setzName(S.name);
@@ -2393,6 +2411,11 @@ window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origi
   $$('.mk').forEach(b=>{ b.classList.remove('mk','nur'); });
   MARKE={bande:e.data.bande,trikot:e.data.trikot,original:e.data.original,name:String(e.data.name||'').replace(/[^\S\n]+/g,' ').trim().slice(0,40)};
   const fertig=()=>{ try{ passe(); }catch(_){} }; let n=0; const im=new Image(); im.onload=fertig; im.src=MARKE.bande; fertig(); }catch(x){} });
+window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||!e.data)return;
+  if(e.data.reise==='bande-editor-zu'){REISEFILM.sichtbar(true);const b=$('[data-bande-bearbeiten]:not([hidden])');if(b)b.focus({preventScroll:true});return;}
+  if(e.data.reise!=='bande-projekt')return;const u=e.data.vorschau;if(u!==null&&(typeof u!=='string'||u.length>690000||!/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(u)))return;
+  BANDE_PROJEKT={vorschau:u,bearbeiten:e.data.bearbeiten===true,version:Math.max(0,+e.data.version||0)};passe();
+});
 window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origin!==location.origin||!e.data||e.data.reise!=='name')return; const i=$('#nameIn'), n=String(e.data.name||'').slice(0,40);
   FIRMA=e.data.gebunden?n:null; KONTEXT_BEREIT=!e.data.gebunden||!!n;
   i.readOnly=!!e.data.gebunden; $('#startF .knopf').disabled=!KONTEXT_BEREIT;

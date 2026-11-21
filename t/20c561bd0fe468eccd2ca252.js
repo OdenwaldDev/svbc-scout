@@ -86,10 +86,11 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
   H.innerHTML=L.map(d=>{ const x=pdStation(d), partner=x&&x.status==='partner', wa=`https://wa.me/?text=${encodeURIComponent(pdText(d))}`;
     return `<div class="card pd-d${d.aktiv?'':' aus'}"><div class="pd-dk"><div><b>${svEsc(d.firma)}</b><small>${[d.ansprech&&((d.anrede?d.anrede+' ':'')+d.ansprech),d.branche].filter(Boolean).map(svEsc).join(' · ')}</small>
         ${d.empfehlung?`<small class="pd-empf">Empfohlen: ${svEsc(PD_ST[d.empfehlung]||d.empfehlung)}</small>`:''}${d.passung&&d.passung.widmung?`<small class="pd-empf pd-wid">Widmung: ${svEsc(d.passung.widmung)}</small>`:''}
-        <small class="pd-schau">${d.aufrufe?`${SVI('eye')} ${d.aufrufe}× angeschaut, zuletzt ${svEsc(pdDatum(d.zuletzt))}`:'Noch nicht angeschaut'}${d.anfragen?` · ${d.anfragen} Anfrage${d.anfragen>1?'n':''}`:''}${d.antrag?' · <b class="pd-ok">Antrag unterschrieben</b>':''}${d.aktiv?'':' · abgeschaltet'}</small></div>
+        <small class="pd-schau">${d.aufrufe?`${SVI('eye')} ${d.aufrufe} Linkaufrufe, auch vor Ort, zuletzt ${svEsc(pdDatum(d.zuletzt))}`:'Noch keine Linkaufrufe'}${d.anfragen?` · ${d.anfragen} Anfrage${d.anfragen>1?'n':''}`:''}${d.antrag?' · <b class="pd-ok">Antrag unterschrieben</b>':''}${d.aktiv?'':' · abgeschaltet'}</small></div>
       <div class="pd-tags">${x?`<i class="spo-st s-${svEsc(x.status)}">${svEsc(SPO_STL[x.status]||x.status)}</i>`:'<i class="spo-st pd-ohne">Nicht unter Firmen</i>'}</div></div>
       <div class="pd-akt">${x?'':`<button type="button" class="btn ghost sm" data-pdakteneu="${svEsc(d.id)}">${SVI('plus')} Zu Firmen hinzufügen</button>`}
-        <a class="btn ghost" href="${svEsc(svBasis()+'partner.html#d='+d.code)}" target="_blank" rel="noopener" title="Mit deiner Anmeldung: Sonderpreis, Sonstiges, Unterschrift für den Verein">${SVI('eye')} Präsentation starten</a>
+        <a class="btn ghost" href="${svEsc(svBasis()+'partner.html?reise=1&intern=1#d='+d.code)}" target="_blank" rel="noopener" title="Mit deiner Anmeldung: Sonderpreis, Sonstiges, Unterschrift für den Verein">${SVI('eye')} Präsentation starten</a>
+        <button type="button" class="btn ghost" data-pdnutzung="${svEsc(d.code)}">Spätere Nutzung</button>
         ${partner?`<button type="button" class="btn ghost" data-pdakte="${svEsc(x.id)}">${SVI('file')} Akte öffnen</button>`:x?`<button type="button" class="btn ghost" data-pdsend="${svEsc(d.id)}">${SVI('send')} Schicken</button>`:''}
         <details class="pd-mehr"><summary aria-label="Mehr zu ${svEsc(d.firma)}">…</summary><div>
           <button type="button" class="btn ghost sm" data-pdcp="${svEsc(d.code)}">${SVI('copy')} Link kopieren</button>
@@ -106,6 +107,7 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
   H.querySelectorAll('.pd-wa').forEach(a=>a.addEventListener('click',e=>{ if(!impOk())e.preventDefault(); }));
   H.querySelectorAll('[data-pdcp]').forEach(b=>b.onclick=async()=>{ if(!impOk())return; const u=pdLink(b.dataset.pdcp); try{ await navigator.clipboard.writeText(u); kToast('✓ Link kopiert'); }catch(e){ kToast(u); } });
   H.querySelectorAll('[data-pded]').forEach(b=>b.onclick=()=>pdForm(D.find(x=>x.id===b.dataset.pded)));
+  H.querySelectorAll('[data-pdnutzung]').forEach(b=>b.onclick=()=>{if(!window.PD_TEILEN_APP){kToast('Die Nutzungsübersicht lässt sich gerade nicht laden. Bitte lade die App neu.');return;}window.PD_TEILEN_APP.oeffnen({code:b.dataset.pdnutzung,rpc:async(fn,p)=>{const {data,error}=await SVB.sb.rpc(fn,p);if(error)throw new Error(typeof svFehlerText==='function'?svFehlerText(error):error.message);return data;}});});
   // Seit 0.99.82: die Präsentation einer Firma als PDF zum Weitergeben (Text zur Firma, Widmung, Pakete und Bausteine mit Preisen, Link). Verschickt wird nichts.
   H.querySelectorAll('[data-pddeckpdf]').forEach(b=>b.onclick=()=>paEinmal(b,async()=>{
     try{ const {data,error}=await SVB.sb.functions.invoke('partner-deck',{body:{deck:b.dataset.pddeckpdf,nurPdf:true}}); if(error)throw error; if(!data||!data.pdf)throw new Error('Kein PDF');
