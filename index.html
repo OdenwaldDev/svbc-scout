@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon-64.png">
-<meta name="app-build" content="beta-0.99.120">
+<meta name="app-build" content="beta-0.99.121">
 <title>SV/BSC Sportzentrale</title>
 <script src="vendor/chart.umd.min.js?v=81ffafe13c37" async></script>
 <style>
@@ -409,6 +409,9 @@
   .srow.clk{cursor:pointer;border-radius:9px;}
   .srow.clk:hover{background:rgba(255,255,255,.05);}
   .srow.clk .sm:after{content:' ›';color:var(--accent);font-weight:900;}
+.vl{max-width:1000px;margin:auto;font-size:15px;line-height:1.5}.vl .card{margin:16px 0;padding:22px}.vl label{display:flex;flex-direction:column;gap:6px;margin:10px 0}.vl input,.vl select{font:inherit;min-height:44px;max-width:100%;width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line,#65708b);border-radius:8px;background:var(--card,#182137);color:var(--ink,#fff)}.vl-filter,.vl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.vl-head{display:flex;align-items:center;gap:16px}.vl-head h3{margin:0}.vl-list{list-style:none;padding:0}.vl-list li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;padding:15px 0;border-bottom:1px solid var(--line,#65708b)}.vl small{display:block;font-size:13px}.vl-badges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;text-align:center}.vl-badges img{max-width:100%;height:auto}.vl-badges b{display:block;font-size:14px}.vl fieldset{min-width:0;border:1px solid var(--line,#65708b);border-radius:12px;margin:20px 0;padding:16px}.vl .vl-check{flex-direction:row;align-items:center;min-height:44px}.vl-check input{width:24px;min-height:24px;flex-shrink:0}.vl .btn{min-height:44px;margin:4px}.vl a{overflow-wrap:anywhere}.vl #vlError{color:var(--red,#ef7676)}@media(max-width:550px){.vl .card{padding:16px}.vl-badges{grid-template-columns:repeat(2,minmax(0,1fr))}.vl-filter{grid-template-columns:1fr}.vl-list li{font-size:14px}.vl-list strong{white-space:nowrap}}
+
+.vl summary{min-height:44px;padding:10px 0;cursor:pointer}.vl textarea{font:inherit;width:100%;min-height:88px;box-sizing:border-box;padding:10px;background:var(--card,#182137);color:var(--ink,#fff);border:1px solid var(--line,#65708b);border-radius:8px}
 </style>
 <style id="appCss">
 /* ===== App-Modus ===== */
@@ -4413,7 +4416,7 @@ a.kbtn{text-decoration:none;display:inline-block}
 
 
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
-<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.120", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
+<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.121", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
 <script src="vendor/supabase.js?v=dff1e545f4f3"></script>
 <script src="icons.js?v=2b264497e7cf"></script>
 <script src="boot.js?v=1d6601716449"></script>
