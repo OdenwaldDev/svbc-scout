@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.119', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.120', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18698,6 +18698,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.120',v:'0.99.120',datum:'2026-11-21',titel:'Gerätesicherung im Bandenstudio',kurz:'Nach einem Logotausch bestätigt der freie Editor die erfolgreiche Sicherung auf diesem Gerät.',punkte:[{ic:'i',t:'Speicherstand stimmt mit dem Entwurf überein',d:'Der freie Editor vergleicht die gespeicherte Fassung nach denselben Regeln wie die Gestaltung. Eine unnötige Warnung beim Verlassen entfällt. Neue Eingaben während einer laufenden Sicherung bleiben bis zum nächsten erfolgreichen Speichern offen.',r:'admin'}]},
   {id:'0.99.119',v:'0.99.119',datum:'2026-11-21',titel:'Banden gestalten und Präsentationen teilen',kurz:'Bandenentwürfe lassen sich je Firma bearbeiten und speichern. Persönliche Präsentationen behalten eure Auswahl.',
     punkte:[{ic:'i',t:'Bande direkt bearbeiten',d:'Der kleine Bearbeiten-Knopf an der Vorschau öffnet das Bandenstudio. Logo aufbereiten, CI-Vorlage wählen und mit dem grünen Knopf speichern. Eure eigenen Änderungen werden durch neue Vorschläge nicht überschrieben.',r:'admin'},{ic:'i',t:'Begrenzte Bearbeitung für Kunden',d:'Das Partner-Team kann die Bearbeitung für den persönlichen Kundenlink freigeben. Kunden dürfen das Logo und zwei feste Anordnungen wählen. Zusätzliche Texte, Schrift- und Farbwahl bleiben beim Team.',r:'admin'},{ic:'i',t:'Präsentation mit Auswahl teilen',d:'Über das Teilen-Symbol erhältst du QR-Code, Link, WhatsApp- und E-Mail-Auswahl. Die freiwillige Auswertung unterscheidet spätere Nutzung vom gemeinsamen Gespräch. Erinnerungen schaltest du selbst ein.',r:'admin'},{ic:'i',t:'Druckdatei mit passenden Vorgaben',d:'Das Bandenstudio exportiert PDF mit Vektorschrift, Endmaß und Beschnitt. Farbprofil und Mindestauflösung müssen zu eurer Druckerei passen. Eine Vorschau ersetzt keine Druckfreigabe.',r:'admin'}]},
   {id:'0.99.118',v:'0.99.118',datum:'2026-11-21',titel:'Scouting lädt auch bei fehlender Liga',kurz:'Leere Ligaangaben bei Vereinswechseln blockieren die Spielersuche nicht mehr.',punkte:[{ic:'i',t:'Fehlende Angaben bleiben erkennbar',d:'Alle Ligaansichten behandeln fehlende Werte als unbekannt. Auch der Vereinswechsel-Abgleich behält die aktuelle Quellliga bei.',r:'scout'}]},

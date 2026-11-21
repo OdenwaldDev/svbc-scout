@@ -16,7 +16,7 @@
     if(!db)throw Error('Die Gerätesicherung ist nicht verfügbar. Lade eine Projektdatei herunter.');
     const snapshot=C.normalise(doc);snapshot.updated=new Date().toISOString();
     await new Promise((ok,no)=>{const t=db.transaction('projects','readwrite');t.objectStore('projects').put(snapshot);t.oncomplete=ok;t.onerror=()=>no(Error('Auf diesem Gerät ist nicht genug Speicher. Lade die Projektdatei herunter.'));t.onabort=t.onerror;});
-    if(JSON.stringify({...doc,updated:snapshot.updated})===JSON.stringify(snapshot)){dirty=false;$('#saveState').textContent='Auf diesem Gerät gesichert';}
+    if(JSON.stringify(C.normalise({...doc,updated:snapshot.updated}))===JSON.stringify(snapshot)){dirty=false;$('#saveState').textContent='Auf diesem Gerät gesichert';}
     await recent();
   }
   function queueSave(){dirty=true;if(embedded){$('#saveState').textContent='Noch nicht gespeichert';$('#editState').textContent='Mit Speichern für diese Firma übernehmen';embeddedButtons();return;}$('#saveState').textContent='Änderungen werden gesichert';clearTimeout(saveTimer);saveTimer=setTimeout(()=>{saveChain=saveChain.catch(()=>{}).then(localSave).catch(e=>{$('#saveState').textContent='Bitte als Projektdatei sichern';error(e);});},700);}
