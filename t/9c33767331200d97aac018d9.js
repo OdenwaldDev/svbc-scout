@@ -1443,6 +1443,35 @@ const LOGO = (() => {
   return { laden, aufbereiten, variante, alsDataUrl, dateiLesen, lum, hex };
 })();
 
+/* Trainingsanzug: dieselbe fotobasierte Ärmelvorlage für jede Firma.
+   Originale bleiben erhalten. Das Logo wird schwarz auf den Stoff gesetzt. */
+(function(root){
+  'use strict';
+  const SEITEN={
+    aermel_l:{datei:'aermel-links.webp',feld:[[.513,.309],[.743,.311],[.744,.455],[.498,.450]]},
+    aermel_r:{datei:'aermel-rechts.webp',feld:[[.240,.314],[.471,.319],[.489,.462],[.230,.452]]}
+  };
+  const cache=new Map();let zuletzt=null;
+  function canvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+  function bild(src){if(cache.has(src))return cache.get(src);const p=new Promise((ok,nein)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=()=>nein(Error('Die Anzugvorschau konnte nicht geladen werden. Bitte versuche es erneut.'));if(!/^data:|^blob:/.test(src))im.crossOrigin='anonymous';im.src=src;});cache.set(src,p);p.catch(()=>cache.delete(src));return p;}
+  function feld(seite,w,h){const s=SEITEN[seite];if(!s)throw Error('Bitte einen linken oder rechten Ärmel wählen.');return s.feld.map(([x,y])=>[x*w,y*h]);}
+  function punkt(q,u,v){return [(1-v)*((1-u)*q[0][0]+u*q[1][0])+v*((1-u)*q[3][0]+u*q[2][0]),(1-v)*((1-u)*q[0][1]+u*q[1][1])+v*((1-u)*q[3][1]+u*q[2][1])];}
+  function aufdruck(x,im,q){const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,w=(Math.hypot(q[1][0]-q[0][0],q[1][1]-q[0][1])+Math.hypot(q[2][0]-q[3][0],q[2][1]-q[3][1]))/2,h=(Math.hypot(q[3][0]-q[0][0],q[3][1]-q[0][1])+Math.hypot(q[2][0]-q[1][0],q[2][1]-q[1][1]))/2,s=Math.min(w/iw,h/ih),uw=iw*s/w,vh=ih*s/h,u0=(1-uw)/2,v0=(1-vh)/2;
+    // Ein durchgehender Aufdruck statt einzeln geglätteter Dreiecke: keine hellen Maschennähte im Logo.
+    const r=[[u0,v0],[u0+uw,v0],[u0+uw,v0+vh],[u0,v0+vh]].map(([u,v])=>punkt(q,u,v)),ox=Math.floor(Math.min(...r.map(p=>p[0]))),oy=Math.floor(Math.min(...r.map(p=>p[1]))),W=Math.ceil(Math.max(...r.map(p=>p[0])))-ox,H=Math.ceil(Math.max(...r.map(p=>p[1])))-oy;
+    const sc=canvas(iw,ih),sx=sc.getContext('2d');sx.drawImage(im,0,0);const a=sx.getImageData(0,0,iw,ih).data,oc=canvas(W,H),cx=oc.getContext('2d'),out=cx.createImageData(W,H),b=out.data;
+    const A=r[0],B=[r[1][0]-A[0],r[1][1]-A[1]],C=[r[3][0]-A[0],r[3][1]-A[1]],D=[r[2][0]-r[1][0]-r[3][0]+A[0],r[2][1]-r[1][1]-r[3][1]+A[1]];
+    for(let py=0;py<H;py++)for(let px=0;px<W;px++){const X=ox+px+.5,Y=oy+py+.5;let u=(X-A[0])/B[0],v=(Y-A[1])/C[1];
+      for(let i=0;i<5;i++){const ex=A[0]+B[0]*u+C[0]*v+D[0]*u*v-X,ey=A[1]+B[1]*u+C[1]*v+D[1]*u*v-Y,du=[B[0]+D[0]*v,B[1]+D[1]*v],dv=[C[0]+D[0]*u,C[1]+D[1]*u],det=du[0]*dv[1]-dv[0]*du[1];if(Math.abs(det)<1e-8)break;u-=(ex*dv[1]-ey*dv[0])/det;v-=(ey*du[0]-ex*du[1])/det;}
+      if(u<0||u>1||v<0||v>1)continue;const tx=Math.max(0,Math.min(iw-1,u*iw-.5)),ty=Math.max(0,Math.min(ih-1,v*ih-.5)),ix=Math.floor(tx),iy=Math.floor(ty),dx=tx-ix,dy=ty-iy,alpha=(xx,yy)=>a[(yy*iw+xx)*4+3],al=(alpha(ix,iy)*(1-dx)+alpha(Math.min(ix+1,iw-1),iy)*dx)*(1-dy)+(alpha(ix,Math.min(iy+1,ih-1))*(1-dx)+alpha(Math.min(ix+1,iw-1),Math.min(iy+1,ih-1))*dx)*dy,j=(py*W+px)*4;b[j+3]=Math.round(al);}
+    cx.putImageData(out,0,0);x.save();x.globalAlpha=.95;x.globalCompositeOperation='multiply';x.drawImage(oc,ox,oy);x.restore();}
+  async function zeichnen(o={}){const seite=o.seite||'aermel_r',s=SEITEN[seite];if(!s)throw Error('Bitte einen linken oder rechten Ärmel wählen.');const W=Math.max(360,Math.min(1536,Math.round(+o.breite||1200))),H=Math.round(W*2/3),c=canvas(W,H),x=c.getContext('2d'),base=await bild((o.kit||'kit/')+'anzug/'+s.datei);x.drawImage(base,0,0,W,H);
+    let src=o.logo;if(src){if(typeof LOGO==='undefined')throw Error('Die Logoaufbereitung wird noch geladen. Bitte versuche es erneut.');src=await LOGO.alsDataUrl(src,'schwarz',1600);}else{const t=canvas(1200,280),tx=t.getContext('2d');tx.fillStyle='#111111';tx.textAlign='center';tx.textBaseline='middle';tx.font='700 100px BarlowC,Arial,sans-serif';const name=String(o.firma||'Euer Name').trim().slice(0,120),tw=tx.measureText(name).width;if(tw>1120)tx.font='700 '+Math.floor(100*1120/tw)+'px BarlowC,Arial,sans-serif';tx.fillText(name,600,140);src=t.toDataURL('image/png');}
+    aufdruck(x,await bild(src),feld(seite,W,H));return c;}
+  async function bilder(firma,logo,kit='kit/'){const key=JSON.stringify([firma,logo||null,kit]);if(zuletzt?.key===key)return zuletzt.p;const job={key,p:null};zuletzt=job;job.p=(async()=>{const b={gesamt_foto:true};for(const seite of Object.keys(SEITEN)){const c=await zeichnen({firma,logo,seite,kit,breite:1200});b[seite]=c.toDataURL('image/webp',.94);b[seite==='aermel_l'?'gesamt_l':'gesamt_r']=b[seite];c.width=c.height=1;}return b;})().catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});return job.p;}
+  const api={zeichnen,bilder,feld,punkt};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TRAININGSANZUG=api;
+})(typeof window!=='undefined'?window:globalThis);
+
 /* =====================================================================
    Beta 0.80 · Trikot-Creator im Partner-Bereich (Reiter „Trikots“)
    Ein möglicher Partner sieht sofort, wie sein Logo LIVE auf unseren Trikots aussieht.
@@ -1508,7 +1537,7 @@ async function tcRender(B){
       <section class="pz-tc-block" aria-labelledby="tcLh"><div class="pz-tc-bk"><h3 id="tcLh">Logo</h3>
         <label class="pz-tc-hoch"><input type="file" id="tcDatei" accept="image/png,image/jpeg,image/webp,image/svg+xml">${SVI('plus')}<span>Logo hochladen</span></label></div>
         <div class="pz-tc-logos" id="tcLogos" role="list" aria-label="Vorhandene Partnerlogos"></div><div id="tcAnalyse"></div></section>
-      <section class="pz-tc-block" aria-labelledby="tcPh"><div class="pz-tc-bk"><h3 id="tcPh">Plätze</h3><span class="pz-tc-zahl" id="tcZahl"></span></div><div id="tcListe" class="pz-tc-liste"></div></section>
+      <section class="pz-tc-block" aria-labelledby="tcPh"><div class="pz-tc-bk"><h3 id="tcPh">Plätze</h3><span class="pz-tc-zahl" id="tcZahl"></span></div><div id="tcListe" class="pz-tc-liste"></div></section><section class="pz-tc-block" id="tcAnzugStand" aria-label="Trainingsanzüge, Belegung"></section>
       <section class="pz-tc-block pz-tc-teilen"><button type="button" class="pz-tc-b or" id="tcTeilen">${SVI('share')}<span>Bild teilen</span></button>
         <button type="button" class="pz-tc-b" id="tcSpeichern">${SVI('download')}<span>Bild speichern</span></button>
         <p>Ein Bild mit der Überschrift „So sieht dein Logo bei uns aus“, für WhatsApp oder Mail.</p></section>
@@ -1517,7 +1546,7 @@ async function tcRender(B){
   P.querySelector('#tcArt').onclick = e => { const b = e.target.closest('[data-tcart]'); if(b){ TC.art = b.dataset.tcart; TC.platz = null; tcStand(true); } };
   P.querySelector('#tcSicht').onclick = e => { const b = e.target.closest('[data-tcsicht]'); if(b && TC.v){ TC.v.fokus('oben'); TC.v.drehen(b.dataset.tcsicht); TC.sicht = b.dataset.tcsicht; tcKnoepfe(); } };
   P.querySelector('#tcAermel').onclick = e => { const b=e.target.closest('[data-tcaermel]'); if(b&&TC.v){ TC.v.detail(b.dataset.tcaermel); tcKnoepfe(); } };
-  P.querySelector('#tcModus').onclick = async e => { const b = e.target.closest('[data-tcmodus]'); if(!b || !TC.v) return; const ok = await TC.v.modus(b.dataset.tcmodus); if(ok) TC.modus = b.dataset.tcmodus; else kToast(TC.art === 'anzug' ? 'Für den Anzug gibt es nur die 3D-Ansicht.' : 'Die 3D-Ansicht geht auf diesem Gerät nicht.'); tcKnoepfe(); };
+  P.querySelector('#tcModus').onclick = async e => { const b = e.target.closest('[data-tcmodus]'); if(!b || !TC.v) return; const ok = await TC.v.modus(b.dataset.tcmodus); if(ok) TC.modus = b.dataset.tcmodus; else kToast(TC.art === 'anzug' ? 'Die Fotoansicht lässt sich gerade nicht öffnen.' : 'Die 3D-Ansicht geht auf diesem Gerät nicht.'); tcKnoepfe(); };
   P.querySelector('#tcDatei').onchange = tcHochladen;
   P.querySelector('#tcTeilen').onclick = e => tcBild(true, e.currentTarget);
   P.querySelector('#tcSpeichern').onclick = e => tcBild(false, e.currentTarget);
@@ -1537,14 +1566,16 @@ async function tcRender(B){
 }
 function tcZoomText(){ const zb = document.getElementById('tcZoom'); if(!zb || !TC.v) return; const ganz = TC.v.fokusJetzt === 'gesamt'; zb.textContent = ganz ? 'Trikot nah' : 'Ganzes Set'; zb.setAttribute('aria-pressed', String(ganz)); zb.hidden = !TC.v.webgl || TC.modus === 'foto'; }
 function tcKnoepfe(){ const P = document.querySelector('.pz-tc'); if(!P) return; tcZoomText();
-  P.querySelectorAll('[data-tcaermel]').forEach(b=>{const an=b.dataset.tcaermel === (TC.v&&/^aermel_/.test(TC.v.fokusJetzt)?TC.v.fokusJetzt:'gesamt');b.setAttribute('aria-pressed',String(an));b.classList.toggle('on',an);});
+  P.classList.toggle('anzug-foto',TC.art==='anzug'&&TC.modus==='foto');
+  P.querySelectorAll('[data-tcaermel]').forEach(b=>{const an=b.dataset.tcaermel === (TC.v&&/^aermel_/.test(TC.v.fokusJetzt)?TC.v.fokusJetzt:'gesamt');b.setAttribute('aria-pressed',String(an));b.classList.toggle('on',an);b.disabled=TC.art==='anzug'&&TC.modus==='foto'&&b.dataset.tcaermel==='gesamt';});
   P.querySelectorAll('[data-tcart]').forEach(b => { const an = b.dataset.tcart === TC.art; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); });
-  P.querySelectorAll('[data-tcsicht]').forEach(b => { const an = b.dataset.tcsicht === TC.sicht; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); b.disabled = TC.modus === 'foto' && b.dataset.tcsicht === 'seite'; });
-  P.querySelectorAll('[data-tcmodus]').forEach(b => { const an = b.dataset.tcmodus === TC.modus; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); b.disabled = (b.dataset.tcmodus === 'foto' && TC.art === 'anzug') || (b.dataset.tcmodus === '3d' && TC.v && !TC.v.webgl); });
+  P.querySelectorAll('[data-tcsicht]').forEach(b => { const an = b.dataset.tcsicht === TC.sicht; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); b.disabled = TC.modus === 'foto' && (TC.art==='anzug'||b.dataset.tcsicht === 'seite'); });
+  P.querySelectorAll('[data-tcmodus]').forEach(b => { const an = b.dataset.tcmodus === TC.modus; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); b.disabled = (b.dataset.tcmodus === '3d' && TC.v && !TC.v.webgl);if(b.dataset.tcmodus==='foto')b.textContent=TC.art==='anzug'?'Ärmelfoto':'Foto'; });
 }
-function tcStand(neuBauen){
+function tcAnzugStand(){const h=document.getElementById('tcAnzugStand');if(!h||!TC.d?.anzug_aermel)return;const plaetze=TC.d.anzug_aermel.plaetze||[];h.innerHTML='<h3>Trainingsanzüge</h3><p>Linker und rechter Ärmel werden getrennt vergeben. Logos immer schwarz.</p><ul class="pz-anzug-stand">'+plaetze.map(t=>'<li><button type="button" data-tcanzug="'+tcE(t.team)+'" data-seite="'+tcE(t.seite)+'"><span>'+tcE(t.name)+' · '+(t.seite==='aermel_l'?'links':'rechts')+'</span><strong>'+tcE(t.status==='frei'?'Offen':t.status==='angefragt'?'Angefragt':t.status==='spaeter'?'Erst ab '+t.ab_jahr:'Vergeben')+'</strong>'+(t.firma?'<small>'+tcE(t.firma)+'</small>':'')+'</button></li>').join('')+'</ul>';h.querySelectorAll('[data-tcanzug]').forEach(b=>b.onclick=()=>{TC.team=b.dataset.tcanzug;TC.art='anzug';TC.platz=b.dataset.seite;tcStand(true);TC.v?.detail(TC.platz,true);tcKnoepfe();});}
+function tcStand(neuBauen){tcAnzugStand();
   const P = document.querySelector('.pz-tc'); if(!P || !TC.d) return; const s = tcSatz();
-  if(TC.art === 'anzug' && TC.modus === 'foto') TC.modus = '3d';
+  P.querySelector('#tcTeam').value=TC.team;
   tcKnoepfe();
   const info = P.querySelector('#tcInfo'), team = tcTeams().find(t => t.id === TC.team) || {};
   const pl = tcPlaetze(), frei = pl.filter(p => p.status === 'frei').length;

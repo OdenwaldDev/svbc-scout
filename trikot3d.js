@@ -616,7 +616,7 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
       const d = Z.daten, art = Z.art === 'anzug' ? 'anzug' : 'trikot', grundAlle = d.grund || '#2f5fd0', akzent = d.akzent || '#ffffff', kit = opt.kit;
       const fest = {}; await Promise.all([['wappen', 'wappen.png'], ['gemeinde', 'wappen-glocken-weiss.png'], ['jungs', 'jungs.png']].map(async ([k, f]) => { try{ fest[k] = await bild(kit + f); }catch(e){} }));
       try{ await document.fonts.load(`800 100px ${opt.schrift}`); await document.fonts.load(`700 100px ${opt.schrift}`); }catch(e){}
-      const logos = {}; await Promise.all(Object.entries(d.belegung || {}).map(async ([k, b]) => { if(b && b.status !== 'frei' && (b.bild || b.firma)) logos[k] = await logoLeinwand(b, opt.schrift); }));
+      const logos = {}; await Promise.all(Object.entries(d.belegung || {}).map(async ([k, b]) => { if(b && b.status !== 'frei' && (b.bild || b.firma)) logos[k] = await logoLeinwand(art==='anzug'&&/^aermel_/.test(k)?{...b,variante:'schwarz'}:b, opt.schrift); }));
       if(nr!==malNr||!Z.lebt)return;
       if(teile.foto) await fotoMalen(fest, logos);
       if(nr !== malNr) return;
@@ -795,9 +795,11 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
     async function foto(streng=false){
       if(!Z.lebt||Z.modus !== 'foto' || !Z.daten) return; const nr = ++fotoNr;
       const d = Z.daten, satz = Z.art === 'auswaerts' ? 'auswaerts' : 'heim', seite = Z.sicht === 'hinten' ? 'hinten' : 'vorn', F = FOTO[satz][seite];
-      if(Z.art === 'anzug'){ const r0 = wurzel.getBoundingClientRect(), dp = Math.min(2, window.devicePixelRatio || 1); cvF.width = Math.round(r0.width * dp); cvF.height = Math.round(r0.height * dp);
-        const x0 = cvF.getContext('2d'); x0.clearRect(0, 0, cvF.width, cvF.height); x0.fillStyle = '#4a5064'; x0.font = `600 ${15 * dp}px system-ui, sans-serif`; x0.textAlign = 'center';
-        x0.fillText('Den Anzug zeigen wir nur in 3D.', cvF.width / 2, cvF.height / 2); Z.fotoLage = null; Object.values(marken).forEach(m => m.classList.add('weg')); return; }
+      if(Z.art==='anzug'){
+        try{if(!window.TRAININGSANZUG)throw Error('Die Anzugvorschau wird noch geladen.');const k=Z.fokusZiel==='aermel_l'?'aermel_l':'aermel_r',b=d.belegung?.[k],c=await TRAININGSANZUG.zeichnen({firma:b?.firma||'Euer Name',logo:b?.status!=='frei'?b?.bild:null,seite:k,kit:opt.kit,breite:1200});
+          if(!Z.lebt||nr!==fotoNr||Z.modus!=='foto'){c.width=c.height=1;return;}const r0=wurzel.getBoundingClientRect(),dp=Math.min(2,window.devicePixelRatio||1);cvF.width=Math.max(1,Math.round(r0.width*dp));cvF.height=Math.max(1,Math.round(r0.height*dp));const x0=cvF.getContext('2d'),scale=Math.min(cvF.width/c.width,cvF.height/c.height);x0.clearRect(0,0,cvF.width,cvF.height);x0.drawImage(c,(cvF.width-c.width*scale)/2,(cvF.height-c.height*scale)/2,c.width*scale,c.height*scale);c.width=c.height=1;Z.fotoLage=null;Object.values(marken).forEach(m=>m.classList.add('weg'));cvF.setAttribute('aria-label',(k==='aermel_l'?'Linker':'Rechter')+' Trainingsanzugärmel mit schwarzem Logo, Gestaltungsvorschau.');return;
+        }catch(e){if(streng)throw e;return;}
+      }
       let img; try{ img = await bild(opt.kit + F.bild); }catch(e){ if(streng)throw e; return; }
       const fest = {}; await Promise.all([['wappen', 'wappen.png'], ['gemeinde', 'wappen-glocken-weiss.png'], ['jungs', 'jungs.png']].map(async ([k, f]) => { try{ fest[k] = await bild(opt.kit + f); }catch(e){} }));
       try{ await document.fonts.load(`700 100px ${opt.schrift}`); }catch(e){}
@@ -848,13 +850,12 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
       wurzel.dataset.vorschauPlaetze=Object.entries(daten.belegung||{}).filter(([,b])=>b&&b.vorschau).map(([k])=>k).join(',');
       const artNeu = daten.art === 'anzug' ? 'anzug' : daten.art === 'auswaerts' ? 'auswaerts' : 'heim', formWechsel = (artNeu === 'anzug') !== (Z.art === 'anzug') || !(teile.torso || teile.foto) || (teile.foto && teile.foto.satz !== artNeu), farbWechsel = !Z.daten || Z.daten.grund !== daten.grund;
       Z.art = artNeu; Z.daten = daten;
-      if(Z.art === 'anzug' && Z.modus === 'foto' && Z.gl){ Z.modus = '3d'; modusZeigen(); }
       if(Z.gl){ if(formWechsel || farbWechsel){ bauen(); oberkanten(); } }
       if(Z.modus === 'foto') foto(); else malen();
     }
     function oberkanten(){ Z.oberkante = {}; ['aermel_l', 'aermel_r'].forEach(n => { const t = teile[n]; if(!t) return; let best = -9, bu = 0; for(let i = 0; i < 64; i++){ const u = i / 64, y = t.form.PUV(u, .6)[1]; if(y > best){ best = y; bu = u; } } Z.oberkante[n] = bu; }); }
     function modusZeigen(){ const gl = wurzel.querySelector('.t3-gl'); if(gl) gl.hidden = Z.modus !== '3d'; cvF.hidden = Z.modus !== 'foto'; }
-    async function modus(m){ if(m === '3d' && !Z.gl) return false; if(m === 'foto' && Z.art === 'anzug') return false; Z.modus = m; modusZeigen();
+    async function modus(m){ if(m === '3d' && !Z.gl) return false; Z.modus = m; modusZeigen();
       if(m === 'foto'){ Z.sicht = Z.winkel > PI / 2 ? 'hinten' : 'vorn'; foto(); } else { malen(); zeigen3d(); } return true; }
     function platzBei(cx, cy, radius){ const r = wurzel.getBoundingClientRect(); let best = null, bd = radius || 60;
       Object.entries(marken).forEach(([k, m]) => { if(m.dataset.sicht !== '1') return; const d = Math.hypot(+m.dataset.x + r.left - cx, +m.dataset.y + r.top - cy); if(d < bd){ bd = d; best = k; } }); return best; }

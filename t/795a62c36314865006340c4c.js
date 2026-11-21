@@ -937,7 +937,7 @@ if(typeof vtZeigen==='function'){
     function summe(){const c=berechnung(),gratis=$('.pk132-gratis'),auto=$('#pk132Auto');
       gratis.hidden=!c.gratis_saison;auto.disabled=c.gratis_saison||busy;if(c.gratis_saison)auto.checked=false;
       $('.pk132-summe').innerHTML=(c.hat_saison?'<div><span>Je Saison, netto'+(c.rabatt&&c.netto_jahr>0?' einschließlich '+c.rabatt+' % Laufzeitvorteil':'')+'</span><b>'+euro(c.netto_jahr)+'</b></div>':'')+(c.einmalig?'<div><span>Einmalige Leistungen, netto</span><b>'+euro(c.einmalig)+'</b></div>':'')+'<div class="pk132-gesamt"><span>Gesamt über die Laufzeit, netto</span><b>'+euro(c.netto_gesamt)+'</b></div>';
-      c.positionen.forEach((p,i)=>{const e=$('[data-pk132betrag="'+i+'"]');if(e)e.textContent=(['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend'].includes(p.key)?'ca. ':'')+euro(p.summe)+(p.saisonal?' je Saison':'');});}
+      c.positionen.forEach((p,i)=>{const e=$('[data-pk132betrag="'+i+'"]');if(e)e.textContent=(['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend','aermel_anzug_l','aermel_anzug_r'].includes(p.key)?'ca. ':'')+euro(p.summe)+(p.saisonal?' je Saison':'');});}
     function render(){
       const pkAnzahl=zeilen.filter(p=>L(p.key)?.art==='paket').length;
       $('.pk132-zeilen').innerHTML=zeilen.length?zeilen.map((p,i)=>{const l=L(p.key)||{};

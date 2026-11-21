@@ -665,6 +665,11 @@ html.zeiger .spot{opacity:1}
 /* 0.99.78: Zettel mit Summe der ersten Saison (Trikots stehen getrennt, die Summe nennt alles) */
 .bon .zl.sum{font-weight:700;border-top:2px solid var(--tinte);margin-top:4px;padding-top:8px}
 .reise-bande-motive{position:absolute;z-index:3;top:12px;left:16px;right:16px;display:flex;justify-content:center;gap:8px;margin:0}.reise-bande-motive[hidden]{display:none}.reise-bande-motive button{min-height:44px;max-width:220px;flex:1;border:1px solid #9babc3;border-radius:6px;padding:8px 12px;background:#12213c;color:#fff;font:700 15px/1.2 var(--b);cursor:pointer}.reise-bande-motive button[aria-pressed="true"]{border-color:#e8741f;box-shadow:inset 0 -3px #e8741f}.reise-bande-motive button:focus-visible{outline:3px solid #fff;outline-offset:3px}.reise-bande-motive button:disabled{opacity:.65;cursor:wait}
+
+/* Trainingsanzug: schwarzer Aufdruck auf dem weißen Ärmeleinsatz. */
+.kleidung-wahl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.kleidung-wahl button{min-height:44px;padding:10px 12px;border:1px solid #8393ad;border-radius:6px;background:#12213c;color:#fff;font:700 15px/1.2 var(--t)}.kleidung-wahl button[aria-pressed="true"]{border-color:#e8741f;box-shadow:inset 0 -3px #e8741f}.kleidung-wahl button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.anzug-buehne{position:absolute;inset:0;display:none;background:#d3d3d1}.anzug-buehne img{width:100%;height:100%;object-fit:cover}.anzug-buehne .trikot-seite{position:absolute;bottom:0;color:#fff}.sz-trikot[data-kleidung="anzug"] .anzug-buehne{display:block}.sz-trikot[data-kleidung="anzug"] .trikot-gesamt,.sz-trikot[data-kleidung="anzug"] .trikot-name{display:none!important}.sz-trikot[data-kleidung="anzug"]::before,.sz-trikot[data-kleidung="anzug"]::after{display:none}
+.zt .bild.anzug-nah{aspect-ratio:3/2;background:#d3d3d1}.zt .bild.anzug-nah img{object-fit:cover}.zt .bild.anzug-nah .trikot-seite{position:absolute;font-size:11px;padding:5px 8px}.zt.anzug-angebot{cursor:default}.zt.anzug-angebot label{font:600 13px/1.4 var(--t);margin:5px 0}.zt.anzug-angebot select{display:block;width:100%;min-height:44px;margin-top:5px;border:1px solid #8791a6;border-radius:5px;padding:8px;background:#fff;color:#1d2760;font:500 16px var(--t)}.zt.anzug-angebot .anzug-dazu{min-height:44px;width:100%;margin-top:8px;padding:10px;background:#1d2760;color:#fff;border:0;border-radius:5px;font:700 15px var(--t)}.zt.anzug-angebot .anzug-dazu:disabled{opacity:.5}.zt.anzug-angebot .anzug-status{font:500 12px/1.4 var(--t)}
 /* Partnerreise: räumliche Materialien. Nach reise_stil.css einbinden.
    Keine neuen Inhalte oder Bilder der Firma, keine zusätzlichen Schriftarten.
    Optional: .sz-trikot { --schrank-rueckwand: url("partner/r-schrank.webp") }
@@ -1368,9 +1373,10 @@ html.zeiger .spot{opacity:1}
         <h2 class="auf" style="--v:1">Euer Name. <em>Am Platz.</em></h2>
       </div>
       <div class="bue-r auf" style="--v:2">
+        <div class="kleidung-wahl" id="kleidungWahl" role="group" aria-label="Kleidungsstück" hidden><button type="button" data-kleidung="trikot" aria-pressed="true">Trikot</button><button type="button" data-kleidung="anzug" aria-pressed="false">Trainingsanzug</button></div>
         <div class="rahmen" id="rahmen">
           <div class="sz sz-bande an" data-sz="bande"><div class="banden-entwurf"><img src="partner/r-bande.webp" alt="Bande am Spielfeldrand mit eurem Namen"><div class="bande-name"><span class="passt" data-name-gross>EUER NAME</span></div></div></div>
-          <div class="sz sz-trikot" data-sz="trikot" data-ansicht="ganz"><div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div><div class="trikot-name trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem rechten Ärmel"><span class="trikot-platzhalter" data-name-gross>EUER NAME</span><small class="trikot-seite">Rechter Ärmel · Gestaltungsvorschau</small></div></div>
+          <div class="sz sz-trikot" data-sz="trikot" data-ansicht="ganz"><div class="anzug-buehne" data-anzug-vorschau><img hidden alt="Euer schwarzes Logo auf dem Trainingsanzug"><span class="trikot-platzhalter">Anzugvorschau wird geladen.</span><small class="trikot-seite">Trainingsanzug · Gestaltungsvorschau</small></div><div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div><div class="trikot-name trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem rechten Ärmel"><span class="trikot-platzhalter" data-name-gross>EUER NAME</span><small class="trikot-seite">Rechter Ärmel · Gestaltungsvorschau</small></div></div>
           <div class="sz sz-durch" data-sz="tag" data-spieltag></div>
           <div class="sz sz-wand" data-sz="wand"><h4>Unsere Partnerwand <small>SAISON 2027/28</small></h4><div class="kacheln"><i></i><i></i><i></i><i></i><i></i><div class="ich"><span class="passt" data-name-gross>EUER NAME</span></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
@@ -1510,21 +1516,20 @@ html.zeiger .spot{opacity:1}
    bilder(firma,logo,true) ergänzt zwei Ganzansichten des echten Squadra-Trikots. */
 window.REISE_TRIKOT=(()=>{
   'use strict';
-  let bibliothekP=null, zuletzt=null;
-  const vorhanden=name=>name==='LOGO'?typeof LOGO!=='undefined':!!window.TRIKOT3D;
-  function bibliothek(){
-    if(vorhanden('TRIKOT3D')&&vorhanden('LOGO'))return Promise.resolve();
-    if(bibliothekP)return bibliothekP;
-    bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
+  const module=new Map();let zuletzt=null;
+  const vorhanden=name=>name==='LOGO'?typeof LOGO!=='undefined':!!window[name];
+  async function bibliothek(art){
+    for(const [name,datei] of [['LOGO','logolib.js'],art==='anzug'?['TRAININGSANZUG','trainingsanzug.js']:['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.124';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.125';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
-        document.head.appendChild(s); });
-    }})().catch(e=>{bibliothekP=null;throw e;});
-    return bibliothekP;
+        document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
+      await module.get(name);
+    }
   }
-  async function erzeugen(firma,logo,mitGesamt){
-    await bibliothek();
+  async function erzeugen(firma,logo,mitGesamt,art){
+    await bibliothek(art);
+    if(art==='anzug')return window.TRAININGSANZUG.bilder(firma,logo);
     const host=document.createElement('div'); host.setAttribute('aria-hidden','true'); host.inert=true;
     host.style.cssText='position:fixed;left:-2000px;top:0;width:640px;height:400px;pointer-events:none;opacity:0';
     document.body.appendChild(host); let v=null;
@@ -1555,12 +1560,12 @@ window.REISE_TRIKOT=(()=>{
       return bilder;
     }finally{try{v?.zerstoeren();}finally{host.remove();}}
   }
-  function bilder(firma,logo,mitGesamt=false){
+  function bilder(firma,logo,mitGesamt=false,art='heim'){
     mitGesamt=mitGesamt===true;
-    const key=JSON.stringify([firma,logo||null,mitGesamt]);
+    const key=JSON.stringify([firma,logo||null,mitGesamt,art]);
     if(zuletzt?.key===key)return zuletzt.p;
     const job={key,p:null}; zuletzt=job;
-    job.p=erzeugen(firma,logo,mitGesamt).catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});
+    job.p=erzeugen(firma,logo,mitGesamt,art).catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});
     return job.p;
   }
   return {bilder};
@@ -1732,10 +1737,13 @@ const ROLLE={
   heimat:['Einer von hier','Ihr gebt dem Ort etwas zurück. Das merkt sich ein Verein.'],
   gast:['Gast am Platz','Ihr schaut erst genau hin. So macht man das mit seinem Geld.']
 };
+const ANZUG_KEYS=['aermel_anzug_l','aermel_anzug_r'];
 const EX={
   sotd:{t:'Partner des Tages',k:'Ein ganzes Heimspiel in eurem Namen.',e:'je Heimspiel',tags:{buehne:2,ehre:3},nicht:['p1896'],bild:'plakat',preis:pk=>({supporter:189,club:169,premium:149,p1896:149}[pk]||189)},
   bande_erste:{t:'Eigene Werbebande',k:'Eure Bande am Sportplatz. Man sieht sie bei jedem Heimspiel.',p:350,e:'je Saison',sais:1,tags:{buehne:4},nur:['keins'],bild:'bande'},
   baelle_jugend:{t:'Ballpatenschaft',k:'Zehn Bälle für eine Jugendmannschaft. Die Kinder sagen Danke mit einem Foto.',p:150,e:'je Saison',sais:1,tags:{herz:4},bild:'partner/r-ball.webp'},
+  aermel_anzug_l:{t:'Trainingsanzug, linker Ärmel',k:'Euer Logo in Schwarz auf dem linken Anzugärmel einer Jugendmannschaft.',p:600,ca:1,e:'einmalig',tags:{herz:3,buehne:2},bild:'anzug'},
+  aermel_anzug_r:{t:'Trainingsanzug, rechter Ärmel',k:'Euer Logo in Schwarz auf dem rechten Anzugärmel einer Jugendmannschaft.',p:600,ca:1,e:'einmalig',tags:{herz:3,buehne:2},bild:'anzug'},
   trikot_jugend:{t:'Trikotpatenschaft Jugend',k:'Eine Mannschaft läuft in neuen Trikots mit eurem Logo auf.',p:600,ca:1,e:'einmalig',tags:{herz:3,buehne:1},bild:'trikot'},
   team_jugend:{t:'Teampartner Jugend',k:'Eine Saison lang Partner einer Jugendmannschaft, mit Logo auf dem Mannschaftsfoto.',p:250,e:'je Saison',sais:1,tags:{herz:3,heimat:1},bild:'partner/r-jugend.webp'},
   trainer_jugend:{t:'Patenschaft Trainerlizenz',k:'Ihr übernehmt eine Trainerlizenz. Davon haben die Kinder viele Jahre etwas.',p:300,e:'einmalig',tags:{herz:2},bild:'partner/r-jugend.webp'},
@@ -1805,7 +1813,7 @@ let S=neu(), laeuft=false, ton=false, sperrBis=0;
 // Öffnet die Firma ihren Link allein, gibt es keine Notizen fürs Gespräch und später keinen Nachlass, es wird nur gespeichert (Albert, 17.11.2026).
 const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true; } })();
 // Ein Abstecher in den Creator beendet die Reise nicht. Antworten und Folie bleiben im selben Rahmen erhalten.
-['reiseBande','reiseAermel'].forEach((id,i)=>{ const b=$('#'+id); if(!b)return; b.hidden=!GERAHMT; b.onclick=()=>{ if(!GERAHMT)return; clearInterval(szUhr); REISEFILM.sichtbar(false); window.parent.postMessage({reise:'creator',art:i?'aermel':'bande',paket:pk(),seite:AERMEL_SEITE},location.origin); }; });
+['reiseBande','reiseAermel'].forEach((id,i)=>{ const b=$('#'+id); if(!b)return; b.hidden=!GERAHMT; b.onclick=()=>{ if(!GERAHMT)return; clearInterval(szUhr); REISEFILM.sichtbar(false); window.parent.postMessage({reise:'creator',art:i?'aermel':'bande',paket:pk(),seite:AERMEL_SEITE,kleidung:KLEIDUNG},location.origin); }; });
 window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.reise==='creator-zu')REISEFILM.sichtbar(true);});
 let FIRMA=null, KONTEXT_BEREIT=!GERAHMT;
 let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
@@ -1845,7 +1853,7 @@ const kleinstBaustein=()=>KLEIN[reihe()[0]]||'baelle_jugend';
 
 /* ---------- Vereinbarte Konditionen: Anzeige eines vom Rahmen gelieferten Serverstands ---------- */
 let KONDITIONEN=null, KONDITIONEN_WAHL='', KONDITIONEN_HINWEIS='';
-const konditionenSignatur=()=>JSON.stringify([pk(),[...S.extras].sort(),S.laufzeit,!!S.verl]);
+const konditionenSignatur=()=>JSON.stringify([pk(),[...S.extras].sort(),S.laufzeit,!!S.verl,ANZUG_KEYS.some(k=>S.extras.has(k))?[S.anzugTeam||null,S.anzugSeite||AERMEL_SEITE]:null]);
 const konditionenDatum=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)?s.slice(8,10)+'.'+s.slice(5,7)+'.'+s.slice(0,4):'';
 function konditionenSauber(k){
   if(!k||typeof k!=='object'||Array.isArray(k)||typeof k.id!=='string'||!(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(k.id)||k.quelle==='angebot'&&/^angebot:[a-z0-9-]{1,80}$/i.test(k.id))||!Array.isArray(k.positionen)||!k.positionen.length||k.positionen.length>24)return null;
@@ -1858,6 +1866,7 @@ function konditionenSauber(k){
 }
 function konditionenInStand(){ if(!KONDITIONEN)return; const k=KONDITIONEN,p=k.positionen.find(x=>ST.includes(x.key)&&!x.zusatzpaket)||k.positionen.find(x=>ST.includes(x.key));
   S.pi=p?ST.indexOf(p.key):-1;S.groesse=S.pi;S.auto=false;S.warKeins=!p;S.extras=new Set(k.positionen.filter(x=>EX[x.key]).map(x=>x.key));S.laufzeit=k.saisons;S.verl=k.auto_verlaengerung;
+  const anzug=k.positionen.find(x=>ANZUG_KEYS.includes(x.key));if(anzug){S.anzugTeam=anzug.mannschaft||null;S.anzugSeite=anzug.key==='aermel_anzug_l'?'aermel_l':'aermel_r';AERMEL_SEITE=S.anzugSeite;}
   $$('[data-frage="groesse"] [data-w]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.w===S.groesse));
   $$('[data-frage="laufzeit"] [data-w]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.w===S.laufzeit));
   $('#autoB').setAttribute('aria-pressed','false');$('#kleinstB').setAttribute('aria-pressed',S.groesse===-1);
@@ -1876,9 +1885,9 @@ function konditionenNutzerPruefen(){if(!KONDITIONEN||konditionenSignatur()===KON
   KONDITIONEN=null;KONDITIONEN_WAHL='';if(S.laufzeit>3)S.laufzeit=3;KONDITIONEN_HINWEIS='Auswahl geändert. Es gelten wieder die Standardpreise.';konditionenHinweis();
   try{window.parent.postMessage({reise:'konditionen-geaendert'},location.origin);}catch(_){}
 }
-function konditionenText(p){return (p.menge>1?p.menge+' × ':'')+p.titel+(p.zusatzpaket?' (zusätzliches Paket)':'');}
+function konditionenText(p){return (p.menge>1?p.menge+' × ':'')+p.titel+(ANZUG_KEYS.includes(p.key)&&p.mannschaft?' · '+anzugTeamName(p.mannschaft):'')+(p.zusatzpaket?' (zusätzliches Paket)':'');}
 function konditionenDetail(p){const t=[];if(Number.isFinite(p.nachlass)&&p.nachlass>0)t.push(p.nachlass.toLocaleString('de-DE',{maximumFractionDigits:2})+' % individueller Nachlass');if(Number.isFinite(p.rabatt)&&p.rabatt>0&&p.einzel>0)t.push(Math.round(p.rabatt*100)+' % Laufzeitvorteil');return t.join(', ');}
-function konditionenTrikot(p){return KONDITIONEN?.abrechnung_fassung===1&&['trikot_jugend','aermel_erste','aermel_zweite','aermel_jugend'].includes(p.key);}
+function konditionenTrikot(p){return KONDITIONEN?.abrechnung_fassung===1&&['trikot_jugend','aermel_erste','aermel_zweite','aermel_jugend','aermel_anzug_l','aermel_anzug_r'].includes(p.key);}
 function konditionenZeilen(){return KONDITIONEN.positionen.map(p=>'<div class="konditionen-zeile"><span>'+esc(konditionenText(p))+(konditionenDetail(p)?'<small>'+esc(konditionenDetail(p))+'</small>':'')+'</span><b>'+(konditionenTrikot(p)?'ca. ':'')+eur(p.summe,true)+'<small>'+(p.einheit==='saison'?'je Saison':'einmalig')+'</small></b></div>').join('');}
 function konditionenRechnung(){const k=KONDITIONEN,br=x=>Math.round(Math.round(x*100)*(100+USTP)/100)/100,trikot=k.positionen.filter(konditionenTrikot).reduce((s,p)=>s+p.summe,0),erste=Math.round((k.netto_jahr+k.einmalig-trikot)*100)/100;
   return {z:k.positionen.map(p=>[konditionenText(p),p.summe,p.einheit==='saison'?'s':'e']),rab:0,ab:0,jahr:k.netto_jahr,einmal:k.einmalig,trikot,erste,ca:k.positionen.some(konditionenTrikot),voll:k.hat_saison,brutto:br(erste),jahrBrutto:br(k.netto_jahr)};
@@ -1892,7 +1901,7 @@ function konditionenBon(){const k=KONDITIONEN,b=$('#bon'),sw=$('#swVerl');sw.hid
     +(k.hat_saison?'<div class="zl gr"><span>Je Saison</span><span>'+eur(k.netto_jahr,true)+'</span></div>':'')+(k.einmalig?'<div class="zl"><span>Einmalig</span><span>'+eur(k.einmalig,true)+'</span></div>':'')
     +'<div class="zl gr"><span>Gesamt'+(k.hat_saison?' über '+k.saisons+' Saison'+(k.saisons===1?'':'s'):'')+'</span><span>'+(k.positionen.some(konditionenTrikot)?'ca. ':'')+eur(k.netto_gesamt,true)+'</span></div><p class="fuss">Preise netto. Alle genannten Nachlässe sind bereits enthalten.'+(k.hat_saison?' Laufzeit: '+esc(konditionenDatum(k.beginn))+(k.ende?' bis '+esc(konditionenDatum(k.ende)):'')+'.':'')+(k.positionen.some(konditionenTrikot)?' Trikots und Ärmel sind Richtwerte. Wir rechnen sie getrennt ab, sobald die Stückzahlen bestätigt sind. Ein anderer Endbetrag braucht eine eigene Vereinbarung.':'')+'</p>';
 }
-const konditionenB=$('#konditionenB');if(konditionenB)konditionenB.onclick=()=>{if(!GERAHMT||!TERMIN)return;clearInterval(szUhr);REISEFILM.sichtbar(false);window.parent.postMessage({reise:'konditionen-oeffnen',wahl:{paket:pk(),extras:[...S.extras],saisons:S.laufzeit,auto:!!S.verl,beginn:'2027-07-01'}},location.origin);};
+const konditionenB=$('#konditionenB');if(konditionenB)konditionenB.onclick=()=>{if(!GERAHMT||!TERMIN)return;clearInterval(szUhr);REISEFILM.sichtbar(false);window.parent.postMessage({reise:'konditionen-oeffnen',wahl:{paket:pk(),extras:[...S.extras],anzug_team:S.anzugTeam||null,anzug_seite:S.anzugSeite||AERMEL_SEITE,saisons:S.laufzeit,auto:!!S.verl,beginn:'2027-07-01'}},location.origin);};
 window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.reise==='konditionen')konditionenSetz(e.data.konditionen);});
 
 /* ---------- Marke (seit 0.99.85): das Logo der Firma an Bande, Trikot und Partnerwand ----------
@@ -1901,8 +1910,10 @@ window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===lo
    Partnerwand). name steht nur dabei, wenn das Logo den Namen nicht selbst trägt. Ohne Rahmen oder ohne Logo bleibt der Name als Schrift. */
 var MARKE=null, BANDE_PROJEKT=null;
 let AERMEL_SEITE='aermel_r', TRIKOT_ANSICHT='ganz', TRIKOT_BILDER=null, TRIKOT_ANFRAGE=null, TRIKOT_FEHLER=false;
+let KLEIDUNG='trikot',ANZUG_STAND=null,ANZUG_BILDER=null,ANZUG_ANFRAGE=null,ANZUG_FEHLER=false;
 function trikotHtml(){ return '<div class="bild trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem Ärmel"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Ärmel · Gestaltungsvorschau</small></div>'; }
-function trikotGanzHtml(){return '<div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div>';}
+function anzugHtml(angebot=false){return '<div class="bild anzug-nah" data-anzug-vorschau data-anzug-angebot="'+(angebot?'1':'0')+'"><img hidden alt="Euer schwarzes Logo auf dem Trainingsanzug"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Trainingsanzug · Gestaltungsvorschau</small></div>';}
+function trikotGanzHtml(){if(KLEIDUNG==='anzug')return anzugHtml();return '<div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div>';}
 function spieltagHtml(){return '<div class="spieltag-karte"><div class="spieltag-kopf"><img src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach"><span>Heimspiel<br><small>Saison 2027/28</small></span></div><div class="spieltag-foto" aria-hidden="true"><img src="partner/stadion-original-nord.jpg" alt=""></div><div class="spieltag-in"><small>Unser Partner des Tages</small><div class="spieltag-marke">'+(MARKE?.original?'<img src="'+esc(MARKE.original)+'" alt="'+esc(S.name||'Euer Logo')+'">':'<b>'+esc(S.name||'Euer Name')+'</b>')+'</div><p>Ein Heimspiel in eurem Namen.</p></div><div class="spieltag-fuss"><span>Euer Heimspiel</span><small>Gestaltungsvorschau</small></div></div>';}
 function spieltagSetz(){const key=JSON.stringify([S.name,MARKE?.original||'']);$$('[data-spieltag]').forEach(e=>{if(e.dataset.marke===key)return;e.dataset.marke=key;e.innerHTML=spieltagHtml();});}
 function trikotSetz(){
@@ -1928,11 +1939,25 @@ function trikotSetz(){
   $$('.sz-trikot[data-sz]').forEach(e=>e.dataset.ansicht=TRIKOT_ANSICHT);
   $$('[data-trikot-ansicht]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.trikotAnsicht===TRIKOT_ANSICHT));
   $$('[data-trikot-seite]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.trikotSeite===AERMEL_SEITE));
+  anzugSetz();
 }
+function anzugSetz(){
+  if(!['buehne','extras','ja'].includes(ORD[S.i]))return;
+  $$('.sz-trikot[data-sz]').forEach(e=>e.dataset.kleidung=KLEIDUNG);
+  $$('button[data-kleidung]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.kleidung===KLEIDUNG));
+  $$('[data-trikot-ansicht]').forEach(b=>b.hidden=KLEIDUNG==='anzug');
+  const w=$('#kleidungWahl');if(w)w.hidden=$('#trikotAnsichten').hidden;
+  const alle=$$('[data-anzug-vorschau]');if(!alle.length)return;
+  const gebraucht=KLEIDUNG==='anzug'||ORD[S.i]==='extras'&&alle.some(e=>e.dataset.anzugAngebot==='1');if(!gebraucht)return;
+  const logo=MARKE?.original||MARKE?.trikot||null,key=JSON.stringify([S.name,logo]);
+  if(ANZUG_ANFRAGE!==key){ANZUG_ANFRAGE=key;ANZUG_BILDER=null;ANZUG_FEHLER=false;REISE_TRIKOT.bilder(S.name||'Euer Name',logo,false,'anzug').then(b=>{if(ANZUG_ANFRAGE===key){ANZUG_BILDER=b;anzugSetz();}}).catch(()=>{if(ANZUG_ANFRAGE===key){ANZUG_FEHLER=true;anzugSetz();}});}
+  alle.forEach(e=>{const im=$('img',e),p=$('.trikot-platzhalter',e),t=$('.trikot-seite',e),seite=e.dataset.anzugAngebot==='1'?(S.anzugSeite||AERMEL_SEITE):AERMEL_SEITE,u=ANZUG_BILDER?.[seite];im.hidden=!u;if(u&&im.getAttribute('src')!==u)im.src=u;if(!u)im.removeAttribute('src');im.alt=(logo?'Euer schwarzes Logo':'Euer Firmenname')+' auf dem '+(seite==='aermel_l'?'linken':'rechten')+' Anzugärmel';p.hidden=!!u;p.textContent=ANZUG_FEHLER?'Die Vorschau konnte nicht geladen werden. Öffnet die Ärmelansicht erneut.':'Anzugvorschau wird geladen.';t.textContent='Trainingsanzug · '+(seite==='aermel_l'?'linker':'rechter')+' Ärmel · Gestaltungsvorschau';});
+}
+$$('button[data-kleidung]').forEach(b=>b.onclick=()=>{KLEIDUNG=b.dataset.kleidung==='anzug'?'anzug':'trikot';if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
 $$('[data-trikot-ansicht]').forEach(b=>b.onclick=()=>{TRIKOT_ANSICHT=b.dataset.trikotAnsicht;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
-$$('[data-trikot-seite]').forEach(b=>b.onclick=()=>{AERMEL_SEITE=b.dataset.trikotSeite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
+$$('[data-trikot-seite]').forEach(b=>b.onclick=()=>{AERMEL_SEITE=b.dataset.trikotSeite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
 window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||e.data?.reise!=='aermel-seite'||!['aermel_r','aermel_l'].includes(e.data.seite))return;
-  AERMEL_SEITE=e.data.seite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
+  AERMEL_SEITE=e.data.seite;if(e.data.kleidung)KLEIDUNG=e.data.kleidung==='anzug'?'anzug':'trikot';if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
 let MOTIV_FOKUS=null,MOTIV_URSPRUNG=null;
 function markeSetz(){ const bild=u=>'<img src="'+u+'" alt="">';
   if(BANDE_PROJEKT&&BANDE_PROJEKT.vorschau){$$('.bande-name').forEach(b=>{const stamp=(BANDE_PROJEKT.motiv||'haupt')+':'+BANDE_PROJEKT.version;if(b.dataset.projekt!==stamp){b.dataset.projekt=stamp;b.classList.add('bd-entwurf-gespeichert');b.classList.remove('mk','nur');b.innerHTML=bild(BANDE_PROJEKT.vorschau);}});}
@@ -2055,7 +2080,7 @@ $('#skepB').onclick=()=>{ S.skeptisch=!S.skeptisch; if(S.skeptisch)S.antrieb=[];
 
 /* ---------- Station 3: Name am Platz ---------- */
 let szUhr=null;
-function zeigSz(w,wie){ $$('#rahmen .sz').forEach(s=>{ const an=s.dataset.sz===w; s.classList.remove('kommt','fahrt'); s.classList.toggle('an',an); if(an&&wie&&!ruhig){ void s.offsetWidth; s.classList.add(wie); } }); $('#trikotAnsichten').hidden=w!=='trikot'; passe(); }
+function zeigSz(w,wie){ $$('#rahmen .sz').forEach(s=>{ const an=s.dataset.sz===w; s.classList.remove('kommt','fahrt'); s.classList.toggle('an',an); if(an&&wie&&!ruhig){ void s.offsetWidth; s.classList.add(wie); } }); $('#trikotAnsichten').hidden=w!=='trikot';if($('#kleidungWahl'))$('#kleidungWahl').hidden=w!=='trikot'; passe(); }
 function szAuto(){ clearInterval(szUhr); } // Jede Vorschau bleibt stehen, bis die Firma eine andere wählt.
 $$('[data-frage="platz"] [data-w]').forEach(b=>b.onclick=()=>{ S.platz=b.dataset.w; neuRechnen(); clearInterval(szUhr);
   $$('[data-frage="platz"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x===b)); zeigSz(S.platz,'kommt'); lob('platz',LOB.platz[S.platz]); routeZeig(); regieZeig(); });
@@ -2144,30 +2169,54 @@ $('#zeigB').onclick=()=>{ const s=szene('platz'); s.dataset.teil='2'; s.scrollTo
 $('#nichtB').onclick=()=>geh(ORD.indexOf('antrieb'));
 
 /* ---------- Station 7: Schwarzes Brett ---------- */
-function exPreis(k){ const e=EX[k]; return e.preis?e.preis(pk()):e.p; }
+function exPreis(k){ const e=EX[k]; return ANZUG_KEYS.includes(k)?ANZUG_STAND?.preise?.[k]??e.p:e.preis?e.preis(pk()):e.p; }
+function anzugTeamName(team){return ANZUG_STAND?.plaetze.find(t=>t.team===team)?.name||String(team||'').toUpperCase();}
+function exTitel(k){return EX[k].t+(ANZUG_KEYS.includes(k)&&S.anzugTeam?' · '+anzugTeamName(S.anzugTeam):'');}
 function exWahl(){ const p=punkte(), paket=pk(), fest=paket==='keins'?kleinstBaustein():null;
-  let l=Object.keys(EX).filter(k=>k!==fest&&!(EX[k].nicht||[]).includes(paket)&&(!EX[k].nur||EX[k].nur.includes(paket))).map(k=>{ const t=EX[k].tags; let sc=0, best=null, bw=0; for(const d in t){ const w=t[d]*p[d]; sc+=w; if(w>bw){ bw=w; best=d; } } return {k,sc,best:best&&ECHO[best].some(x=>S.antrieb.includes(x))?best:null}; });
+  let l=Object.keys(EX).filter(k=>(!ANZUG_KEYS.includes(k)||k===anzugKey()&&anzugFrei().length>0)&&k!==fest&&!(EX[k].nicht||[]).includes(paket)&&(!EX[k].nur||EX[k].nur.includes(paket))).map(k=>{ const t=EX[k].tags; let sc=0, best=null, bw=0; for(const d in t){ const w=t[d]*p[d]; sc+=w; if(w>bw){ bw=w; best=d; } } return {k,sc,best:best&&ECHO[best].some(x=>S.antrieb.includes(x))?best:null}; });
   l.sort((a,b)=>b.sc-a.sc); const aus=[], zahl={}, zwing=(k,sagt)=>{ const x=l.find(e=>e.k===k); if(x&&!aus.includes(x)){ if(sagt)x.sagt=sagt; aus.push(x); zahl[x.best]=(zahl[x.best]||0)+1; } };
+  if(anzugFrei().length)zwing(anzugKey());
   if(S.platz==='tag')zwing('sotd',ZITAT.tag); if(S.platz==='trikot')zwing('trikot_jugend',ZITAT.trikot); if(S.antrieb.includes('kinder'))zwing('baelle_jugend',ZITAT.kinder);
   for(const e of l){ if(aus.length>=3)break; if(aus.includes(e)||e.sc<8)continue; const b=e.best||'x'; if((zahl[b]||0)>=2)continue; zahl[b]=(zahl[b]||0)+1; aus.push(e); }
   return aus; }
 // Räumt Bausteine weg, die nicht mehr zu Paket und Antworten gehören (auch wenn das Brett übersprungen wird).
-function exPutzen(){ if(KONDITIONEN)return; const ok=new Set(exWahl().map(e=>e.k)); if(pk()==='keins')ok.add(kleinstBaustein()); [...S.extras].forEach(k=>{ if(!ok.has(k))S.extras.delete(k); }); }
+function exPutzen(){ anzugWahlPruefen(false);if(KONDITIONEN)return; const ok=new Set(exWahl().map(e=>e.k)); if(pk()==='keins')ok.add(kleinstBaustein()); [...S.extras].forEach(k=>{ if(!ok.has(k)&&!(ANZUG_KEYS.includes(k)&&ANZUG_STAND===null))S.extras.delete(k); }); }
 function exBild(k){ const x=EX[k], n=esc(S.name||'Euer Name');
   if(x.bild==='plakat')return '<div class="bild spieltag-klein" data-spieltag>'+spieltagHtml()+'</div>';
   if(x.bild==='bande')return '<div class="bild"><img src="partner/r-bande.webp" alt=""></div>';
   if(x.bild==='trikot')return trikotHtml();
+  if(x.bild==='anzug')return anzugHtml();
   if(x.bild)return '<div class="bild"><img src="'+x.bild+'" alt=""></div>';
   return '<div class="bild schrift">'+x.schrift+'</div>'; }
 function exZeig(hinweis){ exPutzen(); const l=exWahl(), paket=pk(), bandeHinweis=paket==='supporter'&&(S.platz==='bande'||S.antrieb.includes('sehen'));
-  let h=l.map(e=>{ const x=EX[e.k], pr=exPreis(e.k), drin=S.extras.has(e.k), weil=e.sagt?'Ihr habt gesagt: '+e.sagt:e.best?WEIL_EX[e.best]:'Auch möglich';
+  let h=l.map(e=>{if(ANZUG_KEYS.includes(e.k))return anzugKarte(); const x=EX[e.k], pr=exPreis(e.k), drin=S.extras.has(e.k), weil=e.sagt?'Ihr habt gesagt: '+e.sagt:e.best?WEIL_EX[e.best]:'Auch möglich';
     return '<button type="button" class="zt'+(drin?' drin':'')+'" data-k="'+e.k+'" aria-pressed="'+drin+'">'+exBild(e.k)+ib(e.k,x.t).replace('data-i=','data-preis="1" data-i=')+'<span class="tx"><span class="weil-t">'+weil+'</span><b>'+x.t+'</b><p>'+x.k+'</p><span class="pr"><em>'+(x.ca?'ca. ':'')+eur(pr)+'<small>'+x.e+'</small></em><span>'+(drin?'Wieder raus':'Dazunehmen')+'</span></span></span></button>'; }).join('');
   if(bandeHinweis)h+='<div class="zt hinweis"><span class="tx"><span class="weil-t">Ehrlich gerechnet</span><b>Bande dazu?</b><p>Supporter plus eigene Bande kostet mehr als der Club Partner. Dort ist die Bande schon dabei.</p><button class="knopf dunkel" type="button" id="clubB">Zum Club Partner</button></span></div>';
   $('#exL').innerHTML=h; $('#exL').hidden=!h;
-  $('#exUnter').textContent=hinweis||(h?'Passt zu euren Antworten. Muss nicht sein.':'Zu eurem Paket fehlt nichts. Mehr braucht es nicht.');
+  $('#exUnter').textContent=hinweis||ANZUG_HINWEIS||(h?'Passt zu euren Antworten. Muss nicht sein.':'Zu eurem Paket fehlt nichts. Mehr braucht es nicht.');
   $$('#exL .zt[data-k]').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(S.extras.has(k))S.extras.delete(k); else S.extras.add(k); konditionenNutzerPruefen(); exZeig(); regieZeig(); });
+  anzugKarteBinden();
   const cb=$('#clubB'); if(cb)cb.onclick=()=>{ S.pi=1; konditionenNutzerPruefen(); exZeig('Jetzt Club Partner. Die Bande ist dabei.'); regieZeig(); }; passe(); }
 
+
+var ANZUG_HINWEIS='';
+function anzugKey(){return (S.anzugSeite||AERMEL_SEITE)==='aermel_l'?'aermel_anzug_l':'aermel_anzug_r';}
+function anzugFrei(seite){return ANZUG_STAND?.erlaubt?(ANZUG_STAND.plaetze||[]).filter(t=>t.frei===1&&(!seite||t.seite===seite)):[];}
+function anzugWahlPruefen(aktualisieren=true){const gewaehlt=ANZUG_KEYS.some(k=>S.extras.has(k));if(ANZUG_STAND===null||!S.anzugTeam&&!gewaehlt||S.anzugTeam&&anzugFrei(S.anzugSeite||AERMEL_SEITE).some(t=>t.team===S.anzugTeam))return false;
+ S.anzugTeam=null;ANZUG_KEYS.forEach(k=>S.extras.delete(k));if(!gewaehlt)return false;
+ ANZUG_HINWEIS='Der gewählte Anzugärmel ist inzwischen vergeben. Bitte wählt am Schwarzen Brett einen anderen freien Platz.';konditionenNutzerPruefen();
+ if(aktualisieren){if(ORD[S.i]==='bon')bonZeig(true);if(ORD[S.i]==='ja')$('#jaWas').textContent=wahlText();merken();}return true;}
+function anzugKarte(){const seite=S.anzugSeite||AERMEL_SEITE,key=anzugKey(),frei=anzugFrei(seite),valid=frei.some(t=>t.team===S.anzugTeam),drin=S.extras.has(key),preis=exPreis(key);
+ return '<article class="zt anzug-angebot'+(drin?' drin':'')+'">'+anzugHtml(true)+'<div class="tx"><span class="weil-t">Für die aktuelle Ausstattung</span><b>Ärmelpartner Trainingsanzug</b><p>Euer Logo in Schwarz auf dem weißen Ärmeleinsatz.</p><label>Ärmel, aus Sicht des Trägers<select id="anzugSeite" aria-label="Ärmel für die Trainingsanzüge">'+[['aermel_l','Linker Ärmel'],['aermel_r','Rechter Ärmel']].map(([k,n])=>'<option value="'+k+'"'+(seite===k?' selected':'')+'>'+n+' ('+anzugFrei(k).length+' frei)</option>').join('')+'</select></label><label>Mannschaft<select id="anzugTeam" aria-label="Mannschaft für die Trainingsanzüge"><option value="">Mannschaft wählen</option>'+frei.map(t=>'<option value="'+esc(t.team)+'"'+(t.team===S.anzugTeam?' selected':'')+'>'+esc(t.name)+'</option>').join('')+'</select></label><p class="anzug-status">'+frei.length+' Plätze auf dieser Seite frei. Einmalig etwa 500 bis 700 Euro, je nach Mannschaftsgröße.</p><div class="pr"><em>ca. '+eur(preis)+'<small>einmalig</small></em></div><button type="button" class="anzug-dazu" id="anzugDazu"'+(!valid?' disabled':'')+'>'+(drin?'Wieder raus':'Dazunehmen')+'</button></div></article>';}
+function anzugKarteBinden(){const w=$('#anzugTeam'),s=$('#anzugSeite'),b=$('#anzugDazu');const refresh=id=>{konditionenNutzerPruefen();exZeig();regieZeig();merken();$('#'+id)?.focus({preventScroll:true});};
+ if(s)s.onchange=()=>{const drin=ANZUG_KEYS.some(k=>S.extras.has(k));ANZUG_KEYS.forEach(k=>S.extras.delete(k));S.anzugSeite=s.value==='aermel_l'?'aermel_l':'aermel_r';AERMEL_SEITE=S.anzugSeite;if(!anzugFrei(S.anzugSeite).some(t=>t.team===S.anzugTeam))S.anzugTeam=null;else if(drin)S.extras.add(anzugKey());refresh('anzugSeite');};
+ if(w)w.onchange=()=>{ANZUG_HINWEIS='';S.anzugSeite=S.anzugSeite||AERMEL_SEITE;S.anzugTeam=anzugFrei(S.anzugSeite||AERMEL_SEITE).some(t=>t.team===w.value)?w.value:null;if(!S.anzugTeam)ANZUG_KEYS.forEach(k=>S.extras.delete(k));refresh('anzugTeam');};
+ if(b)b.onclick=()=>{S.anzugSeite=S.anzugSeite||AERMEL_SEITE;if(!anzugFrei(S.anzugSeite||AERMEL_SEITE).some(t=>t.team===S.anzugTeam))return;const key=anzugKey(),drin=S.extras.has(key);ANZUG_KEYS.forEach(k=>S.extras.delete(k));if(!drin)S.extras.add(key);refresh('anzugDazu');};}
+window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||e.data?.reise!=='anzug-stand'||!Array.isArray(e.data.plaetze))return;
+ const next={erlaubt:e.data.erlaubt===true,preise:Object.fromEntries(ANZUG_KEYS.map(k=>[k,Number.isFinite(+e.data.preise?.[k])?Math.max(0,+e.data.preise[k]):600])),plaetze:e.data.plaetze.slice(0,40).filter(t=>t&&/^[a-z0-9_]{1,12}$/.test(t.team)&&['aermel_l','aermel_r'].includes(t.seite)&&ANZUG_KEYS.includes(t.key)&&typeof t.name==='string').map(t=>({team:t.team,seite:t.seite,key:t.key,name:t.name.slice(0,80),frei:t.frei===1?1:0,status:t.status,ab_jahr:t.ab_jahr}))};
+ if(JSON.stringify(ANZUG_STAND)===JSON.stringify(next)){anzugWahlPruefen();return;}ANZUG_STAND=next;
+ const fokus=document.activeElement?.id;anzugWahlPruefen();
+ if(ORD[S.i]==='extras'){exZeig();if(['anzugTeam','anzugSeite','anzugDazu'].includes(fokus)){let e=$('#'+fokus);if(!e||e.disabled)e=$('#anzugTeam')||$('#exUnter');if(e.id==='exUnter')e.setAttribute('tabindex','-1');e.focus({preventScroll:true});}}});
 
 /* ---------- Mehr dazu (0.99.75, Albert: kleine Info-Knöpfe an Paketen und Bausteinen, „dass man sich alles durchlesen kann“) ----------
    Jeder Text steht auf dem, was im Katalog der App steht (partner_leistungen). Nichts versprechen, was dort nicht steht. */
@@ -2195,6 +2244,8 @@ const INFO={
   baelle_jugend:{l:'Ohne Bälle kein Training.',
     t:['Mit eurer Patenschaft hat eine Jugendmannschaft eine Saison lang gutes Material. Die Mannschaft bedankt sich bei euch mit einem Foto.'],
     d:['Zehn Bälle für eine Jugendmannschaft.','Ein Mannschaftsfoto als Dankeschön.',KIND]},
+  aermel_anzug_l:{l:'Euer Logo begleitet die Mannschaft auch vor und nach dem Spiel.',t:['Ein schwarzer Aufdruck auf dem weißen Ärmeleinsatz der Trainingsanzüge. Ihr wählt eine freie Jugendmannschaft und den linken Ärmel.'],d:['Einmalig, je nach Mannschaftsgröße etwa 500 bis 700 Euro.','Richtwert 600 Euro. Die Stückzahl allein ändert den vereinbarten Preis nicht.','Belegte und vorläufig angefragte Plätze werden nicht erneut angeboten.']},
+  aermel_anzug_r:{l:'Euer Logo begleitet die Mannschaft auch vor und nach dem Spiel.',t:['Ein schwarzer Aufdruck auf dem weißen Ärmeleinsatz der Trainingsanzüge. Ihr wählt eine freie Jugendmannschaft und den rechten Ärmel.'],d:['Einmalig, je nach Mannschaftsgröße etwa 500 bis 700 Euro.','Richtwert 600 Euro. Die Stückzahl allein ändert den vereinbarten Preis nicht.','Belegte und vorläufig angefragte Plätze werden nicht erneut angeboten.']},
   trikot_jugend:{l:'Das erste richtige Trikot vergisst kein Kind.',
     t:['Mit eurer Patenschaft läuft eine ganze Mannschaft in neuen Trikots auf, mit eurem Logo. Die Kinder tragen es bei jedem Spiel, und die Eltern am Rand sehen, wer dahintersteht.'],
     d:['Ein Trikotsatz für eine Jugendmannschaft, mit eurem Logo.','Einmalige Kosten, je nach Größe der Mannschaft etwa 500 bis 700 €.','Ein Satz hält meist zwei bis drei Saisons.']},
@@ -2240,20 +2291,21 @@ const USTP=19;   // Umsatzsteuer in Prozent (mit dem Verein abgleichen)
 // 0.99.78 (R8): Trikots sind Circa-Beträge und bekommen eine eigene Rechnung, sobald die Stückzahl feststeht. Auf dem Zettel stehen sie
 // deshalb getrennt (trikot), die Summe der ersten Saison nennt trotzdem alles zusammen.
 function rechne(){ if(KONDITIONEN)return konditionenRechnung(); const p=pk(), P=PAK[p]; let voll=P.p, einmal=0, trikot=0, ca=false; const z=p==='keins'?[]:[[P.t,P.p,'s']];
-  S.extras.forEach(k=>{ const x=EX[k], pr=exPreis(k); if(x.ca)ca=true; if(x.sais){ voll+=pr; z.push([x.t,pr,'s']); } else { einmal+=pr; if(x.ca)trikot+=pr; z.push([x.t+(x.ca?' (ca.)':''),pr,'e']); } });
+  S.extras.forEach(k=>{ const x=EX[k], pr=exPreis(k); if(x.ca)ca=true; if(x.sais){ voll+=pr; z.push([exTitel(k),pr,'s']); } else { einmal+=pr; if(x.ca)trikot+=pr; z.push([exTitel(k)+(x.ca?' (ca.)':''),pr,'e']); } });
   const rab=voll?(S.laufzeit>=3?.10:S.laufzeit===2?.05:0):0, ab=Math.round(voll*rab*100)/100, jahr=Math.round((voll-ab)*100)/100, erste=Math.round((jahr+einmal)*100)/100, br=x=>Math.round(Math.round(x*100)*(100+USTP)/100)/100;
   return {z,rab,ab,jahr,einmal,trikot,erste,ca,voll,brutto:br(erste),jahrBrutto:br(jahr)}; }
 const hatBande=()=>['club','premium','p1896'].includes(pk())||S.extras.has('bande_erste');
-function wahlText(){ if(KONDITIONEN)return KONDITIONEN.positionen.map(konditionenText).join(', ')+(KONDITIONEN.hat_saison?' · '+KONDITIONEN.saisons+' Saison'+(KONDITIONEN.saisons===1?'':'s'):''); const r=rechne(), p=pk(), ex=[...S.extras].map(k=>EX[k].t).join(', '); return (p==='keins'?ex:PAK[p].t+(ex?' und '+ex:''))+(r.voll?' · '+(S.laufzeit>1?S.laufzeit+' Saisons':'eine Saison'):''); }
+function wahlText(){ if(KONDITIONEN)return KONDITIONEN.positionen.map(konditionenText).join(', ')+(KONDITIONEN.hat_saison?' · '+KONDITIONEN.saisons+' Saison'+(KONDITIONEN.saisons===1?'':'s'):''); const r=rechne(), p=pk(), ex=[...S.extras].map(exTitel).join(', '); return (p==='keins'?ex:PAK[p].t+(ex?' und '+ex:''))+(r.voll?' · '+(S.laufzeit>1?S.laufzeit+' Saisons':'eine Saison'):''); }
 function bonZeig(schnell){ if(KONDITIONEN){konditionenBon();return;} const r=rechne(), b=$('#bon'), sw=$('#swVerl'); sw.hidden=!r.voll; sw.setAttribute('aria-checked',S.verl); $('small',sw).textContent=S.verl?'Nach der gewählten Laufzeit verlängert sich der Vertrag um je eine Saison.':'Aus. Nach der Laufzeit ist Schluss.';
   b.innerHTML='<h3>SV/BSC Mörlenbach</h3><p class="mini">Für'+(S.name?'<br>'+esc(S.name):' euch')+'</p>'
+    +(ANZUG_HINWEIS?'<p class="anzug-status" role="status">'+esc(ANZUG_HINWEIS)+'</p>':'')
     +r.z.map(x=>'<div class="zl"><span>'+x[0]+'</span><span>'+eur(x[1])+'</span></div>').join('')
     +(r.rab?'<div class="zl rab"><span>'+S.laufzeit+' Saisons, '+Math.round(r.rab*100)+' % weniger</span><span>−'+eur(r.ab,true)+'</span></div>':'')
     +(r.voll?'<div class="zl gr"><span>Je Saison</span><span>'+eur(r.jahr,!Number.isInteger(r.jahr))+'</span></div>':'')
     +(r.einmal-r.trikot?'<div class="zl'+(r.voll?'':' gr')+'"><span>Einmalig</span><span>'+eur(r.einmal-r.trikot)+'</span></div>':'')
-    +(r.trikot?'<div class="zl'+(r.voll||r.einmal-r.trikot?'':' gr')+'"><span>Trikots, eigene Rechnung</span><span>ca. '+eur(r.trikot)+'</span></div>':'')
+    +(r.trikot?'<div class="zl'+(r.voll||r.einmal-r.trikot?'':' gr')+'"><span>Bekleidung, eigene Rechnung</span><span>ca. '+eur(r.trikot)+'</span></div>':'')
     +(r.voll&&r.einmal?'<div class="zl sum"><span>Zusammen in der ersten Saison</span><span>'+(r.ca?'ca. ':'')+eur(r.erste,!Number.isInteger(r.erste))+'</span></div>':'')
-    +'<p class="fuss">Preise netto.'+(hatBande()?' Bande: Druck exkl., Montage inkl.':'')+(r.trikot?' Trikots rechnen wir getrennt ab, sobald die Stückzahl feststeht.':'')+'</p>'
+    +'<p class="fuss">Preise netto.'+(hatBande()?' Bande: Druck exkl., Montage inkl.':'')+(r.trikot?' Bekleidung rechnen wir getrennt ab, sobald die Stückzahl feststeht.':'')+'</p>'
     +'<span class="stempel">Preis fest</span>';
   if(S.laufzeit>1&&r.voll)setTimeout(()=>$('.stempel',b).style.setProperty('--st',1),schnell?200:650); }
 $('#swVerl').onclick=()=>{ S.verl=!S.verl; konditionenNutzerPruefen(); bonZeig(true); regieZeig(); };
@@ -2375,7 +2427,7 @@ let notizAlt='';
 function reiseMelden(){ try{ const n=reiseNotiz(); if(!n||n===notizAlt||window.parent===window)return; notizAlt=n; window.parent.postMessage({reise:'notiz',notiz:n},location.origin); }catch(e){} }
 // Die Wahl geht nur mit, wenn die Firma Ja gesagt hat. Vorher ist das Paket nur ein Vorschlag und darf nicht in den Vertrag rutschen.
 function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz(),
-  wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],saisons:S.laufzeit,auto:!!S.verl,beginn:KONDITIONEN?KONDITIONEN.beginn:'2027-07-01'}:null},location.origin); }catch(e){} }
+  wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],anzug_team:S.anzugTeam||null,anzug_seite:S.anzugSeite||AERMEL_SEITE,saisons:S.laufzeit,auto:!!S.verl,beginn:KONDITIONEN?KONDITIONEN.beginn:'2027-07-01'}:null},location.origin); }catch(e){} }
 /* ---------- Speichern, Spur und Wiederkommen (0.99.76, R12, R15, R17) ----------
    Der Rahmen in partner.html kennt den persönlichen Link und spricht mit dem Server (partner_reise_stand, partner_reise_merken).
    Die Reise selbst kennt weder Schlüssel noch Adresse: Sie schickt nur Nachrichten an den Rahmen. Ohne Rahmen wird nichts gespeichert.
@@ -2385,7 +2437,7 @@ const SZ_NAME={start:'Start',worum:'Worum es geht',verb:'Woher kennt ihr uns?',a
 const SID=(()=>{ try{ return crypto.randomUUID(); }catch(e){ return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g,()=>(Math.random()*16|0).toString(16)); } })();
 const T0=Date.now(), szSek={}, klNeu=[]; let klZahl=0, merkUhr=null, GEMERKT=null;
 setInterval(()=>{ if(MERKT&&!NEUES_TEILEN&&!document.hidden){ const id=ORD[S.i]; szSek[id]=(szSek[id]||0)+1; } },1000);
-function standJetzt(){ const o={i:S.i,name:S.name,skeptisch:!!S.skeptisch,auto:!!S.auto,verl:!!S.verl,laufzeit:S.laufzeit,antrieb:S.antrieb.slice(),extras:[...S.extras],info:(S.info||[]).slice(),paket:pk(),aermel:AERMEL_SEITE,eigen:String(S.eigen||'').slice(0,90)};
+function standJetzt(){ const o={i:S.i,name:S.name,skeptisch:!!S.skeptisch,auto:!!S.auto,verl:!!S.verl,laufzeit:S.laufzeit,antrieb:S.antrieb.slice(),extras:[...S.extras],info:(S.info||[]).slice(),paket:pk(),aermel:AERMEL_SEITE,kleidung:KLEIDUNG,anzug_team:S.anzugTeam||null,anzug_seite:S.anzugSeite||AERMEL_SEITE,eigen:String(S.eigen||'').slice(0,90)};
   ['verb','platz','jahr','ja','weg','wann'].forEach(k=>{ if(S[k])o[k]=S[k]; }); ['groesse','pi'].forEach(k=>{ if(S[k]!=null)o[k]=S[k]; }); return o; }
 function merken(){ clearTimeout(merkUhr); merkUhr=null; if(!MERKT)return;
   if(GEMERKT&&S.i===0&&$('#wieder')?.hidden===false)return; // Die Rückkehr-Auswahl hat den gespeicherten Stand noch nicht übernommen.
@@ -2399,9 +2451,9 @@ F.addEventListener('pointerdown',e=>{ if(!MERKT||NEUES_TEILEN||klZahl>=400)retur
 F.addEventListener('click',e=>{if(!GERAHMT||!e.isTrusted||e.target.closest('#reiseTeilen,#regie'))return;const b=e.target.closest('button,input,select,summary,[role="button"]');if(!b)return;const id=ORD[S.i],aktion=b.closest('[data-trikot-vorschau],#reiseBande,#reiseAermel')?'3d':['groesse','bon'].includes(id)?'preis':b.matches('[data-k],[data-w],[data-ja]')?'auswahl':b.matches('.ib,.br')?'info':b.id==='zurB'?'zurueck':'weiter';window.parent.postMessage({reise:'teilen-stat',szene:id,aktion,vertraut:true},location.origin);},{passive:true});
 // Stand aus dem Speicher in die Reise legen: Antworten, Auswahl und alle gedrückten Knöpfe
 function standSetz(st){ const n=neu(); S=n; S.name=String(FIRMA!==null?FIRMA:(st.name||'')); ['verb','platz','jahr','wann'].forEach(k=>{ if(st[k])S[k]=st[k]; });
-  if(['aermel_r','aermel_l'].includes(st.aermel))AERMEL_SEITE=st.aermel;S.eigen=String(st.eigen||'').slice(0,90);const eigen=$('#rEigen');if(eigen)eigen.value=S.eigen;
+  if(['aermel_r','aermel_l'].includes(st.aermel))AERMEL_SEITE=st.aermel;KLEIDUNG=st.kleidung==='anzug'?'anzug':'trikot';S.anzugTeam=typeof st.anzug_team==='string'?st.anzug_team:null;S.anzugSeite=['aermel_l','aermel_r'].includes(st.anzug_seite)?st.anzug_seite:AERMEL_SEITE;S.eigen=String(st.eigen||'').slice(0,90);const eigen=$('#rEigen');if(eigen)eigen.value=S.eigen;
   S.antrieb=(st.antrieb||[]).filter(a=>HAUPT[a]); S.skeptisch=!!st.skeptisch&&!S.antrieb.length; S.auto=!!st.auto; if(st.groesse!=null&&!S.auto)S.groesse=+st.groesse; if(st.pi!=null)S.pi=+st.pi;
-  S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins'; konditionenInStand();
+  S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins'; konditionenInStand();anzugWahlPruefen(false);
   $('#nameIn').value=S.name; setzName(S.name);
   $$('[data-frage="verb"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===S.verb)); $('[data-frage="verb"]').classList.toggle('gewaehlt',!!S.verb); verbBild(S.verb); $('#und').hidden=!S.verb; $('#jahrIn').value=S.jahr||'';
   $$('[data-frage="platz"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===S.platz));

@@ -472,7 +472,7 @@ PLIB.eur=(n,dez)=>{ const r=Math.round((+n||0)*100)/100; return r.toLocaleString
 // Partner des Tages richtet sich nach dem Paket in der Auswahl (höchstes gilt): Club 20 €, Premium und 1896 Partner 40 € unter dem Grundpreis (189 / 169 / 149 €).
 PLIB.sotdPreis=function(l,pos){ const k=(pos||[]).map(e=>e&&e.key), pk=['p1896','premium','club','supporter'].find(x=>k.includes(x)), b=+l.preis;
   return pk==='club'?Math.max(0,b-20):pk==='premium'||pk==='p1896'?Math.max(0,b-40):b; };
-PLIB.TRIKOT_KEYS=['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend'];
+PLIB.TRIKOT_KEYS=['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend','aermel_anzug_l','aermel_anzug_r'];
 PLIB.rechnen=function(pos,leistungen,saisons,opt){
   const s=Math.max(1,Math.min(5,+saisons||1)), rab=s>=3?.10:s===2?.05:0, fassung=+(opt&&opt.abrechnung_fassung)===1?1:0;
   let jahr=0,einmal=0,spende=0,trikot=0,saisonPos=0,mitRab=false; const aus=[];
