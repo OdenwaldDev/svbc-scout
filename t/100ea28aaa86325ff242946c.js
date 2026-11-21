@@ -737,7 +737,7 @@ function sc2JobNew(pre){
     if(art==='spieler'){ F.innerHTML=`<input class="search" id="sc2Q" placeholder="Spieler suchen (Name oder Verein) …" autocomplete="off"><div class="sc2pick" id="sc2Pick"></div>
       <div class="field"><label>Worauf besonders achten? (optional)</label><input id="sc2Fr" maxlength="300" placeholder="z.B. Passt er als Linksfuß in unsere Viererkette?"></div>
       <div class="btnrow sbact"><button class="btn" id="sc2Go" disabled>Bericht erstellen</button></div>`;
-      const list=q=>{ const n=TRC.N?TRC.N(q):String(q).toLowerCase(); const L=players.filter(p=>!p.own&&(!n||(TRC.N?TRC.N(p.name+' '+(p.club||'')):(p.name+' '+p.club).toLowerCase()).includes(n))).slice(0,8);
+      const list=q=>{ const n=TRC.N?TRC.N(q):String(q).toLowerCase(); const L=players.filter(p=>svScoutInScope(p)&&!p.own&&(!n||(TRC.N?TRC.N(p.name+' '+(p.club||'')):(p.name+' '+p.club).toLowerCase()).includes(n))).slice(0,8);
         document.getElementById('sc2Pick').innerHTML=L.map(p=>`<button type="button" class="${sel===p.id?'on':''}" data-pp="${svEsc(p.id)}"><b>${svEsc(p.name)}</b><small>${svEsc((p.cur&&p.cur.club)||p.club||'')} · ${svEsc(sc2PN(p))}</small></button>`).join('')||'<div class="note">Kein Treffer.</div>';
         document.querySelectorAll('#sc2Pick [data-pp]').forEach(b=>b.onclick=()=>{ sel=b.dataset.pp; document.getElementById('sc2Go').disabled=false; list(document.getElementById('sc2Q').value); }); };
       const q=document.getElementById('sc2Q'); if(sel){ const p=trP(sel); q.value=p?p.name:''; document.getElementById('sc2Go').disabled=false; } list(q.value); q.oninput=()=>list(q.value);

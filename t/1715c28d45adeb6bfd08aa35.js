@@ -346,7 +346,7 @@ const SC4_GRUND={ersatz:'Ersatz',verstaerkung:'Verstärkung',abgang:'Abgang erse
 const SC4_ZP={sofort:'Sofort',winter:'Winter',sommer:'Sommer'};
 
 /* ---------- Kandidaten: nur externe ---------- */
-{ const _kl4=kandList; kandList=function(){ return _kl4.apply(this,arguments).filter(p=>!p.own&&!sv4Team(p)); }; }
+{ const _kl4=kandList; kandList=function(){ return _kl4.apply(this,arguments).filter(p=>svScoutInScope(p)&&!p.own&&!sv4Team(p)); }; }
 
 /* ---------- Weniger Tags: Liga + wichtigster Status ---------- */
 { const _bd4=badges; badges=function(p){
@@ -398,9 +398,10 @@ function sc4RadarTabs(){
 const SC4_RF=[['alle','Alle'],['serien','Serien & heiße Läufe'],['talente','Junge Talente'],['beob','Merkliste & beobachtet'],['chancen','Moneyball']];
 if(typeof rdRender==='function'){ const _rr4=rdRender; rdRender=function(){
   const F=SC4_RF.some(x=>x[0]===VR.rf)?VR.rf:'alle', all=VR.radar||[];
+  const scopePick=r=>!r.player_id||svScoutInScope(sv4P(r.player_id));
   const pick={serien:r=>['serie','lauf'].includes(r.typ),talente:r=>['jung','quote'].includes(r.typ),beob:r=>{ const p=r.player_id&&sv4P(r.player_id); return r.typ==='merk'||!!(p&&(p.star||(typeof SC2!=='undefined'&&SC2.follow.has(p.id)))); },alle:r=>r.typ!=='team'}[F];
-  let res; if(F==='chancen'){ VR.rf='chancen'; res=_rr4.apply(this,arguments); }
-  else { VR.radar=all.filter(pick); VR.rf='alle'; try{ res=_rr4.apply(this,arguments); }finally{ VR.radar=all; } }
+  let res; if(F==='chancen'){ VR.rf='chancen'; VR.radar=all.filter(scopePick); try{res=_rr4.apply(this,arguments);}finally{VR.radar=all;} }
+  else { VR.radar=all.filter(scopePick).filter(pick); VR.rf='alle'; try{ res=_rr4.apply(this,arguments); }finally{ VR.radar=all; } }
   VR.rf=F;
   try{ const P=document.getElementById('panel-radar'), t=P&&P.querySelector('.rdf');
     if(t){ t.innerHTML=SC4_RF.map(([k,l])=>`<button class="${F===k?'on':''}" data-rf4="${k}">${l}</button>`).join(''); t.querySelectorAll('[data-rf4]').forEach(b=>b.onclick=()=>{ VR.rf=b.dataset.rf4; rdRender(); }); }
@@ -420,7 +421,7 @@ function sc4Cands(b,n){
   const pr=b.profil||{}, pos=b.pos, lvl={GL:6,KOL:5,A:4,B:3,C:2,D:1};
   const have=new Set(SV4.bk.filter(x=>x.bedarf_id===b.id).map(x=>x.player_id));
   const fit=p=>p.pos===pos?1:(p.pos2||[]).includes(pos)?0.8:(pos==='Flügel'&&p.pos==='ST')||(pos==='ST'&&p.pos==='Flügel')?0.7:0;
-  return players.filter(p=>{ if(have.has(p.id)||sv4Team(p)||p.verzicht)return false; const C=crmOf(p); if(C.s==='no')return false; if(!fit(p))return false;
+  return players.filter(p=>{ if(!svScoutInScope(p)||have.has(p.id)||sv4Team(p)||p.verzicht)return false; const C=crmOf(p); if(C.s==='no')return false; if(!fit(p))return false;
       if(pr.alter_von&&p.alter!=null&&p.alter<+pr.alter_von)return false; if(pr.alter_bis&&p.alter!=null&&p.alter>+pr.alter_bis)return false;
       if(pr.km_max&&p.km!=null&&p.km>+pr.km_max)return false; if(pr.liga_min&&!p.isJugend&&(lvl[ligaBase((p.cur&&p.cur.sub)||p.liga)]||0)<lvl[pr.liga_min])return false;
       if(pr.fuss&&p.fuss&&p.fuss!==pr.fuss&&p.fuss!=='Beidfüßig')return false; if(p.isJugend&&!pr.jugend)return false; return true; })
@@ -441,7 +442,7 @@ function sc4Bedarf(){
   host.innerHTML=`<div class="card bd4-top"><div class="kd4-lh"><h3>${SVI('target')} Bedarfe <small>Ausgangspunkt fürs Scouting</small></h3><button class="btn sm" data-bnew>${SVI('plus')} Neuer Bedarf</button></div>
       <div class="flow4">${SC4_FLOW.map((t,i)=>`<span class="${i<=1?'on':''}">${t}</span>`).join('<i>›</i>')}</div>
       <div class="chips4">${[['offen','Offen'],['zu','Abgeschlossen'],['alle','Alle']].map(([k,t])=>`<button type="button" class="${f===k?'on':''}" data-bf="${k}">${t}</button>`).join('')}</div>
-      ${L.length?`<div class="bd4g">${L.map(b=>{ const K=SV4.bk.filter(x=>x.bedarf_id===b.id), st=sc4Stage(b), fp=b.fuer_player&&sv4P(b.fuer_player);
+      ${L.length?`<div class="bd4g">${L.map(b=>{ const K=SV4.bk.filter(x=>x.bedarf_id===b.id&&svScoutInScope(sv4P(x.player_id))), st=sc4Stage(b), fp=b.fuer_player&&sv4P(b.fuer_player);
         return `<button type="button" class="bd4c${open&&open.id===b.id?' on':''} p-${b.prio}" data-bopen="${b.id}"><b>${sv4Esc(b.titel)}</b>
           <span>${sv4Esc(SV4_POSL[b.pos]||b.pos)} · ${SV4_TEAM[b.team]} · ${sv4SL(b.saison)} · ${SC4_ZP[b.zeitpunkt]||''}</span>
           <small>${sv4Esc(SC4_GRUND[b.grund]||'')}${fp?' für '+sv4Esc(fp.name):''} · ${K.length} Kandidaten${K.filter(x=>x.status==='shortlist').length?' · '+K.filter(x=>x.status==='shortlist').length+' Shortlist':''}</small>
@@ -456,7 +457,7 @@ function sc4Bedarf(){
   try{ if(typeof sc2Load==='function'){ sc2Load(); sc2ScoutBox(); sc2PlanBox(); } }catch(e){ console.warn(e); }
 }
 function sc4Detail(b){
-  const K=SV4.bk.filter(x=>x.bedarf_id===b.id), pr=b.profil||{}, st=sc4Stage(b);
+  const K=SV4.bk.filter(x=>x.bedarf_id===b.id&&svScoutInScope(sv4P(x.player_id))), pr=b.profil||{}, st=sc4Stage(b);
   const jobs=(typeof SC2!=='undefined'?SC2.jobs:[]).filter(j=>j.bedarf_id===b.id);
   const sug=sc4Cands(b,6), intern=sc4Intern(b);
   const prof=[pr.alter_von||pr.alter_bis?`Alter ${pr.alter_von||'?'}–${pr.alter_bis||'?'}`:'',pr.fuss?pr.fuss:'',pr.liga_min?`mind. ${LIGA_NAME[pr.liga_min]||pr.liga_min}`:'',pr.km_max?`bis ${pr.km_max} km`:'',pr.rolle?sv4Esc(pr.rolle):'',pr.jugend?'inkl. A-Jugend':''].filter(Boolean);

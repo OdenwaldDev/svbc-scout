@@ -78,7 +78,7 @@ function sc2AddPick(pos,s){
   svModal(`<div class="mhead"><div class="rm-ic" style="width:46px;height:46px">${SVI('plus')}</div><div><h2 style="margin:0">${SC2_PN[pos]} · Saison ${sc2SN(s)}</h2><div class="msub">Aus Merkliste, Beobachteten oder der ganzen Datenbank</div></div></div>
     <input class="search" id="sc2AQ" placeholder="Name oder Verein …" autocomplete="off"><div class="sc2pick" id="sc2AP"></div>`);
   const pref=p=>(p.star?2:0)+(SC2.follow.has(p.id)?2:0)+(sc2Pos(p)===pos?3:(SC2_NAH[pos]||[]).includes(sc2Pos(p))?1:0);
-  const list=q=>{ const n=(TRC.N?TRC.N(q):q.toLowerCase()); const L=players.filter(p=>!p.own&&!sc2No(p.id)&&(!n||(TRC.N?TRC.N(p.name+' '+(p.club||'')):(p.name+' '+p.club).toLowerCase()).includes(n))).sort((a,b)=>pref(b)-pref(a)).slice(0,10);
+  const list=q=>{ const n=(TRC.N?TRC.N(q):q.toLowerCase()); const L=players.filter(p=>svScoutInScope(p)&&!p.own&&!sc2No(p.id)&&(!n||(TRC.N?TRC.N(p.name+' '+(p.club||'')):(p.name+' '+p.club).toLowerCase()).includes(n))).sort((a,b)=>pref(b)-pref(a)).slice(0,10);
     document.getElementById('sc2AP').innerHTML=L.map(p=>`<button type="button" data-ap="${svEsc(p.id)}"><b>${p.star?'⭐ ':''}${SC2.follow.has(p.id)?'🔔 ':''}${svEsc(p.name)}</b><small>${svEsc((p.cur&&p.cur.club)||p.club||'')} · ${svEsc(sc2PN(p))}</small></button>`).join('')||'<div class="note">Kein Treffer.</div>';
     document.querySelectorAll('#sc2AP [data-ap]').forEach(b=>b.onclick=async()=>{ const {error}=await SVB.sb.from('saison_plan').upsert({saison:s,pos,player_id:b.dataset.ap,status:'ziel'}); if(error)return kToast('⚠️ '+error.message); closeOverlay(); kToast('🎯 Als Ziel eingeplant'); await sc2Load(true); }); };
   const q=document.getElementById('sc2AQ'); list(''); q.oninput=()=>list(q.value); q.focus();

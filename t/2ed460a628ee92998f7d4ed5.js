@@ -667,7 +667,7 @@ const S1_AKTIV=['offen','suche','shortlist'];
 
 function s1LigaKey(p){ const l=String((p&&p.cur&&p.cur.sub)||(p&&p.liga)||''); return S1_LKEY[l]||(V1K.LIGA[l]?l:null); }
 function s1Liga(p){ const k=s1LigaKey(p); return k?V1K.LIGA[k]:String((p&&p.liga)||''); }
-function s1Extern(p){ return p&&!p.own&&!sv4Team(p)&&!p.verzicht; }
+function s1Extern(p){ return p&&svScoutInScope(p)&&!p.own&&!sv4Team(p)&&!p.verzicht; }
 function s1AttrLaden(){ if(S1.attr)return Promise.resolve(); if(S1.attrP)return S1.attrP;
   S1.attrP=(async()=>{ try{ S1.attr=(await v1Rpc('rating_v1_attribute'))||{}; }catch(e){ S1.attr={}; } S1.attrP=null; })(); return S1.attrP; }
 function s1Ehemalig(){
@@ -815,7 +815,7 @@ function s1Kandidaten(){
   const P=k1Panel('skand'); if(!P||!s1Bereit(P,s1Kandidaten))return;
   const bed=new Map((SV4.bed||[]).map(b=>[b.id,b])), heute=sv4Today();
   if(S1.kb&&!bed.has(S1.kb))S1.kb='';
-  const alle=(SV4.bk||[]).filter(k=>bed.has(k.bedarf_id)&&(!S1.kb||k.bedarf_id===S1.kb)&&sv4P(k.player_id));
+  const alle=(SV4.bk||[]).filter(k=>bed.has(k.bedarf_id)&&(!S1.kb||k.bedarf_id===S1.kb)&&svScoutInScope(sv4P(k.player_id)));
   const akt=alle.filter(k=>s1KAktiv(k)&&S1_AKTIV.concat(['entschieden']).includes(bed.get(k.bedarf_id).status)), abg=alle.filter(k=>!akt.includes(k));
   const card=k=>{ const p=sv4P(k.player_id), b=bed.get(k.bedarf_id), x=s1Bewerten(p,b,k), f=k.wiedervorlage&&k.wiedervorlage<=heute;
     return `<button type="button" class="s1-k${f?' faellig':''}" data-s1k="${k1E(k.bedarf_id)}|${k1E(k.player_id)}"><b>${k1E(p.name)} <span style="float:right">${x.sp.ca??'?'}</span></b>
@@ -828,6 +828,7 @@ function s1Kandidaten(){
   const bOpt=p=>{ const pass=offenB.filter(b=>V1K.passung({pos:p.pos,pos2:p.pos2||[]},s1Pos(b))>=.5); return (pass.length?pass:offenB).map(b=>`<option value="${k1E(b.id)}">${k1E(b.titel)}</option>`).join(''); };
   P.innerHTML=`${k1Kopf('Kandidaten','Vom Kandidaten über Kontakt und Gespräch zur Entscheidung. Interesse und Machbarkeit sind Fakten, keine Stärke.')}
     <div class="k1-leiste"><label>Bedarf <select data-s1kb><option value="">alle</option>${(SV4.bed||[]).filter(b=>S1_AKTIV.includes(b.status)||b.id===S1.kb).map(b=>`<option value="${k1E(b.id)}"${b.id===S1.kb?' selected':''}>${k1E(b.titel)}</option>`).join('')}</select></label></div>
+    ${!alle.length?'<p class="note">Keine Kandidaten in dieser Auswahl. In der Gruppenliga zeigen wir nur Vereine aus Bergstraße und Odenwald. Bisherige Notizen bleiben gespeichert. Neue Kandidaten findest du in der Spielersuche.</p>':''}
     <div class="s1-pipe">${Object.entries(S1_STUFE).map(([st,l])=>{ const L=akt.filter(k=>(k.stufe||'kandidat')===st); return `<div class="s1-sp"><h4><span>${l}</span><span>${L.length}</span></h4>${L.map(card).join('')}</div>`; }).join('')}</div>
     ${ohne.length&&offenB.length?`<div class="card"><h3 class="trh">${SVI('users')} Kandidaten ohne Bedarf <small>${ohne.length}</small></h3><p class="note small">Aus der bisherigen Kandidatenliste. Einem Bedarf zuordnen, damit Fit und Empfehlung greifen.</p>
       ${ohne.map(p=>`<div class="k1-oe"><span class="lnk" data-svp="${k1E(p.id)}">${k1E(p.name)}</span><small>${k1E(svPosTxt(p)||'')}</small><select data-s1zu="${k1E(p.id)}">${bOpt(p)}</select><button class="btn sm ghost" type="button" data-s1zuok="${k1E(p.id)}">Zuordnen</button></div>`).join('')}</div>`:''}

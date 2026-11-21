@@ -570,7 +570,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.114', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.115', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -676,6 +676,28 @@ function appInit(){
   appRegisterSW();
   setTimeout(()=>appCheckUpdate(true),4000);
 }
+
+/* Gruppenliga scouting scope, verified clubs in vendor/scouting-scope.json. */
+function svScoutInScope(p){
+ if(!p)return false;
+ if(p.own||p.isJugend||(typeof sv4Team==='function'&&['1','2','A','B'].includes(sv4Team(p))))return true;
+ const gl=l=>l==='GL'||l==='herren-gruppenliga-darmstadt';
+ const names=new Set(['SV Fürth','FC Fürth','FSG Riedrode','Tvgg. Lorsch','SC Olympia Lorsch','TSV Rot-Weiss Auerbach','TSV Rot-Weiß Auerbach','TSV Auerbach','TSV Höchst']);
+ const clubOk=r=>["sv-fuerth", "fc-fuerth", "fsg-riedrode", "tsv-hoechst", "tvgg-lorsch", "sc-olympia-lorsch", "tsv-rot-weiss-auerbach"].includes(r.club_slug)||[87768, 23257, 39284, 26305, 87762, 87761, 87773].includes(Number(r.team_id))||names.has(r.verein||r.mannschaft||r.club);
+ const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], season=typeof klaSk==='function'?klaSk('cur'):null;
+ const rows=K&&K[season]&&K[season].zeilen, active=(rows||[]).filter(r=>r.kader===true);
+ const basis=active.length?active:(rows||[]).filter(r=>Number(r.einsaetze)>0);
+ if(basis.length)return basis.some(r=>!gl(r.league)||clubOk(r));
+ const now=typeof svLigaJetzt==='function'?svLigaJetzt(p):null;
+ const league=now&&now.jetzt?now.liga:(p.cur&&p.cur.liga)||p.liga;
+ const club=now&&now.jetzt?now.club:(p.cur&&p.cur.club)||p.club;
+ return !gl(league)||clubOk({club,club_slug:p.club_slug,team_id:p.team_id});
+}
+// Re-evaluated on each render, including initial load, pull and push reload.
+{const original=visible;visible=function(){return original.apply(this,arguments).filter(svScoutInScope);};}
+
+// Home scouting suggestions share the same exclusion, without removing profiles.
+if(typeof crmHidden==='function'){const prior=crmHidden;crmHidden=function(p){return !svScoutInScope(p)||prior.apply(this,arguments);};}
 
 /* =====================================================================
    SV/BSC Scout v3 · Rollen, Supabase-Sync, Nutzerverwaltung, App-Shell

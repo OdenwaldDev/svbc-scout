@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.114', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.115', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -2205,6 +2205,28 @@ function appInit(){
   appRegisterSW();
   setTimeout(()=>appCheckUpdate(true),4000);
 }
+
+/* Gruppenliga scouting scope, verified clubs in vendor/scouting-scope.json. */
+function svScoutInScope(p){
+ if(!p)return false;
+ if(p.own||p.isJugend||(typeof sv4Team==='function'&&['1','2','A','B'].includes(sv4Team(p))))return true;
+ const gl=l=>l==='GL'||l==='herren-gruppenliga-darmstadt';
+ const names=new Set(['SV Fürth','FC Fürth','FSG Riedrode','Tvgg. Lorsch','SC Olympia Lorsch','TSV Rot-Weiss Auerbach','TSV Rot-Weiß Auerbach','TSV Auerbach','TSV Höchst']);
+ const clubOk=r=>["sv-fuerth", "fc-fuerth", "fsg-riedrode", "tsv-hoechst", "tvgg-lorsch", "sc-olympia-lorsch", "tsv-rot-weiss-auerbach"].includes(r.club_slug)||[87768, 23257, 39284, 26305, 87762, 87761, 87773].includes(Number(r.team_id))||names.has(r.verein||r.mannschaft||r.club);
+ const K=typeof KLAW!=='undefined'&&KLAW.by&&KLAW.by[p.id], season=typeof klaSk==='function'?klaSk('cur'):null;
+ const rows=K&&K[season]&&K[season].zeilen, active=(rows||[]).filter(r=>r.kader===true);
+ const basis=active.length?active:(rows||[]).filter(r=>Number(r.einsaetze)>0);
+ if(basis.length)return basis.some(r=>!gl(r.league)||clubOk(r));
+ const now=typeof svLigaJetzt==='function'?svLigaJetzt(p):null;
+ const league=now&&now.jetzt?now.liga:(p.cur&&p.cur.liga)||p.liga;
+ const club=now&&now.jetzt?now.club:(p.cur&&p.cur.club)||p.club;
+ return !gl(league)||clubOk({club,club_slug:p.club_slug,team_id:p.team_id});
+}
+// Re-evaluated on each render, including initial load, pull and push reload.
+{const original=visible;visible=function(){return original.apply(this,arguments).filter(svScoutInScope);};}
+
+// Home scouting suggestions share the same exclusion, without removing profiles.
+if(typeof crmHidden==='function'){const prior=crmHidden;crmHidden=function(p){return !svScoutInScope(p)||prior.apply(this,arguments);};}
 
 /* =====================================================================
    SV/BSC Scout v3 · Rollen, Supabase-Sync, Nutzerverwaltung, App-Shell
@@ -6729,7 +6751,7 @@ function sc2JobNew(pre){
     if(art==='spieler'){ F.innerHTML=`<input class="search" id="sc2Q" placeholder="Spieler suchen (Name oder Verein) …" autocomplete="off"><div class="sc2pick" id="sc2Pick"></div>
       <div class="field"><label>Worauf besonders achten? (optional)</label><input id="sc2Fr" maxlength="300" placeholder="z.B. Passt er als Linksfuß in unsere Viererkette?"></div>
       <div class="btnrow sbact"><button class="btn" id="sc2Go" disabled>Bericht erstellen</button></div>`;
-      const list=q=>{ const n=TRC.N?TRC.N(q):String(q).toLowerCase(); const L=players.filter(p=>!p.own&&(!n||(TRC.N?TRC.N(p.name+' '+(p.club||'')):(p.name+' '+p.club).toLowerCase()).includes(n))).slice(0,8);
+      const list=q=>{ const n=TRC.N?TRC.N(q):String(q).toLowerCase(); const L=players.filter(p=>svScoutInScope(p)&&!p.own&&(!n||(TRC.N?TRC.N(p.name+' '+(p.club||'')):(p.name+' '+p.club).toLowerCase()).includes(n))).slice(0,8);
         document.getElementById('sc2Pick').innerHTML=L.map(p=>`<button type="button" class="${sel===p.id?'on':''}" data-pp="${svEsc(p.id)}"><b>${svEsc(p.name)}</b><small>${svEsc((p.cur&&p.cur.club)||p.club||'')} · ${svEsc(sc2PN(p))}</small></button>`).join('')||'<div class="note">Kein Treffer.</div>';
         document.querySelectorAll('#sc2Pick [data-pp]').forEach(b=>b.onclick=()=>{ sel=b.dataset.pp; document.getElementById('sc2Go').disabled=false; list(document.getElementById('sc2Q').value); }); };
       const q=document.getElementById('sc2Q'); if(sel){ const p=trP(sel); q.value=p?p.name:''; document.getElementById('sc2Go').disabled=false; } list(q.value); q.oninput=()=>list(q.value);
@@ -6856,7 +6878,7 @@ function sc2AddPick(pos,s){
   svModal(`<div class="mhead"><div class="rm-ic" style="width:46px;height:46px">${SVI('plus')}</div><div><h2 style="margin:0">${SC2_PN[pos]} · Saison ${sc2SN(s)}</h2><div class="msub">Aus Merkliste, Beobachteten oder der ganzen Datenbank</div></div></div>
     <input class="search" id="sc2AQ" placeholder="Name oder Verein …" autocomplete="off"><div class="sc2pick" id="sc2AP"></div>`);
   const pref=p=>(p.star?2:0)+(SC2.follow.has(p.id)?2:0)+(sc2Pos(p)===pos?3:(SC2_NAH[pos]||[]).includes(sc2Pos(p))?1:0);
-  const list=q=>{ const n=(TRC.N?TRC.N(q):q.toLowerCase()); const L=players.filter(p=>!p.own&&!sc2No(p.id)&&(!n||(TRC.N?TRC.N(p.name+' '+(p.club||'')):(p.name+' '+p.club).toLowerCase()).includes(n))).sort((a,b)=>pref(b)-pref(a)).slice(0,10);
+  const list=q=>{ const n=(TRC.N?TRC.N(q):q.toLowerCase()); const L=players.filter(p=>svScoutInScope(p)&&!p.own&&!sc2No(p.id)&&(!n||(TRC.N?TRC.N(p.name+' '+(p.club||'')):(p.name+' '+p.club).toLowerCase()).includes(n))).sort((a,b)=>pref(b)-pref(a)).slice(0,10);
     document.getElementById('sc2AP').innerHTML=L.map(p=>`<button type="button" data-ap="${svEsc(p.id)}"><b>${p.star?'⭐ ':''}${SC2.follow.has(p.id)?'🔔 ':''}${svEsc(p.name)}</b><small>${svEsc((p.cur&&p.cur.club)||p.club||'')} · ${svEsc(sc2PN(p))}</small></button>`).join('')||'<div class="note">Kein Treffer.</div>';
     document.querySelectorAll('#sc2AP [data-ap]').forEach(b=>b.onclick=async()=>{ const {error}=await SVB.sb.from('saison_plan').upsert({saison:s,pos,player_id:b.dataset.ap,status:'ziel'}); if(error)return kToast('⚠️ '+error.message); closeOverlay(); kToast('🎯 Als Ziel eingeplant'); await sc2Load(true); }); };
   const q=document.getElementById('sc2AQ'); list(''); q.oninput=()=>list(q.value); q.focus();
@@ -7875,7 +7897,7 @@ const SC4_GRUND={ersatz:'Ersatz',verstaerkung:'Verstärkung',abgang:'Abgang erse
 const SC4_ZP={sofort:'Sofort',winter:'Winter',sommer:'Sommer'};
 
 /* ---------- Kandidaten: nur externe ---------- */
-{ const _kl4=kandList; kandList=function(){ return _kl4.apply(this,arguments).filter(p=>!p.own&&!sv4Team(p)); }; }
+{ const _kl4=kandList; kandList=function(){ return _kl4.apply(this,arguments).filter(p=>svScoutInScope(p)&&!p.own&&!sv4Team(p)); }; }
 
 /* ---------- Weniger Tags: Liga + wichtigster Status ---------- */
 { const _bd4=badges; badges=function(p){
@@ -7927,9 +7949,10 @@ function sc4RadarTabs(){
 const SC4_RF=[['alle','Alle'],['serien','Serien & heiße Läufe'],['talente','Junge Talente'],['beob','Merkliste & beobachtet'],['chancen','Moneyball']];
 if(typeof rdRender==='function'){ const _rr4=rdRender; rdRender=function(){
   const F=SC4_RF.some(x=>x[0]===VR.rf)?VR.rf:'alle', all=VR.radar||[];
+  const scopePick=r=>!r.player_id||svScoutInScope(sv4P(r.player_id));
   const pick={serien:r=>['serie','lauf'].includes(r.typ),talente:r=>['jung','quote'].includes(r.typ),beob:r=>{ const p=r.player_id&&sv4P(r.player_id); return r.typ==='merk'||!!(p&&(p.star||(typeof SC2!=='undefined'&&SC2.follow.has(p.id)))); },alle:r=>r.typ!=='team'}[F];
-  let res; if(F==='chancen'){ VR.rf='chancen'; res=_rr4.apply(this,arguments); }
-  else { VR.radar=all.filter(pick); VR.rf='alle'; try{ res=_rr4.apply(this,arguments); }finally{ VR.radar=all; } }
+  let res; if(F==='chancen'){ VR.rf='chancen'; VR.radar=all.filter(scopePick); try{res=_rr4.apply(this,arguments);}finally{VR.radar=all;} }
+  else { VR.radar=all.filter(scopePick).filter(pick); VR.rf='alle'; try{ res=_rr4.apply(this,arguments); }finally{ VR.radar=all; } }
   VR.rf=F;
   try{ const P=document.getElementById('panel-radar'), t=P&&P.querySelector('.rdf');
     if(t){ t.innerHTML=SC4_RF.map(([k,l])=>`<button class="${F===k?'on':''}" data-rf4="${k}">${l}</button>`).join(''); t.querySelectorAll('[data-rf4]').forEach(b=>b.onclick=()=>{ VR.rf=b.dataset.rf4; rdRender(); }); }
@@ -7949,7 +7972,7 @@ function sc4Cands(b,n){
   const pr=b.profil||{}, pos=b.pos, lvl={GL:6,KOL:5,A:4,B:3,C:2,D:1};
   const have=new Set(SV4.bk.filter(x=>x.bedarf_id===b.id).map(x=>x.player_id));
   const fit=p=>p.pos===pos?1:(p.pos2||[]).includes(pos)?0.8:(pos==='Flügel'&&p.pos==='ST')||(pos==='ST'&&p.pos==='Flügel')?0.7:0;
-  return players.filter(p=>{ if(have.has(p.id)||sv4Team(p)||p.verzicht)return false; const C=crmOf(p); if(C.s==='no')return false; if(!fit(p))return false;
+  return players.filter(p=>{ if(!svScoutInScope(p)||have.has(p.id)||sv4Team(p)||p.verzicht)return false; const C=crmOf(p); if(C.s==='no')return false; if(!fit(p))return false;
       if(pr.alter_von&&p.alter!=null&&p.alter<+pr.alter_von)return false; if(pr.alter_bis&&p.alter!=null&&p.alter>+pr.alter_bis)return false;
       if(pr.km_max&&p.km!=null&&p.km>+pr.km_max)return false; if(pr.liga_min&&!p.isJugend&&(lvl[ligaBase((p.cur&&p.cur.sub)||p.liga)]||0)<lvl[pr.liga_min])return false;
       if(pr.fuss&&p.fuss&&p.fuss!==pr.fuss&&p.fuss!=='Beidfüßig')return false; if(p.isJugend&&!pr.jugend)return false; return true; })
@@ -7970,7 +7993,7 @@ function sc4Bedarf(){
   host.innerHTML=`<div class="card bd4-top"><div class="kd4-lh"><h3>${SVI('target')} Bedarfe <small>Ausgangspunkt fürs Scouting</small></h3><button class="btn sm" data-bnew>${SVI('plus')} Neuer Bedarf</button></div>
       <div class="flow4">${SC4_FLOW.map((t,i)=>`<span class="${i<=1?'on':''}">${t}</span>`).join('<i>›</i>')}</div>
       <div class="chips4">${[['offen','Offen'],['zu','Abgeschlossen'],['alle','Alle']].map(([k,t])=>`<button type="button" class="${f===k?'on':''}" data-bf="${k}">${t}</button>`).join('')}</div>
-      ${L.length?`<div class="bd4g">${L.map(b=>{ const K=SV4.bk.filter(x=>x.bedarf_id===b.id), st=sc4Stage(b), fp=b.fuer_player&&sv4P(b.fuer_player);
+      ${L.length?`<div class="bd4g">${L.map(b=>{ const K=SV4.bk.filter(x=>x.bedarf_id===b.id&&svScoutInScope(sv4P(x.player_id))), st=sc4Stage(b), fp=b.fuer_player&&sv4P(b.fuer_player);
         return `<button type="button" class="bd4c${open&&open.id===b.id?' on':''} p-${b.prio}" data-bopen="${b.id}"><b>${sv4Esc(b.titel)}</b>
           <span>${sv4Esc(SV4_POSL[b.pos]||b.pos)} · ${SV4_TEAM[b.team]} · ${sv4SL(b.saison)} · ${SC4_ZP[b.zeitpunkt]||''}</span>
           <small>${sv4Esc(SC4_GRUND[b.grund]||'')}${fp?' für '+sv4Esc(fp.name):''} · ${K.length} Kandidaten${K.filter(x=>x.status==='shortlist').length?' · '+K.filter(x=>x.status==='shortlist').length+' Shortlist':''}</small>
@@ -7985,7 +8008,7 @@ function sc4Bedarf(){
   try{ if(typeof sc2Load==='function'){ sc2Load(); sc2ScoutBox(); sc2PlanBox(); } }catch(e){ console.warn(e); }
 }
 function sc4Detail(b){
-  const K=SV4.bk.filter(x=>x.bedarf_id===b.id), pr=b.profil||{}, st=sc4Stage(b);
+  const K=SV4.bk.filter(x=>x.bedarf_id===b.id&&svScoutInScope(sv4P(x.player_id))), pr=b.profil||{}, st=sc4Stage(b);
   const jobs=(typeof SC2!=='undefined'?SC2.jobs:[]).filter(j=>j.bedarf_id===b.id);
   const sug=sc4Cands(b,6), intern=sc4Intern(b);
   const prof=[pr.alter_von||pr.alter_bis?`Alter ${pr.alter_von||'?'}–${pr.alter_bis||'?'}`:'',pr.fuss?pr.fuss:'',pr.liga_min?`mind. ${LIGA_NAME[pr.liga_min]||pr.liga_min}`:'',pr.km_max?`bis ${pr.km_max} km`:'',pr.rolle?sv4Esc(pr.rolle):'',pr.jugend?'inkl. A-Jugend':''].filter(Boolean);
@@ -18661,6 +18684,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.115',v:'0.99.115',datum:'2026-11-21',titel:'Scouting in unserem Gebiet',kurz:'In der Gruppenliga konzentriert sich die Spielersuche auf Bergstraße und Odenwald.',
+    punkte:[{ic:'i',t:'Passende Vereine im Blick',d:'Gruppenliga-Spieler anderer Kreise erscheinen nicht mehr in Suche, Kandidatenlisten und automatischen Scout-Vorschlägen. Eigene Spieler, Jugend und die unteren Ligen bleiben erhalten. Bisherige Notizen und Statistiken bleiben gespeichert.',r:'scout'}]},
   {id:'0.99.114',v:'0.99.114',datum:'2026-11-21',titel:'Vereinbarungen im Partnerflow',kurz:'Nachlässe bleiben bis zum Abschluss nachvollziehbar. Trikots werden nach bestätigter Stückzahl getrennt abgerechnet.',
     punkte:[{ic:'i',t:'Konditionen im Gespräch festhalten',d:'Mit Vertragsrecht kannst du je Leistung einen Nachlass und zusätzliche Partnerpakete vereinbaren. Die Firma sieht dieselben Preise in der Reise und im Abschluss. Eine geänderte Auswahl löst die Preisbindung sichtbar.',r:'admin'},{ic:'i',t:'Trikots getrennt abrechnen',d:'Neue Verträge mit Trikots oder Ärmeln zeigen Richtwerte und die getrennte Abrechnung. Nach der Mengenbestätigung legt das Partner-Team die Rechnung an. Ein anderer Endbetrag braucht eine eigene Vereinbarung mit PDF-Beleg. Unterschriebene Verträge bleiben unverändert.',r:'admin'},{ic:'i',t:'Logo je Auftritt vorbereiten',d:'In der Präsentation kannst du das Original und getrennte Druckfassungen für Bande und Ärmel pflegen. Vorschauen auf hellem und dunklem Grund helfen beim Prüfen. Der Stadionüberblick zeigt das ganze Vereinsheim.',r:'admin'}]},
   {id:'0.99.113',v:'0.99.113',datum:'2026-11-20',titel:'Näher am echten Stadion',kurz:'Der Rundgang folgt den Originalfotos genauer und zeigt Vereinsheim und Spielfeld auch zusammen.',
@@ -22825,7 +22850,7 @@ const S1_AKTIV=['offen','suche','shortlist'];
 
 function s1LigaKey(p){ const l=String((p&&p.cur&&p.cur.sub)||(p&&p.liga)||''); return S1_LKEY[l]||(V1K.LIGA[l]?l:null); }
 function s1Liga(p){ const k=s1LigaKey(p); return k?V1K.LIGA[k]:String((p&&p.liga)||''); }
-function s1Extern(p){ return p&&!p.own&&!sv4Team(p)&&!p.verzicht; }
+function s1Extern(p){ return p&&svScoutInScope(p)&&!p.own&&!sv4Team(p)&&!p.verzicht; }
 function s1AttrLaden(){ if(S1.attr)return Promise.resolve(); if(S1.attrP)return S1.attrP;
   S1.attrP=(async()=>{ try{ S1.attr=(await v1Rpc('rating_v1_attribute'))||{}; }catch(e){ S1.attr={}; } S1.attrP=null; })(); return S1.attrP; }
 function s1Ehemalig(){
@@ -22973,7 +22998,7 @@ function s1Kandidaten(){
   const P=k1Panel('skand'); if(!P||!s1Bereit(P,s1Kandidaten))return;
   const bed=new Map((SV4.bed||[]).map(b=>[b.id,b])), heute=sv4Today();
   if(S1.kb&&!bed.has(S1.kb))S1.kb='';
-  const alle=(SV4.bk||[]).filter(k=>bed.has(k.bedarf_id)&&(!S1.kb||k.bedarf_id===S1.kb)&&sv4P(k.player_id));
+  const alle=(SV4.bk||[]).filter(k=>bed.has(k.bedarf_id)&&(!S1.kb||k.bedarf_id===S1.kb)&&svScoutInScope(sv4P(k.player_id)));
   const akt=alle.filter(k=>s1KAktiv(k)&&S1_AKTIV.concat(['entschieden']).includes(bed.get(k.bedarf_id).status)), abg=alle.filter(k=>!akt.includes(k));
   const card=k=>{ const p=sv4P(k.player_id), b=bed.get(k.bedarf_id), x=s1Bewerten(p,b,k), f=k.wiedervorlage&&k.wiedervorlage<=heute;
     return `<button type="button" class="s1-k${f?' faellig':''}" data-s1k="${k1E(k.bedarf_id)}|${k1E(k.player_id)}"><b>${k1E(p.name)} <span style="float:right">${x.sp.ca??'?'}</span></b>
@@ -22986,6 +23011,7 @@ function s1Kandidaten(){
   const bOpt=p=>{ const pass=offenB.filter(b=>V1K.passung({pos:p.pos,pos2:p.pos2||[]},s1Pos(b))>=.5); return (pass.length?pass:offenB).map(b=>`<option value="${k1E(b.id)}">${k1E(b.titel)}</option>`).join(''); };
   P.innerHTML=`${k1Kopf('Kandidaten','Vom Kandidaten über Kontakt und Gespräch zur Entscheidung. Interesse und Machbarkeit sind Fakten, keine Stärke.')}
     <div class="k1-leiste"><label>Bedarf <select data-s1kb><option value="">alle</option>${(SV4.bed||[]).filter(b=>S1_AKTIV.includes(b.status)||b.id===S1.kb).map(b=>`<option value="${k1E(b.id)}"${b.id===S1.kb?' selected':''}>${k1E(b.titel)}</option>`).join('')}</select></label></div>
+    ${!alle.length?'<p class="note">Keine Kandidaten in dieser Auswahl. In der Gruppenliga zeigen wir nur Vereine aus Bergstraße und Odenwald. Bisherige Notizen bleiben gespeichert. Neue Kandidaten findest du in der Spielersuche.</p>':''}
     <div class="s1-pipe">${Object.entries(S1_STUFE).map(([st,l])=>{ const L=akt.filter(k=>(k.stufe||'kandidat')===st); return `<div class="s1-sp"><h4><span>${l}</span><span>${L.length}</span></h4>${L.map(card).join('')}</div>`; }).join('')}</div>
     ${ohne.length&&offenB.length?`<div class="card"><h3 class="trh">${SVI('users')} Kandidaten ohne Bedarf <small>${ohne.length}</small></h3><p class="note small">Aus der bisherigen Kandidatenliste. Einem Bedarf zuordnen, damit Fit und Empfehlung greifen.</p>
       ${ohne.map(p=>`<div class="k1-oe"><span class="lnk" data-svp="${k1E(p.id)}">${k1E(p.name)}</span><small>${k1E(svPosTxt(p)||'')}</small><select data-s1zu="${k1E(p.id)}">${bOpt(p)}</select><button class="btn sm ghost" type="button" data-s1zuok="${k1E(p.id)}">Zuordnen</button></div>`).join('')}</div>`:''}
