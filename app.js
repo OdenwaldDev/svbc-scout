@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.121', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.122', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18698,6 +18698,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.122',v:'0.99.122',datum:'2026-11-21',titel:'Deine Skills und nächsten Ziele',kurz:'15 besondere Skills in Bronze, Silber und Gold. Lukas entscheidet über die Freischaltung.',punkte:[{ic:'i',t:'Schwelle erreicht, Lukas entscheidet',d:'Jaguar, Kopfballmonster, Kraftpaket und weitere Positionsskills zeigen klare Ziele. Geprüfte Werte oder dokumentierte Spielszenen ergeben Vorschläge. Nur Lukas bestätigt mit Ja oder Nein und kann Skills auch zum Start manuell vergeben.'},{ic:'i',t:'Medaillen mit eigenem Charakter',d:'Matte Vereinsmedaillen und gravierte Bildmotive. Dauerhafte Skills haben drei Stufen; Spiel-, Monats-, Jahres- und Meilensteinmedaillen bleiben eine getrennte Vorschau. Deine Spielerwertung wird dadurch nicht künstlich erhöht.'}]},
   {id:'0.99.121',v:'0.99.121',datum:'2026-11-21',titel:'Leistung und Vereinsheft',kurz:'Geprüfte Spielwerte für eure Mannschaft und ein Redaktionspostfach für den Doppelpass.',punkte:[{ic:'i',t:'Leistung im Spielerkonto',d:'Veo-Spielwerte mit Aufnahmequelle erfassen, prüfen und nach Mannschaft vergleichen. Ohne geprüfte Messwerte bleibt die Rangliste leer. Das bestehende Spielerrating bleibt unverändert.'},{ic:'i',t:'Doppelpass redaktionell gestalten',d:'Neues wählbares Cover mit echter Fotografie und klarer Schrift. Quellenbelegte Artikelentwürfe lassen sich im Redaktionspostfach prüfen und auf freie Heftseiten übernehmen.',r:'admin'}]},
   {id:'0.99.120',v:'0.99.120',datum:'2026-11-21',titel:'Gerätesicherung im Bandenstudio',kurz:'Nach einem Logotausch bestätigt der freie Editor die erfolgreiche Sicherung auf diesem Gerät.',punkte:[{ic:'i',t:'Speicherstand stimmt mit dem Entwurf überein',d:'Der freie Editor vergleicht die gespeicherte Fassung nach denselben Regeln wie die Gestaltung. Eine unnötige Warnung beim Verlassen entfällt. Neue Eingaben während einer laufenden Sicherung bleiben bis zum nächsten erfolgreichen Speichern offen.',r:'admin'}]},
   {id:'0.99.119',v:'0.99.119',datum:'2026-11-21',titel:'Banden gestalten und Präsentationen teilen',kurz:'Bandenentwürfe lassen sich je Firma bearbeiten und speichern. Persönliche Präsentationen behalten eure Auswahl.',
@@ -39411,9 +39412,25 @@ if(typeof vtZeigen==='function'){
 }
 
 /* Veo: überprüfte Werte im bestehenden Spielerkonto, kein neuer CA-Score. */
-const VL = {d:null,team:null,metric:'distance_m',period:'month',mode:'total',model:null,seq:0};
+const VL = {d:null,team:null,metric:'distance_m',period:'month',badgeTier:'silber',mode:'total',model:null,seq:0};
 const VL_MET = {distance_m:['Laufstrecke','laufmonster','m'],top_speed_kmh:['Höchsttempo','rakete','km/h'],goals:['Tore','torjaeger',''],assists:['Vorlagen','vorbereiter',''],ga:['Tore + Vorlagen','scorer',''],sprints:['Sprints','rakete',''],recoveries:['Balleroberungen','balljaeger',''],saves:['Paraden','rueckhalt','']};
 const vlE = x => svEsc(String(x == null ? '' : x));
+const VL_TIERS = {
+  bronze:{name:'Bronze',zeit:'Spiel',text:'Eine starke Leistung im einzelnen Spiel.'},
+  silber:{name:'Silber',zeit:'Monat',text:'Sehr gute Leistung über einen ganzen Monat.'},
+  gold:{name:'Gold',zeit:'Jahr',text:'Überragende Leistung im Jahresvergleich.'},
+  platin:{name:'Platin',zeit:'Meilenstein',text:'Die höchste Stufe für besondere langfristige Leistungen.'}
+};
+function vlBadge(motiv,stufe,label){
+  const tier=Object.hasOwn(VL_TIERS,stufe)?stufe:'bronze';
+  const icon=['laufmonster','rakete','torjaeger','vorbereiter','scorer','balljaeger','rueckhalt','bestmarke','jaguar','motor','spielmacher','sicherer_halt','kopfball','kraftpaket'].includes(motiv)?motiv:'bestmarke';
+  return `<span class="vl-medaille vl-medaille-${tier}" role="img" aria-label="${vlE(label+' · '+VL_TIERS[tier].name)}"><span class="vl-praegung" aria-hidden="true"></span><img class="vl-motiv" src="veo/gravur-${icon}.webp" width="120" height="120" alt=""><span class="vl-rangzeichen" aria-hidden="true">${{bronze:"I",silber:"II",gold:"III",platin:"IV"}[tier]}</span></span>`;
+}
+function vlAuszeichnungen(){const tier=VL_TIERS[VL.badgeTier]||VL_TIERS.silber;
+  return `<section class="card"><h3>Deine nächsten Auszeichnungen</h3><p>Vier Stufen, vom starken Spiel bis zum besonderen Meilenstein.</p><div class="vl-stufen" role="group" aria-label="Auszeichnungsstufe ansehen">${Object.entries(VL_TIERS).map(([k,t])=>`<button type="button" class="vl-stufe vl-stufe-${k}" data-vl-tier="${k}" aria-pressed="${k===VL.badgeTier}">${vlBadge('laufmonster',k,t.name)}<b>${t.name}</b><span>${t.zeit}</span></button>`).join('')}</div><p class="vl-stufen-text"><strong>${tier.name}: ${tier.zeit}.</strong> ${tier.text}</p><div class="vl-badges">${[...Object.entries(VL_MET).filter(([k])=>k!=='sprints').map(([,m])=>[m[1],m[0]]),['bestmarke','Persönliche Bestmarke']].map(([icon,name])=>`<div>${vlBadge(icon,VL.badgeTier,name)}<b>${name}</b><small>${tier.name} · ${tier.zeit}</small></div>`).join('')}</div><p class="note">Vorschau, noch nicht vergeben. Kriterien und geprüfter Zeitraumabschluss müssen vor der ersten Vergabe feststehen. Platin ist kein automatisches Upgrade für die meisten Einsätze. Auch persönliche Fortschritte zählen.</p></section>`;
+}
+
+function vlSkills(){return '<section class="card vl-skills"><h3>Skills, die bleiben</h3><p>Jaguar, Kopfballmonster oder Strafraumchef: Entdecke deine Ziele und deine freigeschalteten Skills in Bronze, Silber und Gold. Die Schwelle liefert den Vorschlag, Lukas entscheidet.</p><button class="btn" type="button" onclick="goTab(&quot;skills&quot;)">Spieler-Skills ansehen</button></section>';}
 function vlZeitraum(){const now=new Date(),today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin'}).format(now),y=+today.slice(0,4),m=+today.slice(5,7);
   return {from:VL.period==='year'?y+'-01-01':VL.period==='season'?(y-(m<7?1:0))+'-07-01':today.slice(0,7)+'-01',to:today};}
 async function vlRpc(fn,args){const r=await SVB.sb.rpc(fn,args);if(r.error)throw new Error(r.error.message);return r.data;}
@@ -39428,12 +39445,14 @@ function vlZeigen(){const p=vlPanel(),d=VL.d,z=vlZeitraum(),meta=VL_MET[VL.metri
   <label>Zeitraum<select id="vlPeriod">${[['month','Dieser Monat'],['year','Dieses Jahr'],['season','Diese Saison']].map(([v,t])=>`<option value="${v}"${v===VL.period?' selected':''}>${t}</option>`).join('')}</select></label>
   <label>Wert<select id="vlMetric">${Object.entries(VL_MET).map(([k,m])=>`<option value="${k}"${k===VL.metric?' selected':''}>${m[0]}</option>`).join('')}</select></label>
   <label>Vergleich<select id="vlMode"><option value="total">${VL.metric==='top_speed_kmh'?'Bestwert':'Gesamt'}</option>${VL.metric==='top_speed_kmh'?'':'<option value="per90"'+(VL.mode==='per90'?' selected':'')+'>Je 90 Minuten</option>'}</select></label></div></div>
-  <section class="card"><div class="vl-head"><img src="veo/${meta[1]}.webp" alt="" width="92" height="92"><div><h3>${meta[0]}</h3><p>${z.from.split('-').reverse().join('.')} bis ${z.to.split('-').reverse().join('.')}</p></div></div>
+  <section class="card"><div class="vl-head"><img src="veo/gravur-${meta[1]}.webp" alt="" width="92" height="92"><div><h3>${meta[0]}</h3><p>${z.from.split('-').reverse().join('.')} bis ${z.to.split('-').reverse().join('.')}</p></div></div>
   ${r.ranked.length?`<ol class="vl-list">${r.ranked.map(x=>`<li><b>${x.rank}.</b><span>${vlE(names.get(x.playerId)||'Zuordnung offen')}<small>${x.games} Spiele${x.partial?' · Werte fehlen':''}</small></span><strong>${x.value.toLocaleString('de-DE')} ${meta[2]}</strong></li>`).join('')}</ol>`:'<h3>Noch keine geprüften Werte</h3><p>Nach der ersten ausgewerteten Aufnahme prüft das Trainerteam die Zuordnung und Messwerte. Dann erscheint hier die Rangliste.</p>'}
   <p class="note">Zwischenstand der erfassten Spiele, noch kein Monats- oder Jahressieger. Fehlende Aufnahmen zählen nicht als null. Laufwerte beruhen auf Videoanalyse, nicht auf GPS. Verletzungen und fehlende Einsatzzeit verschlechtern deinen Spielerscore hier nicht.</p>
   ${r.pending.length?`<details><summary>${r.pending.length} Zuordnungen noch ohne vergleichbaren Wert</summary>${r.pending.map(x=>`<p>${vlE(names.get(x.playerId)||'Spieler')}: ${vlE(x.reasons.join(', '))}</p>`).join('')}</details>`:''}</section>
-  <section class="card"><h3>Deine nächsten Auszeichnungen</h3><div class="vl-badges">${Object.entries(VL_MET).filter(([k])=>k!=='sprints').map(([,m])=>`<div><img src="veo/${m[1]}.webp" width="80" height="80" alt="${m[0]}"><b>${m[0]}</b><small>Noch nicht vergeben</small></div>`).join('')}<div><img src="veo/bestmarke.webp" width="80" height="80" alt="Persönliche Bestmarke"><b>Persönliche Bestmarke</b><small>Noch nicht vergeben</small></div></div><p>Alle beginnen bei ihrem eigenen Stand. Auszeichnungen gibt es erst nach geprüftem Abschluss des Zeitraums.</p></section>
+  ${vlAuszeichnungen()}
+  ${vlSkills()}
   <section class="card"><h3>Erfasste Spiele</h3>${d.spiele.length?d.spiele.map(g=>`<p><a target="_blank" rel="noopener noreferrer" href="${vlE(g.quelle)}">${vlE(g.datum)} · Veo-Aufnahme</a> · Stand ${g.revision}${d.pflegen?` <button class="btn ghost" data-vl-edit="${vlE(g.spiel)}">Prüfen</button>`:''}</p>`).join(''):'<p>Noch kein Spiel erfasst.</p>'}${d.pflegen?'<button class="btn" id="vlNeu">Spielwerte erfassen</button><p class="note">Manuelle Übernahme aus der Veo-Aufnahme. Ein automatischer Veo-Abgleich ist noch nicht verbunden.</p>':''}</section></div>`;
+  p.querySelectorAll('[data-vl-tier]').forEach(b=>b.onclick=()=>{VL.badgeTier=b.dataset.vlTier;vlZeigen();p.querySelector('[data-vl-tier="'+VL.badgeTier+'"]').focus();});
   p.querySelector('#vlTeam').onchange=e=>{VL.team=e.target.value;vlLaden();};p.querySelector('#vlPeriod').onchange=e=>{VL.period=e.target.value;vlLaden();};
   p.querySelector('#vlMetric').onchange=e=>{VL.metric=e.target.value;if(VL.metric==='top_speed_kmh')VL.mode='total';vlZeigen();};p.querySelector('#vlMode').onchange=e=>{VL.mode=e.target.value;vlZeigen();};
   p.querySelectorAll('[data-vl-edit]').forEach(b=>b.onclick=()=>vlForm(b.dataset.vlEdit));const neu=p.querySelector('#vlNeu');if(neu)neu.onclick=()=>vlForm();}
@@ -39450,6 +39469,66 @@ function vlForm(id){const old=VL.d.spiele.find(g=>g.spiel===id),rows=old?VL.d.we
 SV_TBL.leistung=['award','Leistung'];SV_PAGES.leistung=['Deine Leistung','Geprüfte Spielwerte und Team-Ranglisten'];try{SVR_TAB.leistung=null;}catch(e){}
 {const old=svTabAllowed;svTabAllowed=function(t){return t==='leistung'?sk96Darf():old.apply(this,arguments);};}
 {const old=goTab;goTab=function(t){if(t==='leistung')vlPanel();const r=old.apply(this,arguments);if(t==='leistung'&&svCurTab()==='leistung')vlLaden();return r;};}
+
+/* Dauerhafte Skills: Server entscheidet über Rechte und Vorschläge. */
+const SS225={data:null,team:null,player:null,edit:false,filter:'Alle',seq:0,busy:false,actor:null,drafts:new Map()};
+const ss225Tier=n=>['Gesperrt','Bronze','Silber','Gold'][n]||'Gesperrt';
+function ss225Panel(){let p=document.getElementById('panel-skills');if(!p){p=document.createElement('section');p.id='panel-skills';p.className='panel';document.getElementById('panel-home').parentNode.appendChild(p);}return p;}
+async function ss225Load(){const seq=++SS225.seq,p=ss225Panel();SS225.data=null;SS225.edit=false;
+  SS225.team=SS225.team||(SK96.d&&SK96.d.ich&&SK96.d.ich.team)||'1';
+  p.innerHTML='<div class="vl card"><h2>Spieler-Skills</h2><p>Deine Ziele werden geladen …</p></div>';
+  try{const d=await vlRpc('skills_laden',{p_team:SS225.team});if(seq!==SS225.seq)return;
+    if(!d||!Array.isArray(d.spieler)||!Array.isArray(d.katalog))throw new Error('Die Skills konnten nicht geladen werden. Bitte erneut versuchen.');
+    if(SS225.player&&!d.spieler.some(x=>x.id===SS225.player))throw new Error('Dieser Spieler ist dieser Mannschaft nicht zugeordnet. Öffne die Skills über dein Spielerkonto oder wähle die richtige Mannschaft.');
+    if(SS225.actor!==d.konto){SS225.drafts.clear();SS225.actor=d.konto;}SS225.data=d;if(!SS225.player)SS225.player=d.spieler.some(x=>x.id===d.ich)?d.ich:d.spieler[0]?.id||null;
+    ss225Render();
+  }catch(e){if(seq!==SS225.seq)return;p.innerHTML='<div class="vl card"><h2>Skills noch nicht verfügbar</h2><p>'+vlE(e.message)+'</p><button class="btn" id="ss225Retry">Erneut laden</button></div>';p.querySelector('button').onclick=ss225Load;}
+}
+function ss225Ziel(k,i){const t=k.ziele[i],art=k.art;return art==='speed'?t.toLocaleString('de-DE')+' km/h in '+k.spiele+' Spielen':art==='distance'?(t/1000).toLocaleString('de-DE')+' km je 90 Trackingminuten in '+k.spiele+' Spielen':art==='assists'?t+' Torvorlagen in mindestens '+k.spiele+' Spielen':art==='saves'?t+' Paraden in mindestens '+k.spiele+' Spielen':t+' von Lukas bestätigte Pflichtspiele nach dem Kriterium unten';}
+function ss225Progress(k,s){const b=s.nachweis;if(!b||!b.erfasst)return 'Noch keine passenden geprüften Belege. Fehlende Werte sind unbekannt.';
+  if(k.art==='speed'||k.art==='distance')return b.anzahl.map((n,i)=>ss225Tier(i+1)+': '+n+' von '+k.spiele+' Spielen').join(' · ');
+  return Number(b.gesamt).toLocaleString('de-DE')+' '+(k.art==='observation'?'bestätigte Spiele':k.art==='assists'?'Vorlagen':'Paraden')+' · '+b.spiele+' Spiele';}
+function ss225Card(k,s){const d=SS225.data,edit=d.pflegen&&SS225.edit,tier=['bronze','silber','gold'][Math.max(0,s.stufe-1)];
+  return `<article data-ss-skill="${vlE(k.id)}"><div class="ss225-emblem ${s.stufe?'':'ss225-locked'}">${s.stufe?vlBadge(k.icon,tier,k.name):vlBadge(k.icon,tier,k.name).replace('aria-label="'+vlE(k.name+' · Bronze')+'"','aria-label="'+vlE(k.name+' · noch gesperrt')+'"')}</div><small>${vlE(k.position)} · dauerhaft</small><h3>${vlE(k.name)}</h3><b>${ss225Tier(s.stufe)}</b>${s.zeit&&s.stufe?'<small>Zuletzt geprüft am '+vlE(new Date(s.zeit).toLocaleDateString('de-DE'))+'</small>':''}
+  ${s.vorschlag?'<p class="ss225-proposal"><strong>Schwelle erreicht: '+ss225Tier(s.vorschlag)+'</strong><br>'+ (d.pflegen?'Entscheidung von Lukas steht aus.':'Lukas prüft die Freischaltung.')+'</p>':''}
+  ${s.pruefung?'<p class="ss225-proposal">Belege haben sich geändert. Lukas prüft den bestehenden Skill erneut.</p>':''}
+  <details><summary>Ziele & Belege ansehen</summary><p>Vereinsziele, Fassung ${k.version}. Schwellen sind Vorschläge für eure Bewertung, keine Veo-Benchmarks.</p><ol>${k.ziele.map((_,i)=>'<li><b>'+ss225Tier(i+1)+':</b> '+vlE(ss225Ziel(k,i))+'</li>').join('')}</ol><p>${vlE(k.kriterium)}</p><p>${vlE(ss225Progress(k,s))}</p><p>Belege aus der laufenden Saison. Bronze, Silber und Gold bleiben nach der Vergabe bestehen. Es gibt keinen automatischen Punktebonus.</p>
+  ${d.pflegen?(s.nachweis.belege||[]).map(b=>b.quelle?'<p><a href="'+vlE(b.quelle)+'" target="_blank" rel="noopener noreferrer">'+vlE(b.datum)+' · Aufnahme</a> · Wert '+vlE(Number(b.wert).toLocaleString('de-DE'))+' '+({speed:'km/h',distance:'m je 90 Trackingminuten',assists:'Vorlagen',saves:'Paraden'}[k.art]||'')+' · Fassung '+b.revision+'</p>':'<p>'+vlE(b.datum)+': '+vlE(b.notiz)+(edit?'<button class="btn ghost" data-ss-action="zurueck" data-date="'+vlE(b.datum)+'">Beleg zurücknehmen</button>':'')+'</p>').join(''):''}</details>
+  ${edit?`<label>Kurze fachliche Begründung<textarea data-ss-note maxlength="800" placeholder="Zum Beispiel: Szenen geprüft, Leistung wiederholt bestätigt.">${vlE(SS225.drafts.get(SS225.player+':'+k.id)||'')}</textarea></label>
+  ${s.vorschlag?'<div class="ss225-actions"><button class="btn" data-ss-action="ja" data-tier="'+s.vorschlag+'">Ja, '+ss225Tier(s.vorschlag)+' freischalten</button><button class="btn ghost" data-ss-action="nein" data-tier="'+s.stufe+'">Nein, noch nicht</button></div>':''}
+  <div class="ss225-actions"><button class="btn" data-ss-action="manuell" data-tier="${s.stufe?0:1}" aria-pressed="${!!s.stufe}">${s.stufe?'Deaktivieren':'Aktivieren: Bronze'}</button><label>Stufe<select data-ss-level><option value="1"${s.stufe===1?' selected':''}>Bronze</option><option value="2"${s.stufe===2?' selected':''}>Silber</option><option value="3"${s.stufe===3?' selected':''}>Gold</option></select></label><button class="btn ghost" data-ss-action="stufe">Stufe bestätigen</button></div>
+  ${k.art==='observation'?'<details><summary>Qualifizierendes Spiel dokumentieren</summary><p>Bestätige das oben beschriebene Kriterium mit Gegner, Spielszenen und Minuten in der Begründung. Ein Tag zählt nur einmal.</p><label>Spieldatum<input type="date" data-ss-date></label><button class="btn ghost" data-ss-action="beobachtung">Geprüften Beleg hinzufügen</button></details>':''}
+  <p role="alert" data-ss-error></p>`:''}</article>`;
+}
+function ss225Render(){const d=SS225.data;if(!d)return;const p=ss225Panel(),pl=d.spieler.find(x=>x.id===SS225.player),pending=d.spieler.flatMap(x=>x.skills.filter(s=>s.vorschlag||s.pruefung).map(s=>({p:x,s})));
+ p.innerHTML=`<div class="vl ss225"><section class="card"><h2>Spieler-Skills</h2><p>Deine Stärken. Deine nächsten Ziele.</p><p>Schwelle erreicht? Lukas prüft die Belege und entscheidet mit Ja oder Nein. Nur seine Bestätigung schaltet einen Skill frei.</p><div class="vl-filter"><label>Mannschaft<select id="ss225Team">${d.teams.map(t=>'<option value="'+vlE(t)+'"'+(t===SS225.team?' selected':'')+'>'+vlE(t)+'. Mannschaft</option>').join('')}</select></label><label>Spieler<select id="ss225Player">${d.spieler.map(x=>'<option value="'+vlE(x.id)+'"'+(x.id===SS225.player?' selected':'')+'>'+vlE(x.name)+'</option>').join('')}</select></label><label>Position<select id="ss225Filter">${['Alle','Torwart','Abwehr','Mittelfeld','Angriff'].map(x=>'<option'+(x===SS225.filter?' selected':'')+'>'+x+'</option>').join('')}</select></label></div>
+ ${d.pflegen?'<button class="btn" id="ss225Edit" aria-pressed="'+SS225.edit+'">'+(SS225.edit?'Bearbeitung beenden':'Skills bearbeiten')+'</button>':''}</section>
+ ${d.pflegen&&pending.length?'<section class="card"><h3>'+pending.length+' Vorschläge und Prüfungen</h3><div class="ss225-actions">'+pending.map(({p:x,s})=>'<button class="btn ghost" data-ss-open="'+vlE(x.id)+'" data-skill="'+vlE(s.id)+'">'+vlE(x.name)+' · '+vlE(d.katalog.find(k=>k.id===s.id)?.name||s.id)+' · '+(s.pruefung?'Belege prüfen':ss225Tier(s.vorschlag))+'</button>').join('')+'</div></section>':''}
+ ${pl?'<section class="card vl-skills"><h2>'+vlE(pl.name)+'</h2><div class="vl-skills-grid">'+d.katalog.filter(k=>SS225.filter==='Alle'||k.position==='Alle'||k.position.includes(SS225.filter)).map(k=>ss225Card(k,pl.skills.find(s=>s.id===k.id))).join('')+'</div></section>':'<section class="card"><p>Hier ist noch kein eigener Seniorenspieler zugeordnet. Bitte die bestehende Kaderzuordnung prüfen lassen.</p></section>'}</div>`;
+ p.querySelector('#ss225Team').onchange=e=>{SS225.team=e.target.value;SS225.player=null;ss225Load();};
+ p.querySelector('#ss225Player').onchange=e=>{SS225.player=e.target.value;SS225.edit=false;ss225Render();};
+ p.querySelector('#ss225Filter').onchange=e=>{SS225.filter=e.target.value;ss225Render();};
+ const edit=p.querySelector('#ss225Edit');if(edit)edit.onclick=()=>{SS225.edit=!SS225.edit;ss225Render();p.querySelector('#ss225Edit').focus();};
+ p.querySelectorAll('[data-ss-open]').forEach(b=>b.onclick=()=>{SS225.player=b.dataset.ssOpen;SS225.edit=true;SS225.filter='Alle';ss225Render();p.querySelector('[data-ss-skill="'+b.dataset.skill+'"]').scrollIntoView({block:'start'});});
+ p.querySelectorAll('[data-ss-note]').forEach(t=>t.oninput=()=>SS225.drafts.set(SS225.player+':'+t.closest('[data-ss-skill]').dataset.ssSkill,t.value));
+ p.querySelectorAll('[data-ss-action]').forEach(b=>b.onclick=()=>ss225Save(b));
+}
+async function ss225Save(button){if(SS225.busy)return;const card=button.closest('[data-ss-skill]'),id=card.dataset.ssSkill,player=SS225.player,team=SS225.team,d=SS225.data,s=d.spieler.find(x=>x.id===player).skills.find(x=>x.id===id),note=card.querySelector('[data-ss-note]').value.trim(),error=card.querySelector('[data-ss-error]'),action=button.dataset.ssAction;
+ if(note.length<(action==='beobachtung'?10:5)){error.textContent='Bitte deine fachliche Begründung mit mindestens '+(action==='beobachtung'?10:5)+' Zeichen eintragen.';card.querySelector('textarea').focus();return;}
+ SS225.busy=true;ss225Panel().querySelectorAll('button,select,input,textarea').forEach(e=>e.disabled=true);
+ try{if(action==='zurueck')await vlRpc('skills_beobachtung_zurueck',{p_spieler:player,p_skill:id,p_datum:button.dataset.date,p_notiz:note});
+ else if(action==='beobachtung')await vlRpc('skills_beobachtung',{p_spieler:player,p_skill:id,p_datum:card.querySelector('[data-ss-date]').value||null,p_notiz:note});
+ else await vlRpc('skills_entscheiden',{p_spieler:player,p_skill:id,p_aktion:action==='stufe'?'manuell':action,p_stufe:action==='stufe'?Number(card.querySelector('[data-ss-level]').value):Number(button.dataset.tier),p_erwartet:s.revision,p_finger:s.nachweis.fingerabdruck||null,p_notiz:note});
+ if(SS225.player!==player||SS225.team!==team)return;
+ SS225.drafts.delete(player+':'+id);const loadSeq=SS225.seq+1;await ss225Load();if(SS225.seq!==loadSeq||SS225.player!==player||SS225.team!==team)return;if(SS225.data){SS225.edit=true;ss225Render();const target=ss225Panel().querySelector('[data-ss-skill="'+id+'"]');if(target){target.scrollIntoView({block:'start'});target.querySelector('[data-ss-error]').textContent='Gespeichert.';}}
+ }catch(e){if(card.isConnected){error.textContent=e.message;ss225Panel().querySelectorAll('button,select,input,textarea').forEach(x=>x.disabled=false);}}
+ finally{SS225.busy=false;}
+}
+{const old=sk96Render;sk96Render=function(){const r=old.apply(this,arguments),p=sk96Panel();if(sk96Darf()&&!p.querySelector('#ss225Own')){const b=document.createElement('button');b.id='ss225Own';b.className='btn';b.textContent='Meine Skills & Ziele';b.onclick=()=>{SS225.player=SK96.d?.ich?.id||null;SS225.team=SK96.d?.ich?.team||null;goTab('skills');};p.prepend(b);}return r;};}
+if(typeof openModal==='function'){const old=openModal;openModal=function(id){const r=old.apply(this,arguments),p=typeof sv4P==='function'?sv4P(id):null,root=document.querySelector('#modal .pf4');if(p&&p.own&&!p.isJugend&&root&&!root.querySelector('[data-ss-profile]')){const b=document.createElement('button');b.className='btn';b.dataset.ssProfile='1';b.textContent='Skills & Ziele';b.onclick=()=>{SS225.player=id;const team=typeof sv4Team==='function'?sv4Team(p):null;if(['1','2'].includes(String(team)))SS225.team=String(team);closeOverlay();goTab('skills');};root.querySelector('.pf4-head')?.appendChild(b);}return r;};}
+SV_TBL.skills=['award','Spieler-Skills'];SV_PAGES.skills=['Spieler-Skills','Stärken und nächste Ziele'];try{SVR_TAB.skills=null;}catch(e){}
+{const old=svTabAllowed;svTabAllowed=function(t){return t==='skills'?sk96Darf():old.apply(this,arguments);};}
+{const old=goTab;goTab=function(t){if(t==='skills')ss225Panel();const r=old.apply(this,arguments);if(t==='skills'&&svCurTab()==='skills')ss225Load();return r;};}
 
 /* Redaktioneller Heftauftritt. Alte Satzfassungen bleiben ausdrücklich erhalten. */
 function huTitel(B,s,i,C){const d=s.daten||{},ink='#13254a',paper='#f6f2e9',orange='#df642b',name=(window.VEREIN&&VEREIN.texte&&VEREIN.texte.stadionheft)||'Doppelpass';

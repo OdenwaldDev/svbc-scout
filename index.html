@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon-64.png">
-<meta name="app-build" content="beta-0.99.121">
+<meta name="app-build" content="beta-0.99.122">
 <title>SV/BSC Sportzentrale</title>
 <script src="vendor/chart.umd.min.js?v=81ffafe13c37" async></script>
 <style>
@@ -412,6 +412,25 @@
 .vl{max-width:1000px;margin:auto;font-size:15px;line-height:1.5}.vl .card{margin:16px 0;padding:22px}.vl label{display:flex;flex-direction:column;gap:6px;margin:10px 0}.vl input,.vl select{font:inherit;min-height:44px;max-width:100%;width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line,#65708b);border-radius:8px;background:var(--card,#182137);color:var(--ink,#fff)}.vl-filter,.vl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.vl-head{display:flex;align-items:center;gap:16px}.vl-head h3{margin:0}.vl-list{list-style:none;padding:0}.vl-list li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;padding:15px 0;border-bottom:1px solid var(--line,#65708b)}.vl small{display:block;font-size:13px}.vl-badges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;text-align:center}.vl-badges img{max-width:100%;height:auto}.vl-badges b{display:block;font-size:14px}.vl fieldset{min-width:0;border:1px solid var(--line,#65708b);border-radius:12px;margin:20px 0;padding:16px}.vl .vl-check{flex-direction:row;align-items:center;min-height:44px}.vl-check input{width:24px;min-height:24px;flex-shrink:0}.vl .btn{min-height:44px;margin:4px}.vl a{overflow-wrap:anywhere}.vl #vlError{color:var(--red,#ef7676)}@media(max-width:550px){.vl .card{padding:16px}.vl-badges{grid-template-columns:repeat(2,minmax(0,1fr))}.vl-filter{grid-template-columns:1fr}.vl-list li{font-size:14px}.vl-list strong{white-space:nowrap}}
 
 .vl summary{min-height:44px;padding:10px 0;cursor:pointer}.vl textarea{font:inherit;width:100%;min-height:88px;box-sizing:border-box;padding:10px;background:var(--card,#182137);color:var(--ink,#fff);border:1px solid var(--line,#65708b);border-radius:8px}
+
+
+/* Matte Vereinsmedaillen. Farbe und Rangzeichen sind unabhängig lesbar. */
+.vl-medaille{--vl-metall:#c8cbd0;--vl-kante:#69737e;display:inline-block;position:relative;width:144px;max-width:100%;aspect-ratio:1;vertical-align:middle;flex-shrink:0;border-radius:50%;background:var(--vl-metall);border:3px double var(--vl-kante);box-shadow:inset 0 0 0 4px var(--vl-metall),inset 0 0 0 5px var(--vl-kante);overflow:hidden}
+.vl-medaille-bronze{--vl-metall:#c39777;--vl-kante:#77503a}.vl-medaille-silber{--vl-metall:#ccd0d1;--vl-kante:#667276}.vl-medaille-gold{--vl-metall:#debd72;--vl-kante:#8a672c}.vl-medaille-platin{--vl-metall:#d8eaec;--vl-kante:#376e7c;border-width:4px}
+.vl-medaille .vl-motiv{position:absolute;display:block;width:83%;max-width:none;height:auto;left:8.5%;top:4%;pointer-events:none}
+.vl-rangzeichen{position:absolute;bottom:8%;left:0;width:100%;font-family:Georgia,serif;font-size:14px;font-weight:700;letter-spacing:2px;color:#18283c;text-align:center}
+.vl-stufen{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.vl-stufe{font:inherit;color:var(--ink,#fff);background:var(--card,#182137);border:2px solid var(--line,#65708b);border-radius:12px;padding:14px 6px;min-height:44px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px}
+.vl-stufe .vl-medaille{width:92px}.vl-stufe b{font-size:16px}.vl-stufe>span:not(.vl-medaille){font-size:13px}.vl-stufe .vl-rangzeichen{font-size:11px;bottom:7%}
+.vl-stufe[aria-pressed="true"]{border-color:var(--ink,#fff);outline:2px solid var(--ink,#fff);outline-offset:2px}
+.vl-stufe:focus-visible{outline:3px solid #6db8ff;outline-offset:4px}
+.vl-stufen-text{min-height:48px}.vl-badges .vl-medaille{width:140px;margin-bottom:10px}
+.vl-skills-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.vl-skills article{border:1px solid var(--line,#65708b);border-radius:12px;padding:22px}.vl-skills h4{font-family:Georgia,serif;font-size:27px;line-height:1.2;margin:8px 0}.vl-skill-emblem{display:grid;place-items:center;width:168px;max-width:100%;aspect-ratio:1;background:#eee8d8;border:3px double #8f897c;border-radius:50%;margin-bottom:20px;overflow:hidden}.vl-skill-emblem img{display:block;width:100%;height:auto}.vl-skill-status{margin-top:14px;font-weight:600}.vl-skills summary{min-height:44px;display:flex;align-items:center;text-decoration:underline;cursor:pointer}.vl-skills details p{margin:8px 0}
+@media(max-width:550px){.vl-stufen{grid-template-columns:repeat(2,minmax(0,1fr))}.vl-badges{gap:18px 8px}.vl-badges .vl-medaille{width:126px}.vl-skills-grid{grid-template-columns:1fr}}
+
+.vl-head>img{background:#eee8d8;border-radius:50%;padding:5px}
+
+.ss225 .ss225-actions{display:flex;flex-wrap:wrap;align-items:end;gap:8px}.ss225-locked .vl-medaille{filter:grayscale(1)}.ss225-locked{position:relative}.ss225-locked::after{content:'Noch gesperrt';display:block;font-size:13px;margin:6px 0}.ss225-proposal{border-left:3px solid #b68b45;padding:10px}.ss225 article{scroll-margin-top:24px;min-width:0}.ss225 li{margin:10px 0}.ss225 .btn{white-space:normal;overflow-wrap:anywhere}.ss225 select{min-width:0}.ss225 [data-ss-error]{min-height:24px}.ss225{padding-bottom:100px}
 </style>
 <style id="appCss">
 /* ===== App-Modus ===== */
@@ -4416,7 +4435,7 @@ a.kbtn{text-decoration:none;display:inline-block}
 
 
 <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
-<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.121", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
+<script>window.SVBC_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.122", "dataBytes": 3052726, "demo": {"url": "https://radio-odenwald.de/svbsc-demo", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN2YnNjLWRlbW8iLCJpYXQiOjE3OTMwMDAwMDAsImV4cCI6MjEwMDAwMDAwMH0.WTgZ_bW9Nzc1KZ-z-UxvP6t249pk-TBYZbpWcdILofE", "mails": ["demo@kaderwerk.pro"]}};</script>
 <script src="vendor/supabase.js?v=dff1e545f4f3"></script>
 <script src="icons.js?v=2b264497e7cf"></script>
 <script src="boot.js?v=1d6601716449"></script>
