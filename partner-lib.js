@@ -2626,7 +2626,7 @@ const LOGO = (() => {
 /* =====================================================================
    Beta 0.80 · Bandencreator: Gestaltung, Druckdaten und Platzszene
    Gemeinsam für die App (svm79.js) und die Partner-Präsentation (partner.js), braucht LOGO (logolib.js).
-   - Feste Regeln, damit alle Banden zusammenpassen: Sicherheitsabstand, Logo-Zone, Name und Slogan, Kontaktleiste unten,
+   - Feste Regeln, damit alle Banden zusammenpassen: Sicherheitsabstand, großes Logo, bei Bedarf ein ausdrücklich bestätigter Symbolname,
      Partner-CI heißt: weiße Bande, Marine, Logo einfarbig. Seit 0.99.38 steht KEIN Vereinsabsender mehr auf der Bande (kein Wappen,
      kein „SV/BSC“, keine Handschrift): Auf die Bande gehört nur der Partner. Schriften und Farben aus dem Corporate Design Manual.
    - Alles in Millimetern. layout() liefert eine Liste von Bausteinen (Fläche, Linie, Bild, Text, Strich) mit ihren Kästen,
@@ -2652,7 +2652,7 @@ const BANDE = (() => {
     { key:'premium', t:'Premium', format:'250x80' },
     { key:'p1896', t:'1896 Partner', format:'500x80' } ];
   const BESCHNITT = 20;           // mm je Seite
-  const LAYOUTS = [['links', 'Logo links'], ['mitte', 'Logo groß'], ['claim', 'Mit Slogan']];
+  const LAYOUTS = [['links', 'Logo links'], ['mitte', 'Logo groß']];
   const FAM = { c:"'BandeC','Barlow Condensed','PZC','BarlowC','Arial Narrow',sans-serif", t:"'BandeT','Barlow','InterV',Arial,sans-serif", h:"'BandeH','Caveat','PZHand',cursive" };
   const SCHRIFTEN = [['BandeC', 'barlowc-900.woff2', '900'], ['BandeT', 'barlow-500.woff2', '500'], ['BandeT', 'barlow-600.woff2', '600'], ['BandeT', 'barlow-700.woff2', '700'], ['BandeH', 'caveat-700.woff2', '700']];
 
@@ -2692,7 +2692,6 @@ const BANDE = (() => {
   const versal = f => mess('H', f).a / 100;     // Versalhöhe je mm Schriftgröße
   const lesbarAus = (f, fs) => Math.round(versal(f) * fs / 4) ;   // Meter: Versalhöhe (mm) mal 250 / 1000
   const sauber = t => String(t == null ? '' : t).replace(/\s*[–—]\s*/g, ' · ').replace(/\s+/g, ' ').trim();
-  const webKurz = w => sauber(w).replace(/^https?:\/\//i, '').replace(/\/+$/, '');
 
   // Text in einen Kasten einpassen: eine oder zwei Zeilen, die größere Schrift gewinnt (zwei Zeilen erst ab 15 % Gewinn).
   function einpassen(text, f, maxW, maxH, maxFs, zeilen = 2, lh = .92){
@@ -2716,118 +2715,78 @@ const BANDE = (() => {
   }
 
   /* ---------- Layout ---------- */
-  // spec: { format, stil:'ci'|'original', layout, firma, name, claim, web, telefon, branche, kontakt, nameAn, logoFarbe:'marine'|'schwarz', akzent }
-  // res:  { logo:{w,h,hell,farben}, wappen:{w,h} }  (aus vorbereiten)
+  const firmenKey = value => sauber(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  function muster(spec){
+    spec = spec || {}; if(['normal', 'bb', 'moerlens'].includes(spec.pattern)) return spec.pattern;
+    const firma = firmenKey(spec.firma || spec.name);
+    return firma === 'bbbernsbaltz' ? 'bb' : ['morlens', 'moerlens','bbbernsbaltzmorlens','bbbernsbaltzmoerlens'].includes(firma) ? 'moerlens' : 'normal';
+  }
+  // The legacy page also runs without BD_CORE. Keep recognition limited to complete contact lines.
+  function kontaktZeile(value){
+    if(typeof BD_CORE !== 'undefined' && BD_CORE.isContactText) return BD_CORE.isContactText(value);
+    const t = String(value == null ? '' : value).trim(); if(!t) return false;
+    if(/[\r\n]/.test(t)) return t.split(/\r?\n/).some(kontaktZeile);
+    const label = t.match(/^(telefon|tel\.?|telefax|fax|mobil|handy|phone|e[ -]?mail|mail|internet|website|homepage|web|url)\s*(?::\s*|\s+)(.+)$/i), v = (label ? label[2] : t).trim();
+    if(/^(?:https?:\/\/|www\.)[^\s<>]+$/i.test(v) || /^(?:mailto:)?[^\s@<>]+@(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}$/iu.test(v) || /^(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?\.)+[\p{L}]{2,63}(?::\d{1,5})?(?:[/?#][^\s<>]*)?$/iu.test(v)) return true;
+    const phone = v.replace(/^tel:/i, '').trim(), digits = phone.replace(/\D/g, ''), named = /^tel:/i.test(v) || !!(label && /^(?:telefon|tel\.?|telefax|fax|mobil|handy|phone)$/i.test(label[1]));
+    if(/^[+\d().\s/-]+$/.test(phone) && digits.length >= (named ? 3 : 7) && digits.length <= 18 && (named || /^(?:\+|0)/.test(phone))) return true;
+    const parts = t.split(/\s*[;|·•]\s*/); return parts.length > 1 && parts.every(kontaktZeile);
+  }
+  const ohneKontakt = value => String(value == null ? '' : value).split(/\r?\n/).filter(line => !kontaktZeile(line)).join(' ');
+  function druckOps(L){
+    return L.ops.flatMap(o => {
+      if(['kontakt', 'web', 'telefon', 'fax', 'leiste'].includes(o.rolle)) return [];
+      if(o.rolle === 'claim' && (L.pattern !== 'moerlens' || o.lines.join(' ') !== 'Restobar & Patisserie')) return [];
+      if(o.t !== 'text') return [o]; const lines = o.lines.filter(line => !kontaktZeile(line));
+      return lines.some(line => String(line).trim()) ? [lines.length === o.lines.length ? o : Object.assign({}, o, { lines })] : [];
+    });
+  }
+  // A logo occupies the safe area. Only confirmed symbols get a separate company name.
   function layout(spec, res){
     spec = spec || {}; res = res || {};
     const F = FORMATE[spec.format] || FORMATE['300x80'], W = F.w, H = F.h, ci = spec.stil !== 'original';
-    const ops = [], info = { warn:[], kontrast:[], lesbar:{} };
-    const m = Math.round(H * .075), logo = res.logo && res.logo.w ? res.logo : null;
-    const web = webKurz(spec.web), tel = sauber(spec.telefon), kText = [web, tel].filter(Boolean).join('   ·   ');
-    const kontakt = spec.kontakt !== false && !!kText;
-    const bandH = Math.round(H * (kontakt || ci ? .2 : .05));
-    const name = sauber(spec.name || spec.firma), claim = sauber(spec.claim);
-    const nameAn = spec.nameAn != null ? !!spec.nameAn : !logo;   // das Logo trägt den Namen meist schon, ohne Logo steht er groß da
-    // Farben
-    let bg = C.weiss, band, bandText, nameF, claimF, ak = null;
-    if(ci){ band = C.marine; bandText = C.weiss; nameF = C.marine; claimF = C.grau; }
-    else { ak = (/^#[0-9a-fA-F]{6}$/.test(spec.akzent || '') ? spec.akzent : null) || akzent(logo && logo.farben);
-      if(logo && logo.hell){ bg = lum(ak) < .16 ? ak : C.tinte; nameF = C.weiss; claimF = '#e9ebf1'; band = C.weiss; bandText = kontrast(bg, C.weiss) >= 4.5 ? bg : C.tinte; }
-      else { nameF = C.tinte; claimF = C.grau; band = ak; bandText = textAuf(ak); } }
+    const ops = [], info = { warn:[], kontrast:[], lesbar:{} }, m = Math.round(Math.min(W, H) * .08), Hu = H - 2 * m, aw = W - 2 * m, x0 = m, cx = W / 2;
+    const logo = res.logo && res.logo.w > 0 && res.logo.h > 0 ? res.logo : null, pattern = muster(spec), name = sauber(ohneKontakt(spec.name || spec.firma)), nameAn = spec.nameAn === true && pattern === 'normal';
+    const lay = spec.layout === 'mitte' || spec.layout === 'claim' ? 'mitte' : 'links', nF = { fam:'c', w:900 }, cF = { fam:'t', w:600 };
+    const ak = ci ? null : (/^#[0-9a-fA-F]{6}$/.test(spec.akzent || '') ? spec.akzent : null) || akzent(logo && logo.farben);
+    const bg = !ci && logo && logo.hell ? (lum(ak) < .16 ? ak : C.tinte) : C.weiss, nameF = ci ? C.marine : textAuf(bg), claimF = nameF;
     ops.push({ t:'rect', x:-BESCHNITT, y:-BESCHNITT, w:W + 2 * BESCHNITT, h:H + 2 * BESCHNITT, fill:bg, rolle:'grund' });
-    ops.push({ t:'rect', x:-BESCHNITT, y:H - bandH, w:W + 2 * BESCHNITT, h:bandH + BESCHNITT, fill:band, rolle:'leiste' });
-    const yTop = m, yBot = H - bandH - Math.round(m * .8), Hu = yBot - yTop;
-    let x0 = m, x1 = W - m, wap = null;
-    // Kein Vereinsabsender mehr (Albert, 15.11.2026: „SV/BSC von den Banden runter, sollen nur die Partner drauf“). Bis 0.99.35 standen im
-    // Partner-CI rechts Doppel-Logo, „SV/BSC MÖRLENBACH“ und die Handschrift. Die Fläche gehört jetzt ganz der Firma. Nicht wieder einbauen.
-    const aw = x1 - x0, quer = aw / Hu >= 2.1, cxA = x0 + aw / 2;
-    const NAME = name.toUpperCase(), lay = spec.layout === 'mitte' || spec.layout === 'claim' ? spec.layout : 'links';
-    const nF = { fam:'c', w:900 }, cF = { fam:'t', w:600 }, lF = { fam:'t', w:700, ls:.08 };
-    const logoBox = (mw, mh) => { if(!logo) return null; const r = logo.w / logo.h; let w = mw, h = w / r; if(h > mh){ h = mh; w = h * r; } return { w, h }; };
-    const stapel = (teile, x, y, align) => { let yy = y; teile.forEach(([p, fill, rolle, gap]) => { if(!p) return; ops.push(textOp(p, x, yy, align, fill, rolle)); yy += p.h + (gap || 0); }); };
-    const hoehe = teile => teile.reduce((s, [p, , , gap], i) => s + (p ? p.h + (i < teile.length - 1 ? gap || 0 : 0) : 0), 0);
-    let logoOp = null;
-    if(lay === 'links'){
-      const tx = [nameAn || !logo ? NAME : '', claim].filter(Boolean).length;
-      if(quer){
-        const lb = logoBox(tx ? aw * .46 : aw, Hu * .92), gT = Math.round(H * .08);
-        if(lb){ logoOp = { t:'img', key:'logo', x:tx ? x0 : cxA - lb.w / 2, y:yTop + (Hu - lb.h) / 2, w:lb.w, h:lb.h, rolle:'logo' }; ops.push(logoOp); }
-        const tX = lb ? x0 + lb.w + gT : x0, tw = x1 - tX, beide = (nameAn || !logo) && claim;
-        const pn = nameAn || !logo ? einpassen(NAME, nF, tw, Hu * (beide ? .58 : .86), Hu * (logo ? .5 : .62), 2) : null;
-        const pc = claim ? einpassen(claim, cF, tw, Hu * (pn ? .3 : .5), Hu * (pn ? .18 : .26), 2, 1.08) : null;
-        const T = [[pn, nameF, 'name', Hu * .07], [pc, claimF, 'claim', 0]];
-        if(pn || pc) stapel(T, tX, yTop + (Hu - hoehe(T)) / 2, 'l');
+    const logoBox = (mw, mh) => { if(!logo) return null; const scale = Math.min(mw / logo.w, mh / logo.h); return { w:logo.w * scale, h:logo.h * scale }; };
+    const img = (b, x, y) => ops.push({ t:'img', key:'logo', x, y, w:b.w, h:b.h, rolle:'logo', box:{ x, y, w:b.w, h:b.h } });
+    const txt = (p, x, y, rolle, fill = nameF) => { if(p) ops.push(textOp(p, x, y, 'c', fill, rolle)); };
+    if(!logo){
+      const p = einpassen(name.toUpperCase(), nF, aw, Hu, Hu / .7, 2); if(p) txt(p, cx, m + (Hu - p.h) / 2, 'name');
+    } else if(pattern === 'bb'){
+      const lw = Math.min(aw * .32, Hu * 1.45), gap = Math.min(H * .10, aw * .04), sw = (aw - lw - 2 * gap) / 2, b = logoBox(lw, Hu);
+      img(b, cx - b.w / 2, m + (Hu - b.h) / 2);
+      const fs = Math.min(Hu * .85, sw / (Math.max(mess('EVENT', nF).w, mess('KREATIV', nF).w) / 100));
+      const left = einpassen('EVENT', nF, sw, Hu, fs, 1), right = einpassen('KREATIV', nF, sw, Hu, fs, 1);
+      txt(left, x0 + sw / 2, (H - left.h) / 2, 'event'); txt(right, W - m - sw / 2, (H - right.h) / 2, 'kreativ');
+    } else if(pattern === 'moerlens'){
+      const claim = einpassen('Restobar & Patisserie', cF, aw, Hu * .22, H * .19, 1), gap = H * .05, b = logoBox(aw, Hu - claim.h - gap), y = m + (Hu - b.h - claim.h - gap) / 2;
+      img(b, cx - b.w / 2, y); txt(claim, cx, y + b.h + gap, 'claim', claimF);
+    } else if(nameAn && name){
+      if(lay === 'mitte'){
+        const p = einpassen(name.toUpperCase(), nF, aw, Hu * .22, Hu * .3, 1), gap = H * .05, b = logoBox(aw, Hu - p.h - gap), y = m + (Hu - b.h - p.h - gap) / 2;
+        img(b, cx - b.w / 2, y); txt(p, cx, y + b.h + gap, 'name');
       } else {
-        const lb = logoBox(aw, Hu * (tx ? .5 : .9)), g = Hu * .07;
-        const pn = nameAn || !logo ? einpassen(NAME, nF, aw, Hu * (lb ? (claim ? .26 : .38) : (claim ? .6 : .9)), Hu * .4, 2) : null;
-        const pc = claim ? einpassen(claim, cF, aw, Hu * (lb ? .14 : .3), Hu * .12, 2, 1.08) : null;
-        const T = [[pn, nameF, 'name', Hu * .05], [pc, claimF, 'claim', 0]], th = hoehe(T), tot = (lb ? lb.h + (th ? g : 0) : 0) + th;
-        let y = yTop + (Hu - tot) / 2;
-        if(lb){ logoOp = { t:'img', key:'logo', x:x0, y, w:lb.w, h:lb.h, rolle:'logo' }; ops.push(logoOp); y += lb.h + g; }
-        stapel(T, x0, y, 'l');
+        const b = logoBox(Math.min(aw * .35, Hu * 1.45), Hu), gap = Math.min(H * .1, aw * .06), tx = x0 + b.w + gap, tw = W - m - tx, p = einpassen(name.toUpperCase(), nF, tw, Hu, Hu / .7, 2);
+        img(b, x0, m + (Hu - b.h) / 2); if(p) txt(p, tx + tw / 2, m + (Hu - p.h) / 2, 'name');
       }
-    } else if(lay === 'mitte'){
-      const unten = claim || (nameAn && logo ? name : '');
-      if(logo){
-        const g = Hu * .07, pc = unten ? einpassen(unten, claim ? cF : { fam:'c', w:900 }, aw * .9, Hu * .2, Hu * .16, 1) : null;
-        const lb = logoBox(ci ? aw * .86 : aw * .9, Hu * (pc ? .94 - (pc.h + g) / Hu : .94)), tot = lb.h + (pc ? g + pc.h : 0);
-        let y = yTop + (Hu - tot) / 2;
-        logoOp = { t:'img', key:'logo', x:cxA - lb.w / 2, y, w:lb.w, h:lb.h, rolle:'logo' }; ops.push(logoOp); y += lb.h + g;
-        if(pc) ops.push(textOp(pc, cxA, y, 'c', claim ? claimF : nameF, claim ? 'claim' : 'name'));
-      } else {
-        const pn = einpassen(NAME, nF, aw, Hu * (claim ? .62 : .9), Hu * .7, 2), pc = claim ? einpassen(claim, cF, aw * .9, Hu * .26, Hu * .2, 2, 1.08) : null;
-        const T = [[pn, nameF, 'name', Hu * .07], [pc, claimF, 'claim', 0]]; stapel(T, cxA, yTop + (Hu - hoehe(T)) / 2, 'c');
-      }
-    } else {
-      // Mit Slogan: der Slogan ist die große Zeile, darüber klein der Name; ohne Slogan die Branche, sonst der Name
-      const head = (claim || sauber(spec.branche) || name).toUpperCase(), label = (claim || spec.branche) && (nameAn || !logo) ? NAME : '';
-      if(quer){
-        const lr = logo ? logo.w / logo.h : 1, lb = logoBox(aw * Math.min(.46, Math.max(.32, .32 + (lr - 2) * .04)), Hu * .66), gT = Math.round(H * .08);
-        if(lb){ logoOp = { t:'img', key:'logo', x:x0, y:yTop + (Hu - lb.h) / 2, w:lb.w, h:lb.h, rolle:'logo' }; ops.push(logoOp); }
-        const tX = lb ? x0 + lb.w + gT : x0, tw = x1 - tX;
-        const pl = label ? einpassen(label, lF, tw, Hu * .12, Hu * .1, 1) : null, ph = einpassen(head, nF, tw, Hu * (pl ? .7 : .88), Hu * .38, 2, .9);
-        const T = [[pl, ci ? C.marine : C.grau, 'label', Hu * .06], [ph, ci ? C.tinte : nameF, 'name', 0]];
-        stapel(T, tX, yTop + (Hu - hoehe(T)) / 2, 'l');
-      } else {
-        const lb = logoBox(aw * .7, Hu * .38), g = Hu * .07;
-        const pl = label ? einpassen(label, lF, aw, Hu * .1, Hu * .08, 1) : null, ph = einpassen(head, nF, aw, Hu * (lb ? .4 : .7), Hu * .3, 2, .9);
-        const T = [[pl, ci ? C.marine : C.grau, 'label', Hu * .04], [ph, ci ? C.tinte : nameF, 'name', 0]], th = hoehe(T), tot = (lb ? lb.h + g : 0) + th;
-        let y = yTop + (Hu - tot) / 2;
-        if(lb){ logoOp = { t:'img', key:'logo', x:x0, y, w:lb.w, h:lb.h, rolle:'logo' }; ops.push(logoOp); y += lb.h + g; }
-        stapel(T, x0, y, 'l');
-      }
-    }
-    // Schutzraum zwischen Partnerlogo und Doppel-Logo: mindestens die halbe Höhe der größeren Marke
-    if(logoOp && wap){
-      const brauch = () => .5 * Math.max(logoOp.h, wap.h);
-      for(let i = 0; i < 12 && wap.x - (logoOp.x + logoOp.w) < brauch(); i++){
-        const cx = logoOp.x + logoOp.w / 2, cy = logoOp.y + logoOp.h / 2, s = .92; logoOp.w *= s; logoOp.h *= s;
-        logoOp.x = lay === 'mitte' ? cx - logoOp.w / 2 : logoOp.x; logoOp.y = cy - logoOp.h / 2; }
-      info.schutzraum = Math.round(wap.x - (logoOp.x + logoOp.w)); info.schutzraumNoetig = Math.round(.5 * Math.max(logoOp.h, wap.h));
-    }
-    if(logoOp) logoOp.box = { x:logoOp.x, y:logoOp.y, w:logoOp.w, h:logoOp.h };
-    if(wap) wap.box = { x:wap.x, y:wap.y, w:wap.w, h:wap.h };
-    // Kontaktleiste
-    if(kontakt){
-      const kF = { fam:'t', w:600 }, mitte = lay === 'mitte', kw = mitte ? aw : W - 2 * m;
-      const p = einpassen(kText, kF, kw, bandH * .66, bandH * .6, 1);
-      ops.push(textOp(p, mitte ? cxA : x0, H - bandH + (bandH - p.h) / 2, mitte ? 'c' : 'l', bandText, 'kontakt'));
-    }
-    // Auswertung: Kontrast und Lesbarkeit je Text
+    } else { const b = logoBox(aw, Hu); img(b, cx - b.w / 2, m + (Hu - b.h) / 2); }
     ops.filter(o => o.t === 'text').forEach(o => {
-      const auf = o.rolle === 'kontakt' ? band : bg; info.kontrast.push({ rolle:o.rolle, text:o.fill, grund:auf, wert:Math.round(kontrast(o.fill, auf) * 10) / 10 });
-      const d = lesbarAus(o.f, o.fs); if(!info.lesbar[o.rolle] || d < info.lesbar[o.rolle]) info.lesbar[o.rolle] = d; });
-    const haupt = info.lesbar.name || 0;
-    if(haupt && haupt < 30) info.warn.push('Der große Text ist nur aus ' + haupt + ' m lesbar. Kürzer wird er größer.');
-    if(info.lesbar.kontakt && info.lesbar.kontakt < 15) info.warn.push('Die Kontaktzeile ist nur aus ' + info.lesbar.kontakt + ' m lesbar. Lass die Telefonnummer oder die Website weg.');
+      info.kontrast.push({ rolle:o.rolle, text:o.fill, grund:bg, wert:Math.round(kontrast(o.fill, bg) * 10) / 10 });
+      const distance = lesbarAus(o.f, o.fs); if(!info.lesbar[o.rolle] || distance < info.lesbar[o.rolle]) info.lesbar[o.rolle] = distance;
+    });
+    if(info.lesbar.name && info.lesbar.name < 30) info.warn.push('Der große Text ist nur aus ' + info.lesbar.name + ' m lesbar. Kürzer wird er größer.');
     if(!logo && spec.logoGewollt) info.warn.push('Das Logo fehlt noch. Bis dahin steht der Name als Schriftzug.');
-    return { W, H, B:BESCHNITT, rand:m, leiste:bandH, format:spec.format in FORMATE ? spec.format : '300x80', stil:ci ? 'ci' : 'original', layout:lay, ops, info, farben:{ grund:bg, leiste:band, akzent:ak } };
+    return { W, H, B:BESCHNITT, rand:m, leiste:0, kontakt:false, pattern, format:spec.format in FORMATE ? spec.format : '300x80', stil:ci ? 'ci' : 'original', layout:lay, ops, info, farben:{ grund:bg, leiste:ak, akzent:ak } };
   }
 
   /* ---------- Malen (Canvas, 1 Einheit = 1 mm, Ursprung = Endformat oben links) ---------- */
   function malen(x, L, res){
     res = res || {};
-    L.ops.forEach(o => {
+    druckOps(L).forEach(o => {
       if(o.t === 'rect'){ x.fillStyle = o.fill; x.fillRect(o.x, o.y, o.w, o.h); }
       else if(o.t === 'linie'){ x.strokeStyle = o.stroke; x.lineWidth = o.w; x.lineCap = 'round'; x.beginPath(); x.moveTo(o.x1, o.y1); x.lineTo(o.x2, o.y2); x.stroke(); }
       else if(o.t === 'strich'){ const [a, b, c] = o.pts; x.strokeStyle = o.stroke; x.lineWidth = o.w; x.lineCap = 'round'; x.beginPath(); x.moveTo(a[0], a[1]); x.quadraticCurveTo(b[0], b[1], c[0], c[1]); x.stroke(); }
@@ -2857,7 +2816,7 @@ const BANDE = (() => {
     o = o || {}; await schriften(o.basis);
     const res = {}, ci = spec.stil !== 'original';
     if(spec.logo && typeof LOGO !== 'undefined'){
-      try{ const a = await LOGO.aufbereiten(spec.logo); const art = ci ? 'farbe:' + (spec.logoFarbe === 'schwarz' ? C.tinte : C.marine) : 'original';
+      try{ const a = await LOGO.aufbereiten(spec.logo); const art = ci ? 'farbe:' + (muster(spec)==='bb' ? C.orange : spec.logoFarbe === 'schwarz' ? C.tinte : C.marine) : 'original';
         const c = await LOGO.variante(spec.logo, art); res.logo = { w:c.width, h:c.height, hell:a.hell, farben:a.farben }; res.logoBild = c; res.analyse = a; }
       catch(e){ res.logoFehler = e.message || 'Logo lässt sich nicht laden'; } }
     return res;
@@ -2877,7 +2836,7 @@ const BANDE = (() => {
     x.fillRect(ox - B * s, oy - B * s, (L.W + 2 * B) * s, B * s); x.fillRect(ox - B * s, oy + L.H * s, (L.W + 2 * B) * s, B * s);
     x.fillRect(ox - B * s, oy, B * s, L.H * s); x.fillRect(ox + L.W * s, oy, B * s, L.H * s);
     x.strokeStyle = 'rgba(28,28,34,.55)'; x.lineWidth = 1 * dpr; x.strokeRect(ox, oy, L.W * s, L.H * s);
-    if(o.raster){ x.save(); x.setLineDash([6 * dpr, 5 * dpr]); x.strokeStyle = '#e8741f'; x.lineWidth = 1.2 * dpr; x.strokeRect(ox + L.rand * s, oy + L.rand * s, (L.W - 2 * L.rand) * s, (L.H - L.leiste - 1.8 * L.rand) * s); x.restore(); }
+    if(o.raster){ x.save(); x.setLineDash([6 * dpr, 5 * dpr]); x.strokeStyle = '#e8741f'; x.lineWidth = 1.2 * dpr; x.strokeRect(ox + L.rand * s, oy + L.rand * s, (L.W - 2 * L.rand) * s, (L.H - 2 * L.rand) * s); x.restore(); }
     // Schnittmarken
     x.strokeStyle = '#1c1c22'; x.lineWidth = 1 * dpr; const mk = 14 * dpr, ab = B * s + 3 * dpr;
     [[ox, oy, -1, -1], [ox + L.W * s, oy, 1, -1], [ox, oy + L.H * s, -1, 1], [ox + L.W * s, oy + L.H * s, 1, 1]].forEach(([px, py, sx, sy]) => {
@@ -3058,7 +3017,7 @@ const BANDE = (() => {
     const B = L.B, fonts = await Promise.all(SCHRIFTEN.map(async ([fam, f, w]) => { const u = await fontDaten(f); return u ? `@font-face{font-family:'${fam}';font-weight:${w};src:url(${u.replace(/^data:[^;]*;/, 'data:font/woff2;')}) format('woff2');}` : ''; }));
     const bildUrl = im => { if(!im) return null; const c = document.createElement('canvas'); c.width = im.naturalWidth || im.width; c.height = im.naturalHeight || im.height; c.getContext('2d').drawImage(im, 0, 0); return c.toDataURL('image/png'); };
     const lu = bildUrl(res.logoBild), wu = bildUrl(res.wappenBild), famName = f => FAM[f.fam].replace(/"/g, "'");
-    const teile = L.ops.map(o => {
+    const teile = druckOps(L).map(o => {
       if(o.t === 'rect') return `<rect x="${r2(o.x)}" y="${r2(o.y)}" width="${r2(o.w)}" height="${r2(o.h)}" fill="${fa(o.fill)}"/>`;
       if(o.t === 'linie') return `<line x1="${r2(o.x1)}" y1="${r2(o.y1)}" x2="${r2(o.x2)}" y2="${r2(o.y2)}" stroke="${fa(o.stroke)}" stroke-width="${r2(+o.w || 0)}" stroke-linecap="round"/>`;
       if(o.t === 'strich'){ const [a, b, c] = o.pts; return `<path d="M${r2(a[0])} ${r2(a[1])}Q${r2(b[0])} ${r2(b[1])} ${r2(c[0])} ${r2(c[1])}" fill="none" stroke="${fa(o.stroke)}" stroke-width="${r2(o.w)}" stroke-linecap="round"/>`; }
@@ -3183,7 +3142,7 @@ const BANDE = (() => {
     return { boxen, pxm:Math.abs(m1[0] - m0[0]) / dpr };
   }
 
-  return { C, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, laden };
+  return { C, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, muster, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, ohneKontakt, laden };
 })();
 
 /* Gemeinsame Platzwahl für die persönliche Partnerreise. Alle Schreibzugriffe bleiben unverbindliche Wünsche. */
@@ -3504,6 +3463,37 @@ const BANDENWAHL = (() => {
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   const isRaster=s=>/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(s||'');
   const hexRGB=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  // Recognise whole contact lines only. Brand names and ordinary copy are not contact data.
+  function contactLine(value){
+    const line=String(value==null?'':value).trim();if(!line)return false;
+    const labelled=line.match(/^(telefon|tel\.?|telefax|fax|mobil|handy|phone|e[ -]?mail|mail|internet|website|homepage|web|url)\s*:?\s+(.+)$/i)||line.match(/^(telefon|tel\.?|telefax|fax|mobil|handy|phone|e[ -]?mail|mail|internet|website|homepage|web|url)\s*:\s*(.+)$/i);
+    const valueOnly=(labelled?labelled[2]:line).trim();
+    if(/^(?:https?:\/\/|www\.)[^\s<>]+$/i.test(valueOnly))return true;
+    if(/^(?:mailto:)?[^\s@<>]+@(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}$/iu.test(valueOnly))return true;
+    if(/^(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?\.)+[\p{L}]{2,63}(?::\d{1,5})?(?:[/?#][^\s<>]*)?$/iu.test(valueOnly))return true;
+    const phone=valueOnly.replace(/^tel:/i,'').trim(),digits=phone.replace(/\D/g,''),phoneLabel=/^tel:/i.test(valueOnly)||!!(labelled&&/^(?:telefon|tel\.?|telefax|fax|mobil|handy|phone)$/i.test(labelled[1]));
+    if(/^[+\d().\s/-]+$/.test(phone)&&digits.length>=(phoneLabel?3:7)&&digits.length<=18&&(phoneLabel||/^(?:\+|0)/.test(phone)))return true;
+    const parts=line.split(/\s*[;|·•]\s*/);return parts.length>1&&parts.some(contactLine);
+  }
+  const contactTokens=/(?:https?:\/\/|www\.)[^\s<>]+|(?:mailto:)?[^\s@<>]+@(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}|\b(?:[\p{L}\p{N}-]+\.)+(?:de|com|net|org|eu|info|pro|io|app|online|shop|store|dev|co|at|ch|biz|club|digital|gmbh|example|invalid|test)(?::\d{1,5})?(?:[/?#][^\s<>]*)?\b/iu;
+  const labelledPhone=/(?:^|\s)(?:telefon|tel\.?|telefax|fax|mobil|handy|phone)\s*:?\s*[+\d][\d(). /+-]{2,}/iu;
+  const inlinePhone=/(^|\s)((?:\+|0)[\d(). /-]{5,}\d)(?=$|[\s,;|·•])/u;
+  function domainToken(value){const token=String(value).replace(/^[\[("']+|[\])"',;!?]+$/g,'');if(/^(?:co\.kg|gmbh&co\.kg|dr\.[\p{L}.]+|prof\.[\p{L}.]+|dipl\.[\p{L}.]+|e\.v\.?|e\.k\.?)$/iu.test(token))return false;return /[.@]/.test(token)&&contactLine(token);}
+  function hasInlinePhone(line){const m=String(line).match(inlinePhone);return !!m&&m[2].replace(/\D/g,'').length>=7;}
+  function isContactText(value){return String(value==null?'':value).split(/\r?\n/).some(line=>contactLine(line)||contactTokens.test(line)||labelledPhone.test(line)||hasInlinePhone(line)||line.split(/\s+/).some(domainToken));}
+  function withoutContactLine(line){
+    if(!isContactText(line))return line;
+    return line.split(/\s*[;|·•]\s*/).map(part=>{
+      if(contactLine(part))return '';
+      return part.split(/(\s+)/).map(token=>domainToken(token)?'':token).join('').replace(new RegExp(contactTokens.source,'giu'),'').replace(new RegExp(labelledPhone.source,'giu'),' ').replace(new RegExp(inlinePhone.source,'gu'),(all,gap,number)=>number.replace(/\D/g,'').length>=7?gap:all).replace(/(?:website|homepage|internet|e[ -]?mail|mail|web|url)\s*:\s*$/iu,'').replace(/\s{2,}/g,' ').trim();
+    }).filter(Boolean).join(' · ').trim();
+  }
+  function cleanContacts(doc){
+    const d=normalise(doc);d.elements=d.elements.flatMap(e=>{
+      if(e.type!=='text')return [e];if(e.role==='web')return [];
+      const value=e.text.split(/\r?\n/).map(withoutContactLine).filter(line=>line.trim()).join('\n');return value.trim()?[{...e,text:value}]:[];
+    });return d;
+  }
   function normalise(raw){
     if(!raw||raw.schema!=='svbsc.bande'||raw.version!==1)throw Error('Das ist kein Bandenstudio-Projekt dieser Fassung.');
     if(!Array.isArray(raw.elements)||raw.elements.length>60)throw Error('Ein Projekt kann höchstens 60 Elemente enthalten.');
@@ -3543,25 +3533,34 @@ const BANDENWAHL = (() => {
   }
   function create(title=''){return normalise({schema:'svbsc.bande',version:1,id:uid(),title,width:3000,height:800,bleed:20,safe:40,background:CI.weiss,scale:1,minDpi:100,mode:'rgb',elements:[],assets:{}});}
   function template(doc,key,fields={}){
-    const d=copyDocument(doc),W=d.width,H=d.height,m=Math.max(d.safe,H*.075),contact=text(fields.web||'',100),name=text(fields.name||fields.title||d.title||'FIRMENNAME',120),claim=text(fields.claim||'',100),logo=fields.asset||doc.elements.find(e=>e.type==='image')?.asset||Object.keys(d.assets)[Object.keys(d.assets).length-1];
-    const light=!!d.assets[logo]?.light,dark=key==='marine'||light&&['klar','logo'].includes(key);
+    const d=copyDocument(doc),W=d.width,H=d.height,m=Math.max(d.safe,Math.min(W,H)*.08),stripe=key==='kante'?Math.min(H*.09,W*.08):0,frame={x:m,y:m,w:W-2*m-stripe,h:H-2*m};
+    const clean=value=>text(value,120).split(/\r?\n/).filter(line=>!contactLine(line)).join('\n').trim(),name=clean(fields.name||fields.title||d.title),claim=clean(fields.claim),logo=fields.asset||doc.elements.find(e=>e.type==='image')?.asset||Object.keys(d.assets)[Object.keys(d.assets).length-1];
+    if(logo&&!Object.prototype.hasOwnProperty.call(d.assets,logo))throw Error('Das gewählte Logo fehlt im Projekt.');
+    const light=!!d.assets[logo]?.light,dark=key==='marine'||light,pattern=['bb','moerlens'].includes(fields.pattern)?fields.pattern:'normal';
     d.background=dark?CI.marine:CI.weiss;d.elements=[];
     const rect=(x,y,w,h,fill)=>d.elements.push({id:uid(),type:'rect',x,y,w,h,fill,locked:false});
     const txt=(value,x,y,w,h,size,font,fill,align='left',role='text')=>{if(value)d.elements.push({id:uid(),type:'text',x,y,w,h,text:value,role,size,font,fill,align,locked:false});};
-    const img=(x,y,w,h)=>{if(logo)d.elements.push({id:uid(),type:'image',asset:logo,x,y,w,h,locked:false});};
+    const img=(x,y,w,h)=>{if(logo){const e={id:uid(),type:'image',asset:logo,x,y,w,h,locked:false};if(key==='marine'&&!light){const b=fitImage(e,d.assets[logo]),pad=Math.min(H*.025,m);rect(b.x-pad,b.y-pad,b.w+2*pad,b.h+2*pad,CI.weiss);}d.elements.push(e);}};
     const ink=dark?CI.weiss:CI.marine;
-    if(key==='logo'){
-      img(W*.13,H*.13,W*.74,H*.53);if(!logo)txt(name,m,H*.12,W-2*m,H*.57,H*.35,'condensed',ink,'center','name');
-      txt(logo?claim:'',m,H*.69,W-2*m,H*.12,H*.11,'barlow',ink,'center','claim');txt(contact,m,H*.85,W-2*m,H*.09,H*.075,'barlow',ink,'center','web');
+    const nameText=(x,w)=>txt(name,x,frame.y+frame.h*.09,w,frame.h*.82,frame.h*.82/.7,'condensed',ink,'center','name');
+    if(!logo){
+      nameText(frame.x,frame.w);
+    }else if(pattern==='bb'){
+      const lw=Math.min(frame.w*.32,frame.h*1.45),gap=Math.min(H*.10,frame.w*.04),sw=(frame.w-lw-2*gap)/2,size=Math.min(frame.h*.85,sw/3.16),th=size*.7;
+      img(frame.x+(frame.w-lw)/2,frame.y,lw,frame.h);
+      txt(fields.left==='EVENT'?fields.left:'EVENT',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt(fields.right==='KREATIV'?fields.right:'KREATIV',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
+    }else if(pattern==='moerlens'&&claim){
+      const a=d.assets[logo],ch=Math.min(H*.14,frame.h*.22),gap=Math.min(H*.05,frame.h*.08),lh=Math.min(frame.h-ch-gap,frame.w*a.height/a.width),lw=lh*a.width/a.height,ly=frame.y+(frame.h-lh-gap-ch)/2;
+      img(frame.x+(frame.w-lw)/2,ly,lw,lh);
+      txt(claim,frame.x,ly+lh+gap,frame.w,ch,ch/.74,'barlow',ink,'center','claim');
+    }else if(pattern==='normal'&&fields.nameAn===true&&name){
+      const gap=Math.min(H*.10,frame.w*.06),lw=Math.min(frame.w*.35,frame.h*1.45);
+      img(frame.x,frame.y,lw,frame.h);nameText(frame.x+lw+gap,frame.w-lw-gap);
     }else{
-      const lw=logo?Math.min(W*.28,H*1.25):0,nx=logo?m+lw+H*.10:m,nw=W-m-nx;
-      if(logo){if(key==='marine'&&!light)rect(m-12,H*.13-12,lw+24,H*.59+24,CI.weiss);img(m,H*.13,lw,H*.59);}
-      txt(name,nx,H*.16,nw,H*.36,H*.34,'condensed',ink,'left','name');
-      txt(claim,nx,H*.57,nw,H*.14,H*.105,'barlow',ink,'left','claim');
-      rect(nx,H*.77,Math.min(nw*.28,600),Math.max(5,H*.012),CI.orange);
-      txt(contact,nx,H*.84,nw,H*.09,H*.072,'barlow',ink,'left','web');
-      if(key==='kante')rect(W-H*.09,0,H*.09,H,CI.orange);
+      img(frame.x,frame.y,frame.w,frame.h);
     }
+    if(stripe)rect(W-stripe,0,stripe,H,CI.orange);
     return normalise(d);
   }
   function fitImage(e,a){const s=Math.min(e.w/a.width,e.h/a.height),w=a.width*s,h=a.height*s;return {x:e.x+(e.w-w)/2,y:e.y+(e.h-h)/2,w,h};}
@@ -3594,6 +3593,7 @@ const BANDENWAHL = (() => {
         if(a.light&&hexRGB(ground).every(v=>v>=220))add('hint','Ein helles Logo liegt auf hellem Grund. Prüfe die Sichtbarkeit oder wähle eine der dunklen CI-Vorlagen.',e.id);
       }
       if(e.type==='text'){
+        if(e.role==='web'||isContactText(e.text))add('stop','Entferne Website, E-Mail, Telefon oder Fax von der Bande.',e.id);
         const f=fonts[e.font];if(!f)add('stop','Die Schrift '+FONTS[e.font].name+' ist nicht geladen.',e.id);
         else if([...e.text.replace(/\s/g,'')].some(c=>f.charToGlyph(c).index===0))add('stop','Ein Zeichen fehlt in der gewählten Schrift. Bitte ersetze es.',e.id);
         else if(e.text.trim()){const p=textPath(e,f);if(p.size<e.size*.75)add('hint','Ein langer Text wird deutlich verkleinert. Kürze ihn für die Fernwirkung.',e.id);}
@@ -3627,7 +3627,7 @@ const BANDENWAHL = (() => {
     const cw=x1-x0+1,ch=y1-y0+1,out=new Uint8ClampedArray(cw*ch*4);for(let y=0;y<ch;y++)out.set(p.subarray(((y+y0)*W+x0)*4,((y+y0)*W+x0+cw)*4),y*cw*4);
     return {data:out,width:cw,height:ch,removed,background:bg,confidence:already?'transparent':uniform&&removed?'einfarbig':'prüfen',crop:{x:left+x0,y:top+y0,w:cw,h:ch}};
   }
-  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,normalise,create,template,fitImage,textPath,preflight,history,cutout};
+  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,isContactText,cleanContacts,normalise,create,template,fitImage,textPath,preflight,history,cutout};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.BD_CORE=api;
 })(typeof window!=='undefined'?window:globalThis);
 
@@ -3811,7 +3811,7 @@ const BANDENWAHL = (() => {
   function textureLayout(doc,size){const W=size?size[1]:doc.width,H=size?size[2]:doc.height,s=Math.min(W/doc.width,H/doc.height);return {W,H,B:0,format:W/10+'x'+H/10,stil:'studio',layout:'gespeichert',ops:[{t:'rect',x:0,y:0,w:W,h:H,fill:doc.background},{t:'img',key:'logo',x:(W-doc.width*s)/2,y:(H-doc.height*s)/2,w:doc.width*s,h:doc.height*s}],info:{warn:[],lesbar:{}},farben:{grund:doc.background}};}
   const rules={codeOK,previewOK,editorURL,editorMessage,customerPayload,textureLayout};
   if(typeof module!=='undefined'&&module.exports){module.exports=rules;return;}
-  let cfg=null,project=null,documentNow=null,preview=null,loading=null,loadingError=null,modal=null,editor=null,nonce='',saving=false,previousFocus=null,bodyOverflow='',loadGeneration=0,reloadRequired=false;
+  let cfg=null,project=null,documentNow=null,preview=null,loading=null,loadingError=null,modal=null,editor=null,nonce='',saving=false,previousFocus=null,bodyOverflow='',loadGeneration=0,reloadRequired=false,motiv='haupt',availableMotifs=[],motifFocus=null;
   const $=s=>document.querySelector(s),C=()=>root.BD_CORE,R=()=>root.BD_RENDER;
   const frame=()=>document.getElementById('reiseRahmen');
   const canEdit=()=>!!(project&&(project.bearbeiten===true||project.kundenbearbeitung===true));
@@ -3819,23 +3819,34 @@ const BANDENWAHL = (() => {
   const errorText=e=>/failed to fetch|networkerror|load failed|network request failed/i.test(e&&e.message||'')?'Die Verbindung ist unterbrochen. Deine Änderungen bleiben im Editor. Prüfe dein Netz und versuche es erneut.':e&&e.message||'Der Entwurf ist gerade nicht erreichbar. Bitte versuche es erneut.';
   function notify(t){if(cfg&&cfg.toast)cfg.toast(t);}
   function resume(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-editor-zu'},location.origin);if(cfg&&cfg.geschlossen)cfg.geschlossen();}
-  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,bearbeiten:canEdit(),version:project&&project.version||0},location.origin);controls();}
+  const motifs=()=>{const list=project&&project.motive||availableMotifs;return Array.isArray(list)?list.filter(m=>m&&['haupt','moerlens'].includes(m.key)&&typeof m.titel==='string').slice(0,2):[];};
+  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),busy:!!loading||saving},location.origin);controls();}
+  function rpc(fn,args){
+    const routes={bandenstudio_projekt_laden:'bandenstudio_motiv_laden',bandenstudio_projekt_speichern:'bandenstudio_motiv_speichern',bandenstudio_kunde_speichern:'bandenstudio_motiv_kunde_speichern'};
+    return cfg.rpc(motiv!=='haupt'&&routes[fn]?routes[fn]:fn,motiv!=='haupt'&&routes[fn]?{...args,p_motiv:motiv}:args);
+  }
   function controls(){
     const b=$('#bdBearbeiten'),g=$('#bdKundeErlauben'),hint=$('#bdProjektHinweis'),count=$('#bdProjektBestand');
-    if(b){b.hidden=!canEdit();b.disabled=saving;}
+    if(b){b.hidden=!canEdit();b.disabled=saving||!!loading;}
     if(g){g.closest('label').hidden=!(project&&project.kundenfreigabe_darf===true);g.checked=!!(project&&project.kundenbearbeitung);}
     if(hint)hint.textContent=loadingError?'Der gespeicherte Entwurf lässt sich gerade nicht laden. Lade die Seite erneut.':project?'Gespeicherter Entwurf · Version '+project.version+'. Die Druckfreigabe erfolgt separat.':'Euer Entwurf wird geladen …';
     if(count){const s=project&&project.bestand;count.hidden=!(team()&&s);count.textContent=s?'Entwürfe im Bestand: '+s.projekte+' für '+s.aktive_partner+' aktive Präsentationen.':'';}
     for(const id of ['bdLay','bdFmt']){const el=$('#'+id);if(el)el.hidden=!!cfg;}
+    const host=$('#bdMotiv')||$('[data-bandenstudio-motive]'),list=motifs();
+    if(host){host.hidden=list.length<2;const content=list.map(m=>'<button type="button" data-bd-motiv="'+m.key+'" aria-pressed="'+(m.key===motiv)+'"'+(saving||loading?' disabled':'')+'>'+C().esc(m.titel)+'</button>').join('');
+      if(host.innerHTML!==content){host.innerHTML=content;host.querySelectorAll?.('[data-bd-motiv]').forEach(b=>b.onclick=()=>{motifFocus=b.dataset.bdMotiv;changeMotif(b.dataset.bdMotiv);});}
+      if(motifFocus&&!loading&&!saving){host.querySelector?.('[data-bd-motiv="'+motifFocus+'"]')?.focus({preventScroll:true});motifFocus=null;}
+    }
   }
   async function makeDoc(p){
     if(!C()||!R())throw Error('Das Bandenstudio wird noch geladen. Bitte lade die Seite neu.');
-    if(p.quelle!=='generator'&&(p.dokument||p.readDoc))return C().normalise(p.dokument||p.readDoc);
+    if(p.quelle!=='generator'&&(p.dokument||p.readDoc))return C().cleanContacts(p.dokument||p.readDoc);
     const g=p.generator;if(!g||typeof g!=='object')throw Error('Für diesen Link liegt noch kein Bandenentwurf vor.');
     let d=C().create(g.firma||''),asset=g.logo;
     d.width=+g.width||2500;d.height=+g.height||800;d.bleed=Number.isFinite(+g.bleed)?+g.bleed:20;d.safe=Number.isFinite(+g.safe)?+g.safe:40;
-    if(!asset&&g.logo_aus_praesentation&&cfg&&cfg.logo){
-      const src=typeof cfg.logo==='function'?cfg.logo():cfg.logo;
+    if(!asset&&g.logo_aus_praesentation&&cfg&&(cfg.logo||g.logo_url)){
+      if(g.logo_url&&!['partner/bb-signet.svg','partner/moerlens-schriftzug.png'].includes(g.logo_url))throw Error('Die Logo-Vorlage ist nicht freigegeben.');
+      const src=g.logo_url||(typeof cfg.logo==='function'?cfg.logo():cfg.logo);
       if(src&&(/\.svg(?:[?#]|$)/i.test(src)||/^data:image\/svg\+xml[;,]/i.test(src))){
         const response=await fetch(src);if(!response.ok)throw Error('Das Vektorlogo lässt sich gerade nicht laden.');const vector=R().readSVG(await response.text()),data=await R().vectorPreview(vector);
         asset={name:'Logo der Präsentation',src:data,width:vector.width,height:vector.height,kind:'vector',vector};
@@ -3843,8 +3854,14 @@ const BANDENWAHL = (() => {
         const data=await LOGO.alsDataUrl(src,'original',1800),im=await R().image(data);asset={name:'Logo der Präsentation',src:data,width:im.naturalWidth||im.width,height:im.naturalHeight||im.height,kind:'raster'};
       }
     }
-    if(asset){asset=clone(asset);if(typeof R().analyseAsset==='function')asset=await R().analyseAsset(asset)||asset;d.assets.partner_logo=asset;}
-    d=C().template(d,['klar','logo'].includes(g.template)?g.template:'klar',{name:g.firma||'',web:g.web||'',asset:asset?'partner_logo':undefined});
+    if(asset){asset=clone(asset);
+      if(!asset.vector&&typeof LOGO!=='undefined'&&typeof LOGO.alsDataUrl==='function'){
+        const original=asset.original||asset.src,src=await LOGO.alsDataUrl(asset.src,'farbe:'+(g.pattern==='bb'?C().CI.orange:C().CI.marine),1800),im=await R().image(src);
+        asset={...asset,original,src,width:im.naturalWidth||im.width,height:im.naturalHeight||im.height,light:false};
+      }
+      if(typeof R().analyseAsset==='function')asset=await R().analyseAsset(asset)||asset;d.assets.partner_logo=asset;
+    }
+    d=C().template(d,['klar','logo'].includes(g.template)?g.template:'klar',{name:g.name||g.firma||'',nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',asset:asset?'partner_logo':undefined});
     return C().normalise(d);
   }
   async function makePreview(d){
@@ -3858,37 +3875,42 @@ const BANDENWAHL = (() => {
   async function adopt(p,generation){
     if(!p||p.ok===false||!Number.isInteger(p.version))throw Error(p&&p.fehler||'Der Entwurf konnte nicht geladen werden.');
     const d=await makeDoc(p),im=await makePreview(d);if(generation!==loadGeneration)return null;
-    project=p;documentNow=d;preview=im;loadingError=null;reloadRequired=false;context();if(cfg&&cfg.geaendert)cfg.geaendert(p);return p;
+    project=p;availableMotifs=motifs();documentNow=d;preview=im;loadingError=null;reloadRequired=false;context();if(cfg&&cfg.geaendert)cfg.geaendert(p);return p;
   }
   async function load(){
     if(!cfg||!codeOK(cfg.code))throw Error('Der persönliche Präsentationslink fehlt.');
     if(loading)return loading;const generation=loadGeneration;
-    loading=(async()=>{try{return await adopt(await cfg.rpc('bandenstudio_projekt_laden',{p_code:cfg.code}),generation);}catch(e){if(generation===loadGeneration){loadingError=e;controls();}throw e;}finally{if(generation===loadGeneration)loading=null;}})();return loading;
+    loading=(async()=>{try{return await adopt(await rpc('bandenstudio_projekt_laden',{p_code:cfg.code}),generation);}catch(e){if(generation===loadGeneration){loadingError=e;controls();}throw e;}finally{if(generation===loadGeneration){loading=null;context();}}})();return loading;
+  }
+  async function changeMotif(key){
+    if(key===motiv||saving||loading||modal||!motifs().some(m=>m.key===key))return false;
+    const old={motiv,project,documentNow,preview},owner=cfg;availableMotifs=motifs();const generation=++loadGeneration;motiv=key;project=null;loadingError=null;reloadRequired=false;
+    try{const work=load();context();await work;return cfg===owner&&generation===loadGeneration;}catch(e){if(cfg!==owner||generation!==loadGeneration)return false;motiv=old.motiv;project=old.project;documentNow=old.documentNow;preview=old.preview;loadingError=null;context();notify(errorText(e));return false;}
   }
   async function prepare(o){
     if(!o||!codeOK(o.code)||typeof o.rpc!=='function')throw Error('Der persönliche Präsentationslink fehlt.');
     if(saving)throw Error('Der aktuelle Entwurf wird noch gespeichert.');if(modal)close();
-    ++loadGeneration;cfg=o;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
+    ++loadGeneration;cfg=o;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
   }
   async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project};}
   function close(){
     if(!modal||saving)return;const old=modal;modal=null;editor=null;nonce='';old.remove();document.body.style.overflow=bodyOverflow;
-    if(previousFocus&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;resume();
+    if(previousFocus&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;context();resume();
   }
   function status(t){const e=modal&&modal.querySelector('[data-bd-status]');if(e)e.textContent=t;}
   function post(o){if(editor&&editor.contentWindow)editor.contentWindow.postMessage(Object.assign({nonce},o),location.origin);}
-  function sendDocument(){if(!modal||!documentNow)return;post({typ:'bd-editor-laden',doc:clone(documentNow),rolle:team()?'team':'kunde',vorgaben:{firma:project.generator&&project.generator.firma||documentNow.title,web:project.generator&&project.generator.web||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:null});status('');}
+  function sendDocument(){if(!modal||!documentNow)return;const g=project.generator||{};post({typ:'bd-editor-laden',doc:clone(documentNow),rolle:team()?'team':'kunde',vorgaben:{firma:g.firma||documentNow.title,name:g.name||g.firma||documentNow.title,nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:project.quelle==='generator'&&['klar','logo'].includes(g.template)?g.template:null});status('');}
   async function saveFromEditor(data){
     if(!modal||saving||!canEdit())return;saving=true;status('Entwurf wird gespeichert …');const generation=loadGeneration,oldProject=project,oldDoc=documentNow,oldPreview=preview;
     try{
       let p,fn;
       if(team()){
-        const d=C().normalise(data.doc);await R().validateAssets(d);p={expected_version:project.version,dokument:d,vorschau:await makePreview(d)};fn='bandenstudio_projekt_speichern';
+        const d=C().cleanContacts(data.doc);await R().validateAssets(d);p={expected_version:project.version,dokument:d,vorschau:await makePreview(d)};fn='bandenstudio_projekt_speichern';
       }else{p=customerPayload(data.doc,data.template===undefined?null:data.template,project.version,C());fn='bandenstudio_kunde_speichern';}
-      const result=await cfg.rpc(fn,{p_code:cfg.code,p});
+      const result=await rpc(fn,{p_code:cfg.code,p});
       if(!result||result.ok===false)throw Error(result&&result.konflikt?'Der Entwurf wurde inzwischen geändert. Deine Änderungen bleiben geöffnet. Schließe mit Abbrechen und öffne den Editor erneut, um den aktuellen Stand zu laden.':result&&(result.fehler||result.hinweis)||'Der Entwurf wurde nicht gespeichert. Deine Änderungen bleiben im Editor.');
       // Der Server liefert den kanonischen Stand. Falls nur die Version geliefert wird, laden wir ihn erneut.
-      const canonical=result.generator||result.dokument||result.readDoc?result:await cfg.rpc('bandenstudio_projekt_laden',{p_code:cfg.code});
+      const canonical=result.generator||result.dokument||result.readDoc?result:await rpc('bandenstudio_projekt_laden',{p_code:cfg.code});
       await adopt(canonical,generation);if(generation!==loadGeneration)return;
       post({typ:'bd-editor-gespeichert',ok:true,version:project.version,doc:clone(documentNow)});saving=false;close();notify('Bandenentwurf gespeichert.');
     }catch(e){
@@ -3921,9 +3943,10 @@ const BANDENWAHL = (() => {
     }
     const f=frame();if(!cfg||!f||e.source!==f.contentWindow||e.origin!==location.origin||!e.data)return;
     if(e.data.reise==='bereit')context();
-    if(e.data.reise==='bande-editor-oeffnen'){if(canEdit())open();else resume();}
+    if(e.data.reise==='bande-editor-oeffnen'){if(canEdit()&&!loading)open();else resume();}
+    if(e.data.reise==='bande-motiv-waehlen'&&typeof e.data.motiv==='string')changeMotif(e.data.motiv);
   });
-  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,geladen:()=>!!project,regeln:rules};
+  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,geladen:()=>!!project,regeln:rules};
 })(typeof window!=='undefined'?window:globalThis);
 
 /* Explicit one-use same-origin handoff; no private data in URL or browser history. */
@@ -3933,12 +3956,12 @@ const BANDENWAHL = (() => {
     const nonce=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
     const child=window.open('bandenstudio.html#transfer='+nonce,'_blank');
     if(!child){if(typeof kToast==='function')kToast('Bitte erlaube das Öffnen des Bandenstudios in einem neuen Tab.');return;}
-    const input={firma:String(brief.firma||'').slice(0,120),web:String(brief.web||'').slice(0,100),format:String(brief.format||'300x80'),logo:typeof brief.logo==='string'?brief.logo:''};
+    const input={firma:String(brief.firma||'').slice(0,120),format:String(brief.format||'300x80'),logo:typeof brief.logo==='string'?brief.logo:''};
     let used=false;const timeout=setTimeout(()=>removeEventListener('message',receive),180000);
     async function receive(e){
       if(used||e.origin!==location.origin||e.source!==child||e.data?.typ!=='bandenstudio-bereit'||e.data.nonce!==nonce)return;
       used=true;clearTimeout(timeout);removeEventListener('message',receive);
-      const payload={firma:input.firma,web:input.web,format:input.format};
+      const payload={firma:input.firma,format:input.format};
       try{
         let src=input.logo;
         if(src&&!src.startsWith('data:')){

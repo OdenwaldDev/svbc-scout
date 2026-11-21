@@ -9,7 +9,7 @@
     const B = L.B, fonts = await Promise.all(SCHRIFTEN.map(async ([fam, f, w]) => { const u = await fontDaten(f); return u ? `@font-face{font-family:'${fam}';font-weight:${w};src:url(${u.replace(/^data:[^;]*;/, 'data:font/woff2;')}) format('woff2');}` : ''; }));
     const bildUrl = im => { if(!im) return null; const c = document.createElement('canvas'); c.width = im.naturalWidth || im.width; c.height = im.naturalHeight || im.height; c.getContext('2d').drawImage(im, 0, 0); return c.toDataURL('image/png'); };
     const lu = bildUrl(res.logoBild), wu = bildUrl(res.wappenBild), famName = f => FAM[f.fam].replace(/"/g, "'");
-    const teile = L.ops.map(o => {
+    const teile = druckOps(L).map(o => {
       if(o.t === 'rect') return `<rect x="${r2(o.x)}" y="${r2(o.y)}" width="${r2(o.w)}" height="${r2(o.h)}" fill="${fa(o.fill)}"/>`;
       if(o.t === 'linie') return `<line x1="${r2(o.x1)}" y1="${r2(o.y1)}" x2="${r2(o.x2)}" y2="${r2(o.y2)}" stroke="${fa(o.stroke)}" stroke-width="${r2(+o.w || 0)}" stroke-linecap="round"/>`;
       if(o.t === 'strich'){ const [a, b, c] = o.pts; return `<path d="M${r2(a[0])} ${r2(a[1])}Q${r2(b[0])} ${r2(b[1])} ${r2(c[0])} ${r2(c[1])}" fill="none" stroke="${fa(o.stroke)}" stroke-width="${r2(o.w)}" stroke-linecap="round"/>`; }
@@ -134,15 +134,15 @@
     return { boxen, pxm:Math.abs(m1[0] - m0[0]) / dpr };
   }
 
-  return { C, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, laden };
+  return { C, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, muster, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, ohneKontakt, laden };
 })();
 
 /* =====================================================================
    Beta 0.80 · Bandencreator im Partner-Bereich (Reiter „Bandencreator“)
-   Aus Logo, Firmenname, Slogan, Web und Telefon eines Partners entsteht mit einem Tipp eine druckfertige Bande.
-   - Zwei Stile: Partner-CI (weiße Bande, Marine, Logo einfarbig; seit 0.99.38 ohne Vereinsabsender) und Original (Logo in seinen Farben, Firmenfarbe als Leiste)
+   Aus dem Original-Logo eines Partners entsteht eine groß gesetzte Bande.
+   - Zwei Stile: Partner-CI (weiße Bande, Marine, Logo einfarbig; seit 0.99.38 ohne Vereinsabsender) und Original (Logo in seinen Farben)
    - Formate 3, 4, 5 (heutiges Maß) und 6 m mal 80 cm, dazu das Feld der Partnerwand (2 m mal 1 m)
-   - Vorschläge zum Durchwischen (Logo links, Logo groß, mit Slogan), alles im Formular nachjustierbar
+   - Logo groß, zusätzlicher Name nur bei einem ausdrücklich bestätigten Symbol
    - Live am Platz (Bandenreihe in Perspektive, Nachbarn im Einheitslook) oder flach als Druckansicht mit Maßen
    - Export: PDF in Originalgröße mit 2 cm Beschnitt und Schnittmarken, PNG, SVG, Bild vom Platz zum Teilen
    - Bandenplan: Plätze rund um den Platz frei, reserviert oder belegt. Belegte sind gesperrt, freigeben kann nur ein Admin.
@@ -150,7 +150,7 @@
    Gestaltung und Druckdaten: bandenlib.js (BANDE). Daten: 115_banden.sql, Logos aus 114 (trikot_logos).
    ===================================================================== */
 const BC = { d:null, laedt:null, ansicht:'gestalten', sicht:'platz', raster:true, eigen:null, logoKey:null, firmaKey:'', platz:null, entwurf:null, tok:0, res:null, lay:null, nachbarn:null, nbFormat:null, vorT:0, err:null,
-  spec:{ format:'300x80', stil:'ci', layout:'links', firma:'', name:'', claim:'', web:'', telefon:'', branche:'', kontakt:true, nameAn:null, logoFarbe:'marine', akzent:null } };
+  spec:{ format:'300x80', stil:'ci', layout:'mitte', firma:'', name:'', claim:'', web:'', telefon:'', branche:'', kontakt:false, nameAn:false, pattern:'normal', logoFarbe:'marine', akzent:null } };
 const BC_STATUS = { entwurf:'Entwurf', freigegeben:'Zum Druck freigegeben', gedruckt:'Gedruckt' };
 
 /* ---------- Reiter einhängen (nach „Trikots“) ---------- */
@@ -172,27 +172,34 @@ const bcLogoKey = l => l.id || 'eigen';
 function bcLogo(){ return BC.logoKey ? bcLogos().find(l => bcLogoKey(l) === BC.logoKey) || null : null; }
 function bcFirmen(){
   const F = ((BC.d && BC.d.firmen) || []).map(f => ({ key:'s:' + f.id, firma:f.firma, web:f.web, telefon:f.telefon, branche:f.branche, sponsor:f.id, status:f.status }));
-  ((BC.d && BC.d.logos) || []).forEach(l => { if(!F.some(f => f.sponsor && f.sponsor === l.sponsor) && !F.some(f => f.firma.toLowerCase() === l.firma.toLowerCase())) F.push({ key:'l:' + l.id, firma:l.firma, logo:l.id }); });
+  const druck={'3dd57b60-89ca-4b6e-b072-5b8464146c28':'BB Berns&Baltz','10e1823f-fc8b-43a8-a3d2-6f022f2223b4':'BB Berns&Baltz · MÖRLENS'};
+  const logos=(BC.d && BC.d.logos)||[];
+  logos.filter(l=>!druck[l.id]).forEach(l => { if(!F.some(f => f.sponsor && f.sponsor === l.sponsor) && !F.some(f => f.firma.toLowerCase() === l.firma.toLowerCase())) F.push({ key:'l:' + l.id, firma:l.firma, logo:l.id }); });
+  for(const l of logos){const firma=druck[l.id];if(!firma)continue;let f=F.find(f=>f.firma.toLowerCase()===firma.toLowerCase());if(!f){f={key:'l:'+l.id,firma};F.push(f);}f.bandenLogo=l.id;}
   return F; }
-function bcLogoFuer(f){ const L = (BC.d && BC.d.logos) || []; return L.find(l => l.bild && f.sponsor && l.sponsor === f.sponsor) || L.find(l => l.bild && l.firma.toLowerCase() === f.firma.toLowerCase()) || (f.logo ? L.find(l => l.id === f.logo && l.bild) : null) || null; }
-// Mit einem Tipp: Firma wählen füllt Name, Web, Telefon, Branche und das Logo
+function bcLogoFuer(f){ const L = (BC.d && BC.d.logos) || []; return (f.bandenLogo?L.find(l=>l.bild&&l.id===f.bandenLogo):null) || L.find(l => l.bild && f.sponsor && l.sponsor === f.sponsor) || L.find(l => l.bild && l.firma.toLowerCase() === f.firma.toLowerCase()) || (f.logo ? L.find(l => l.id === f.logo && l.bild) : null) || null; }
+// Eine Firmenwahl übernimmt nur deren Namen und eigenes Logo.
 function bcFirmaWaehlen(key){
   const f = bcFirmen().find(x => x.key === key); BC.firmaKey = key; if(!f) return;
-  const s = BC.spec; s.firma = f.firma; s.name = f.firma; s.web = f.web || ''; s.telefon = f.telefon || ''; s.branche = f.branche || ''; s.claim = ''; s.nameAn = null; s.akzent = null;
-  BC.sponsor = f.sponsor || null; const l = bcLogoFuer(f); BC.logoKey = l ? l.id : null; BC.entwurf = null;
+  const s = BC.spec; s.firma = f.firma; s.name = f.firma; s.web = ''; s.telefon = ''; s.branche = f.branche || ''; s.claim = ''; s.kontakt = false; s.nameAn = false; s.pattern = BANDE.muster({ firma:f.firma }); s.akzent = null;
+  BC.sponsor = f.sponsor || null; const l = bcLogoFuer(f); BC.eigen = null; BC.logoKey = l ? l.id : null; BC.entwurf = null;
 }
 
 // Ohne gewählte Firma: neutraler Anfang. Kein Name, kein Kontakt und vor allem kein Logo einer anderen Firma bleiben stehen (0.99.24).
 // Albert: „Es stand immer derselbe fremde Name mit drauf.“ Der Creator fing mit dem ersten Partner samt Logo an, und das Logo blieb,
-// wenn man einen anderen Namen eintippte oder einen Platz wählte. Ein selbst hochgeladenes Logo bleibt.
-function bcFirmaLeer(name){ const s = BC.spec; BC.firmaKey = ''; BC.sponsor = null; BC.entwurf = null; s.firma = s.name = name || 'Deine Firma'; s.web = ''; s.telefon = ''; s.branche = ''; s.claim = ''; s.nameAn = null; s.akzent = null;
-  if(BC.logoKey !== 'eigen') BC.logoKey = null; }
+// wenn man einen anderen Namen eintippte oder einen Platz wählte.
+function bcFirmaLeer(name){ const s = BC.spec; BC.firmaKey = ''; BC.sponsor = null; BC.entwurf = null; s.firma = s.name = name || ''; s.web = ''; s.telefon = ''; s.branche = ''; s.claim = ''; s.kontakt = false; s.nameAn = false; s.pattern = BANDE.muster({ firma:s.firma }); s.akzent = null;
+  BC.eigen = null; BC.logoKey = null; }
+function bcEigenerName(name){
+  if(BC.logoKey === 'eigen' && BC.eigen && !BC.eigen.firma){ BC.spec.firma = BC.spec.name = name; BC.spec.pattern = BANDE.muster({ firma:name }); return; }
+  bcFirmaLeer(name);
+}
 
 /* ---------- Oberfläche ---------- */
 async function bcRender(B){
   if(B.querySelector('.pz-bc') && BC.d){ bcAnsichtZeigen(); return; }
   B.innerHTML = `<div class="pz pz-tc pz-bc"><div class="pz-tc-kopf"><span class="pz-hand">Rund um unseren Platz</span><h2>Bandencreator</h2>
-    <p>Logo, Name und Kontakt rein, fertig ist die Bande. Alle Banden folgen denselben Regeln, damit unser Platz einheitlich und ruhig aussieht.</p></div>
+    <p>Das Logo steht groß auf der Bande. Fehlt darin der Firmenname, kannst du ihn ergänzen.</p></div>
     <div class="pz-bc-sw"><div class="pz-tc-seg" id="bcAnsicht" role="group" aria-label="Ansicht"><button type="button" data-bcansicht="gestalten">Gestalten</button><button type="button" data-bcansicht="plan">Bandenplan</button></div></div>
     <div id="bcInhalt"><div class="pz-tc-buehne pz-bc-laden"><div class="pz-tc-laden"><i></i>Bandencreator wird geladen …</div></div></div></div>`;
   B.querySelector('#bcAnsicht').onclick = e => { const b = e.target.closest('[data-bcansicht]'); if(b){ BC.ansicht = b.dataset.bcansicht; bcAnsichtZeigen(); } };
@@ -219,11 +226,8 @@ function bcGestalten(I){
       <section class="pz-tc-block" aria-labelledby="bcPh"><div class="pz-tc-bk"><h3 id="bcPh">Partner</h3></div>
         <label class="pz-tc-team"><span>Firma</span><select id="bcFirma" aria-label="Firma"><option value="">Eigene Angaben</option>${fa.map(f => `<option value="${bcE(f.key)}">${bcE(f.firma)}</option>`).join('')}</select></label>
         <div class="pz-bc-felder">
-          <label class="pz-tc-firma"><span>Name auf der Bande</span><input type="text" id="bcName" maxlength="80" autocomplete="organization"></label>
-          <label class="pz-tc-firma"><span>Slogan</span><input type="text" id="bcClaim" maxlength="80" placeholder="Kurz und klar, höchstens acht Wörter"></label>
-          <label class="pz-tc-firma"><span>Website</span><input type="text" id="bcWeb" maxlength="80" inputmode="url" autocomplete="url"></label>
-          <label class="pz-tc-firma"><span>Telefon</span><input type="text" id="bcTel" maxlength="40" inputmode="tel" autocomplete="tel"></label></div>
-        <div class="pz-bc-schalter"><label class="pz-bc-cb"><input type="checkbox" id="bcNameAn"><span>Firmenname zeigen</span></label><label class="pz-bc-cb"><input type="checkbox" id="bcKontakt"><span>Kontaktzeile</span></label></div></section>
+          <label class="pz-tc-firma"><span>Firmenname</span><input type="text" id="bcName" maxlength="80" autocomplete="organization"></label></div>
+        <div class="pz-bc-schalter"><label class="pz-bc-cb"><input type="checkbox" id="bcNameAn"><span>Logo enthält keinen Firmennamen</span></label></div></section>
       <section class="pz-tc-block" aria-labelledby="bcLh"><div class="pz-tc-bk"><h3 id="bcLh">Logo</h3>
         <label class="pz-tc-hoch"><input type="file" id="bcDatei" accept="image/png,image/jpeg,image/webp,image/svg+xml">${SVI('plus')}<span>Logo hochladen</span></label></div>
         <div class="pz-tc-logos" id="bcLogos" role="list" aria-label="Vorhandene Partnerlogos"></div><div id="bcAnalyse"></div></section>
@@ -241,9 +245,8 @@ function bcGestalten(I){
   const $ = q => I.querySelector(q);
   $('#bcFirma').value = BC.firmaKey && fa.some(f => f.key === BC.firmaKey) ? BC.firmaKey : '';
   $('#bcFirma').onchange = e => { if(e.target.value) bcFirmaWaehlen(e.target.value); else bcFirmaLeer(); bcFormularFuellen(); bcLogosZeigen(); bcNeu(true); };
-  [['#bcName', 'name'], ['#bcClaim', 'claim'], ['#bcWeb', 'web'], ['#bcTel', 'telefon']].forEach(([q, k]) => { $(q).oninput = e => { s[k] = e.target.value; if(k === 'name' && !BC.firmaKey) s.firma = e.target.value; bcNeu(); }; });
+  $('#bcName').oninput = e => { const value = e.target.value; if(!BC.firmaKey && s.firma !== value){ bcEigenerName(value); bcLogosZeigen(); } else s.name = value; bcNeu(); };
   $('#bcNameAn').onchange = e => { s.nameAn = e.target.checked; bcNeu(); };
-  $('#bcKontakt').onchange = e => { s.kontakt = e.target.checked; bcNeu(); };
   $('#bcSicht').onclick = e => { const b = e.target.closest('[data-bcsicht]'); if(b){ BC.sicht = b.dataset.bcsicht; bcKnoepfe(); bcBuehne(); } };
   $('#bcRaster').onclick = () => { BC.raster = !BC.raster; bcKnoepfe(); bcBuehne(); };
   $('#bcStil').onclick = e => { const b = e.target.closest('[data-bcstil]'); if(b && s.stil !== b.dataset.bcstil){ s.stil = b.dataset.bcstil; bcNeu(true); } };
@@ -257,7 +260,7 @@ function bcGestalten(I){
 }
 function bcFormularFuellen(){
   const P = document.querySelector('.pz-bc'); if(!P) return; const s = BC.spec, v = (q, x) => { const e = P.querySelector(q); if(e && e.value !== x) e.value = x || ''; };
-  v('#bcName', s.name); v('#bcClaim', s.claim); v('#bcWeb', s.web); v('#bcTel', s.telefon);
+  v('#bcName', s.name);
   const fs = P.querySelector('#bcFirma'); if(fs) fs.value = BC.firmaKey || '';
 }
 function bcKnoepfe(){
@@ -270,17 +273,21 @@ function bcKnoepfe(){
   if(fein){ const farben = BC.res && BC.res.analyse ? BC.res.analyse.farben : [], auto = BC.lay && BC.lay.farben.akzent;
     fein.innerHTML = s.stil === 'ci'
       ? `<span class="pz-tc-leise">Logo einfarbig</span><div class="pz-tc-seg mini" role="group" aria-label="Logofarbe">${[['marine', 'Marine'], ['schwarz', 'Schwarz']].map(([k, t]) => `<button type="button" data-bclf="${k}" class="${s.logoFarbe === k ? 'on' : ''}" aria-pressed="${s.logoFarbe === k}">${t}</button>`).join('')}</div>`
-      : `<span class="pz-tc-leise">Firmenfarbe für die Leiste</span><div class="pz-bc-farben" role="group" aria-label="Firmenfarbe">${[null].concat(farben.filter(f => !f.hell).map(f => f.hex).slice(0, 4)).concat(['#1d2760']).filter((x, i, a) => a.indexOf(x) === i).map(h => {
+      : `<span class="pz-tc-leise">Hintergrund für helle Logos</span><div class="pz-bc-farben" role="group" aria-label="Hintergrundfarbe">${[null].concat(farben.filter(f => !f.hell).map(f => f.hex).slice(0, 4)).concat(['#1d2760']).filter((x, i, a) => a.indexOf(x) === i).map(h => {
           const an2 = (s.akzent || null) === h, farbe = [h, auto, '#1d2760'].find(x => /^#[0-9a-fA-F]{6}$/.test(x || '')); return `<button type="button" data-bcak="${h || ''}" class="${an2 ? 'on' : ''}" aria-pressed="${an2}" aria-label="${h ? 'Farbe ' + h : 'Automatisch aus dem Logo'}"><i style="background:${farbe}"></i>${h ? '' : '<span>Auto</span>'}</button>`; }).join('')}</div>`;
     fein.querySelectorAll('[data-bclf]').forEach(b => b.onclick = () => { s.logoFarbe = b.dataset.bclf; bcNeu(true); });
     fein.querySelectorAll('[data-bcak]').forEach(b => b.onclick = () => { s.akzent = b.dataset.bcak || null; bcNeu(true); }); }
-  const na = P.querySelector('#bcNameAn'), ko = P.querySelector('#bcKontakt');
-  if(na){ const logo = BC.res && BC.res.logo; na.checked = s.nameAn != null ? s.nameAn : !logo; }
-  if(ko) ko.checked = s.kontakt !== false;
+  const na = P.querySelector('#bcNameAn'), name = P.querySelector('#bcName'), logo = BC.res && BC.res.logo, normal = BANDE.muster(s) === 'normal';
+  if(na){ na.checked = s.nameAn === true && normal; na.disabled = !logo || !normal; }
+  if(name) name.disabled = !!logo && (!normal || s.nameAn !== true);
 }
 
 /* ---------- Zeichnen ---------- */
-function bcSpecVoll(){ const l = bcLogo(); return Object.assign({}, BC.spec, { logo:l ? l.bild : null, logoGewollt:!!l }); }
+function bcInhalt(spec, hasLogo){
+  const pattern = BANDE.muster(spec), nameAn = !!hasLogo && pattern === 'normal' && spec.nameAn === true;
+  return { name:!hasLogo || nameAn ? BANDE.sauber(BANDE.ohneKontakt(spec.name || spec.firma)) : '', claim:hasLogo && pattern === 'moerlens' ? 'Restobar & Patisserie' : '', web:'', telefon:'', branche:spec.branche || '', kontakt:false, nameAn, pattern, logoFarbe:spec.logoFarbe, akzent:spec.akzent };
+}
+function bcSpecVoll(){ const l = bcLogo(); return Object.assign({}, BC.spec, bcInhalt(BC.spec, !!l), { logo:l ? l.bild : null, logoGewollt:!!l }); }
 function bcNeu(sofort){ clearTimeout(BC.vorT); BC.vorT = setTimeout(bcZeichnen, sofort ? 0 : 140); }
 async function bcZeichnen(){
   const tok = ++BC.tok, sp = bcSpecVoll();
@@ -293,9 +300,8 @@ async function bcZeichnen(){
 function bcInfo(){
   const el = document.getElementById('bcInfo'); if(!el || !BC.lay) return; const i = BC.lay.info, s = BC.spec;
   const teile = [`<b>${bcE(bcFormatT(BC.lay.format))}</b>`, BC.lay.stil === 'ci' ? 'Partner-CI' : 'Original'];
-  if(i.lesbar.name) teile.push(`großer Text lesbar aus ${i.lesbar.name} m`); else if(i.lesbar.claim) teile.push(`Slogan lesbar aus ${i.lesbar.claim} m`);
+  if(i.lesbar.name) teile.push(`großer Text lesbar aus ${i.lesbar.name} m`); else if(i.lesbar.claim) teile.push(`Unterzeile lesbar aus ${i.lesbar.claim} m`);
   else { const lg = BC.lay.ops.find(o => o.rolle === 'logo'); if(lg) teile.push(`Logo ${Math.round(lg.h / 10)} cm hoch`); }
-  if(i.lesbar.kontakt) teile.push(`Kontakt aus ${i.lesbar.kontakt} m`);
   const kmin = Math.min(...i.kontrast.map(k => k.wert)); if(isFinite(kmin)) teile.push(`Kontrast ${String(kmin).replace('.', ',')} : 1`);
   el.innerHTML = teile.join(' · ') + (i.warn.length ? `<span class="pz-bc-warn">${i.warn.map(bcE).join(' ')}</span>` : '') + (BC.res && BC.res.logoFehler ? `<span class="pz-bc-warn">Das Logo ließ sich nicht laden.</span>` : '');
   void s;
@@ -340,7 +346,7 @@ function bcLogosZeigen(){
   const H = document.getElementById('bcLogos'); if(!H) return; const an = BC.logoKey;
   H.innerHTML = `<div role="listitem"><button type="button" class="pz-tc-lg ohne${!an ? ' an' : ''}" data-bclogo="" aria-pressed="${!an}" aria-label="Ohne Logo, nur Schriftzug"><b>Aa</b><span>Ohne Logo</span></button></div>` +
     bcLogos().map(l => { const o = an === bcLogoKey(l); return `<div role="listitem"><button type="button" class="pz-tc-lg${o ? ' an' : ''}" data-bclogo="${bcE(bcLogoKey(l))}" aria-pressed="${o}" title="${bcE(l.firma)}" aria-label="Logo ${bcE(l.firma)}${o ? ', gewählt' : ''}"><img src="${bcE(l.bild)}" alt="" draggable="false"><span>${bcE(l.firma)}</span></button></div>`; }).join('');
-  H.querySelectorAll('[data-bclogo]').forEach(b => b.onclick = () => { BC.logoKey = b.dataset.bclogo || null; BC.spec.akzent = null; BC.spec.nameAn = null; bcLogosZeigen(); bcNeu(true); });
+  H.querySelectorAll('[data-bclogo]').forEach(b => b.onclick = () => { BC.logoKey = b.dataset.bclogo || null; BC.spec.akzent = null; BC.spec.nameAn = false; bcLogosZeigen(); bcNeu(true); });
   bcLogos().forEach(l => LOGO.aufbereiten(l.bild).then(a => { if(!a.hell) return; const b = H.querySelector(`[data-bclogo="${CSS.escape(bcLogoKey(l))}"]`); if(b) b.classList.add('dunkel'); }).catch(() => {}));
 }
 function bcAnalyse(){
@@ -352,14 +358,14 @@ async function bcHochladen(e){
   const f = e.target.files && e.target.files[0]; e.target.value = ''; if(!f) return;
   try{ const roh = await LOGO.dateiLesen(f); const a = await LOGO.aufbereiten(roh);
     let bild = await LOGO.alsDataUrl(roh, 'original', 900); if(bild.length > 690000) bild = await LOGO.alsDataUrl(roh, 'original', 600);
-    BC.eigen = { id:null, firma:BC.spec.firma || BC.spec.name || '', bild, farben:a.farben, neu:true }; BC.logoKey = 'eigen'; BC.spec.akzent = null; BC.spec.nameAn = null;
+    BC.eigen = { id:null, firma:BC.spec.firma || BC.spec.name || '', bild, farben:a.farben, neu:true }; BC.logoKey = 'eigen'; BC.spec.akzent = null; BC.spec.nameAn = false;
     bcLogosZeigen(); bcNeu(true); kToast(a.hintergrundEntfernt ? 'Hintergrund entfernt. Die Bande ist schon fertig.' : 'Logo ist drauf.');
   }catch(x){ kToast(x.message || 'Das Logo lässt sich nicht lesen.'); }
 }
-async function bcLogoSichern(firma){
-  const l = bcLogo(); if(!l) return null; if(l.id) return l.id;
-  const r = await bcRpc('trikot_logo_speichern', { p:{ firma:firma || l.firma, bild:l.bild, farben:(l.farben || []).slice(0, 8), sponsor:BC.sponsor || null } });
-  l.id = r.id; l.neu = false; BC.d.logos = (BC.d.logos || []).filter(x => x.id !== r.id).concat([r]); BC.eigen = null; BC.logoKey = r.id; return r.id;
+async function bcLogoSichern(firma,l=bcLogo(),sponsor=BC.sponsor||null,aktuell=()=>true){
+  if(!l) return null; if(l.id) return l.id;
+  const r = await bcRpc('trikot_logo_speichern', { p:{ firma:firma || l.firma, bild:l.bild, farben:(l.farben || []).slice(0, 8), sponsor } });
+  l.id = r.id; l.neu = false; if(aktuell()){BC.d.logos = (BC.d.logos || []).filter(x => x.id !== r.id).concat([r]); BC.eigen = null; BC.logoKey = r.id;} return r.id;
 }
 
 /* ---------- Druckdaten ---------- */
@@ -383,7 +389,7 @@ async function bcExport(art, btn){
 }
 
 /* ---------- Speichern und Liste ---------- */
-function bcVorschauUrl(){ try{ const ppm = 640 / BC.lay.W, c = BANDE.bild(BC.lay, BC.res, ppm, false); return c.toDataURL('image/jpeg', .85); }catch(e){ return null; } }
+function bcVorschauUrl(layout=BC.lay,res=BC.res){ try{ const ppm = 640 / layout.W, c = BANDE.bild(layout, res, ppm, false); return c.toDataURL('image/jpeg', .85); }catch(e){ return null; } }
 function bcSpeichernDialog(){
   if(!BC.lay) return; const s = BC.spec, firma = s.firma || s.name || '';
   const pl = ((BC.d && BC.d.plaetze) || []).filter(p => p.status === 'frei' || (p.status === 'reserviert' && firma && p.firma && p.firma.toLowerCase() === firma.toLowerCase()) || p.id === BC.platz);
@@ -397,10 +403,14 @@ function bcSpeichernDialog(){
   M.querySelector('#bcDlgNein').onclick = () => closeOverlay();
   M.querySelector('#bcDlgOk').onclick = () => paEinmal(M.querySelector('#bcDlgOk'), async () => {
     const fa = inp.value.trim(); if(!fa){ kToast('Bitte die Firma eintragen.'); inp.focus(); return; }
-    try{ const logo = await bcLogoSichern(fa), platz = M.querySelector('#bcDlgPlatz').value || null;
-      const inhalt = { name:s.name, claim:s.claim, web:s.web, telefon:s.telefon, branche:s.branche, kontakt:s.kontakt !== false, nameAn:s.nameAn, logoFarbe:s.logoFarbe, akzent:s.akzent };
-      const r = await bcRpc('banden_entwurf_speichern', { p:{ id:gesperrt ? null : BC.entwurf, firma:fa, sponsor:BC.sponsor || null, logo, format:s.format, stil:s.stil, layout:s.layout, inhalt, vorschau:bcVorschauUrl(), platz } });
-      BC.entwurf = r.id; BC.platz = r.platz || null; closeOverlay(); await bcLaden(true); bcListe(); bcLogosZeigen();
+    try{ if(fa.trim().toLowerCase() !== (s.firma || '').trim().toLowerCase()) bcEigenerName(fa);
+      const snapshot=bcSpecVoll(),vorEntwurf=BC.entwurf,entwurf=gesperrt?null:vorEntwurf,sponsor=BC.sponsor||null,firmaKey=BC.firmaKey,tok=BC.tok,platz=M.querySelector('#bcDlgPlatz').value||null;
+      const aktuell=()=>BC.spec.firma===snapshot.firma&&BC.firmaKey===firmaKey&&(BC.sponsor||null)===sponsor&&BC.entwurf===vorEntwurf&&BC.tok===tok;
+      const logo=await bcLogoSichern(fa,bcLogo(),sponsor,aktuell);
+      const res=await BANDE.vorbereiten(snapshot,{basis:'partner/',wappen:'plakat/wappen/svbsc-moerlenbach.webp'}),layout=BANDE.layout(snapshot,res),inhalt=bcInhalt(snapshot,!!logo);
+      const r = await bcRpc('banden_entwurf_speichern', { p:{ id:entwurf, firma:fa, sponsor, logo, format:snapshot.format, stil:snapshot.stil, layout:snapshot.layout, inhalt, vorschau:bcVorschauUrl(layout,res), platz } });
+      if(!aktuell()){kToast('Bandenentwurf für '+fa+' gespeichert.');return;}
+      BC.entwurf = r.id; BC.platz = r.platz || null; ++BC.tok; BC.lay=layout; BC.res=res; closeOverlay(); await bcLaden(true); bcListe(); bcLogosZeigen(); bcFormularFuellen(); bcBuehne(); bcInfo();
       kToast(platz ? `Gespeichert. ${bcPlatzName(bcPlatz(platz))} ist für ${fa} reserviert.` : 'Gespeichert.');
     }catch(e){ kToast(e.message); } }, 'Speichert …');
 }
@@ -422,8 +432,8 @@ function bcListe(){
 }
 function bcOeffnen(id){
   const e = (BC.d.entwuerfe || []).find(x => x.id === id); if(!e) return; const i = e.inhalt || {};
-  Object.assign(BC.spec, { format:e.format, stil:e.stil, layout:e.layout, firma:e.firma, name:i.name || e.firma, claim:i.claim || '', web:i.web || '', telefon:i.telefon || '', branche:i.branche || '', kontakt:i.kontakt !== false, nameAn:i.nameAn == null ? null : !!i.nameAn, logoFarbe:['marine', 'schwarz'].includes(i.logoFarbe) ? i.logoFarbe : 'marine', akzent:/^#[0-9a-fA-F]{6}$/.test(i.akzent || '') ? i.akzent : null });
-  BC.logoKey = e.logo || null; BC.entwurf = e.id; BC.platz = e.platz || null; BC.sponsor = e.sponsor || null;
+  Object.assign(BC.spec, { format:e.format, stil:e.stil, layout:e.layout, firma:e.firma, name:i.name || e.firma, claim:'', web:'', telefon:'', branche:i.branche || '', kontakt:false, nameAn:i.nameAn === true, pattern:BANDE.muster({ firma:e.firma, pattern:i.pattern }), logoFarbe:['marine', 'schwarz'].includes(i.logoFarbe) ? i.logoFarbe : 'marine', akzent:/^#[0-9a-fA-F]{6}$/.test(i.akzent || '') ? i.akzent : null });
+  BC.eigen = null; BC.logoKey = e.logo || null; BC.entwurf = e.id; BC.platz = e.platz || null; BC.sponsor = e.sponsor || null;
   const f = bcFirmen().find(x => (e.sponsor && x.sponsor === e.sponsor) || x.firma.toLowerCase() === e.firma.toLowerCase()); BC.firmaKey = f ? f.key : '';
   bcFormularFuellen(); bcLogosZeigen(); bcListe(); bcNeu(true);
   const st = document.getElementById('bcBuehne'); if(st) st.scrollIntoView({ block:'start', behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });

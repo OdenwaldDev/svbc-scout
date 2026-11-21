@@ -14,6 +14,37 @@
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   const isRaster=s=>/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(s||'');
   const hexRGB=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  // Recognise whole contact lines only. Brand names and ordinary copy are not contact data.
+  function contactLine(value){
+    const line=String(value==null?'':value).trim();if(!line)return false;
+    const labelled=line.match(/^(telefon|tel\.?|telefax|fax|mobil|handy|phone|e[ -]?mail|mail|internet|website|homepage|web|url)\s*:?\s+(.+)$/i)||line.match(/^(telefon|tel\.?|telefax|fax|mobil|handy|phone|e[ -]?mail|mail|internet|website|homepage|web|url)\s*:\s*(.+)$/i);
+    const valueOnly=(labelled?labelled[2]:line).trim();
+    if(/^(?:https?:\/\/|www\.)[^\s<>]+$/i.test(valueOnly))return true;
+    if(/^(?:mailto:)?[^\s@<>]+@(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}$/iu.test(valueOnly))return true;
+    if(/^(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?\.)+[\p{L}]{2,63}(?::\d{1,5})?(?:[/?#][^\s<>]*)?$/iu.test(valueOnly))return true;
+    const phone=valueOnly.replace(/^tel:/i,'').trim(),digits=phone.replace(/\D/g,''),phoneLabel=/^tel:/i.test(valueOnly)||!!(labelled&&/^(?:telefon|tel\.?|telefax|fax|mobil|handy|phone)$/i.test(labelled[1]));
+    if(/^[+\d().\s/-]+$/.test(phone)&&digits.length>=(phoneLabel?3:7)&&digits.length<=18&&(phoneLabel||/^(?:\+|0)/.test(phone)))return true;
+    const parts=line.split(/\s*[;|·•]\s*/);return parts.length>1&&parts.some(contactLine);
+  }
+  const contactTokens=/(?:https?:\/\/|www\.)[^\s<>]+|(?:mailto:)?[^\s@<>]+@(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}|\b(?:[\p{L}\p{N}-]+\.)+(?:de|com|net|org|eu|info|pro|io|app|online|shop|store|dev|co|at|ch|biz|club|digital|gmbh|example|invalid|test)(?::\d{1,5})?(?:[/?#][^\s<>]*)?\b/iu;
+  const labelledPhone=/(?:^|\s)(?:telefon|tel\.?|telefax|fax|mobil|handy|phone)\s*:?\s*[+\d][\d(). /+-]{2,}/iu;
+  const inlinePhone=/(^|\s)((?:\+|0)[\d(). /-]{5,}\d)(?=$|[\s,;|·•])/u;
+  function domainToken(value){const token=String(value).replace(/^[\[("']+|[\])"',;!?]+$/g,'');if(/^(?:co\.kg|gmbh&co\.kg|dr\.[\p{L}.]+|prof\.[\p{L}.]+|dipl\.[\p{L}.]+|e\.v\.?|e\.k\.?)$/iu.test(token))return false;return /[.@]/.test(token)&&contactLine(token);}
+  function hasInlinePhone(line){const m=String(line).match(inlinePhone);return !!m&&m[2].replace(/\D/g,'').length>=7;}
+  function isContactText(value){return String(value==null?'':value).split(/\r?\n/).some(line=>contactLine(line)||contactTokens.test(line)||labelledPhone.test(line)||hasInlinePhone(line)||line.split(/\s+/).some(domainToken));}
+  function withoutContactLine(line){
+    if(!isContactText(line))return line;
+    return line.split(/\s*[;|·•]\s*/).map(part=>{
+      if(contactLine(part))return '';
+      return part.split(/(\s+)/).map(token=>domainToken(token)?'':token).join('').replace(new RegExp(contactTokens.source,'giu'),'').replace(new RegExp(labelledPhone.source,'giu'),' ').replace(new RegExp(inlinePhone.source,'gu'),(all,gap,number)=>number.replace(/\D/g,'').length>=7?gap:all).replace(/(?:website|homepage|internet|e[ -]?mail|mail|web|url)\s*:\s*$/iu,'').replace(/\s{2,}/g,' ').trim();
+    }).filter(Boolean).join(' · ').trim();
+  }
+  function cleanContacts(doc){
+    const d=normalise(doc);d.elements=d.elements.flatMap(e=>{
+      if(e.type!=='text')return [e];if(e.role==='web')return [];
+      const value=e.text.split(/\r?\n/).map(withoutContactLine).filter(line=>line.trim()).join('\n');return value.trim()?[{...e,text:value}]:[];
+    });return d;
+  }
   function normalise(raw){
     if(!raw||raw.schema!=='svbsc.bande'||raw.version!==1)throw Error('Das ist kein Bandenstudio-Projekt dieser Fassung.');
     if(!Array.isArray(raw.elements)||raw.elements.length>60)throw Error('Ein Projekt kann höchstens 60 Elemente enthalten.');
@@ -53,25 +84,34 @@
   }
   function create(title=''){return normalise({schema:'svbsc.bande',version:1,id:uid(),title,width:3000,height:800,bleed:20,safe:40,background:CI.weiss,scale:1,minDpi:100,mode:'rgb',elements:[],assets:{}});}
   function template(doc,key,fields={}){
-    const d=copyDocument(doc),W=d.width,H=d.height,m=Math.max(d.safe,H*.075),contact=text(fields.web||'',100),name=text(fields.name||fields.title||d.title||'FIRMENNAME',120),claim=text(fields.claim||'',100),logo=fields.asset||doc.elements.find(e=>e.type==='image')?.asset||Object.keys(d.assets)[Object.keys(d.assets).length-1];
-    const light=!!d.assets[logo]?.light,dark=key==='marine'||light&&['klar','logo'].includes(key);
+    const d=copyDocument(doc),W=d.width,H=d.height,m=Math.max(d.safe,Math.min(W,H)*.08),stripe=key==='kante'?Math.min(H*.09,W*.08):0,frame={x:m,y:m,w:W-2*m-stripe,h:H-2*m};
+    const clean=value=>text(value,120).split(/\r?\n/).filter(line=>!contactLine(line)).join('\n').trim(),name=clean(fields.name||fields.title||d.title),claim=clean(fields.claim),logo=fields.asset||doc.elements.find(e=>e.type==='image')?.asset||Object.keys(d.assets)[Object.keys(d.assets).length-1];
+    if(logo&&!Object.prototype.hasOwnProperty.call(d.assets,logo))throw Error('Das gewählte Logo fehlt im Projekt.');
+    const light=!!d.assets[logo]?.light,dark=key==='marine'||light,pattern=['bb','moerlens'].includes(fields.pattern)?fields.pattern:'normal';
     d.background=dark?CI.marine:CI.weiss;d.elements=[];
     const rect=(x,y,w,h,fill)=>d.elements.push({id:uid(),type:'rect',x,y,w,h,fill,locked:false});
     const txt=(value,x,y,w,h,size,font,fill,align='left',role='text')=>{if(value)d.elements.push({id:uid(),type:'text',x,y,w,h,text:value,role,size,font,fill,align,locked:false});};
-    const img=(x,y,w,h)=>{if(logo)d.elements.push({id:uid(),type:'image',asset:logo,x,y,w,h,locked:false});};
+    const img=(x,y,w,h)=>{if(logo){const e={id:uid(),type:'image',asset:logo,x,y,w,h,locked:false};if(key==='marine'&&!light){const b=fitImage(e,d.assets[logo]),pad=Math.min(H*.025,m);rect(b.x-pad,b.y-pad,b.w+2*pad,b.h+2*pad,CI.weiss);}d.elements.push(e);}};
     const ink=dark?CI.weiss:CI.marine;
-    if(key==='logo'){
-      img(W*.13,H*.13,W*.74,H*.53);if(!logo)txt(name,m,H*.12,W-2*m,H*.57,H*.35,'condensed',ink,'center','name');
-      txt(logo?claim:'',m,H*.69,W-2*m,H*.12,H*.11,'barlow',ink,'center','claim');txt(contact,m,H*.85,W-2*m,H*.09,H*.075,'barlow',ink,'center','web');
+    const nameText=(x,w)=>txt(name,x,frame.y+frame.h*.09,w,frame.h*.82,frame.h*.82/.7,'condensed',ink,'center','name');
+    if(!logo){
+      nameText(frame.x,frame.w);
+    }else if(pattern==='bb'){
+      const lw=Math.min(frame.w*.32,frame.h*1.45),gap=Math.min(H*.10,frame.w*.04),sw=(frame.w-lw-2*gap)/2,size=Math.min(frame.h*.85,sw/3.16),th=size*.7;
+      img(frame.x+(frame.w-lw)/2,frame.y,lw,frame.h);
+      txt(fields.left==='EVENT'?fields.left:'EVENT',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt(fields.right==='KREATIV'?fields.right:'KREATIV',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
+    }else if(pattern==='moerlens'&&claim){
+      const a=d.assets[logo],ch=Math.min(H*.14,frame.h*.22),gap=Math.min(H*.05,frame.h*.08),lh=Math.min(frame.h-ch-gap,frame.w*a.height/a.width),lw=lh*a.width/a.height,ly=frame.y+(frame.h-lh-gap-ch)/2;
+      img(frame.x+(frame.w-lw)/2,ly,lw,lh);
+      txt(claim,frame.x,ly+lh+gap,frame.w,ch,ch/.74,'barlow',ink,'center','claim');
+    }else if(pattern==='normal'&&fields.nameAn===true&&name){
+      const gap=Math.min(H*.10,frame.w*.06),lw=Math.min(frame.w*.35,frame.h*1.45);
+      img(frame.x,frame.y,lw,frame.h);nameText(frame.x+lw+gap,frame.w-lw-gap);
     }else{
-      const lw=logo?Math.min(W*.28,H*1.25):0,nx=logo?m+lw+H*.10:m,nw=W-m-nx;
-      if(logo){if(key==='marine'&&!light)rect(m-12,H*.13-12,lw+24,H*.59+24,CI.weiss);img(m,H*.13,lw,H*.59);}
-      txt(name,nx,H*.16,nw,H*.36,H*.34,'condensed',ink,'left','name');
-      txt(claim,nx,H*.57,nw,H*.14,H*.105,'barlow',ink,'left','claim');
-      rect(nx,H*.77,Math.min(nw*.28,600),Math.max(5,H*.012),CI.orange);
-      txt(contact,nx,H*.84,nw,H*.09,H*.072,'barlow',ink,'left','web');
-      if(key==='kante')rect(W-H*.09,0,H*.09,H,CI.orange);
+      img(frame.x,frame.y,frame.w,frame.h);
     }
+    if(stripe)rect(W-stripe,0,stripe,H,CI.orange);
     return normalise(d);
   }
   function fitImage(e,a){const s=Math.min(e.w/a.width,e.h/a.height),w=a.width*s,h=a.height*s;return {x:e.x+(e.w-w)/2,y:e.y+(e.h-h)/2,w,h};}
@@ -104,6 +144,7 @@
         if(a.light&&hexRGB(ground).every(v=>v>=220))add('hint','Ein helles Logo liegt auf hellem Grund. Prüfe die Sichtbarkeit oder wähle eine der dunklen CI-Vorlagen.',e.id);
       }
       if(e.type==='text'){
+        if(e.role==='web'||isContactText(e.text))add('stop','Entferne Website, E-Mail, Telefon oder Fax von der Bande.',e.id);
         const f=fonts[e.font];if(!f)add('stop','Die Schrift '+FONTS[e.font].name+' ist nicht geladen.',e.id);
         else if([...e.text.replace(/\s/g,'')].some(c=>f.charToGlyph(c).index===0))add('stop','Ein Zeichen fehlt in der gewählten Schrift. Bitte ersetze es.',e.id);
         else if(e.text.trim()){const p=textPath(e,f);if(p.size<e.size*.75)add('hint','Ein langer Text wird deutlich verkleinert. Kürze ihn für die Fernwirkung.',e.id);}
@@ -137,6 +178,6 @@
     const cw=x1-x0+1,ch=y1-y0+1,out=new Uint8ClampedArray(cw*ch*4);for(let y=0;y<ch;y++)out.set(p.subarray(((y+y0)*W+x0)*4,((y+y0)*W+x0+cw)*4),y*cw*4);
     return {data:out,width:cw,height:ch,removed,background:bg,confidence:already?'transparent':uniform&&removed?'einfarbig':'prüfen',crop:{x:left+x0,y:top+y0,w:cw,h:ch}};
   }
-  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,normalise,create,template,fitImage,textPath,preflight,history,cutout};
+  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,isContactText,cleanContacts,normalise,create,template,fitImage,textPath,preflight,history,cutout};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.BD_CORE=api;
 })(typeof window!=='undefined'?window:globalThis);

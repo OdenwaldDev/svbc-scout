@@ -17,6 +17,37 @@
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   const isRaster=s=>/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(s||'');
   const hexRGB=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  // Recognise whole contact lines only. Brand names and ordinary copy are not contact data.
+  function contactLine(value){
+    const line=String(value==null?'':value).trim();if(!line)return false;
+    const labelled=line.match(/^(telefon|tel\.?|telefax|fax|mobil|handy|phone|e[ -]?mail|mail|internet|website|homepage|web|url)\s*:?\s+(.+)$/i)||line.match(/^(telefon|tel\.?|telefax|fax|mobil|handy|phone|e[ -]?mail|mail|internet|website|homepage|web|url)\s*:\s*(.+)$/i);
+    const valueOnly=(labelled?labelled[2]:line).trim();
+    if(/^(?:https?:\/\/|www\.)[^\s<>]+$/i.test(valueOnly))return true;
+    if(/^(?:mailto:)?[^\s@<>]+@(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}$/iu.test(valueOnly))return true;
+    if(/^(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?\.)+[\p{L}]{2,63}(?::\d{1,5})?(?:[/?#][^\s<>]*)?$/iu.test(valueOnly))return true;
+    const phone=valueOnly.replace(/^tel:/i,'').trim(),digits=phone.replace(/\D/g,''),phoneLabel=/^tel:/i.test(valueOnly)||!!(labelled&&/^(?:telefon|tel\.?|telefax|fax|mobil|handy|phone)$/i.test(labelled[1]));
+    if(/^[+\d().\s/-]+$/.test(phone)&&digits.length>=(phoneLabel?3:7)&&digits.length<=18&&(phoneLabel||/^(?:\+|0)/.test(phone)))return true;
+    const parts=line.split(/\s*[;|·•]\s*/);return parts.length>1&&parts.some(contactLine);
+  }
+  const contactTokens=/(?:https?:\/\/|www\.)[^\s<>]+|(?:mailto:)?[^\s@<>]+@(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}|\b(?:[\p{L}\p{N}-]+\.)+(?:de|com|net|org|eu|info|pro|io|app|online|shop|store|dev|co|at|ch|biz|club|digital|gmbh|example|invalid|test)(?::\d{1,5})?(?:[/?#][^\s<>]*)?\b/iu;
+  const labelledPhone=/(?:^|\s)(?:telefon|tel\.?|telefax|fax|mobil|handy|phone)\s*:?\s*[+\d][\d(). /+-]{2,}/iu;
+  const inlinePhone=/(^|\s)((?:\+|0)[\d(). /-]{5,}\d)(?=$|[\s,;|·•])/u;
+  function domainToken(value){const token=String(value).replace(/^[\[("']+|[\])"',;!?]+$/g,'');if(/^(?:co\.kg|gmbh&co\.kg|dr\.[\p{L}.]+|prof\.[\p{L}.]+|dipl\.[\p{L}.]+|e\.v\.?|e\.k\.?)$/iu.test(token))return false;return /[.@]/.test(token)&&contactLine(token);}
+  function hasInlinePhone(line){const m=String(line).match(inlinePhone);return !!m&&m[2].replace(/\D/g,'').length>=7;}
+  function isContactText(value){return String(value==null?'':value).split(/\r?\n/).some(line=>contactLine(line)||contactTokens.test(line)||labelledPhone.test(line)||hasInlinePhone(line)||line.split(/\s+/).some(domainToken));}
+  function withoutContactLine(line){
+    if(!isContactText(line))return line;
+    return line.split(/\s*[;|·•]\s*/).map(part=>{
+      if(contactLine(part))return '';
+      return part.split(/(\s+)/).map(token=>domainToken(token)?'':token).join('').replace(new RegExp(contactTokens.source,'giu'),'').replace(new RegExp(labelledPhone.source,'giu'),' ').replace(new RegExp(inlinePhone.source,'gu'),(all,gap,number)=>number.replace(/\D/g,'').length>=7?gap:all).replace(/(?:website|homepage|internet|e[ -]?mail|mail|web|url)\s*:\s*$/iu,'').replace(/\s{2,}/g,' ').trim();
+    }).filter(Boolean).join(' · ').trim();
+  }
+  function cleanContacts(doc){
+    const d=normalise(doc);d.elements=d.elements.flatMap(e=>{
+      if(e.type!=='text')return [e];if(e.role==='web')return [];
+      const value=e.text.split(/\r?\n/).map(withoutContactLine).filter(line=>line.trim()).join('\n');return value.trim()?[{...e,text:value}]:[];
+    });return d;
+  }
   function normalise(raw){
     if(!raw||raw.schema!=='svbsc.bande'||raw.version!==1)throw Error('Das ist kein Bandenstudio-Projekt dieser Fassung.');
     if(!Array.isArray(raw.elements)||raw.elements.length>60)throw Error('Ein Projekt kann höchstens 60 Elemente enthalten.');
@@ -56,25 +87,34 @@
   }
   function create(title=''){return normalise({schema:'svbsc.bande',version:1,id:uid(),title,width:3000,height:800,bleed:20,safe:40,background:CI.weiss,scale:1,minDpi:100,mode:'rgb',elements:[],assets:{}});}
   function template(doc,key,fields={}){
-    const d=copyDocument(doc),W=d.width,H=d.height,m=Math.max(d.safe,H*.075),contact=text(fields.web||'',100),name=text(fields.name||fields.title||d.title||'FIRMENNAME',120),claim=text(fields.claim||'',100),logo=fields.asset||doc.elements.find(e=>e.type==='image')?.asset||Object.keys(d.assets)[Object.keys(d.assets).length-1];
-    const light=!!d.assets[logo]?.light,dark=key==='marine'||light&&['klar','logo'].includes(key);
+    const d=copyDocument(doc),W=d.width,H=d.height,m=Math.max(d.safe,Math.min(W,H)*.08),stripe=key==='kante'?Math.min(H*.09,W*.08):0,frame={x:m,y:m,w:W-2*m-stripe,h:H-2*m};
+    const clean=value=>text(value,120).split(/\r?\n/).filter(line=>!contactLine(line)).join('\n').trim(),name=clean(fields.name||fields.title||d.title),claim=clean(fields.claim),logo=fields.asset||doc.elements.find(e=>e.type==='image')?.asset||Object.keys(d.assets)[Object.keys(d.assets).length-1];
+    if(logo&&!Object.prototype.hasOwnProperty.call(d.assets,logo))throw Error('Das gewählte Logo fehlt im Projekt.');
+    const light=!!d.assets[logo]?.light,dark=key==='marine'||light,pattern=['bb','moerlens'].includes(fields.pattern)?fields.pattern:'normal';
     d.background=dark?CI.marine:CI.weiss;d.elements=[];
     const rect=(x,y,w,h,fill)=>d.elements.push({id:uid(),type:'rect',x,y,w,h,fill,locked:false});
     const txt=(value,x,y,w,h,size,font,fill,align='left',role='text')=>{if(value)d.elements.push({id:uid(),type:'text',x,y,w,h,text:value,role,size,font,fill,align,locked:false});};
-    const img=(x,y,w,h)=>{if(logo)d.elements.push({id:uid(),type:'image',asset:logo,x,y,w,h,locked:false});};
+    const img=(x,y,w,h)=>{if(logo){const e={id:uid(),type:'image',asset:logo,x,y,w,h,locked:false};if(key==='marine'&&!light){const b=fitImage(e,d.assets[logo]),pad=Math.min(H*.025,m);rect(b.x-pad,b.y-pad,b.w+2*pad,b.h+2*pad,CI.weiss);}d.elements.push(e);}};
     const ink=dark?CI.weiss:CI.marine;
-    if(key==='logo'){
-      img(W*.13,H*.13,W*.74,H*.53);if(!logo)txt(name,m,H*.12,W-2*m,H*.57,H*.35,'condensed',ink,'center','name');
-      txt(logo?claim:'',m,H*.69,W-2*m,H*.12,H*.11,'barlow',ink,'center','claim');txt(contact,m,H*.85,W-2*m,H*.09,H*.075,'barlow',ink,'center','web');
+    const nameText=(x,w)=>txt(name,x,frame.y+frame.h*.09,w,frame.h*.82,frame.h*.82/.7,'condensed',ink,'center','name');
+    if(!logo){
+      nameText(frame.x,frame.w);
+    }else if(pattern==='bb'){
+      const lw=Math.min(frame.w*.32,frame.h*1.45),gap=Math.min(H*.10,frame.w*.04),sw=(frame.w-lw-2*gap)/2,size=Math.min(frame.h*.85,sw/3.16),th=size*.7;
+      img(frame.x+(frame.w-lw)/2,frame.y,lw,frame.h);
+      txt(fields.left==='EVENT'?fields.left:'EVENT',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt(fields.right==='KREATIV'?fields.right:'KREATIV',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
+    }else if(pattern==='moerlens'&&claim){
+      const a=d.assets[logo],ch=Math.min(H*.14,frame.h*.22),gap=Math.min(H*.05,frame.h*.08),lh=Math.min(frame.h-ch-gap,frame.w*a.height/a.width),lw=lh*a.width/a.height,ly=frame.y+(frame.h-lh-gap-ch)/2;
+      img(frame.x+(frame.w-lw)/2,ly,lw,lh);
+      txt(claim,frame.x,ly+lh+gap,frame.w,ch,ch/.74,'barlow',ink,'center','claim');
+    }else if(pattern==='normal'&&fields.nameAn===true&&name){
+      const gap=Math.min(H*.10,frame.w*.06),lw=Math.min(frame.w*.35,frame.h*1.45);
+      img(frame.x,frame.y,lw,frame.h);nameText(frame.x+lw+gap,frame.w-lw-gap);
     }else{
-      const lw=logo?Math.min(W*.28,H*1.25):0,nx=logo?m+lw+H*.10:m,nw=W-m-nx;
-      if(logo){if(key==='marine'&&!light)rect(m-12,H*.13-12,lw+24,H*.59+24,CI.weiss);img(m,H*.13,lw,H*.59);}
-      txt(name,nx,H*.16,nw,H*.36,H*.34,'condensed',ink,'left','name');
-      txt(claim,nx,H*.57,nw,H*.14,H*.105,'barlow',ink,'left','claim');
-      rect(nx,H*.77,Math.min(nw*.28,600),Math.max(5,H*.012),CI.orange);
-      txt(contact,nx,H*.84,nw,H*.09,H*.072,'barlow',ink,'left','web');
-      if(key==='kante')rect(W-H*.09,0,H*.09,H,CI.orange);
+      img(frame.x,frame.y,frame.w,frame.h);
     }
+    if(stripe)rect(W-stripe,0,stripe,H,CI.orange);
     return normalise(d);
   }
   function fitImage(e,a){const s=Math.min(e.w/a.width,e.h/a.height),w=a.width*s,h=a.height*s;return {x:e.x+(e.w-w)/2,y:e.y+(e.h-h)/2,w,h};}
@@ -107,6 +147,7 @@
         if(a.light&&hexRGB(ground).every(v=>v>=220))add('hint','Ein helles Logo liegt auf hellem Grund. Prüfe die Sichtbarkeit oder wähle eine der dunklen CI-Vorlagen.',e.id);
       }
       if(e.type==='text'){
+        if(e.role==='web'||isContactText(e.text))add('stop','Entferne Website, E-Mail, Telefon oder Fax von der Bande.',e.id);
         const f=fonts[e.font];if(!f)add('stop','Die Schrift '+FONTS[e.font].name+' ist nicht geladen.',e.id);
         else if([...e.text.replace(/\s/g,'')].some(c=>f.charToGlyph(c).index===0))add('stop','Ein Zeichen fehlt in der gewählten Schrift. Bitte ersetze es.',e.id);
         else if(e.text.trim()){const p=textPath(e,f);if(p.size<e.size*.75)add('hint','Ein langer Text wird deutlich verkleinert. Kürze ihn für die Fernwirkung.',e.id);}
@@ -140,7 +181,7 @@
     const cw=x1-x0+1,ch=y1-y0+1,out=new Uint8ClampedArray(cw*ch*4);for(let y=0;y<ch;y++)out.set(p.subarray(((y+y0)*W+x0)*4,((y+y0)*W+x0+cw)*4),y*cw*4);
     return {data:out,width:cw,height:ch,removed,background:bg,confidence:already?'transparent':uniform&&removed?'einfarbig':'prüfen',crop:{x:left+x0,y:top+y0,w:cw,h:ch}};
   }
-  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,normalise,create,template,fitImage,textPath,preflight,history,cutout};
+  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,isContactText,cleanContacts,normalise,create,template,fitImage,textPath,preflight,history,cutout};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.BD_CORE=api;
 })(typeof window!=='undefined'?window:globalThis);
 
@@ -324,7 +365,7 @@
   function textureLayout(doc,size){const W=size?size[1]:doc.width,H=size?size[2]:doc.height,s=Math.min(W/doc.width,H/doc.height);return {W,H,B:0,format:W/10+'x'+H/10,stil:'studio',layout:'gespeichert',ops:[{t:'rect',x:0,y:0,w:W,h:H,fill:doc.background},{t:'img',key:'logo',x:(W-doc.width*s)/2,y:(H-doc.height*s)/2,w:doc.width*s,h:doc.height*s}],info:{warn:[],lesbar:{}},farben:{grund:doc.background}};}
   const rules={codeOK,previewOK,editorURL,editorMessage,customerPayload,textureLayout};
   if(typeof module!=='undefined'&&module.exports){module.exports=rules;return;}
-  let cfg=null,project=null,documentNow=null,preview=null,loading=null,loadingError=null,modal=null,editor=null,nonce='',saving=false,previousFocus=null,bodyOverflow='',loadGeneration=0,reloadRequired=false;
+  let cfg=null,project=null,documentNow=null,preview=null,loading=null,loadingError=null,modal=null,editor=null,nonce='',saving=false,previousFocus=null,bodyOverflow='',loadGeneration=0,reloadRequired=false,motiv='haupt',availableMotifs=[],motifFocus=null;
   const $=s=>document.querySelector(s),C=()=>root.BD_CORE,R=()=>root.BD_RENDER;
   const frame=()=>document.getElementById('reiseRahmen');
   const canEdit=()=>!!(project&&(project.bearbeiten===true||project.kundenbearbeitung===true));
@@ -332,23 +373,34 @@
   const errorText=e=>/failed to fetch|networkerror|load failed|network request failed/i.test(e&&e.message||'')?'Die Verbindung ist unterbrochen. Deine Änderungen bleiben im Editor. Prüfe dein Netz und versuche es erneut.':e&&e.message||'Der Entwurf ist gerade nicht erreichbar. Bitte versuche es erneut.';
   function notify(t){if(cfg&&cfg.toast)cfg.toast(t);}
   function resume(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-editor-zu'},location.origin);if(cfg&&cfg.geschlossen)cfg.geschlossen();}
-  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,bearbeiten:canEdit(),version:project&&project.version||0},location.origin);controls();}
+  const motifs=()=>{const list=project&&project.motive||availableMotifs;return Array.isArray(list)?list.filter(m=>m&&['haupt','moerlens'].includes(m.key)&&typeof m.titel==='string').slice(0,2):[];};
+  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),busy:!!loading||saving},location.origin);controls();}
+  function rpc(fn,args){
+    const routes={bandenstudio_projekt_laden:'bandenstudio_motiv_laden',bandenstudio_projekt_speichern:'bandenstudio_motiv_speichern',bandenstudio_kunde_speichern:'bandenstudio_motiv_kunde_speichern'};
+    return cfg.rpc(motiv!=='haupt'&&routes[fn]?routes[fn]:fn,motiv!=='haupt'&&routes[fn]?{...args,p_motiv:motiv}:args);
+  }
   function controls(){
     const b=$('#bdBearbeiten'),g=$('#bdKundeErlauben'),hint=$('#bdProjektHinweis'),count=$('#bdProjektBestand');
-    if(b){b.hidden=!canEdit();b.disabled=saving;}
+    if(b){b.hidden=!canEdit();b.disabled=saving||!!loading;}
     if(g){g.closest('label').hidden=!(project&&project.kundenfreigabe_darf===true);g.checked=!!(project&&project.kundenbearbeitung);}
     if(hint)hint.textContent=loadingError?'Der gespeicherte Entwurf lässt sich gerade nicht laden. Lade die Seite erneut.':project?'Gespeicherter Entwurf · Version '+project.version+'. Die Druckfreigabe erfolgt separat.':'Euer Entwurf wird geladen …';
     if(count){const s=project&&project.bestand;count.hidden=!(team()&&s);count.textContent=s?'Entwürfe im Bestand: '+s.projekte+' für '+s.aktive_partner+' aktive Präsentationen.':'';}
     for(const id of ['bdLay','bdFmt']){const el=$('#'+id);if(el)el.hidden=!!cfg;}
+    const host=$('#bdMotiv')||$('[data-bandenstudio-motive]'),list=motifs();
+    if(host){host.hidden=list.length<2;const content=list.map(m=>'<button type="button" data-bd-motiv="'+m.key+'" aria-pressed="'+(m.key===motiv)+'"'+(saving||loading?' disabled':'')+'>'+C().esc(m.titel)+'</button>').join('');
+      if(host.innerHTML!==content){host.innerHTML=content;host.querySelectorAll?.('[data-bd-motiv]').forEach(b=>b.onclick=()=>{motifFocus=b.dataset.bdMotiv;changeMotif(b.dataset.bdMotiv);});}
+      if(motifFocus&&!loading&&!saving){host.querySelector?.('[data-bd-motiv="'+motifFocus+'"]')?.focus({preventScroll:true});motifFocus=null;}
+    }
   }
   async function makeDoc(p){
     if(!C()||!R())throw Error('Das Bandenstudio wird noch geladen. Bitte lade die Seite neu.');
-    if(p.quelle!=='generator'&&(p.dokument||p.readDoc))return C().normalise(p.dokument||p.readDoc);
+    if(p.quelle!=='generator'&&(p.dokument||p.readDoc))return C().cleanContacts(p.dokument||p.readDoc);
     const g=p.generator;if(!g||typeof g!=='object')throw Error('Für diesen Link liegt noch kein Bandenentwurf vor.');
     let d=C().create(g.firma||''),asset=g.logo;
     d.width=+g.width||2500;d.height=+g.height||800;d.bleed=Number.isFinite(+g.bleed)?+g.bleed:20;d.safe=Number.isFinite(+g.safe)?+g.safe:40;
-    if(!asset&&g.logo_aus_praesentation&&cfg&&cfg.logo){
-      const src=typeof cfg.logo==='function'?cfg.logo():cfg.logo;
+    if(!asset&&g.logo_aus_praesentation&&cfg&&(cfg.logo||g.logo_url)){
+      if(g.logo_url&&!['partner/bb-signet.svg','partner/moerlens-schriftzug.png'].includes(g.logo_url))throw Error('Die Logo-Vorlage ist nicht freigegeben.');
+      const src=g.logo_url||(typeof cfg.logo==='function'?cfg.logo():cfg.logo);
       if(src&&(/\.svg(?:[?#]|$)/i.test(src)||/^data:image\/svg\+xml[;,]/i.test(src))){
         const response=await fetch(src);if(!response.ok)throw Error('Das Vektorlogo lässt sich gerade nicht laden.');const vector=R().readSVG(await response.text()),data=await R().vectorPreview(vector);
         asset={name:'Logo der Präsentation',src:data,width:vector.width,height:vector.height,kind:'vector',vector};
@@ -356,8 +408,14 @@
         const data=await LOGO.alsDataUrl(src,'original',1800),im=await R().image(data);asset={name:'Logo der Präsentation',src:data,width:im.naturalWidth||im.width,height:im.naturalHeight||im.height,kind:'raster'};
       }
     }
-    if(asset){asset=clone(asset);if(typeof R().analyseAsset==='function')asset=await R().analyseAsset(asset)||asset;d.assets.partner_logo=asset;}
-    d=C().template(d,['klar','logo'].includes(g.template)?g.template:'klar',{name:g.firma||'',web:g.web||'',asset:asset?'partner_logo':undefined});
+    if(asset){asset=clone(asset);
+      if(!asset.vector&&typeof LOGO!=='undefined'&&typeof LOGO.alsDataUrl==='function'){
+        const original=asset.original||asset.src,src=await LOGO.alsDataUrl(asset.src,'farbe:'+(g.pattern==='bb'?C().CI.orange:C().CI.marine),1800),im=await R().image(src);
+        asset={...asset,original,src,width:im.naturalWidth||im.width,height:im.naturalHeight||im.height,light:false};
+      }
+      if(typeof R().analyseAsset==='function')asset=await R().analyseAsset(asset)||asset;d.assets.partner_logo=asset;
+    }
+    d=C().template(d,['klar','logo'].includes(g.template)?g.template:'klar',{name:g.name||g.firma||'',nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',asset:asset?'partner_logo':undefined});
     return C().normalise(d);
   }
   async function makePreview(d){
@@ -371,37 +429,42 @@
   async function adopt(p,generation){
     if(!p||p.ok===false||!Number.isInteger(p.version))throw Error(p&&p.fehler||'Der Entwurf konnte nicht geladen werden.');
     const d=await makeDoc(p),im=await makePreview(d);if(generation!==loadGeneration)return null;
-    project=p;documentNow=d;preview=im;loadingError=null;reloadRequired=false;context();if(cfg&&cfg.geaendert)cfg.geaendert(p);return p;
+    project=p;availableMotifs=motifs();documentNow=d;preview=im;loadingError=null;reloadRequired=false;context();if(cfg&&cfg.geaendert)cfg.geaendert(p);return p;
   }
   async function load(){
     if(!cfg||!codeOK(cfg.code))throw Error('Der persönliche Präsentationslink fehlt.');
     if(loading)return loading;const generation=loadGeneration;
-    loading=(async()=>{try{return await adopt(await cfg.rpc('bandenstudio_projekt_laden',{p_code:cfg.code}),generation);}catch(e){if(generation===loadGeneration){loadingError=e;controls();}throw e;}finally{if(generation===loadGeneration)loading=null;}})();return loading;
+    loading=(async()=>{try{return await adopt(await rpc('bandenstudio_projekt_laden',{p_code:cfg.code}),generation);}catch(e){if(generation===loadGeneration){loadingError=e;controls();}throw e;}finally{if(generation===loadGeneration){loading=null;context();}}})();return loading;
+  }
+  async function changeMotif(key){
+    if(key===motiv||saving||loading||modal||!motifs().some(m=>m.key===key))return false;
+    const old={motiv,project,documentNow,preview},owner=cfg;availableMotifs=motifs();const generation=++loadGeneration;motiv=key;project=null;loadingError=null;reloadRequired=false;
+    try{const work=load();context();await work;return cfg===owner&&generation===loadGeneration;}catch(e){if(cfg!==owner||generation!==loadGeneration)return false;motiv=old.motiv;project=old.project;documentNow=old.documentNow;preview=old.preview;loadingError=null;context();notify(errorText(e));return false;}
   }
   async function prepare(o){
     if(!o||!codeOK(o.code)||typeof o.rpc!=='function')throw Error('Der persönliche Präsentationslink fehlt.');
     if(saving)throw Error('Der aktuelle Entwurf wird noch gespeichert.');if(modal)close();
-    ++loadGeneration;cfg=o;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
+    ++loadGeneration;cfg=o;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
   }
   async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project};}
   function close(){
     if(!modal||saving)return;const old=modal;modal=null;editor=null;nonce='';old.remove();document.body.style.overflow=bodyOverflow;
-    if(previousFocus&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;resume();
+    if(previousFocus&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;context();resume();
   }
   function status(t){const e=modal&&modal.querySelector('[data-bd-status]');if(e)e.textContent=t;}
   function post(o){if(editor&&editor.contentWindow)editor.contentWindow.postMessage(Object.assign({nonce},o),location.origin);}
-  function sendDocument(){if(!modal||!documentNow)return;post({typ:'bd-editor-laden',doc:clone(documentNow),rolle:team()?'team':'kunde',vorgaben:{firma:project.generator&&project.generator.firma||documentNow.title,web:project.generator&&project.generator.web||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:null});status('');}
+  function sendDocument(){if(!modal||!documentNow)return;const g=project.generator||{};post({typ:'bd-editor-laden',doc:clone(documentNow),rolle:team()?'team':'kunde',vorgaben:{firma:g.firma||documentNow.title,name:g.name||g.firma||documentNow.title,nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:project.quelle==='generator'&&['klar','logo'].includes(g.template)?g.template:null});status('');}
   async function saveFromEditor(data){
     if(!modal||saving||!canEdit())return;saving=true;status('Entwurf wird gespeichert …');const generation=loadGeneration,oldProject=project,oldDoc=documentNow,oldPreview=preview;
     try{
       let p,fn;
       if(team()){
-        const d=C().normalise(data.doc);await R().validateAssets(d);p={expected_version:project.version,dokument:d,vorschau:await makePreview(d)};fn='bandenstudio_projekt_speichern';
+        const d=C().cleanContacts(data.doc);await R().validateAssets(d);p={expected_version:project.version,dokument:d,vorschau:await makePreview(d)};fn='bandenstudio_projekt_speichern';
       }else{p=customerPayload(data.doc,data.template===undefined?null:data.template,project.version,C());fn='bandenstudio_kunde_speichern';}
-      const result=await cfg.rpc(fn,{p_code:cfg.code,p});
+      const result=await rpc(fn,{p_code:cfg.code,p});
       if(!result||result.ok===false)throw Error(result&&result.konflikt?'Der Entwurf wurde inzwischen geändert. Deine Änderungen bleiben geöffnet. Schließe mit Abbrechen und öffne den Editor erneut, um den aktuellen Stand zu laden.':result&&(result.fehler||result.hinweis)||'Der Entwurf wurde nicht gespeichert. Deine Änderungen bleiben im Editor.');
       // Der Server liefert den kanonischen Stand. Falls nur die Version geliefert wird, laden wir ihn erneut.
-      const canonical=result.generator||result.dokument||result.readDoc?result:await cfg.rpc('bandenstudio_projekt_laden',{p_code:cfg.code});
+      const canonical=result.generator||result.dokument||result.readDoc?result:await rpc('bandenstudio_projekt_laden',{p_code:cfg.code});
       await adopt(canonical,generation);if(generation!==loadGeneration)return;
       post({typ:'bd-editor-gespeichert',ok:true,version:project.version,doc:clone(documentNow)});saving=false;close();notify('Bandenentwurf gespeichert.');
     }catch(e){
@@ -434,9 +497,10 @@
     }
     const f=frame();if(!cfg||!f||e.source!==f.contentWindow||e.origin!==location.origin||!e.data)return;
     if(e.data.reise==='bereit')context();
-    if(e.data.reise==='bande-editor-oeffnen'){if(canEdit())open();else resume();}
+    if(e.data.reise==='bande-editor-oeffnen'){if(canEdit()&&!loading)open();else resume();}
+    if(e.data.reise==='bande-motiv-waehlen'&&typeof e.data.motiv==='string')changeMotif(e.data.motiv);
   });
-  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,geladen:()=>!!project,regeln:rules};
+  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,geladen:()=>!!project,regeln:rules};
 })(typeof window!=='undefined'?window:globalThis);
 
 /* Explicit one-use same-origin handoff; no private data in URL or browser history. */
@@ -446,12 +510,12 @@
     const nonce=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
     const child=window.open('bandenstudio.html#transfer='+nonce,'_blank');
     if(!child){if(typeof kToast==='function')kToast('Bitte erlaube das Öffnen des Bandenstudios in einem neuen Tab.');return;}
-    const input={firma:String(brief.firma||'').slice(0,120),web:String(brief.web||'').slice(0,100),format:String(brief.format||'300x80'),logo:typeof brief.logo==='string'?brief.logo:''};
+    const input={firma:String(brief.firma||'').slice(0,120),format:String(brief.format||'300x80'),logo:typeof brief.logo==='string'?brief.logo:''};
     let used=false;const timeout=setTimeout(()=>removeEventListener('message',receive),180000);
     async function receive(e){
       if(used||e.origin!==location.origin||e.source!==child||e.data?.typ!=='bandenstudio-bereit'||e.data.nonce!==nonce)return;
       used=true;clearTimeout(timeout);removeEventListener('message',receive);
-      const payload={firma:input.firma,web:input.web,format:input.format};
+      const payload={firma:input.firma,format:input.format};
       try{
         let src=input.logo;
         if(src&&!src.startsWith('data:')){
@@ -476,6 +540,6 @@
     const chooser=I.querySelector('#bcFirma'),onchange=chooser&&chooser.onchange;
     if(chooser)chooser.onchange=function(e){if(onchange)onchange.call(this,e);bcGestalten(I);};
     if(I.classList)I.classList.toggle('bd-creator-hat-projekt',!!f);
-    const section=document.createElement('section');section.className='pz-tc-block bd-creator-projekt';section.innerHTML=f?'<h3>Gespeicherter Bandenentwurf</h3><div class="bd-creator-vorschau"><canvas role="img" aria-label="Gespeicherter Bandenentwurf"></canvas><button type="button" class="bd-bearbeiten" data-bandenstudio hidden>Bearbeiten</button></div><p class="pz-tc-tipp" role="status" data-bandenstudio-status>Entwurf wird geladen …</p><label class="bd-kundenfreigabe" hidden><input type="checkbox" data-bandenstudio-grant>Kunde darf Logo und Anordnung bearbeiten</label><button type="button" class="btn ghost" data-bandenstudio-retry hidden>Erneut laden</button>':'<h3>Freies Bandenstudio</h3><p class="pz-tc-tipp">Logo freistellen, Texte und Flächen gestalten. Dieser Entwurf bleibt auf deinem Gerät. Wähle oben eine Firma, um deren gespeicherten Entwurf zu öffnen.</p><button type="button" class="btn" data-bandenstudio>Lokalen Entwurf öffnen</button>';
+    const section=document.createElement('section');section.className='pz-tc-block bd-creator-projekt';section.innerHTML=f?'<h3>Gespeicherter Bandenentwurf</h3><div class="bd-motive" role="group" aria-label="Bandenmotiv" data-bandenstudio-motive hidden></div><div class="bd-creator-vorschau"><canvas role="img" aria-label="Gespeicherter Bandenentwurf"></canvas><button type="button" class="bd-bearbeiten" data-bandenstudio hidden>Bearbeiten</button></div><p class="pz-tc-tipp" role="status" data-bandenstudio-status>Entwurf wird geladen …</p><label class="bd-kundenfreigabe" hidden><input type="checkbox" data-bandenstudio-grant>Kunde darf Logo und Anordnung bearbeiten</label><button type="button" class="btn ghost" data-bandenstudio-retry hidden>Erneut laden</button>':'<h3>Freies Bandenstudio</h3><p class="pz-tc-tipp">Logo freistellen, Texte und Flächen gestalten. Dieser Entwurf bleibt auf deinem Gerät. Wähle oben eine Firma, um deren gespeicherten Entwurf zu öffnen.</p><button type="button" class="btn" data-bandenstudio>Lokalen Entwurf öffnen</button>';
     (I.querySelector('.pz-tc-links')||I).appendChild(section);
     const button=section.querySelector('[data-bandenstudio]');

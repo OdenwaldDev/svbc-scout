@@ -664,6 +664,7 @@ html.zeiger .spot{opacity:1}
 
 /* 0.99.78: Zettel mit Summe der ersten Saison (Trikots stehen getrennt, die Summe nennt alles) */
 .bon .zl.sum{font-weight:700;border-top:2px solid var(--tinte);margin-top:4px;padding-top:8px}
+.reise-bande-motive{position:absolute;z-index:3;top:12px;left:16px;right:16px;display:flex;justify-content:center;gap:8px;margin:0}.reise-bande-motive[hidden]{display:none}.reise-bande-motive button{min-height:44px;max-width:220px;flex:1;border:1px solid #9babc3;border-radius:6px;padding:8px 12px;background:#12213c;color:#fff;font:700 15px/1.2 var(--b);cursor:pointer}.reise-bande-motive button[aria-pressed="true"]{border-color:#e8741f;box-shadow:inset 0 -3px #e8741f}.reise-bande-motive button:focus-visible{outline:3px solid #fff;outline-offset:3px}.reise-bande-motive button:disabled{opacity:.65;cursor:wait}
 /* Partnerreise: räumliche Materialien. Nach reise_stil.css einbinden.
    Keine neuen Inhalte oder Bilder der Firma, keine zusätzlichen Schriftarten.
    Optional: .sz-trikot { --schrank-rueckwand: url("partner/r-schrank.webp") }
@@ -1516,7 +1517,7 @@ window.REISE_TRIKOT=(()=>{
     if(bibliothekP)return bibliothekP;
     bibliothekP=(async()=>{for(const [name,datei] of [['LOGO','logolib.js'],['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.123';
+      await new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.124';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); });
     }})().catch(e=>{bibliothekP=null;throw e;});
@@ -1932,10 +1933,18 @@ $$('[data-trikot-ansicht]').forEach(b=>b.onclick=()=>{TRIKOT_ANSICHT=b.dataset.t
 $$('[data-trikot-seite]').forEach(b=>b.onclick=()=>{AERMEL_SEITE=b.dataset.trikotSeite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
 window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||e.data?.reise!=='aermel-seite'||!['aermel_r','aermel_l'].includes(e.data.seite))return;
   AERMEL_SEITE=e.data.seite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
+let MOTIV_FOKUS=null,MOTIV_URSPRUNG=null;
 function markeSetz(){ const bild=u=>'<img src="'+u+'" alt="">';
-  if(BANDE_PROJEKT&&BANDE_PROJEKT.vorschau){$$('.bande-name').forEach(b=>{if(b.dataset.projekt!==String(BANDE_PROJEKT.version)){b.dataset.projekt=String(BANDE_PROJEKT.version);b.classList.add('bd-entwurf-gespeichert');b.classList.remove('mk','nur');b.innerHTML=bild(BANDE_PROJEKT.vorschau);}});}
+  if(BANDE_PROJEKT&&BANDE_PROJEKT.vorschau){$$('.bande-name').forEach(b=>{const stamp=(BANDE_PROJEKT.motiv||'haupt')+':'+BANDE_PROJEKT.version;if(b.dataset.projekt!==stamp){b.dataset.projekt=stamp;b.classList.add('bd-entwurf-gespeichert');b.classList.remove('mk','nur');b.innerHTML=bild(BANDE_PROJEKT.vorschau);}});}
   else if(MARKE)$$('.bande-name:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.classList.toggle('nur',!MARKE.name); b.innerHTML=bild(MARKE.bande)+(MARKE.name?'<span class="mk-n">'+esc(MARKE.name)+'</span>':''); });
   $$('.banden-entwurf').forEach(b=>{let btn=b.querySelector('[data-bande-bearbeiten]');if(!btn){btn=document.createElement('button');btn.type='button';btn.className='reise-bande-bearbeiten';btn.dataset.bandeBearbeiten='1';btn.textContent='Bearbeiten';btn.onclick=()=>{if(!GERAHMT||!BANDE_PROJEKT?.bearbeiten)return;clearInterval(szUhr);REISEFILM.sichtbar(false);window.parent.postMessage({reise:'bande-editor-oeffnen'},location.origin);};b.appendChild(btn);}btn.hidden=!GERAHMT||!BANDE_PROJEKT?.bearbeiten;});
+  $$('.banden-entwurf').forEach(b=>{let choices=b.parentElement.querySelector('.reise-bande-motive');const list=BANDE_PROJEKT?.motive||[];
+    if(!choices&&list.length>1){choices=document.createElement('div');choices.className='reise-bande-motive';choices.setAttribute('role','group');choices.setAttribute('aria-label','Bandenmotiv');b.parentElement.insertBefore(choices,b);}
+    if(choices){choices.hidden=!GERAHMT||list.length<2;const content=list.map(m=>'<button type="button" data-bande-motiv="'+m.key+'" aria-pressed="'+(m.key===BANDE_PROJEKT.motiv)+'"'+(BANDE_PROJEKT.busy?' disabled':'')+'>'+esc(m.titel)+'</button>').join('');
+      if(choices.innerHTML!==content){choices.innerHTML=content;choices.querySelectorAll('[data-bande-motiv]').forEach(button=>button.onclick=()=>{MOTIV_FOKUS=button.dataset.bandeMotiv;MOTIV_URSPRUNG=choices;window.parent.postMessage({reise:'bande-motiv-waehlen',motiv:button.dataset.bandeMotiv},location.origin);});}
+      if(MOTIV_FOKUS&&!BANDE_PROJEKT.busy&&choices===MOTIV_URSPRUNG){choices.querySelector('[data-bande-motiv="'+MOTIV_FOKUS+'"]')?.focus({preventScroll:true});MOTIV_FOKUS=null;MOTIV_URSPRUNG=null;}
+    }
+  });
   if(!MARKE)return;
   $$('.kacheln .ich:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.innerHTML=bild(MARKE.original); });
   $$('.bande-name.mk:not(.nur)').forEach(b=>{ const t=$('.mk-n',b), im=$('img',b), h=b.clientHeight, w=b.clientWidth; if(!t||!h||!w)return;
@@ -2414,7 +2423,8 @@ window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origi
 window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||!e.data)return;
   if(e.data.reise==='bande-editor-zu'){REISEFILM.sichtbar(true);const b=$('[data-bande-bearbeiten]:not([hidden])');if(b)b.focus({preventScroll:true});return;}
   if(e.data.reise!=='bande-projekt')return;const u=e.data.vorschau;if(u!==null&&(typeof u!=='string'||u.length>690000||!/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(u)))return;
-  BANDE_PROJEKT={vorschau:u,bearbeiten:e.data.bearbeiten===true,version:Math.max(0,+e.data.version||0)};passe();
+  const motive=Array.isArray(e.data.motive)?e.data.motive.filter(m=>m&&['haupt','moerlens'].includes(m.key)&&typeof m.titel==='string').slice(0,2).map(m=>({key:m.key,titel:m.titel.slice(0,50)})):[];
+  BANDE_PROJEKT={vorschau:u,bearbeiten:e.data.bearbeiten===true,version:Math.max(0,+e.data.version||0),motiv:e.data.motiv==='moerlens'?'moerlens':'haupt',motive,busy:e.data.busy===true};passe();
 });
 window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origin!==location.origin||!e.data||e.data.reise!=='name')return; const i=$('#nameIn'), n=String(e.data.name||'').slice(0,40);
   FIRMA=e.data.gebunden?n:null; KONTEXT_BEREIT=!e.data.gebunden||!!n;

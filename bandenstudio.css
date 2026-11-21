@@ -15,3 +15,4 @@
 .embedded #projectSave{display:inline-flex}.embedded:not(.editorReady) .library,.embedded:not(.editorReady) .inspector,.embedded:not(.editorReady) .toolbar{visibility:hidden}.propsActions button{font-size:13px}@media(max-width:800px){.toolbar button{font-size:13px}.project span{font-size:11px}}
 
 .brand{min-height:44px}
+body.customer [data-team-control]{display:none!important}
