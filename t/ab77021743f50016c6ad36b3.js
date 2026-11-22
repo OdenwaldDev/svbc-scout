@@ -1,4 +1,4 @@
-    teaser:f.teaser || '', trainer:f.trainer || '', fotoH:f.fotoH || '', fotoE:f.fotoE || '', wappen:f.wappen || '', quelle:Q,
+    teaser:f.teaser || '', trainer:f.trainer || '', zeigeTore:f.zeigeTore !== false, fotoH:f.fotoH || '', fotoE:f.fotoE || '', wappen:f.wappen || '', quelle:Q,
     toreHand:Array.isArray(N.tore), elfHand:Array.isArray(N.start),
     ergebnisNeu:gespielt && S.tore_h != null && S.tore_g != null && (toreH !== S.tore_h || toreG !== S.tore_g),
     toreNeu:Array.isArray(N.tore) && !!N.toreQ && N.toreQ !== sgHash(JSON.stringify(Q.tore)) && Q.tore.length > 0,
@@ -17,30 +17,37 @@
 /* Bilder zum Datensatz: Wappen, Fotos, Porträts. Fehlt ein echtes Foto, steht ein Stimmungsbild aus dem Vereinsfundus und die Karte sagt es. */
 async function sgAssets(D){ const S = SG.satz, A = { portrait:new Map(), echtH:false, echtE:false };
   const bib = (typeof sbListe === 'function' ? sbListe(60) : []), eigene = bib.filter(m => (m.tags || []).includes('eigene') || (m.tags || []).includes('spieltag'));
-  const quelle = async (wahl, echt) => { if(/^bib:/.test(wahl || '')){ const u = await sbUrl(wahl.slice(4)); if(u){ A[echt] = true; return u; } } return null; };
-  const stimmung = (typeof pkLicht === 'function' ? pkLicht(D.datum, D.zeit || '15:00').stimmung : 'summer');
-  const ersatz = `plakat/foto/${typeof pkFotoAuswahl === 'function' ? pkFotoAuswahl({ datum:D.datum, gegner:D.gegner }, stimmung) : 'summer'}.webp`;
-  const uH = await quelle(D.fotoH, 'echtH') || ersatz, uE = await quelle(D.fotoE, 'echtE') || ersatz;
+  const [quelleH, quelleE] = await Promise.all([sgFotoQuelle(D.fotoH, D, 'fotoH'), sgFotoQuelle(D.fotoE, D, 'fotoE')]);
+  A.echtH = quelleH.echt; A.echtE = quelleE.echt;
+  const uH = quelleH.url, uE = quelleE.url;
   const bilder = [...new Set([...D.tore.flatMap(t => [t.bild, t.vbild]), ...D.start.map(p => p.bild), ...D.bank.map(p => p.bild)].filter(Boolean))];
   try{ if(bilder.length && typeof tkUrls === 'function') await tkUrls(bilder); }catch(e){}
   const [wWir, wGeg, fotoH, fotoE] = await Promise.all([
     pkBild(pkWappenQuelle(VEREIN && VEREIN.texte ? VEREIN.texte.name : 'SV/BSC Mörlenbach') || 'plakat/wappen/svbsc-moerlenbach.webp').then(i => i || pkBild('plakat/wappen/svbsc-moerlenbach.webp')),
     (async () => { if(/^bib:/.test(D.wappen || '')){ const u = await sbUrl(D.wappen.slice(4)); const im = u ? await pkBild(u) : null; if(im) return im; } return pkBild(pkWappenQuelle(D.gegner)); })(), pkBild(uH), pkBild(uE)]);
   await Promise.all(bilder.map(async b => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(b) : null; if(u){ const im = await pkBild(u); if(im) A.portrait.set(b, im); } }));
-  return Object.assign(A, { wWir, wGeg, fotoH, fotoE, eigene }); }
+  return Object.assign(A, { wWir, wGeg, fotoH, fotoE, eigene, bibliothek:bib, fotoWahlH:quelleH, fotoWahlE:quelleE }); }
 
 /* ---------- Prüfen (Spezifikation 7.3 und 9.1): was fehlt, sagt die Karte in einem Satz ---------- */
 function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[], notizen:[] }, U = ueber || {};
   const F = t => R.fehler.push(t), H = t => R.hinweise.push(t);
+  if(SG.bildOffen) F('Das gewählte Bild ist noch nicht bereit. Bitte warte auf die neue Vorschau.');
   if(!A.wGeg) F('Das Wappen von ' + D.gegner + ' fehlt');
   if(m === 'H'){ if(!D.datum) F('Das Datum fehlt'); if(!D.zeit) F('Die Anstoßzeit fehlt');
     if(!String(D.ort || '').trim()) F('Der Spielort fehlt. Bitte unten eintragen.'); if(U.ort) F('Der Spielort ist zu lang. Bitte kürzen.');
     if(U.teaser) F('Die Unterzeile ist zu lang'); if(U.paarung) F('Die Vereinsnamen passen nicht in eine Zeile, bitte Kurznamen eintragen');
-    if(!A.echtH) H('Mannschaftsfoto wählen'); if(!D.wirHeim) R.notizen.push('Die Auswärts-Vorlage ist die Schwester der Heimspiel-Vorlage und noch nicht eigens abgenommen.'); }
+    if(!A.fotoH) F(A.fotoWahlH?.art === 'bibliothek' ? 'Dein gewähltes Foto ist nicht erreichbar. Wähle ein anderes Foto oder ein Vereinsmotiv.' : 'Das Hintergrundbild fehlt. Bitte ein anderes Motiv wählen.'); if(!D.wirHeim) R.notizen.push('Die Auswärts-Vorlage ist die Schwester der Heimspiel-Vorlage und noch nicht eigens abgenommen.'); }
   if(Object.keys(U).some(k => k.startsWith('quer') && U[k])) F('Eine Angabe ist für das Querbanner zu lang. Bitte kürzen.');
   if(m === 'E'){ if(!D.gespielt){ R.wartet = 'Der Endstand fehlt noch'; return R; }
     if(!D.h1) F('Die Headline fehlt'); if(U.h1 || U.h2) F('Die Headline ist zu lang'); if(U.wir || U.gegner) F('Ein Vereinsname ist zu lang, bitte Kurznamen eintragen');
-    if(!D.kopfGewaehlt) H('Headline wählen'); if(!A.echtE) H('Spielfoto wählen'); }
+    if(!D.kopfGewaehlt) H('Headline wählen'); if(!A.fotoE) F(A.fotoWahlE?.art === 'bibliothek' ? 'Dein gewähltes Foto ist nicht erreichbar. Wähle ein anderes Foto oder ein Vereinsmotiv.' : 'Das Hintergrundbild fehlt. Bitte ein anderes Motiv wählen.');
+    if(D.zeigeTore !== false){ const T = sgErgebnisTore(D);
+      if(T.anzahl !== T.erwartet) F('Die Torschützen sind noch nicht vollständig. Ergebnis abrufen, Tore ergänzen oder die Liste bewusst ausblenden.');
+      if(T.fehlendeNamen) F('Bei einem eigenen Tor fehlt der Name. Bitte unter Torschützen ergänzen.');
+      if(T.fehlendeMinuten) F('Bei einem eigenen Tor fehlt die Minute. Bitte unter Torschützen ergänzen.');
+      if(T.gruppen.length > 8 || U.ergebnisTore) F('Mehr als acht verschiedene Torschützen: Bitte den Spielverlauf nutzen oder die Liste auf dem Ergebnisbild ausblenden.');
+      if(Object.keys(U).some(k => /^ergebnis(Tor|Minute)/.test(k) && U[k])) F('Ein Torschützenname oder seine Minuten sind zu lang. Bitte kürzen oder die Liste auf dem Ergebnisbild ausblenden.');
+    } }
   if(m === 'S'){ if(!D.gespielt){ R.wartet = 'Der Endstand fehlt noch'; return R; }
     const n = D.tore.length, soll = D.toreH + D.toreG;
     if(!soll && !n){ R.wartet = 'Keine Tore, kein Spielverlauf'; return R; }
@@ -48,6 +55,7 @@ function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[
     const hT = D.tore.filter(t => t.wir === D.wirHeim).length;
     if(n !== soll || hT !== D.toreH) F(`Die Tore im Verlauf ergeben ${hT}:${n - hT}, der Endstand ist ${D.toreH}:${D.toreG}`);
     if(D.tore.some(t => !t.name)) F('Bei einem Tor fehlt der Schütze');
+    if(D.tore.some(t => !sgTorMinuteGueltig(t))) F('Bei einem Tor fehlt eine gültige Minute. Bitte ergänzen.');
     if(D.toreNeu) H('Der Spielbericht meldet jetzt andere Tore');
     const offen = D.tore.filter(t => t.wir && !t.vorlage).length; if(offen) H(offen === 1 ? '1 Vorlage unbestätigt' : `${offen} Vorlagen unbestätigt`);
     if(n > 6) R.notizen.push(n > 8 ? `Bei ${n} Toren entstehen ${Math.ceil(n / 8)} Karten.` : 'Bei mehr als sechs Toren rücken die Zeilen enger.'); }
@@ -128,7 +136,10 @@ function sgTexteBauen(D, m, ton = 'normal'){
       whatsapp:[kurz ? titel : '💙🧡 ' + auftakt, fakten, waGeschichte, ruf, ton === 'energie' ? 'Lasst uns gemeinsam alles geben! 💙🧡' : ''].filter(Boolean).join('\n\n'),
       story:[(D.wirHeim ? 'HEIMSPIEL' : 'AUSWÄRTSSPIEL') + ' ⚽', paarung, termin, ort ? '📍 ' + ort : '', G.kurz, schlussStory].filter(Boolean).join('\n') };
   }
-  return { post:teile.join('\n\n'), whatsapp:teile.join('\n'), story:[titel, paarung, ergebnis, termin, ort].filter(Boolean).join('\n') };
+  const T = m === 'E' ? sgErgebnisTore(D) : null;
+  const schuetzen = T && T.vollstaendig && T.gruppen.length ? 'Unsere Tore: ' + T.gruppen.map(g => g.name + (g.eigentor ? ' (Eigentor)' : '') + ' (' + g.zeiten.join(', ') + ')').join('; ') : '';
+  if(schuetzen) teile.splice(3, 0, schuetzen);
+  return { post:teile.join('\n\n'), whatsapp:teile.join('\n'), story:[titel, paarung, ergebnis, schuetzen, termin, ort].filter(Boolean).join('\n') };
 }
 function sgTexte(m, D){ const auto = sgTexteBauen(D || SG.d, m, SG.neu.textTon || 'normal'), hand = (SG.neu.texte || {})[m] || {};
   for(const k of ['post','whatsapp','story']) if(typeof hand[k] === 'string') auto[k] = hand[k]; return auto; }
@@ -147,7 +158,7 @@ async function sgTextKopieren(m, key, feld){ if(SG.satz) SG.d = sgDaten(); const
 function sgStandHash(m, D){ const k = [SG_VERSION[m], D.wettbewerb, D.saison, D.nr, D.datum, D.heim, D.gast, D.wappen];
   k.push('Texte 1.0', D.ort, sgTexte(m, D));
   if(m === 'H') k.push('Quer 2.0', D.zeit, D.teaser, D.fotoH, sgQuerNorm(D.querY, .5, 0, 1), sgQuerNorm(D.querZoom, 1, 1, 2));
-  if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE);
+  if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE, D.zeigeTore !== false, D.zeigeTore === false ? null : sgErgebnisTore(D));
   if(m === 'S') k.push(D.toreH, D.toreG, D.tore.map(t => [t.m, t.x, t.wir, t.name, t.vorlage, t.art]));
   if(m === 'A') k.push(D.start.map(p => [p.name, p.nr, p.tw, p.c]), D.bank.map(p => [p.name, p.nr, p.ein]), D.trainer);
   return sgHash(JSON.stringify(k)); }
@@ -201,7 +212,7 @@ const sgKonto = () => typeof SVB !== 'undefined' && SVB.user ? SVB.user.id : nul
 function sgKontextLaden(id){ let timer;
   const laden = Promise.resolve().then(() => svtRpc('spieltag_kontext', { p_spiel:id })).catch(() => null);
   return Promise.race([laden, new Promise(ok => { timer = setTimeout(() => ok(null), 3500); })]).finally(() => clearTimeout(timer)); }
-async function sgSatzLaden(){ const nr = ++sgSatzLauf, s = SG.spiele[SG.idx], vorgemerkt = s && SG_MERKPLAENE.get(s.id), konto = sgKonto(); ++sgBildLauf; clearTimeout(sgZeichenT); SG.abruf = null; SG.satz = null; SG.kontext = null; SG.neu = {}; if(!s) return false;
+async function sgSatzLaden(){ const nr = ++sgSatzLauf, s = SG.spiele[SG.idx], vorgemerkt = s && SG_MERKPLAENE.get(s.id), konto = sgKonto(); ++sgBildLauf; clearTimeout(sgZeichenT); SG.abruf = null; SG.bildOffen = false; SG.satz = null; SG.kontext = null; SG.neu = {}; if(!s) return false;
   const [satz, kontext] = await Promise.allSettled([svtRpc('spieltag_satz', { p_spiel:s.id }), sgKontextLaden(s.id)]);
   if(nr !== sgSatzLauf || konto !== sgKonto()) return false;
   if(satz.status === 'rejected') throw satz.reason; const r = satz.value, k = kontext.status === 'fulfilled' ? kontext.value : null;
@@ -285,12 +296,20 @@ async function sgStart(P){
 async function sgSpielZeigen(){ const h = document.getElementById('sgWrap'); if(!h) return; SG.motiv = '';
   h.innerHTML = '<div class="card"><div class="empty">Lade den Spieltag …</div></div>';
   try{ if(!await sgSatzLaden()) return; await sgNeu(true); }catch(e){ h.innerHTML = `<div class="card"><div class="empty">${sgE(e.message || e)}</div></div>`; } }
+/* Bildwechsel sperren Freigabe und Export sofort, auch vor dem verzögerten
+   Zeichnen. Neue Texte während einer Bildladung laden die aktuelle Wahl weiter. */
+function sgBildStatus(text){ const h = document.getElementById('sgWrap'); if(!h) return;
+  const e = h.querySelector('[data-sgbildstatus]'); if(e){ e.textContent = text; e.hidden = !text; }
+  if(text) h.querySelectorAll('[data-sgx]').forEach(b => { if(b.dataset.sgx !== 'zurueck') b.disabled = true; });
+}
+function sgBildWarten(){ SG.bildOffen = true; sgBildStatus('Das gewählte Bild wird geladen. Bitte warte auf die neue Vorschau.'); }
 /* Alles neu rechnen und zeichnen. mitBildern: Fotos und Wappen neu holen (sonst nur Text). */
 async function sgNeu(mitBildern){ const h = document.getElementById('sgWrap'); if(!h || !SG.satz) return;
   const lauf = ++sgBildLauf, satz = SG.satz, konto = sgKonto(), aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto();
-  const D = sgDaten(); let A = SG.A;
-  try{ if(mitBildern || !A.portrait) A = await sgAssets(D); }catch(e){ if(!aktuell()) return false; throw e; }
-  if(!aktuell()) return false; SG.d = D; SG.A = A;
+  const D = sgDaten(), bilderLaden = mitBildern || SG.bildOffen || !SG.A.portrait; let A = SG.A;
+  if(bilderLaden) sgBildWarten();
+  try{ if(bilderLaden) A = await sgAssets(D); }catch(e){ if(!aktuell()) return false; sgBildStatus('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); throw e; }
+  if(!aktuell()) return false; SG.d = D; SG.A = A; SG.bildOffen = false;
   SG.pruef = {}; SG.cv = SG.cv || {};
   ['H', 'A', 'E', 'S'].forEach(m => { const cv = SG.cv[m] || (SG.cv[m] = document.createElement('canvas')); const vor = sgPruefen(m, SG.d, SG.A, {});
     const ue = vor.wartet ? {} : sgMalen(cv, m, SG.d, SG.A, m === 'S' ? (SG.seite || 0) : 0); SG.pruef[m] = sgPruefen(m, SG.d, SG.A, ue); });
@@ -310,13 +329,19 @@ function sgUebersicht(h){ const D = SG.d, M = ['H', 'A', 'E', 'S'];
   M.forEach(m => { const z = h.querySelector(`[data-sgcv="${m}"]`); if(z && !z.classList.contains('leer')) z.appendChild(SG.cv[m]); });
   sgBinden(h); }
 function sgFeld(k, label, wert, o){ o = o || {}; return `<label class="sg-f"><span>${sgE(label)}</span><input type="${o.typ || 'text'}" data-sgf="${k}" value="${sgE(wert == null ? '' : wert)}" ${o.max ? `maxlength="${o.max}"` : ''} ${o.ph ? `placeholder="${sgE(o.ph)}"` : ''} ${o.attr || ''}></label>`; }
-function sgFotoHtml(feld, wahl, echt){ const L = (SG.A.eigene || []).slice(0, 12);
-  return `<div class="sg-foto" data-sgfoto="${feld}"><p class="sg-l">${feld === 'fotoH' ? 'Mannschaftsfoto' : 'Foto vom Spiel'}</p>
-    ${echt ? '' : '<p class="sg-hin">Gerade steht ein Stimmungsbild aus dem Vereinsfundus. Ein echtes Foto wirkt besser.</p>'}
-    <div class="sg-bib">${L.map(m => `<button type="button" data-sgbib="${sgE(m.pfad)}" class="${wahl === 'bib:' + m.pfad ? 'on' : ''}" aria-label="${sgE(m.name || 'Foto')}"><img src="${sgE(tkFotoUrl(m.pfad))}" alt="" loading="lazy"></button>`).join('')}
-      <label class="sg-up">${SVI('upload')}<span data-sbt>Foto hochladen</span><input type="file" accept="image/*" data-sgup="${feld}" hidden></label></div></div>`; }
+function sgFotoHtml(feld, wahl){ return sgFotoGalerieHtml(feld, wahl, SG.A); }
 function sgListenHtml(){ const K = sgKaderListe(SG.d.sub).map(p => `${String(p.vorname || '').trim()} ${String(p.nachname || '').trim()}`.trim()).filter(Boolean);
   return `<datalist id="sgKader">${[...new Set(K)].sort().map(n => `<option value="${sgE(n)}">`).join('')}</datalist>`; }
+function sgToreEditorHtml(D){ return `${D.toreNeu ? `<div class="sg-quelle"><b>Der Spielbericht meldet jetzt andere Tore.</b><span>Deine Fassung bleibt, bis du entscheidest.</span><button type="button" class="btn sm ghost" data-sgq="tore-quelle">Spielbericht übernehmen</button><button type="button" class="btn sm ghost" data-sgq="tore-meins">Meine behalten</button></div>` : ''}
+    <p class="sg-l">Tore</p><div class="sg-tore">${D.tore.map((t, i) => `<div class="sg-tor" data-i="${i}" data-wir="${t.wir ? 1 : 0}">
+      <input type="number" data-sgt="m" value="${t.m || ''}" min="1" max="130" inputmode="numeric" aria-label="Minute"><input type="number" data-sgt="x" value="${t.x || ''}" min="0" max="20" inputmode="numeric" placeholder="+" aria-label="Nachspielzeit">
+      <select data-sgt="wir" aria-label="Für wen"><option value="1"${t.wir ? ' selected' : ''}>Wir</option><option value="0"${t.wir ? '' : ' selected'}>Gegner</option></select>
+      <input type="text" data-sgt="name" value="${sgE(t.name)}" list="${t.wir ? 'sgKader' : ''}" placeholder="Torschütze" maxlength="40" aria-label="Torschütze">
+      ${t.wir ? `<input type="text" data-sgt="vorlage" value="${sgE(t.vorlage === '-' ? '' : t.vorlage)}" list="sgKader" placeholder="Vorlage" maxlength="40" aria-label="Vorlage"><label class="sg-ohne"><input type="checkbox" data-sgt="ohne"${t.vorlage === '-' ? ' checked' : ''}> ohne Vorlage</label>` : ''}
+      <button type="button" class="sg-weg" data-sgt="weg" aria-label="Tor entfernen">${SVI('x')}</button></div>`).join('')}</div>
+    <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgq="tor-neu">Tor hinzufügen</button>${D.toreHand ? '<button type="button" class="btn sm ghost" data-sgq="tore-quelle">Zurück zum Spielbericht</button>' : ''}</div>
+    <p class="sg-hin">Vorlagen stehen nicht im Spielbericht. Trag sie ein oder hake „ohne Vorlage“ an, sonst bleibt ein Strich und die Karte fragt nach.</p>
+`; }
 function sgFormular(m){ const D = SG.d, f = SG.neu.f || {};
   const kopf = `<details class="sg-mehr"><summary>Kopfzeile und Namen</summary>${sgFeld('wettbewerb', 'Wettbewerb', D.wettbewerb, { max:40 })}${sgFeld('nr', 'Saisonspiel Nummer', D.nr == null ? '' : D.nr, { typ:'number', attr:'min="0" max="60" inputmode="numeric"' })}
     ${sgFeld('wir', 'Unser Name auf dem Plakat', D.wir, { max:40 })}${sgFeld('gegner', 'Name des Gegners auf dem Plakat', D.gegner, { max:40 })}<p class="sg-hin">Die Nummer zählt die gespielten Ligaspiele dieser Mannschaft, nicht den Spieltag der Staffel.</p>${SG.A.wGeg ? sgWappenHtml() : ''}</details>`;
@@ -324,16 +349,11 @@ function sgFormular(m){ const D = SG.d, f = SG.neu.f || {};
   if(m === 'E') return `<p class="sg-l">Headline</p><div class="sg-vor">${D.vorschlaege.map((v, i) => `<button type="button" data-sgvor="${i}" class="${D.kopfGewaehlt && D.h1 === v[0] && D.h2 === v[1] ? 'on' : ''}"><b>${sgE(v[0])}</b> ${sgE(v[1])}</button>`).join('')}</div>
     <p class="sg-hin">Die Vorschläge sagen nur, was der Endstand belegt. Wertungen wie „Favorit“ oder „verdient“ schreibst du selbst, wenn sie stimmen.</p>
     ${sgFeld('h1', 'Zeile 1', D.h1, { max:26 })}${sgFeld('h2', 'Zeile 2', D.h2, { max:22 })}
-    <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>` + sgFotoHtml('fotoE', D.fotoE, SG.A.echtE) + kopf;
-  if(m === 'S') return `${D.toreNeu ? `<div class="sg-quelle"><b>Der Spielbericht meldet jetzt andere Tore.</b><span>Deine Fassung bleibt, bis du entscheidest.</span><button type="button" class="btn sm ghost" data-sgq="tore-quelle">Spielbericht übernehmen</button><button type="button" class="btn sm ghost" data-sgq="tore-meins">Meine behalten</button></div>` : ''}
-    <p class="sg-l">Tore</p><div class="sg-tore">${D.tore.map((t, i) => `<div class="sg-tor" data-i="${i}" data-wir="${t.wir ? 1 : 0}">
-      <input type="number" data-sgt="m" value="${t.m}" min="1" max="130" inputmode="numeric" aria-label="Minute"><input type="number" data-sgt="x" value="${t.x || ''}" min="0" max="20" inputmode="numeric" placeholder="+" aria-label="Nachspielzeit">
-      <select data-sgt="wir" aria-label="Für wen"><option value="1"${t.wir ? ' selected' : ''}>Wir</option><option value="0"${t.wir ? '' : ' selected'}>Gegner</option></select>
-      <input type="text" data-sgt="name" value="${sgE(t.name)}" list="${t.wir ? 'sgKader' : ''}" placeholder="Torschütze" maxlength="40" aria-label="Torschütze">
-      ${t.wir ? `<input type="text" data-sgt="vorlage" value="${sgE(t.vorlage === '-' ? '' : t.vorlage)}" list="sgKader" placeholder="Vorlage" maxlength="40" aria-label="Vorlage"><label class="sg-ohne"><input type="checkbox" data-sgt="ohne"${t.vorlage === '-' ? ' checked' : ''}> ohne Vorlage</label>` : ''}
-      <button type="button" class="sg-weg" data-sgt="weg" aria-label="Tor entfernen">${SVI('x')}</button></div>`).join('')}</div>
-    <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgq="tor-neu">Tor hinzufügen</button>${D.toreHand ? '<button type="button" class="btn sm ghost" data-sgq="tore-quelle">Zurück zum Spielbericht</button>' : ''}</div>
-    <p class="sg-hin">Vorlagen stehen nicht im Spielbericht. Trag sie ein oder hake „ohne Vorlage“ an, sonst bleibt ein Strich und die Karte fragt nach.</p>
+    <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>
+    <label class="sg-ergebnis-tore"><input type="checkbox" data-sgergebnistore${D.zeigeTore ? ' checked' : ''}><span>Torschützen auf dem Ergebnisbild</span></label>
+    <p class="sg-hin">Unsere Schützen mit belegten Minuten. Mehrfachtore stehen gemeinsam unter einem Namen. Fehlen noch Angaben, kannst du sie hier ergänzen.</p>
+    <details class="sg-mehr" data-sgtore-editor${D.zeigeTore && !sgErgebnisTore(D).vollstaendig ? ' open' : ''}><summary>Torschützen bearbeiten</summary>${sgToreEditorHtml(D)}</details>` + sgFotoHtml('fotoE', D.fotoE, SG.A.echtE) + kopf + sgListenHtml();
+  if(m === 'S') return sgToreEditorHtml(D) + `
     <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>` + kopf + sgListenHtml();
   const zeile = (p, i, art) => `<div class="sg-sp" data-art="${art}" data-i="${i}"><input type="number" data-sgp="nr" value="${p.nr == null ? '' : p.nr}" min="0" max="99" inputmode="numeric" placeholder="Nr." aria-label="Rückennummer">
       <input type="text" data-sgp="name" value="${sgE(p.name)}" list="sgKader" placeholder="Name" maxlength="40" aria-label="Name">
@@ -366,7 +386,7 @@ function sgQuerReglerAktualisieren(h){ if(SG.motiv !== 'H' || sgFormat('H') !== 
 }
 function sgQuerAendern(k, v, h){ if(SG.motiv !== 'H' || sgFormat('H') !== 'quer') return;
   const wert = k === 'querZoom' ? sgQuerNorm(v, 1, 1, 2) : sgQuerNorm(v, .5, 0, 1);
-  sgSetzen(k, Math.round(wert * 10000) / 10000); SG.d = sgDaten(); sgSchau('H'); sgQuerReglerAktualisieren(h); sgMerken();
+  sgSetzen(k, Math.round(wert * 10000) / 10000); SG.d = sgDaten(); sgSchau('H'); sgQuerReglerAktualisieren(h); sgFotoQualitaetAktualisieren(h); sgMerken();
 }
 function sgBildTreffer(cv, ev){ const r = cv.getBoundingClientRect(); if(!r.width || !r.height) return null;
   const x = (ev.clientX - r.left) * cv.width / r.width, y = (ev.clientY - r.top) * cv.height / r.height;
@@ -399,9 +419,10 @@ function sgQuerBinden(h){ if(SG.motiv !== 'H' || sgFormat('H') !== 'quer') retur
   bild.onpointerup = ende; bild.onpointercancel = ende; bild.onlostpointercapture = ende;
 }
 function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.pruef[m];
-  const P = fmt === 'quer' && !vor.wartet ? sgPruefen(m, D, SG.A, sgMalen(SG.cvQuer || (SG.cvQuer = document.createElement('canvas')), m, D, SG.A, 0, 'quer')) : vor;
+  const P = SG.bildOffen ? sgPruefen(m, D, SG.A, {}) : fmt === 'quer' && !vor.wartet ? sgPruefen(m, D, SG.A, sgMalen(SG.cvQuer || (SG.cvQuer = document.createElement('canvas')), m, D, SG.A, 0, 'quer')) : vor;
   const st = P.fehler.length ? { art:'du', text:'Braucht dich: ' + P.fehler[0] } : sgStand(m), fr = (SG.neu.frei || {})[m], frei = fr && fr.stand === sgStandHash(m, D);
-  const aktiv = document.activeElement, fokus = aktiv && h.contains(aktiv) && (aktiv.dataset.sgtext ? `[data-sgtext="${aktiv.dataset.sgtext}"]` : aktiv.dataset.sggeschichte != null ? '[data-sggeschichte]' : aktiv.dataset.sgf ? `[data-sgf="${aktiv.dataset.sgf}"]` : ''), auswahl = fokus ? [aktiv.selectionStart, aktiv.selectionEnd] : null;
+  const aktiv = document.activeElement, fokus = aktiv && h.contains(aktiv) && (aktiv.dataset.sgtext ? `[data-sgtext="${aktiv.dataset.sgtext}"]` : aktiv.dataset.sggeschichte != null ? '[data-sggeschichte]' : aktiv.dataset.sgergebnistore != null ? '[data-sgergebnistore]' : aktiv.dataset.sgf ? `[data-sgf="${aktiv.dataset.sgf}"]` : ''), auswahl = fokus ? [aktiv.selectionStart, aktiv.selectionEnd] : null;
+  const fotoZustand = sgFotoZustand(h), toreEditorOffen = h.querySelector('[data-sgtore-editor]')?.open;
   const querFokus = aktiv && h.contains(aktiv) && ['sgQuerY','sgQuerZoom'].includes(aktiv.id) ? aktiv.id : '';
   const offen = !!P.wartet || P.fehler.length > 0, seiten = m === 'S' ? sgSeitenS(D) : 1;
   const liste = [...P.fehler.map(t => `<li class="f">${sgE(t)}</li>`), ...P.hinweise.map(t => `<li class="h">${sgE(t)}</li>`), ...(!offen && !P.hinweise.length ? ['<li class="ok">Angaben vollständig, nichts läuft über</li>'] : []), ...P.notizen.map(t => `<li class="n">${sgE(t)}</li>`)].join('');
@@ -412,12 +433,12 @@ function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.
         <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgtexte-zeigen>Texte für Gruppen und Storys</button></div>
         ${m === 'H' && fmt === 'quer' && !P.wartet ? sgQuerReglerHtml() : ''}
         ${seiten > 1 ? `<div class="sg-zeile sg-seiten">${Array.from({ length:seiten }, (_, i) => `<button type="button" class="btn sm ${i === (SG.seite || 0) ? '' : 'ghost'}" data-sgseite="${i}">Karte ${i + 1}</button>`).join('')}</div>` : ''}
-        <ul class="sg-pruef" id="sgPruef">${liste}</ul>
+        <p class="sg-hin" data-sgbildstatus role="status" aria-live="polite" hidden></p><p class="sg-hin sg-fotoqualitaet" data-sgfotoqualitaet hidden></p><ul class="sg-pruef" id="sgPruef">${liste}</ul>
         <div class="sg-akt">${frei ? `<p class="sg-frei">Freigegeben von ${sgE(fr.name || 'jemandem')}${am ? ', ' + sgE(am) + ' Uhr' : ''}.</p><button type="button" class="btn" data-sgx="teilen" ${offen ? 'disabled' : ''}>${SVI('share')} ${seiten > 1 ? 'Diese Karte teilen' : 'Teilen'}</button><button type="button" class="btn ghost" data-sgx="png" ${offen ? 'disabled' : ''}>${seiten > 1 ? 'Diese Karte als PNG' : 'PNG laden'}</button>${seiten > 1 ? `<button type="button" class="btn ghost" data-sgx="zip" ${offen ? 'disabled' : ''}>Alle ${seiten} Karten als ZIP</button>` : ''}<button type="button" class="btn ghost sm" data-sgx="zurueck">Freigabe zurücknehmen</button>`
           : `<button type="button" class="btn" data-sgx="frei" ${offen ? 'disabled' : ''}>${SVI('check')} Stimmt so</button>${offen ? `<p class="sg-hin">${sgE(P.wartet || 'Erst wenn nichts mehr fehlt, lässt sich das Motiv freigeben.')}</p>` : '<p class="sg-hin">Mit „Stimmt so“ gibst du diesen Stand frei. Danach kannst du teilen.</p>'}`}</div></div>
       <div class="sg-form" id="sgForm">${SG.A.wGeg ? '' : sgWappenHtml()}<p class="sg-tipp">Tipp auf ein Wort im Bild, und du landest im passenden Feld.</p>${sgFormular(m)}${sgTexteHtml(m)}</div></div>`;
   if(!P.wartet){ const z = h.querySelector('#sgBild'); z.appendChild(sgSchau(m)); }
-  sgBinden(h); sgTexteHoehen(h); if(fokus || querFokus){ const ziel = h.querySelector(fokus || '#' + querFokus); if(ziel){ ziel.focus({ preventScroll:true }); if(auswahl) try{ ziel.setSelectionRange(...auswahl); }catch(e){} } } }
+  sgBinden(h); sgTexteHoehen(h); sgFotoWiederherstellen(h, fotoZustand); if(toreEditorOffen){ const e = h.querySelector('[data-sgtore-editor]'); if(e) e.open = true; } if(fokus || querFokus){ const ziel = h.querySelector(fokus || '#' + querFokus); if(ziel){ ziel.focus({ preventScroll:true }); if(auswahl) try{ ziel.setSelectionRange(...auswahl); }catch(e){} } } }
 /* Die Leinwand der Einzelansicht: der Beitrag aus der Übersicht oder dasselbe Motiv als Story, frisch gezeichnet */
 function sgSchau(m){ const fmt = sgFormat(m); if(fmt === 'beitrag') return SG.cv[m]; const key = fmt === 'quer' ? 'cvQuer' : 'cvStory', cv = SG[key] || (SG[key] = document.createElement('canvas')); sgMalen(cv, m, SG.d, SG.A, m === 'S' ? (SG.seite || 0) : 0, fmt); return cv; }
 function sgSetzen(k, v){ SG.neu.f = SG.neu.f || {}; if(k === 'ort') SG.neu.f[k] = String(v || ''); else if(v === '' || v == null) delete SG.neu.f[k]; else SG.neu.f[k] = v; }
@@ -425,11 +446,11 @@ function sgToreHand(){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore = SG.d.tore.
 function sgElfHand(){ if(!Array.isArray(SG.neu.start)){ const z = p => ({ name:p.name, nr:p.nr, tw:p.tw, c:p.c, ein:p.ein }); SG.neu.start = SG.d.start.map(z); SG.neu.bank = SG.d.bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); }
   if(!Array.isArray(SG.neu.bank)) SG.neu.bank = []; return SG.neu; }
 let sgZeichenT = null;
-function sgBald(mitBildern, ganz){ const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz) return sgNeu(mitBildern);
+function sgBald(mitBildern, ganz){ mitBildern = mitBildern || !!SG.bildOffen; if(mitBildern) sgBildWarten(); const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz){ try{ return await sgNeu(mitBildern); }catch(e){ if(satz === SG.satz && konto === sgKonto()) kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); return false; } }
     /* Beim Tippen bleibt das Formular stehen: nur Bild, Prüfliste und Zustand werden frisch */
     const m = SG.motiv, D = sgDaten(); let A = SG.A;
-    try{ if(mitBildern) A = await sgAssets(D); }catch(e){ if(aktuell()) kToast('Die Bilder konnten nicht geladen werden. Bitte erneut versuchen.'); return; }
-    if(!aktuell()) return; SG.d = D; SG.A = A;
+    try{ if(mitBildern) A = await sgAssets(D); }catch(e){ if(aktuell()){ sgBildStatus('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); } return; }
+    if(!aktuell()) return; SG.d = D; SG.A = A; SG.bildOffen = false; sgBildStatus('');
     ['H', 'A', 'E', 'S'].forEach(x => { const vor = sgPruefen(x, SG.d, SG.A, {}); const ue = vor.wartet ? {} : sgMalen(SG.cv[x], x, SG.d, SG.A, x === 'S' ? (SG.seite || 0) : 0); SG.pruef[x] = sgPruefen(x, SG.d, SG.A, ue); });
     const h = document.getElementById('sgWrap'); if(!h || !m) return; if(sgFormat(m) !== 'beitrag' && !SG.pruef[m].wartet) sgSchau(m);
     const P = sgFormat(m) === 'quer' && !SG.pruef[m].wartet ? sgPruefen(m, SG.d, SG.A, SG.ueber) : SG.pruef[m], st = P.fehler.length ? { art:'du', text:'Braucht dich: ' + P.fehler[0] } : sgStand(m), kopf = h.querySelector('.sg-dkopf .sg-st'); if(kopf){ kopf.dataset.art = st.art; kopf.textContent = st.text; }

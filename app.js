@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.133', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.134', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18698,6 +18698,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.134',v:'0.99.134',datum:'2026-11-22',titel:'Torschützen und Flutlichtmotive zurück',kurz:'Die Ergebnisgrafik zeigt unsere Tore. Die Hintergrundgalerie ist wieder direkt beim Spiel.',punkte:[{ic:'i',t:'Ergebnis mit Wappen und Schützen',d:'Beide Wappen und die Vereinsnamen stehen größer am Spielstand. Darunter erscheinen unsere Torschützen mit Minuten. Mehrfachtore werden zusammengefasst. Fehlende Angaben kannst du ergänzen oder die Liste bewusst ausblenden.',r:'team'},{ic:'i',t:'Die Bildwahl ist wieder da',d:'Wähle aus 17 Vereinsmotiven, darunter Flutlicht und Netz bei Nacht, oder nutze ein eigenes Foto. Der Export verwendet die Originaldatei. Künstliche Leuchtränder und Weichzeichner entfallen.',r:'team'}]},
   {id:'0.99.133',v:'0.99.133',datum:'2026-11-22',titel:'Spieldaten direkt abrufen',kurz:'Ergebnis, Torschützen und Aufstellung für das ausgewählte Spiel nachladen.',punkte:[{ic:'i',t:'Ein Knopf direkt am Spiel',d:'Mit „Ergebnis abrufen“ oder „Aufstellung abrufen“ fragst du FUSSBALL.DE direkt ab. Bestätigte Angaben erscheinen in den bestehenden Motiven. Ein Endstand kann schon vorliegen, während der Torverlauf noch fehlt.',r:'team'},{ic:'i',t:'Deine Änderungen bleiben erhalten',d:'Eigene Texte, Tore und Aufstellungen werden durch den Abruf nicht ersetzt. Eine abweichende Quelle wird angezeigt. Fehlende Namen und noch nicht freigegebene Daten bleiben erkennbar.',r:'team'}]},
   {id:'0.99.132',v:'0.99.132',datum:'2026-11-22',titel:'Die Geschichte zum Spiel',kurz:'Ankündigungen greifen die Form und frühere Duelle auf. Deinen Blick aufs Spiel kannst du ergänzen.',punkte:[{ic:'i',t:'Rückblick aus den Ergebnissen',d:'Das Spieltagsstudio ergänzt passende Ligaergebnisse, etwa eine Siegesserie oder das Hinspiel. Unter „Grundlage ansehen“ stehen die verwendeten Ergebnisse. Fehlen Resultate, wird daraus keine Serie gemacht.',r:'team'},{ic:'i',t:'Platz für deine Einschätzung',d:'Ergänze einen eigenen Absatz zum Spielverlauf. Für die Story entsteht eine kurze Zeile. Den automatischen Rückblick kannst du abschalten; bereits bearbeitete Texte bleiben erhalten.',r:'team'}]},
   {id:'0.99.131',v:'0.99.131',datum:'2026-11-22',titel:'Die Spieltagstexte sind zurück',kurz:'Einladungen zum Kopieren und der Spielort direkt auf jedem Ankündigungsmotiv.',punkte:[{ic:'i',t:'Texte für eure Gruppen und Storys',d:'Die früheren motivierenden Einladungen stehen wieder direkt beim Spiel. Wähle ausführlich, kurz oder anfeuernd und kopiere den passenden Text für Beitrag, WhatsApp oder Story. Eigene Änderungen bleiben bearbeitbar.',r:'team'},{ic:'i',t:'Spielort im Banner, Beitrag und in der Story',d:'Der vorhandene Spielort wird übernommen. Wenn du ihn im Formular änderst, erscheint er direkt im Bild und in den vorbelegten Texten. Ohne Spielort fragt das Studio vor der Freigabe nach.',r:'team'}]},
@@ -37707,6 +37708,201 @@ if(typeof dpRender === 'function'){ const _dp126 = dpRender; dpRender = function
   return r; }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm126css'; s.textContent="/* Beta 0.99.91 · Datenprüfung: Ansicht „Vereinswechsel“ (svm126.js) */\n.dpw-z{display:grid;gap:3px;padding:10px 0;border-top:1px solid var(--linie);}\n.dpw-z .lnk{justify-self:start;font-weight:700;font-size:15.5px;background:none;border:0;padding:0;color:var(--blau);cursor:pointer;text-align:left;min-height:28px;}\n.dpw-z span{font-size:14px;line-height:1.4;}\n.dpw-z em{font-style:normal;font-size:13px;font-weight:600;color:var(--gruen,#2c6b3a);}\n.dpw-z.warn em{color:#a11b12;}\n.dpw-d{border:1px solid var(--linie);border-radius:12px;padding:0 12px;margin-top:6px;}\n.dpw-d summary{min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer;}\n.dpw-tw{overflow-x:auto;margin:0 -4px 10px;}\n.dpw-d table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:420px;}\n.dpw-d th{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);padding:6px;border-bottom:1.5px solid var(--linie);}\n.dpw-d td{padding:6px;border-bottom:1px solid var(--linie);vertical-align:top;}\n.dpw-d td .lnk{background:none;border:0;padding:0;color:var(--blau);cursor:pointer;font:inherit;font-weight:600;text-align:left;}\n.g1-dq .s1-gruppe .dpw-zu{margin-left:10px;vertical-align:middle;}\n"; document.head.appendChild(s); }catch(e){} })();
+/* Vorhandene Vereinsmotive: kleine Galeriebilder, feste Originalquellen für die Ausgabe. */
+const SG_FOTO_FUNDUS = Object.freeze([
+  ['linie-abend','Linie am Abend'], ['night','Flutlicht'], ['ball-flutlicht','Ball unter Flutlicht'],
+  ['netz-nacht','Netz bei Nacht'], ['regen-nacht','Regen bei Nacht'], ['kunstrasen-flutlicht','Kunstrasen'],
+  ['mittelkreis-nebel','Mittelkreis im Nebel'], ['autumn','Herbstlaub'], ['elfmeter-herbst','Elfmeterpunkt'],
+  ['pfosten-nebel','Pfosten im Nebel'], ['eckfahne-abend','Eckfahne'], ['schuhe-abend','Schuhe'],
+  ['summer','Ball im Gras'], ['ball-gegenlicht','Gegenlicht'], ['winter','Raureif'],
+  ['tau-linie','Tau an der Linie'], ['ball-frost','Ball im Frost']
+].map(([id,titel]) => Object.freeze({id,titel})));
+const sgFotoFundus = id => SG_FOTO_FUNDUS.find(f => f.id === id) || null;
+const sgFotoFeld = feld => feld === 'fotoH' || feld === 'fotoE';
+const sgFotoEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function sgFotoPfad(p){ return typeof p === 'string' && p.length <= 300 && /^assets\/[a-z0-9_.-]+(?:\/[a-z0-9_.-]+)*\.(?:jpe?g|png|webp)$/i.test(p) && p.split('/').every(s => s !== '.' && s !== '..'); }
+function sgFotoWahl(wahl){
+  if(typeof wahl !== 'string' || wahl.length > 512) return {art:'auto'};
+  const w = wahl.trim(), id = w.startsWith('fundus:') ? w.slice(7) : w;
+  if(sgFotoFundus(id)) return {art:'fundus',id};
+  if(w.startsWith('bib:') && sgFotoPfad(w.slice(4))) return {art:'bibliothek',pfad:w.slice(4)};
+  return {art:'auto'};
+}
+function sgFotoTermin(D, feld){
+  const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(D.datum || ''));
+  const t = /^(\d{1,2}):([0-5]\d)(?::[0-5]\d)?$/.exec(String(D.zeit || '15:00'));
+  if(!d || !t || +t[1] > 23) return {datum:'',zeit:'15:00'};
+  const z = new Date(0); z.setUTCFullYear(+d[1], +d[2] - 1, +d[3]); z.setUTCHours(+t[1], +t[2], 0, 0);
+  if(z.getUTCFullYear() !== +d[1] || z.getUTCMonth() !== +d[2] - 1 || z.getUTCDate() !== +d[3]) return {datum:'',zeit:'15:00'};
+  if(feld === 'fotoE') z.setUTCMinutes(z.getUTCMinutes() + 105);
+  return {datum:z.toISOString().slice(0,10),zeit:z.toISOString().slice(11,16)};
+}
+function sgFotoAuto(D, feld){
+  const termin = sgFotoTermin(D || {}, feld), licht = typeof pkLicht === 'function' ? pkLicht(termin.datum, termin.zeit, 'auto') : {stimmung:'summer'};
+  const stimmung = ['night','summer','autumn','winter'].includes(licht && licht.stimmung) ? licht.stimmung : 'summer';
+  const auswahl = typeof pkFotoAuswahl === 'function' ? pkFotoAuswahl({datum:termin.datum,gegner:D && D.gegner || ''}, stimmung) : stimmung;
+  return sgFotoFundus(auswahl) || sgFotoFundus(stimmung);
+}
+async function sgFotoQuelle(wahl, D, feld){
+  const w = sgFotoWahl(wahl);
+  if(w.art === 'bibliothek'){
+    try{ const url = typeof sbUrl === 'function' ? await sbUrl(w.pfad) : null; if(typeof url === 'string' && url){
+      const L = typeof sbListe === 'function' ? sbListe(60) : [], m = L.find(m => m && m.pfad === w.pfad);
+      return {url,titel:String(m && m.name || 'Eigenes Foto').slice(0,120),art:'bibliothek',echt:true};
+    } }catch(e){ /* Die ausdrückliche Bildwahl bleibt bestehen und wird als fehlend geprüft. */ }
+    return {url:null,titel:'Eigenes Foto nicht erreichbar',art:'bibliothek',echt:true};
+  }
+  const f = w.art === 'fundus' ? sgFotoFundus(w.id) : sgFotoAuto(D || {}, feld);
+  return {url:'plakat/foto/' + f.id + '.webp',titel:f.titel,art:'fundus',echt:false};
+}
+function sgFotoBibliothek(A){
+  const L = A && (Array.isArray(A.bibliothek) ? A.bibliothek : Array.isArray(A.eigene) ? A.eigene : []) || [], seen = new Set();
+  return L.filter(m => m && sgFotoPfad(m.pfad) && !seen.has(m.pfad) && seen.add(m.pfad)).slice(0,60);
+}
+function sgFotoGalerieHtml(feld, wahl, A){
+  if(!sgFotoFeld(feld)) return '';
+  const w = sgFotoWahl(wahl), L = sgFotoBibliothek(A), esc = sgFotoEsc;
+  const knopf = f => `<button type="button" class="sg-fotomotiv" data-sgfundus="${f.id}" aria-pressed="${w.art === 'fundus' && w.id === f.id}" aria-label="Hintergrundmotiv: ${esc(f.titel)}"><img src="plakat/foto/klein/${f.id}.webp" alt="" loading="lazy" width="180" height="320"><span>${esc(f.titel)}</span></button>`;
+  const eigene = L.map(m => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(m.pfad) : '', an = w.art === 'bibliothek' && w.pfad === m.pfad, name = String(m.name || 'Eigenes Foto').slice(0,120);
+    return `<button type="button" class="sg-fotobibmotiv${an ? ' on' : ''}" data-sgbib="${esc(m.pfad)}" aria-pressed="${an}" aria-label="Eigenes Foto: ${esc(name)}">${u ? `<img src="${esc(u)}" alt="" loading="lazy">` : '<span class="sg-fotoplatz" aria-hidden="true">Foto</span>'}<span>${esc(name)}</span></button>`;
+  }).join('');
+  return `<div class="sg-foto sg-fotowahl" data-sgfoto="${feld}"><p class="sg-l">${feld === 'fotoE' ? 'Ergebnis-Hintergrund' : 'Ankündigungs-Hintergrund'}</p>
+    <p class="sg-fotohin">Vereinsmotive auswählen oder ein eigenes Foto verwenden.</p>
+    <div class="sg-fotoreihe" role="group" aria-label="Vereinsmotive"><button type="button" class="sg-fotoauto" data-sgfotoauto aria-pressed="${w.art === 'auto'}"><b>Auto</b><span>${feld === 'fotoE' ? 'Lichtstimmung nach dem Spiel' : 'Lichtstimmung zum Anstoß'}</span></button>${SG_FOTO_FUNDUS.map(knopf).join('')}</div>
+    <details class="sg-fotobibliothek"${w.art === 'bibliothek' ? ' open' : ''}><summary>Eigene Bibliothek (${L.length})</summary>${L.length ? `<div class="sg-bib">${eigene}</div>` : '<p class="sg-fotohin">Noch keine eigenen Hintergrundfotos in der Bibliothek.</p>'}</details>
+    <label class="sg-up sg-fotoupload" role="button" tabindex="0" data-sgfotohoch aria-label="Eigenes Foto hochladen"><span data-sbt>Eigenes Foto hochladen</span><input type="file" accept="image/*" data-sgup="${feld}" hidden></label></div>`;
+}
+function sgFotoBinden(h){
+  if(!h || typeof h.querySelectorAll !== 'function') return;
+  h.querySelectorAll('[data-sgfotohoch]').forEach(l => { l.onkeydown = ev => {
+    if(ev.key !== 'Enter' && ev.key !== ' ') return; const inp = l.querySelector('[data-sgup]');
+    if(inp && !inp.disabled){ ev.preventDefault(); inp.click(); }
+  }; });
+  const binden = (selector, wert) => h.querySelectorAll(selector).forEach(b => { b.onclick = () => {
+    if(h.isConnected === false || typeof h.contains === 'function' && !h.contains(b)) return;
+    const p = b.closest('[data-sgfoto]'), feld = p && p.dataset.sgfoto, v = wert(b);
+    if(!sgFotoFeld(feld) || v === null || typeof sgSetzen !== 'function' || typeof sgBald !== 'function') return;
+    sgSetzen(feld, v); sgBald(true, true);
+  }; });
+  binden('[data-sgfundus]', b => sgFotoFundus(b.dataset.sgfundus) ? 'fundus:' + b.dataset.sgfundus : null);
+  binden('[data-sgfotoauto]', () => '');
+}
+function sgFotoQualitaet(D, A, feld, fmt){
+  if(!sgFotoFeld(feld)) return '';
+  const im = A && A[feld], iw = im && (im.naturalWidth || im.width), ih = im && (im.naturalHeight || im.height);
+  if(!(Number.isFinite(iw) && Number.isFinite(ih) && iw > 0 && ih > 0)) return '';
+  const quer = fmt === 'quer' && feld === 'fotoH'; const hoehe = feld === 'fotoE' ? fmt === 'story' ? 1920 : 1350 : (D && D.wirHeim === false ? 940 : 1000) + (fmt === 'story' ? 285 : 0); let scale = Math.max(1080 / iw, hoehe / ih);
+  if(quer){
+    const zoom = D && Number.isFinite(Number(D.querZoom)) ? Math.max(1, Math.min(2, Number(D.querZoom))) : 1;
+    const crop = typeof sgQuerCrop === 'function' ? sgQuerCrop(iw, ih, D && D.querY, zoom) : {sw:1920 / (Math.max(1920 / iw, 1080 / ih) * zoom)};
+    if(!crop || !(crop.sw > 0)) return ''; scale = 1920 / crop.sw;
+  }
+  if(!(scale > 1.5)) return '';
+  const faktor = scale.toFixed(1).replace('.', ',');
+  return `${iw} × ${ih} Pixel: ${quer ? 'im Querbanner' : 'im Motiv'} ${faktor}-fach vergrößert. ${quer ? 'Nutze möglichst ein größeres Querfoto oder weniger Zoom.' : 'Nutze möglichst ein größeres Original.'}`;
+}
+
+/* Auswahl und Tastaturposition bleiben auch nach einer neuen Bildladung stehen. */
+function sgFotoZustand(h){
+  const A = document.activeElement, innen = A && h.contains(A), p = innen && typeof A.closest === 'function' ? A.closest('[data-sgfoto]') : null;
+  let fokus = '';
+  if(p && sgFotoFeld(p.dataset.sgfoto)){
+    const basis = '[data-sgfoto="' + p.dataset.sgfoto + '"] ', d = A.dataset || {};
+    if(sgFotoFundus(d.sgfundus)) fokus = basis + '[data-sgfundus="' + d.sgfundus + '"]';
+    else if(d.sgfotoauto != null) fokus = basis + '[data-sgfotoauto]';
+    else if(sgFotoPfad(d.sgbib)) fokus = basis + '[data-sgbib="' + d.sgbib + '"]';
+    else if(d.sgfotohoch != null) fokus = basis + '[data-sgfotohoch]';
+  }
+  const reihen = [...h.querySelectorAll('.sg-fotoreihe')].map(e => ({feld:e.closest('[data-sgfoto]').dataset.sgfoto,links:e.scrollLeft}));
+  const offen = [...h.querySelectorAll('.sg-fotobibliothek')].filter(e => e.open).map(e => e.closest('[data-sgfoto]').dataset.sgfoto);
+  return {fokus,reihen,offen};
+}
+function sgFotoWiederherstellen(h, z){
+  if(!z) return;
+  for(const r of z.reihen){ const e = h.querySelector('[data-sgfoto="' + r.feld + '"] .sg-fotoreihe'); if(e) e.scrollLeft = r.links; }
+  for(const feld of z.offen){ const e = h.querySelector('[data-sgfoto="' + feld + '"] .sg-fotobibliothek'); if(e) e.open = true; }
+  if(z.fokus){ const e = h.querySelector(z.fokus); if(e) e.focus({preventScroll:true}); }
+}
+
+/* Ergebnis: Originalfoto, Wappen und belegte Tore. Keine erzeugten Bildtexte. */
+const sgTorMinuteGueltig = t => Number.isInteger(t.m) && t.m >= 1 && t.m <= 130 && Number.isInteger(t.x || 0) && (t.x || 0) >= 0 && (t.x || 0) <= 20;
+function sgErgebnisTore(D){
+  const tore = (D.tore || []).filter(t => t.wir), gruppen = [], map = new Map();
+  let fehlendeNamen = 0, fehlendeMinuten = 0;
+  const erwartet = D.wirHeim ? D.toreH : D.toreG;
+  const sortiert = tore.slice().sort((a,b) => (+a.m || 0) - (+b.m || 0) || (+a.x || 0) - (+b.x || 0));
+  for(const t of sortiert){
+    const name = String(t.name || '').trim(), minute = sgTorMinuteGueltig(t);
+    if(!name) fehlendeNamen++; if(!minute) fehlendeMinuten++;
+    if(!name) continue;
+    const eigentor = t.art === 'et', key = name.toLocaleLowerCase('de') + ':' + eigentor;
+    let g = map.get(key); if(!g){ g = { name, eigentor, zeiten:[] }; map.set(key, g); gruppen.push(g); }
+    if(minute) g.zeiten.push(sgMin(t) + (t.art === 'elf' ? ' (Elfmeter)' : ''));
+  }
+  return { gruppen, erwartet, anzahl:tore.length, fehlendeNamen, fehlendeMinuten,
+    vollstaendig:Number.isInteger(erwartet) && erwartet >= 0 && erwartet === tore.length && !fehlendeNamen && !fehlendeMinuten };
+}
+
+/* Umbruch an Wortgrenzen statt abgeschnittener Namen. Passt selbst ein Wort
+   nicht, meldet das Motiv den Überlauf und bleibt vor dem Export gesperrt. */
+function sgErgebnisZeilen(ctx, text, breite, schrift){
+  ctx.font = schrift; const zeilen = []; let zeile = '';
+  for(const wort of String(text || '').trim().split(/\s+/).filter(Boolean)){
+    const neu = zeile ? zeile + ' ' + wort : wort;
+    if(zeile && ctx.measureText(neu).width > breite){ zeilen.push(zeile); zeile = wort; } else zeile = neu;
+  }
+  if(zeile) zeilen.push(zeile); return zeilen;
+}
+function sgErgebnisName(ctx, name, cx, y, breite, key){
+  let s = 44, zeilen;
+  do{ zeilen = sgErgebnisZeilen(ctx, String(name).toUpperCase(), breite, '800 ' + s + 'px SGC'); if(zeilen.length <= 2) break; s -= 2; }while(s >= 32);
+  if(zeilen.length > 2) SG.ueber[key] = true;
+  zeilen.forEach((z,i) => sgT(ctx, z, cx, y + i * (s + 5), {fam:'SGC',w:800,s,c:CI.weiss,a:'c',max:breite,min:1,k:key}));
+}
+function sgErgebnisMalen(ctx, D, A){
+  const oy = SG.oy || 0;
+  ctx.save(); ctx.filter = 'none'; ctx.shadowBlur = 0; ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = CI.navy; ctx.fillRect(0, -oy, SG_W, SG_H + oy * 2);
+  sgCover(ctx, A.fotoE, 0, -oy, SG_W, SG_H + oy * 2, .35);
+  /* Ein ruhiger Leseschutz, ohne Lichtstrahlen, Glanz oder Weichzeichnung. */
+  ctx.fillStyle = 'rgba(4,17,39,.24)'; ctx.fillRect(0, -oy, SG_W, 640 + oy);
+  sgKopf(ctx, D, true);
+  sgT(ctx, D.h1.toUpperCase(), SG_X, D.h2 ? 372 : 435, {fam:'Anton',w:400,cap:100,c:CI.weiss,max:936,min:.66,k:'h1'});
+  sgT(ctx, D.h2.toUpperCase(), SG_X, 499, {fam:'Anton',w:400,cap:100,c:CI.orange,max:936,min:.66,k:'h2'});
+  ctx.fillStyle = 'rgba(4,17,39,.78)'; ctx.fillRect(0, 640, SG_W, SG_H - 640 + oy);
+  ctx.fillStyle = CI.orange; ctx.fillRect(SG_X, 640, 72, 5);
+  sgT(ctx, 'ENDSTAND', SG_W / 2, 701, {fam:'SGB',w:700,s:23,c:CI.grau,a:'c',sp:4});
+  const links = D.wirHeim ? A.wWir : A.wGeg, rechts = D.wirHeim ? A.wGeg : A.wWir;
+  for(const [im,cx] of [[links,190],[rechts,890]]) if(im){
+    let h = 160; const w = sgWappenBreite(im,h); if(w > 210) h *= 210 / w;
+    sgWappenMalen(ctx, im, cx - sgWappenBreite(im,h) / 2, 811, h);
+  }
+  const basis = 201, schrift = basis / sgCapR(ctx, 'Anton', 400);
+  ctx.font = '400 ' + schrift + 'px Anton';
+  const faktor = Math.min(1, 178 / Math.max(ctx.measureText(String(D.toreH)).width, ctx.measureText(String(D.toreG)).width)), cap = basis * faktor, scoreY = 909 - (basis - cap) / 2;
+  sgT(ctx, D.toreH, 502, scoreY, {fam:'Anton',w:400,cap,c:CI.weiss,a:'r',max:178,min:1,k:'toreH'});
+  sgT(ctx, D.toreG, 578, scoreY, {fam:'Anton',w:400,cap,c:CI.weiss,max:178,min:1,k:'toreG'});
+  ctx.fillStyle = CI.orange; ctx.fillRect(530, 767, 20, 20); ctx.fillRect(530, 844, 20, 20);
+  sgErgebnisName(ctx, D.heim, 249, 971, 354, D.wirHeim ? 'wir' : 'gegner');
+  sgErgebnisName(ctx, D.gast, 831, 971, 354, D.wirHeim ? 'gegner' : 'wir');
+  const T = sgErgebnisTore(D), L = T.gruppen;
+  if(D.zeigeTore !== false && T.erwartet > 0 && L.length){
+    sgLinie(ctx, SG_X, 1046, SG_R, CI.linie, 2);
+    sgT(ctx, 'UNSERE TORE', SG_X, 1082, {fam:'SGB',w:700,s:22,c:CI.blau,sp:2.2});
+    if(L.length > 8) SG.ueber.ergebnisTore = true;
+    const zwei = L.length > 4, spalten = zwei ? 2 : 1, zeilen = Math.ceil(Math.min(8,L.length) / spalten), schritt = Math.min(69, 230 / Math.max(1,zeilen));
+    L.slice(0,8).forEach((g,i) => {
+      const sp = zwei ? i >= zeilen ? 1 : 0 : 0, row = zwei ? i % zeilen : i;
+      const x = sp ? 570 : SG_X, y = 1127 + row * schritt, max = zwei ? 438 : 936, s = zwei ? 32 : 42;
+      const name = g.name + (g.eigentor ? ' (Eigentor)' : ''), zeiten = g.zeiten.join(', ');
+      /* Namen und Minuten haben feste Zeilen; selbst lange Namen bleiben Text. */
+      sgT(ctx, name, x, y, {fam:'SGB',w:600,s,c:CI.weiss,max,min:zwei ? .80 : .78,k:'ergebnisTor' + i});
+      sgT(ctx, zeiten, x, y + 27, {fam:'SGB',w:500,s:zwei ? 23 : 26,c:CI.grau,max,min:.8,k:'ergebnisMinute' + i});
+    });
+  }
+  ctx.restore();
+}
+
 /* =====================================================================
    Beta 0.99.92 · Spieltagsstudio: der Spieltag mit den vier Motiven der Designbibel
    Albert und Lukas, 18.11.2026: „Aufmachen, und es ist schon vorbelegt.“
@@ -37727,7 +37923,7 @@ const SG_W = 1080, SG_H = 1350, SG_X = 72, SG_R = 1008;
 /* Story 9:16: dasselbe Motiv, 285 Pixel tiefer gesetzt, damit oben und unten frei bleibt, was Instagram mit Bedienung überdeckt; der Grund läuft weiter */
 const SG_STORY_H = 1920, SG_OY = 285;
 const SG_QUER_W = 1920, SG_QUER_H = 1080;
-const SG_VERSION = { H:'H 1.1', A:'A 1.0', E:'E 1.0', S:'S 1.0' };
+const SG_VERSION = { H:'H 1.1', A:'A 1.0', E:'E 2.0', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const SG_TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -37752,7 +37948,7 @@ function sgDatumTeile(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '')
   const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return { lang:`${+m[3]}. ${SG_MONAT[+m[2] - 1]} ${m[1]}`, kurz:`${m[3]}.${m[2]}.${m[1]}`, tag:SG_TAG[d.getUTCDay()] }; }
 const sgSaison = s => /^\d{4}$/.test(s || '') ? `20${s.slice(0, 2)}/${s.slice(2)}` : String(s || '');
 const sgSlug = n => String(n || '').replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-const sgMin = t => t.m + (t.x ? '+' + t.x : '') + '’';
+const sgMin = t => t.m > 0 ? t.m + (t.x ? '+' + t.x : '') + '’' : 'XX’';
 
 /* ---------- Zeichnen: Text mit Laufweite, Größe über die Versalhöhe, Überlauf merken ---------- */
 const sgCapCache = new Map();
@@ -37882,24 +38078,8 @@ function sgQuer(ctx, D, A){
   sgT(ctx, D.ort ? 'Spielort: ' + D.ort : 'Spielort bitte ergänzen', 96, 1000, { fam:'SGB', w:700, s:42, c:CI.weiss, max:1728, min:.85, k:'querOrt' });
 }
 
-/* ---------- Motiv E: Endergebnis, bewusst ohne Torschützen ---------- */
-function sgEMalen(ctx, D, A){
-  ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_W, SG_H);
-  sgCover(ctx, A.fotoE, 0, 197, SG_W, 646, .3);
-  const g = ctx.createLinearGradient(0, 430, 0, 843); g.addColorStop(0, 'rgba(4,17,39,0)'); g.addColorStop(.7, 'rgba(4,17,39,.74)'); g.addColorStop(1, 'rgba(4,17,39,.94)'); ctx.fillStyle = g; ctx.fillRect(0, 430, SG_W, 413);
-  sgKopf(ctx, D, true); sgWappen(ctx, A);
-  if(D.h2){ sgT(ctx, D.h1.toUpperCase(), SG_X, 664, { fam:'Anton', w:400, cap:69, c:CI.weiss, max:936, min:.7, k:'h1' }); sgT(ctx, D.h2.toUpperCase(), SG_X, 787, { fam:'Anton', w:400, cap:108, c:CI.orange, max:936, min:.6, k:'h2' }); }
-  else sgT(ctx, D.h1.toUpperCase(), SG_X, 787, { fam:'Anton', w:400, cap:108, c:CI.orange, max:936, min:.6, k:'h1' });
-  sgLinie(ctx, SG_X, 842, SG_R, 'rgba(170,181,200,.32)', 2); sgLinie(ctx, SG_X, 841, 158, CI.orange, 4);
-  /* Ergebnis: Ziffern um den Doppelpunkt, Vereinsnamen außen in zwei kurzen Zeilen */
-  const cap = 272, mitte = 540, a = String(D.toreH), b = String(D.toreG); ctx.font = `400 ${cap / sgCapR(ctx, 'Anton', 400)}px Anton`;
-  const wa = ctx.measureText(a).width, wb = ctx.measureText(b).width, f = Math.min(1, 300 / Math.max(wa, wb));
-  sgT(ctx, a, mitte - 44, 1216 - (1 - f) * cap * .5, { fam:'Anton', w:400, cap:cap * f, c:CI.weiss, a:'r', k:'toreH' }); sgT(ctx, b, mitte + 44, 1216 - (1 - f) * cap * .5, { fam:'Anton', w:400, cap:cap * f, c:CI.weiss, k:'toreG' });
-  ctx.fillStyle = CI.orange; ctx.fillRect(mitte - 23, 1006, 46, 46); ctx.fillRect(mitte - 23, 1112, 46, 46);
-  const aussen = Math.max(wa, wb) * f + 44 + 28, platz = mitte - aussen - SG_X;
-  const label = (name, links, k) => { const Z = sgZweiZeilen(name), y0 = Z.length === 1 ? 1092 : 1047;
-    Z.forEach((z, i) => sgT(ctx, z, links ? SG_X : SG_R, y0 + i * 58, { fam:'SGC', w:800, cap:30, c:CI.weiss, a:links ? 'l' : 'r', max:Math.max(150, platz), min:.62, k })); };
-  label(D.heim, true, D.wirHeim ? 'wir' : 'gegner'); label(D.gast, false, D.wirHeim ? 'gegner' : 'wir'); }
+/* ---------- Motiv E: Ergebnis mit Originalfoto und unseren Torschützen ---------- */
+function sgEMalen(ctx, D, A){ sgErgebnisMalen(ctx, D, A); }
 
 /* ---------- Motiv S: Spielverlauf, Tor für Tor ---------- */
 function sgS(ctx, D, A, seite){
@@ -37973,10 +38153,10 @@ function sgQuelle(S){ const nm = k => sgName((S.namen || {})[k] || ''), wirS = S
   const A = S.aufstellung || {}, start = (A.start || []).map(k => Object.assign({ name:nm(k), c:k === A.c }, A.tw ? { tw:k === A.tw } : {})).filter(p => p.name);
   const bank = (A.bank || []).map(k => ({ name:nm(k), ein:ein.get(nm(k)) || '' })).filter(p => p.name);
   return { tore, start, bank }; }
-function sgVorschlaege(D){ const g = D.gegner.toUpperCase(), a = D.wirHeim ? D.toreH : D.toreG, b = D.wirHeim ? D.toreG : D.toreH, heim = D.wirHeim, L = [];
-  if(a > b){ L.push([heim ? 'Heimsieg gegen' : 'Auswärtssieg bei', g + '.']); L.push(['Drei Punkte', heim ? 'zuhause.' : 'mitgenommen.']); if(a - b >= 3) L.push([`${a}:${b}.`, 'Klare Sache.']); else L.push([`${a}:${b} gegen`, g + '.']); }
-  else if(a === b){ L.push(['Punkt gegen', g + '.']); L.push(['Punkteteilung', heim ? 'zuhause.' : 'auswärts.']); L.push(a ? [`${a + b} Tore,`, 'ein Punkt.'] : ['Keine Tore,', 'ein Punkt.']); }
-  else { L.push(['Niederlage gegen', g + '.']); L.push([`${a}:${b} gegen`, g + '.']); L.push(['Heute', 'keine Punkte.']); }
+function sgVorschlaege(D){ const punkte = ['A','D2'].includes(D.sub) && !/pokal|freundschaft|testspiel/i.test(D.wettbewerb || ''), g = D.gegner.toUpperCase(), a = D.wirHeim ? D.toreH : D.toreG, b = D.wirHeim ? D.toreG : D.toreH, heim = D.wirHeim, L = [];
+  if(a > b){ L.push([heim ? 'Heim' : 'Auswärts', 'Sieg.']); L.push([heim ? 'Heimsieg gegen' : 'Auswärtssieg bei', g + '.']); if(punkte) L.push(['Drei Punkte', heim ? 'zuhause.' : 'mitgenommen.']); if(a - b >= 3) L.push([`${a}:${b}.`, 'Klare Sache.']); else L.push([`${a}:${b} gegen`, g + '.']); }
+  else if(a === b){ L.push(['Unentschieden.', '']); L.push([`${a}:${b} gegen`, g + '.']); if(punkte){ L.push(['Punkteteilung', heim ? 'zuhause.' : 'auswärts.']); L.push(a ? [`${a + b} Tore,`, 'ein Punkt.'] : ['Keine Tore,', 'ein Punkt.']); } }
+  else { L.push(['Niederlage.', '']); L.push(['Niederlage gegen', g + '.']); L.push([`${a}:${b} gegen`, g + '.']); }
   return L; }
 function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S), person = sgPerson(S.sub);
   const ohne = n => String(n || '').replace(/\s*\((FB|H|FB, ?H)[^)]*\)\s*$/i, '').trim();
@@ -37992,7 +38172,7 @@ function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S
     querY:sgQuerNorm(f.querY, .5, 0, 1), querZoom:sgQuerNorm(f.querZoom, 1, 1, 2),
     kontext:sgKontextPassend(SG.kontext, S), rueckblick:f.rueckblick !== false, geschichte:typeof f.geschichte === 'string' ? f.geschichte.trim().slice(0,600) : '',
     wirHeim:!!S.wir_heim, wir, gegner, heim:S.wir_heim ? wir : gegner, gast:S.wir_heim ? gegner : wir, toreH, toreG, gespielt,
-    teaser:f.teaser || '', trainer:f.trainer || '', fotoH:f.fotoH || '', fotoE:f.fotoE || '', wappen:f.wappen || '', quelle:Q,
+    teaser:f.teaser || '', trainer:f.trainer || '', zeigeTore:f.zeigeTore !== false, fotoH:f.fotoH || '', fotoE:f.fotoE || '', wappen:f.wappen || '', quelle:Q,
     toreHand:Array.isArray(N.tore), elfHand:Array.isArray(N.start),
     ergebnisNeu:gespielt && S.tore_h != null && S.tore_g != null && (toreH !== S.tore_h || toreG !== S.tore_g),
     toreNeu:Array.isArray(N.tore) && !!N.toreQ && N.toreQ !== sgHash(JSON.stringify(Q.tore)) && Q.tore.length > 0,
@@ -38011,30 +38191,37 @@ function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S
 /* Bilder zum Datensatz: Wappen, Fotos, Porträts. Fehlt ein echtes Foto, steht ein Stimmungsbild aus dem Vereinsfundus und die Karte sagt es. */
 async function sgAssets(D){ const S = SG.satz, A = { portrait:new Map(), echtH:false, echtE:false };
   const bib = (typeof sbListe === 'function' ? sbListe(60) : []), eigene = bib.filter(m => (m.tags || []).includes('eigene') || (m.tags || []).includes('spieltag'));
-  const quelle = async (wahl, echt) => { if(/^bib:/.test(wahl || '')){ const u = await sbUrl(wahl.slice(4)); if(u){ A[echt] = true; return u; } } return null; };
-  const stimmung = (typeof pkLicht === 'function' ? pkLicht(D.datum, D.zeit || '15:00').stimmung : 'summer');
-  const ersatz = `plakat/foto/${typeof pkFotoAuswahl === 'function' ? pkFotoAuswahl({ datum:D.datum, gegner:D.gegner }, stimmung) : 'summer'}.webp`;
-  const uH = await quelle(D.fotoH, 'echtH') || ersatz, uE = await quelle(D.fotoE, 'echtE') || ersatz;
+  const [quelleH, quelleE] = await Promise.all([sgFotoQuelle(D.fotoH, D, 'fotoH'), sgFotoQuelle(D.fotoE, D, 'fotoE')]);
+  A.echtH = quelleH.echt; A.echtE = quelleE.echt;
+  const uH = quelleH.url, uE = quelleE.url;
   const bilder = [...new Set([...D.tore.flatMap(t => [t.bild, t.vbild]), ...D.start.map(p => p.bild), ...D.bank.map(p => p.bild)].filter(Boolean))];
   try{ if(bilder.length && typeof tkUrls === 'function') await tkUrls(bilder); }catch(e){}
   const [wWir, wGeg, fotoH, fotoE] = await Promise.all([
     pkBild(pkWappenQuelle(VEREIN && VEREIN.texte ? VEREIN.texte.name : 'SV/BSC Mörlenbach') || 'plakat/wappen/svbsc-moerlenbach.webp').then(i => i || pkBild('plakat/wappen/svbsc-moerlenbach.webp')),
     (async () => { if(/^bib:/.test(D.wappen || '')){ const u = await sbUrl(D.wappen.slice(4)); const im = u ? await pkBild(u) : null; if(im) return im; } return pkBild(pkWappenQuelle(D.gegner)); })(), pkBild(uH), pkBild(uE)]);
   await Promise.all(bilder.map(async b => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(b) : null; if(u){ const im = await pkBild(u); if(im) A.portrait.set(b, im); } }));
-  return Object.assign(A, { wWir, wGeg, fotoH, fotoE, eigene }); }
+  return Object.assign(A, { wWir, wGeg, fotoH, fotoE, eigene, bibliothek:bib, fotoWahlH:quelleH, fotoWahlE:quelleE }); }
 
 /* ---------- Prüfen (Spezifikation 7.3 und 9.1): was fehlt, sagt die Karte in einem Satz ---------- */
 function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[], notizen:[] }, U = ueber || {};
   const F = t => R.fehler.push(t), H = t => R.hinweise.push(t);
+  if(SG.bildOffen) F('Das gewählte Bild ist noch nicht bereit. Bitte warte auf die neue Vorschau.');
   if(!A.wGeg) F('Das Wappen von ' + D.gegner + ' fehlt');
   if(m === 'H'){ if(!D.datum) F('Das Datum fehlt'); if(!D.zeit) F('Die Anstoßzeit fehlt');
     if(!String(D.ort || '').trim()) F('Der Spielort fehlt. Bitte unten eintragen.'); if(U.ort) F('Der Spielort ist zu lang. Bitte kürzen.');
     if(U.teaser) F('Die Unterzeile ist zu lang'); if(U.paarung) F('Die Vereinsnamen passen nicht in eine Zeile, bitte Kurznamen eintragen');
-    if(!A.echtH) H('Mannschaftsfoto wählen'); if(!D.wirHeim) R.notizen.push('Die Auswärts-Vorlage ist die Schwester der Heimspiel-Vorlage und noch nicht eigens abgenommen.'); }
+    if(!A.fotoH) F(A.fotoWahlH?.art === 'bibliothek' ? 'Dein gewähltes Foto ist nicht erreichbar. Wähle ein anderes Foto oder ein Vereinsmotiv.' : 'Das Hintergrundbild fehlt. Bitte ein anderes Motiv wählen.'); if(!D.wirHeim) R.notizen.push('Die Auswärts-Vorlage ist die Schwester der Heimspiel-Vorlage und noch nicht eigens abgenommen.'); }
   if(Object.keys(U).some(k => k.startsWith('quer') && U[k])) F('Eine Angabe ist für das Querbanner zu lang. Bitte kürzen.');
   if(m === 'E'){ if(!D.gespielt){ R.wartet = 'Der Endstand fehlt noch'; return R; }
     if(!D.h1) F('Die Headline fehlt'); if(U.h1 || U.h2) F('Die Headline ist zu lang'); if(U.wir || U.gegner) F('Ein Vereinsname ist zu lang, bitte Kurznamen eintragen');
-    if(!D.kopfGewaehlt) H('Headline wählen'); if(!A.echtE) H('Spielfoto wählen'); }
+    if(!D.kopfGewaehlt) H('Headline wählen'); if(!A.fotoE) F(A.fotoWahlE?.art === 'bibliothek' ? 'Dein gewähltes Foto ist nicht erreichbar. Wähle ein anderes Foto oder ein Vereinsmotiv.' : 'Das Hintergrundbild fehlt. Bitte ein anderes Motiv wählen.');
+    if(D.zeigeTore !== false){ const T = sgErgebnisTore(D);
+      if(T.anzahl !== T.erwartet) F('Die Torschützen sind noch nicht vollständig. Ergebnis abrufen, Tore ergänzen oder die Liste bewusst ausblenden.');
+      if(T.fehlendeNamen) F('Bei einem eigenen Tor fehlt der Name. Bitte unter Torschützen ergänzen.');
+      if(T.fehlendeMinuten) F('Bei einem eigenen Tor fehlt die Minute. Bitte unter Torschützen ergänzen.');
+      if(T.gruppen.length > 8 || U.ergebnisTore) F('Mehr als acht verschiedene Torschützen: Bitte den Spielverlauf nutzen oder die Liste auf dem Ergebnisbild ausblenden.');
+      if(Object.keys(U).some(k => /^ergebnis(Tor|Minute)/.test(k) && U[k])) F('Ein Torschützenname oder seine Minuten sind zu lang. Bitte kürzen oder die Liste auf dem Ergebnisbild ausblenden.');
+    } }
   if(m === 'S'){ if(!D.gespielt){ R.wartet = 'Der Endstand fehlt noch'; return R; }
     const n = D.tore.length, soll = D.toreH + D.toreG;
     if(!soll && !n){ R.wartet = 'Keine Tore, kein Spielverlauf'; return R; }
@@ -38042,6 +38229,7 @@ function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[
     const hT = D.tore.filter(t => t.wir === D.wirHeim).length;
     if(n !== soll || hT !== D.toreH) F(`Die Tore im Verlauf ergeben ${hT}:${n - hT}, der Endstand ist ${D.toreH}:${D.toreG}`);
     if(D.tore.some(t => !t.name)) F('Bei einem Tor fehlt der Schütze');
+    if(D.tore.some(t => !sgTorMinuteGueltig(t))) F('Bei einem Tor fehlt eine gültige Minute. Bitte ergänzen.');
     if(D.toreNeu) H('Der Spielbericht meldet jetzt andere Tore');
     const offen = D.tore.filter(t => t.wir && !t.vorlage).length; if(offen) H(offen === 1 ? '1 Vorlage unbestätigt' : `${offen} Vorlagen unbestätigt`);
     if(n > 6) R.notizen.push(n > 8 ? `Bei ${n} Toren entstehen ${Math.ceil(n / 8)} Karten.` : 'Bei mehr als sechs Toren rücken die Zeilen enger.'); }
@@ -38122,7 +38310,10 @@ function sgTexteBauen(D, m, ton = 'normal'){
       whatsapp:[kurz ? titel : '💙🧡 ' + auftakt, fakten, waGeschichte, ruf, ton === 'energie' ? 'Lasst uns gemeinsam alles geben! 💙🧡' : ''].filter(Boolean).join('\n\n'),
       story:[(D.wirHeim ? 'HEIMSPIEL' : 'AUSWÄRTSSPIEL') + ' ⚽', paarung, termin, ort ? '📍 ' + ort : '', G.kurz, schlussStory].filter(Boolean).join('\n') };
   }
-  return { post:teile.join('\n\n'), whatsapp:teile.join('\n'), story:[titel, paarung, ergebnis, termin, ort].filter(Boolean).join('\n') };
+  const T = m === 'E' ? sgErgebnisTore(D) : null;
+  const schuetzen = T && T.vollstaendig && T.gruppen.length ? 'Unsere Tore: ' + T.gruppen.map(g => g.name + (g.eigentor ? ' (Eigentor)' : '') + ' (' + g.zeiten.join(', ') + ')').join('; ') : '';
+  if(schuetzen) teile.splice(3, 0, schuetzen);
+  return { post:teile.join('\n\n'), whatsapp:teile.join('\n'), story:[titel, paarung, ergebnis, schuetzen, termin, ort].filter(Boolean).join('\n') };
 }
 function sgTexte(m, D){ const auto = sgTexteBauen(D || SG.d, m, SG.neu.textTon || 'normal'), hand = (SG.neu.texte || {})[m] || {};
   for(const k of ['post','whatsapp','story']) if(typeof hand[k] === 'string') auto[k] = hand[k]; return auto; }
@@ -38141,7 +38332,7 @@ async function sgTextKopieren(m, key, feld){ if(SG.satz) SG.d = sgDaten(); const
 function sgStandHash(m, D){ const k = [SG_VERSION[m], D.wettbewerb, D.saison, D.nr, D.datum, D.heim, D.gast, D.wappen];
   k.push('Texte 1.0', D.ort, sgTexte(m, D));
   if(m === 'H') k.push('Quer 2.0', D.zeit, D.teaser, D.fotoH, sgQuerNorm(D.querY, .5, 0, 1), sgQuerNorm(D.querZoom, 1, 1, 2));
-  if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE);
+  if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE, D.zeigeTore !== false, D.zeigeTore === false ? null : sgErgebnisTore(D));
   if(m === 'S') k.push(D.toreH, D.toreG, D.tore.map(t => [t.m, t.x, t.wir, t.name, t.vorlage, t.art]));
   if(m === 'A') k.push(D.start.map(p => [p.name, p.nr, p.tw, p.c]), D.bank.map(p => [p.name, p.nr, p.ein]), D.trainer);
   return sgHash(JSON.stringify(k)); }
@@ -38195,7 +38386,7 @@ const sgKonto = () => typeof SVB !== 'undefined' && SVB.user ? SVB.user.id : nul
 function sgKontextLaden(id){ let timer;
   const laden = Promise.resolve().then(() => svtRpc('spieltag_kontext', { p_spiel:id })).catch(() => null);
   return Promise.race([laden, new Promise(ok => { timer = setTimeout(() => ok(null), 3500); })]).finally(() => clearTimeout(timer)); }
-async function sgSatzLaden(){ const nr = ++sgSatzLauf, s = SG.spiele[SG.idx], vorgemerkt = s && SG_MERKPLAENE.get(s.id), konto = sgKonto(); ++sgBildLauf; clearTimeout(sgZeichenT); SG.abruf = null; SG.satz = null; SG.kontext = null; SG.neu = {}; if(!s) return false;
+async function sgSatzLaden(){ const nr = ++sgSatzLauf, s = SG.spiele[SG.idx], vorgemerkt = s && SG_MERKPLAENE.get(s.id), konto = sgKonto(); ++sgBildLauf; clearTimeout(sgZeichenT); SG.abruf = null; SG.bildOffen = false; SG.satz = null; SG.kontext = null; SG.neu = {}; if(!s) return false;
   const [satz, kontext] = await Promise.allSettled([svtRpc('spieltag_satz', { p_spiel:s.id }), sgKontextLaden(s.id)]);
   if(nr !== sgSatzLauf || konto !== sgKonto()) return false;
   if(satz.status === 'rejected') throw satz.reason; const r = satz.value, k = kontext.status === 'fulfilled' ? kontext.value : null;
@@ -38279,12 +38470,20 @@ async function sgStart(P){
 async function sgSpielZeigen(){ const h = document.getElementById('sgWrap'); if(!h) return; SG.motiv = '';
   h.innerHTML = '<div class="card"><div class="empty">Lade den Spieltag …</div></div>';
   try{ if(!await sgSatzLaden()) return; await sgNeu(true); }catch(e){ h.innerHTML = `<div class="card"><div class="empty">${sgE(e.message || e)}</div></div>`; } }
+/* Bildwechsel sperren Freigabe und Export sofort, auch vor dem verzögerten
+   Zeichnen. Neue Texte während einer Bildladung laden die aktuelle Wahl weiter. */
+function sgBildStatus(text){ const h = document.getElementById('sgWrap'); if(!h) return;
+  const e = h.querySelector('[data-sgbildstatus]'); if(e){ e.textContent = text; e.hidden = !text; }
+  if(text) h.querySelectorAll('[data-sgx]').forEach(b => { if(b.dataset.sgx !== 'zurueck') b.disabled = true; });
+}
+function sgBildWarten(){ SG.bildOffen = true; sgBildStatus('Das gewählte Bild wird geladen. Bitte warte auf die neue Vorschau.'); }
 /* Alles neu rechnen und zeichnen. mitBildern: Fotos und Wappen neu holen (sonst nur Text). */
 async function sgNeu(mitBildern){ const h = document.getElementById('sgWrap'); if(!h || !SG.satz) return;
   const lauf = ++sgBildLauf, satz = SG.satz, konto = sgKonto(), aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto();
-  const D = sgDaten(); let A = SG.A;
-  try{ if(mitBildern || !A.portrait) A = await sgAssets(D); }catch(e){ if(!aktuell()) return false; throw e; }
-  if(!aktuell()) return false; SG.d = D; SG.A = A;
+  const D = sgDaten(), bilderLaden = mitBildern || SG.bildOffen || !SG.A.portrait; let A = SG.A;
+  if(bilderLaden) sgBildWarten();
+  try{ if(bilderLaden) A = await sgAssets(D); }catch(e){ if(!aktuell()) return false; sgBildStatus('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); throw e; }
+  if(!aktuell()) return false; SG.d = D; SG.A = A; SG.bildOffen = false;
   SG.pruef = {}; SG.cv = SG.cv || {};
   ['H', 'A', 'E', 'S'].forEach(m => { const cv = SG.cv[m] || (SG.cv[m] = document.createElement('canvas')); const vor = sgPruefen(m, SG.d, SG.A, {});
     const ue = vor.wartet ? {} : sgMalen(cv, m, SG.d, SG.A, m === 'S' ? (SG.seite || 0) : 0); SG.pruef[m] = sgPruefen(m, SG.d, SG.A, ue); });
@@ -38304,13 +38503,19 @@ function sgUebersicht(h){ const D = SG.d, M = ['H', 'A', 'E', 'S'];
   M.forEach(m => { const z = h.querySelector(`[data-sgcv="${m}"]`); if(z && !z.classList.contains('leer')) z.appendChild(SG.cv[m]); });
   sgBinden(h); }
 function sgFeld(k, label, wert, o){ o = o || {}; return `<label class="sg-f"><span>${sgE(label)}</span><input type="${o.typ || 'text'}" data-sgf="${k}" value="${sgE(wert == null ? '' : wert)}" ${o.max ? `maxlength="${o.max}"` : ''} ${o.ph ? `placeholder="${sgE(o.ph)}"` : ''} ${o.attr || ''}></label>`; }
-function sgFotoHtml(feld, wahl, echt){ const L = (SG.A.eigene || []).slice(0, 12);
-  return `<div class="sg-foto" data-sgfoto="${feld}"><p class="sg-l">${feld === 'fotoH' ? 'Mannschaftsfoto' : 'Foto vom Spiel'}</p>
-    ${echt ? '' : '<p class="sg-hin">Gerade steht ein Stimmungsbild aus dem Vereinsfundus. Ein echtes Foto wirkt besser.</p>'}
-    <div class="sg-bib">${L.map(m => `<button type="button" data-sgbib="${sgE(m.pfad)}" class="${wahl === 'bib:' + m.pfad ? 'on' : ''}" aria-label="${sgE(m.name || 'Foto')}"><img src="${sgE(tkFotoUrl(m.pfad))}" alt="" loading="lazy"></button>`).join('')}
-      <label class="sg-up">${SVI('upload')}<span data-sbt>Foto hochladen</span><input type="file" accept="image/*" data-sgup="${feld}" hidden></label></div></div>`; }
+function sgFotoHtml(feld, wahl){ return sgFotoGalerieHtml(feld, wahl, SG.A); }
 function sgListenHtml(){ const K = sgKaderListe(SG.d.sub).map(p => `${String(p.vorname || '').trim()} ${String(p.nachname || '').trim()}`.trim()).filter(Boolean);
   return `<datalist id="sgKader">${[...new Set(K)].sort().map(n => `<option value="${sgE(n)}">`).join('')}</datalist>`; }
+function sgToreEditorHtml(D){ return `${D.toreNeu ? `<div class="sg-quelle"><b>Der Spielbericht meldet jetzt andere Tore.</b><span>Deine Fassung bleibt, bis du entscheidest.</span><button type="button" class="btn sm ghost" data-sgq="tore-quelle">Spielbericht übernehmen</button><button type="button" class="btn sm ghost" data-sgq="tore-meins">Meine behalten</button></div>` : ''}
+    <p class="sg-l">Tore</p><div class="sg-tore">${D.tore.map((t, i) => `<div class="sg-tor" data-i="${i}" data-wir="${t.wir ? 1 : 0}">
+      <input type="number" data-sgt="m" value="${t.m || ''}" min="1" max="130" inputmode="numeric" aria-label="Minute"><input type="number" data-sgt="x" value="${t.x || ''}" min="0" max="20" inputmode="numeric" placeholder="+" aria-label="Nachspielzeit">
+      <select data-sgt="wir" aria-label="Für wen"><option value="1"${t.wir ? ' selected' : ''}>Wir</option><option value="0"${t.wir ? '' : ' selected'}>Gegner</option></select>
+      <input type="text" data-sgt="name" value="${sgE(t.name)}" list="${t.wir ? 'sgKader' : ''}" placeholder="Torschütze" maxlength="40" aria-label="Torschütze">
+      ${t.wir ? `<input type="text" data-sgt="vorlage" value="${sgE(t.vorlage === '-' ? '' : t.vorlage)}" list="sgKader" placeholder="Vorlage" maxlength="40" aria-label="Vorlage"><label class="sg-ohne"><input type="checkbox" data-sgt="ohne"${t.vorlage === '-' ? ' checked' : ''}> ohne Vorlage</label>` : ''}
+      <button type="button" class="sg-weg" data-sgt="weg" aria-label="Tor entfernen">${SVI('x')}</button></div>`).join('')}</div>
+    <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgq="tor-neu">Tor hinzufügen</button>${D.toreHand ? '<button type="button" class="btn sm ghost" data-sgq="tore-quelle">Zurück zum Spielbericht</button>' : ''}</div>
+    <p class="sg-hin">Vorlagen stehen nicht im Spielbericht. Trag sie ein oder hake „ohne Vorlage“ an, sonst bleibt ein Strich und die Karte fragt nach.</p>
+`; }
 function sgFormular(m){ const D = SG.d, f = SG.neu.f || {};
   const kopf = `<details class="sg-mehr"><summary>Kopfzeile und Namen</summary>${sgFeld('wettbewerb', 'Wettbewerb', D.wettbewerb, { max:40 })}${sgFeld('nr', 'Saisonspiel Nummer', D.nr == null ? '' : D.nr, { typ:'number', attr:'min="0" max="60" inputmode="numeric"' })}
     ${sgFeld('wir', 'Unser Name auf dem Plakat', D.wir, { max:40 })}${sgFeld('gegner', 'Name des Gegners auf dem Plakat', D.gegner, { max:40 })}<p class="sg-hin">Die Nummer zählt die gespielten Ligaspiele dieser Mannschaft, nicht den Spieltag der Staffel.</p>${SG.A.wGeg ? sgWappenHtml() : ''}</details>`;
@@ -38318,16 +38523,11 @@ function sgFormular(m){ const D = SG.d, f = SG.neu.f || {};
   if(m === 'E') return `<p class="sg-l">Headline</p><div class="sg-vor">${D.vorschlaege.map((v, i) => `<button type="button" data-sgvor="${i}" class="${D.kopfGewaehlt && D.h1 === v[0] && D.h2 === v[1] ? 'on' : ''}"><b>${sgE(v[0])}</b> ${sgE(v[1])}</button>`).join('')}</div>
     <p class="sg-hin">Die Vorschläge sagen nur, was der Endstand belegt. Wertungen wie „Favorit“ oder „verdient“ schreibst du selbst, wenn sie stimmen.</p>
     ${sgFeld('h1', 'Zeile 1', D.h1, { max:26 })}${sgFeld('h2', 'Zeile 2', D.h2, { max:22 })}
-    <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>` + sgFotoHtml('fotoE', D.fotoE, SG.A.echtE) + kopf;
-  if(m === 'S') return `${D.toreNeu ? `<div class="sg-quelle"><b>Der Spielbericht meldet jetzt andere Tore.</b><span>Deine Fassung bleibt, bis du entscheidest.</span><button type="button" class="btn sm ghost" data-sgq="tore-quelle">Spielbericht übernehmen</button><button type="button" class="btn sm ghost" data-sgq="tore-meins">Meine behalten</button></div>` : ''}
-    <p class="sg-l">Tore</p><div class="sg-tore">${D.tore.map((t, i) => `<div class="sg-tor" data-i="${i}" data-wir="${t.wir ? 1 : 0}">
-      <input type="number" data-sgt="m" value="${t.m}" min="1" max="130" inputmode="numeric" aria-label="Minute"><input type="number" data-sgt="x" value="${t.x || ''}" min="0" max="20" inputmode="numeric" placeholder="+" aria-label="Nachspielzeit">
-      <select data-sgt="wir" aria-label="Für wen"><option value="1"${t.wir ? ' selected' : ''}>Wir</option><option value="0"${t.wir ? '' : ' selected'}>Gegner</option></select>
-      <input type="text" data-sgt="name" value="${sgE(t.name)}" list="${t.wir ? 'sgKader' : ''}" placeholder="Torschütze" maxlength="40" aria-label="Torschütze">
-      ${t.wir ? `<input type="text" data-sgt="vorlage" value="${sgE(t.vorlage === '-' ? '' : t.vorlage)}" list="sgKader" placeholder="Vorlage" maxlength="40" aria-label="Vorlage"><label class="sg-ohne"><input type="checkbox" data-sgt="ohne"${t.vorlage === '-' ? ' checked' : ''}> ohne Vorlage</label>` : ''}
-      <button type="button" class="sg-weg" data-sgt="weg" aria-label="Tor entfernen">${SVI('x')}</button></div>`).join('')}</div>
-    <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgq="tor-neu">Tor hinzufügen</button>${D.toreHand ? '<button type="button" class="btn sm ghost" data-sgq="tore-quelle">Zurück zum Spielbericht</button>' : ''}</div>
-    <p class="sg-hin">Vorlagen stehen nicht im Spielbericht. Trag sie ein oder hake „ohne Vorlage“ an, sonst bleibt ein Strich und die Karte fragt nach.</p>
+    <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>
+    <label class="sg-ergebnis-tore"><input type="checkbox" data-sgergebnistore${D.zeigeTore ? ' checked' : ''}><span>Torschützen auf dem Ergebnisbild</span></label>
+    <p class="sg-hin">Unsere Schützen mit belegten Minuten. Mehrfachtore stehen gemeinsam unter einem Namen. Fehlen noch Angaben, kannst du sie hier ergänzen.</p>
+    <details class="sg-mehr" data-sgtore-editor${D.zeigeTore && !sgErgebnisTore(D).vollstaendig ? ' open' : ''}><summary>Torschützen bearbeiten</summary>${sgToreEditorHtml(D)}</details>` + sgFotoHtml('fotoE', D.fotoE, SG.A.echtE) + kopf + sgListenHtml();
+  if(m === 'S') return sgToreEditorHtml(D) + `
     <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>` + kopf + sgListenHtml();
   const zeile = (p, i, art) => `<div class="sg-sp" data-art="${art}" data-i="${i}"><input type="number" data-sgp="nr" value="${p.nr == null ? '' : p.nr}" min="0" max="99" inputmode="numeric" placeholder="Nr." aria-label="Rückennummer">
       <input type="text" data-sgp="name" value="${sgE(p.name)}" list="sgKader" placeholder="Name" maxlength="40" aria-label="Name">
@@ -38360,7 +38560,7 @@ function sgQuerReglerAktualisieren(h){ if(SG.motiv !== 'H' || sgFormat('H') !== 
 }
 function sgQuerAendern(k, v, h){ if(SG.motiv !== 'H' || sgFormat('H') !== 'quer') return;
   const wert = k === 'querZoom' ? sgQuerNorm(v, 1, 1, 2) : sgQuerNorm(v, .5, 0, 1);
-  sgSetzen(k, Math.round(wert * 10000) / 10000); SG.d = sgDaten(); sgSchau('H'); sgQuerReglerAktualisieren(h); sgMerken();
+  sgSetzen(k, Math.round(wert * 10000) / 10000); SG.d = sgDaten(); sgSchau('H'); sgQuerReglerAktualisieren(h); sgFotoQualitaetAktualisieren(h); sgMerken();
 }
 function sgBildTreffer(cv, ev){ const r = cv.getBoundingClientRect(); if(!r.width || !r.height) return null;
   const x = (ev.clientX - r.left) * cv.width / r.width, y = (ev.clientY - r.top) * cv.height / r.height;
@@ -38393,9 +38593,10 @@ function sgQuerBinden(h){ if(SG.motiv !== 'H' || sgFormat('H') !== 'quer') retur
   bild.onpointerup = ende; bild.onpointercancel = ende; bild.onlostpointercapture = ende;
 }
 function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.pruef[m];
-  const P = fmt === 'quer' && !vor.wartet ? sgPruefen(m, D, SG.A, sgMalen(SG.cvQuer || (SG.cvQuer = document.createElement('canvas')), m, D, SG.A, 0, 'quer')) : vor;
+  const P = SG.bildOffen ? sgPruefen(m, D, SG.A, {}) : fmt === 'quer' && !vor.wartet ? sgPruefen(m, D, SG.A, sgMalen(SG.cvQuer || (SG.cvQuer = document.createElement('canvas')), m, D, SG.A, 0, 'quer')) : vor;
   const st = P.fehler.length ? { art:'du', text:'Braucht dich: ' + P.fehler[0] } : sgStand(m), fr = (SG.neu.frei || {})[m], frei = fr && fr.stand === sgStandHash(m, D);
-  const aktiv = document.activeElement, fokus = aktiv && h.contains(aktiv) && (aktiv.dataset.sgtext ? `[data-sgtext="${aktiv.dataset.sgtext}"]` : aktiv.dataset.sggeschichte != null ? '[data-sggeschichte]' : aktiv.dataset.sgf ? `[data-sgf="${aktiv.dataset.sgf}"]` : ''), auswahl = fokus ? [aktiv.selectionStart, aktiv.selectionEnd] : null;
+  const aktiv = document.activeElement, fokus = aktiv && h.contains(aktiv) && (aktiv.dataset.sgtext ? `[data-sgtext="${aktiv.dataset.sgtext}"]` : aktiv.dataset.sggeschichte != null ? '[data-sggeschichte]' : aktiv.dataset.sgergebnistore != null ? '[data-sgergebnistore]' : aktiv.dataset.sgf ? `[data-sgf="${aktiv.dataset.sgf}"]` : ''), auswahl = fokus ? [aktiv.selectionStart, aktiv.selectionEnd] : null;
+  const fotoZustand = sgFotoZustand(h), toreEditorOffen = h.querySelector('[data-sgtore-editor]')?.open;
   const querFokus = aktiv && h.contains(aktiv) && ['sgQuerY','sgQuerZoom'].includes(aktiv.id) ? aktiv.id : '';
   const offen = !!P.wartet || P.fehler.length > 0, seiten = m === 'S' ? sgSeitenS(D) : 1;
   const liste = [...P.fehler.map(t => `<li class="f">${sgE(t)}</li>`), ...P.hinweise.map(t => `<li class="h">${sgE(t)}</li>`), ...(!offen && !P.hinweise.length ? ['<li class="ok">Angaben vollständig, nichts läuft über</li>'] : []), ...P.notizen.map(t => `<li class="n">${sgE(t)}</li>`)].join('');
@@ -38406,12 +38607,12 @@ function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.
         <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgtexte-zeigen>Texte für Gruppen und Storys</button></div>
         ${m === 'H' && fmt === 'quer' && !P.wartet ? sgQuerReglerHtml() : ''}
         ${seiten > 1 ? `<div class="sg-zeile sg-seiten">${Array.from({ length:seiten }, (_, i) => `<button type="button" class="btn sm ${i === (SG.seite || 0) ? '' : 'ghost'}" data-sgseite="${i}">Karte ${i + 1}</button>`).join('')}</div>` : ''}
-        <ul class="sg-pruef" id="sgPruef">${liste}</ul>
+        <p class="sg-hin" data-sgbildstatus role="status" aria-live="polite" hidden></p><p class="sg-hin sg-fotoqualitaet" data-sgfotoqualitaet hidden></p><ul class="sg-pruef" id="sgPruef">${liste}</ul>
         <div class="sg-akt">${frei ? `<p class="sg-frei">Freigegeben von ${sgE(fr.name || 'jemandem')}${am ? ', ' + sgE(am) + ' Uhr' : ''}.</p><button type="button" class="btn" data-sgx="teilen" ${offen ? 'disabled' : ''}>${SVI('share')} ${seiten > 1 ? 'Diese Karte teilen' : 'Teilen'}</button><button type="button" class="btn ghost" data-sgx="png" ${offen ? 'disabled' : ''}>${seiten > 1 ? 'Diese Karte als PNG' : 'PNG laden'}</button>${seiten > 1 ? `<button type="button" class="btn ghost" data-sgx="zip" ${offen ? 'disabled' : ''}>Alle ${seiten} Karten als ZIP</button>` : ''}<button type="button" class="btn ghost sm" data-sgx="zurueck">Freigabe zurücknehmen</button>`
           : `<button type="button" class="btn" data-sgx="frei" ${offen ? 'disabled' : ''}>${SVI('check')} Stimmt so</button>${offen ? `<p class="sg-hin">${sgE(P.wartet || 'Erst wenn nichts mehr fehlt, lässt sich das Motiv freigeben.')}</p>` : '<p class="sg-hin">Mit „Stimmt so“ gibst du diesen Stand frei. Danach kannst du teilen.</p>'}`}</div></div>
       <div class="sg-form" id="sgForm">${SG.A.wGeg ? '' : sgWappenHtml()}<p class="sg-tipp">Tipp auf ein Wort im Bild, und du landest im passenden Feld.</p>${sgFormular(m)}${sgTexteHtml(m)}</div></div>`;
   if(!P.wartet){ const z = h.querySelector('#sgBild'); z.appendChild(sgSchau(m)); }
-  sgBinden(h); sgTexteHoehen(h); if(fokus || querFokus){ const ziel = h.querySelector(fokus || '#' + querFokus); if(ziel){ ziel.focus({ preventScroll:true }); if(auswahl) try{ ziel.setSelectionRange(...auswahl); }catch(e){} } } }
+  sgBinden(h); sgTexteHoehen(h); sgFotoWiederherstellen(h, fotoZustand); if(toreEditorOffen){ const e = h.querySelector('[data-sgtore-editor]'); if(e) e.open = true; } if(fokus || querFokus){ const ziel = h.querySelector(fokus || '#' + querFokus); if(ziel){ ziel.focus({ preventScroll:true }); if(auswahl) try{ ziel.setSelectionRange(...auswahl); }catch(e){} } } }
 /* Die Leinwand der Einzelansicht: der Beitrag aus der Übersicht oder dasselbe Motiv als Story, frisch gezeichnet */
 function sgSchau(m){ const fmt = sgFormat(m); if(fmt === 'beitrag') return SG.cv[m]; const key = fmt === 'quer' ? 'cvQuer' : 'cvStory', cv = SG[key] || (SG[key] = document.createElement('canvas')); sgMalen(cv, m, SG.d, SG.A, m === 'S' ? (SG.seite || 0) : 0, fmt); return cv; }
 function sgSetzen(k, v){ SG.neu.f = SG.neu.f || {}; if(k === 'ort') SG.neu.f[k] = String(v || ''); else if(v === '' || v == null) delete SG.neu.f[k]; else SG.neu.f[k] = v; }
@@ -38419,11 +38620,11 @@ function sgToreHand(){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore = SG.d.tore.
 function sgElfHand(){ if(!Array.isArray(SG.neu.start)){ const z = p => ({ name:p.name, nr:p.nr, tw:p.tw, c:p.c, ein:p.ein }); SG.neu.start = SG.d.start.map(z); SG.neu.bank = SG.d.bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); }
   if(!Array.isArray(SG.neu.bank)) SG.neu.bank = []; return SG.neu; }
 let sgZeichenT = null;
-function sgBald(mitBildern, ganz){ const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz) return sgNeu(mitBildern);
+function sgBald(mitBildern, ganz){ mitBildern = mitBildern || !!SG.bildOffen; if(mitBildern) sgBildWarten(); const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz){ try{ return await sgNeu(mitBildern); }catch(e){ if(satz === SG.satz && konto === sgKonto()) kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); return false; } }
     /* Beim Tippen bleibt das Formular stehen: nur Bild, Prüfliste und Zustand werden frisch */
     const m = SG.motiv, D = sgDaten(); let A = SG.A;
-    try{ if(mitBildern) A = await sgAssets(D); }catch(e){ if(aktuell()) kToast('Die Bilder konnten nicht geladen werden. Bitte erneut versuchen.'); return; }
-    if(!aktuell()) return; SG.d = D; SG.A = A;
+    try{ if(mitBildern) A = await sgAssets(D); }catch(e){ if(aktuell()){ sgBildStatus('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); } return; }
+    if(!aktuell()) return; SG.d = D; SG.A = A; SG.bildOffen = false; sgBildStatus('');
     ['H', 'A', 'E', 'S'].forEach(x => { const vor = sgPruefen(x, SG.d, SG.A, {}); const ue = vor.wartet ? {} : sgMalen(SG.cv[x], x, SG.d, SG.A, x === 'S' ? (SG.seite || 0) : 0); SG.pruef[x] = sgPruefen(x, SG.d, SG.A, ue); });
     const h = document.getElementById('sgWrap'); if(!h || !m) return; if(sgFormat(m) !== 'beitrag' && !SG.pruef[m].wartet) sgSchau(m);
     const P = sgFormat(m) === 'quer' && !SG.pruef[m].wartet ? sgPruefen(m, SG.d, SG.A, SG.ueber) : SG.pruef[m], st = P.fehler.length ? { art:'du', text:'Braucht dich: ' + P.fehler[0] } : sgStand(m), kopf = h.querySelector('.sg-dkopf .sg-st'); if(kopf){ kopf.dataset.art = st.art; kopf.textContent = st.text; }
@@ -38434,8 +38635,16 @@ function sgBald(mitBildern, ganz){ const satz = SG.satz, konto = sgKonto(), lauf
     if(warFrei !== istFrei || !!P.wartet !== !!h.querySelector('#sgBild.leer')) return sgDetail(h);
     const offen = !!P.wartet || P.fehler.length > 0, ul = h.querySelector('#sgPruef');
     if(ul) ul.innerHTML = [...P.fehler.map(t => `<li class="f">${sgE(t)}</li>`), ...P.hinweise.map(t => `<li class="h">${sgE(t)}</li>`), ...(!offen && !P.hinweise.length ? ['<li class="ok">Angaben vollständig, nichts läuft über</li>'] : []), ...P.notizen.map(t => `<li class="n">${sgE(t)}</li>`)].join('');
-    const b = h.querySelector('[data-sgx="frei"]'); if(b) b.disabled = offen; }, 220); }
+    const b = h.querySelector('[data-sgx="frei"]'); if(b) b.disabled = offen;
+    h.querySelectorAll('[data-sgx]').forEach(b => { if(['teilen','png','zip'].includes(b.dataset.sgx)) b.disabled = offen || !istFrei; }); }, 220); }
+function sgFotoQualitaetAktualisieren(h){ const e = h.querySelector('[data-sgfotoqualitaet]'); if(!e) return;
+  e.textContent = sgFotoQualitaet(SG.d, SG.A, SG.motiv === 'E' ? 'fotoE' : 'fotoH', sgFormat(SG.motiv)); e.hidden = !e.textContent;
+}
 function sgBinden(h){
+  if(SG.bildOffen) sgBildStatus('Das gewählte Bild wird geladen. Bitte warte auf die neue Vorschau.');
+  sgFotoBinden(h);
+  sgFotoQualitaetAktualisieren(h);
+  const ergebnisTore = h.querySelector('[data-sgergebnistore]'); if(ergebnisTore) ergebnisTore.onchange = () => { sgSetzen('zeigeTore', ergebnisTore.checked); sgBald(false, false); };
   h.querySelectorAll('[data-sgabruf]').forEach(b => b.onclick = () => sgAbrufen(b.dataset.sgabruf));
   const sel = h.querySelector('#sgSpiel'); if(sel) sel.onchange = () => { SG.idx = +sel.value; SG.seite = 0; h.querySelector('.sg-grid')?.classList.add('laedt'); sgSpielZeigen(); };
   h.querySelectorAll('[data-sgm]').forEach(b => b.onclick = () => { SG.motiv = b.dataset.sgm; SG.seite = 0; sgDetail(h); window.scrollTo({ top:0, behavior:'instant' in window ? 'instant' : 'auto' }); });
@@ -38476,7 +38685,7 @@ function sgBinden(h){
       if(k === 'weg') el.onclick = tun; else el.onchange = tun; }); });
   h.querySelectorAll('[data-sgq]').forEach(b => b.onclick = () => { const q = b.dataset.sgq, N = SG.neu;
     if(q === 'ergebnis-quelle'){ delete (N.f || {}).toreH; delete (N.f || {}).toreG; }
-    if(q === 'tor-neu'){ const T = sgToreHand(), letzte = T[T.length - 1]; T.push({ m:letzte ? Math.min(90, letzte.m + 1) : 1, x:0, wir:true, name:'', vorlage:'' }); }
+    if(q === 'tor-neu'){ const T = sgToreHand(); T.push({ m:0, x:0, wir:true, name:'', vorlage:'' }); }
     if(q === 'tore-quelle'){ delete N.tore; delete N.toreQ; }
     if(q === 'tore-meins') N.toreQ = sgHash(JSON.stringify(SG.d.quelle.tore));
     if(q === 'start-neu') sgElfHand().start.push({ name:'', nr:null, tw:false, c:false });
@@ -38491,6 +38700,10 @@ function sgBinden(h){
     const feld = { querZeit:'zeit', querOrt:'ort', querPaarung:'gegner', querTeaser:'teaser', querKopf:'wettbewerb' }[t.k] || t.k;
     let ziel = h.querySelector(`[data-sgf="${feld}"]`); const mt = /^(tor|start|bank)(\d+)$/.exec(t.k);
     if(mt) ziel = h.querySelector(mt[1] === 'tor' ? `.sg-tor[data-i="${mt[2]}"] [data-sgt="name"]` : `.sg-sp[data-art="${mt[1]}"][data-i="${mt[2]}"] [data-sgp="name"]`);
+    const et = /^ergebnis(Tor|Minute)(\d+)$/.exec(t.k);
+    if(et){ const g = sgErgebnisTore(SG.d).gruppen[+et[2]], i = g ? SG.d.tore.findIndex(t => t.wir && String(t.name || '').trim().toLocaleLowerCase('de') === g.name.toLocaleLowerCase('de') && (t.art === 'et') === g.eigentor) : -1;
+      if(i >= 0) ziel = h.querySelector(`.sg-tor[data-i="${i}"] [data-sgt="${et[1] === 'Tor' ? 'name' : 'm'}"]`);
+    }
     if(t.k === 'paarung') ziel = h.querySelector('[data-sgf="gegner"]');
     if(t.k === 'querDatum'){ kToast('Das Datum kommt aus dem Spielplan. Bitte dort ändern.'); return; }
     if(ziel){ const d = ziel.closest('details'); if(d) d.open = true; ziel.scrollIntoView({ block:'center', behavior:'smooth' }); ziel.focus({ preventScroll:true }); if(ziel.select) try{ ziel.select(); }catch(e){} } }; sgQuerBinden(h); }
@@ -38514,13 +38727,14 @@ async function sgKartenZip(F, m){ await simpZip(); const zip = new JSZip();
 let sgLaeuft = false;
 async function sgAktion(x, b){ const m = SG.motiv, id = SG.satz && SG.satz.spiel; if(!m || !id || sgLaeuft) return; sgLaeuft = true;
   try{
+    if(SG.bildOffen && x !== 'zurueck') throw new Error('Das gewählte Bild ist noch nicht bereit. Bitte warte auf die neue Vorschau.');
     SG.d = sgDaten();
     if(x !== 'zurueck'){
       const cv = document.createElement('canvas'), P = sgPruefen(m, SG.d, SG.A, sgMalen(cv, m, SG.d, SG.A, SG.seite || 0, sgFormat(m)));
       if(P.wartet || P.fehler.length) throw new Error(P.wartet || P.fehler.join('. '));
     }
     if(x === 'frei' || x === 'zurueck'){ const stand = sgStandHash(m, SG.d), konto = sgKonto(); await sgMerkSofort(id);
-      if(!SG.satz || SG.satz.spiel !== id || SG.motiv !== m || sgKonto() !== konto || sgStandHash(m, sgDaten()) !== stand) throw new Error('Die Angaben wurden während des Speicherns geändert. Bitte den aktuellen Stand erneut prüfen.');
+      if((x === 'frei' && SG.bildOffen) || !SG.satz || SG.satz.spiel !== id || SG.motiv !== m || sgKonto() !== konto || sgStandHash(m, sgDaten()) !== stand) throw new Error('Die Angaben wurden während des Speicherns geändert. Bitte den aktuellen Stand erneut prüfen.');
       const r = await svtRpc('spieltag_freigeben', { p_spiel:id, p_motiv:m, p_an:x === 'frei', p_stand:stand });
       if(!SG.satz || SG.satz.spiel !== id || sgKonto() !== konto) return; SG.neu.frei = (r && r.frei) || {};
       kToast(x === 'frei' ? sgTitel(m) + ' ist freigegeben' : 'Freigabe zurückgenommen'); sgDetail(document.getElementById('sgWrap')); return; }
@@ -38555,7 +38769,7 @@ function sgSchalter(P){ const leiste = P && P.querySelector('.tk-modus'); if(!le
 { const _pt127 = pkTexteZeigen; pkTexteZeigen = function(){ if(typeof TKR !== 'undefined' && TKR.modus === 'spieltag') return; return _pt127.apply(this, arguments); }; }
 if(navigator.webdriver) window.SG_PRUEF = { SG, CI, malen:sgMalen, daten:() => SG.d, stand:sgStand, hash:sgStandHash, pruefen:sgPruefen, vorschlaege:sgVorschlaege, zweiZeilen:sgZweiZeilen, seitenS:sgSeitenS };
 
-(function(){ try{ const s=document.createElement('style'); s.id='svm127css'; s.textContent="/* Beta 0.99.92 · Spieltagsstudio: Spieltag. Die Fläche bleibt in beiden Modi dunkel, wie die Motive selbst:\n   feste dunkle Farben stehen darum als var(--name, #farbe), sonst rechnet der helle Modus sie um. */\n.sg-wrap{--sgn:#041127;--sgn2:#0B1A31;--sgb:#2F8BEF;--sgo:#FF8731;--sgp:#F6F6F2;--sgg:#AAB5C8;--sgl:#22345A;\n  background:var(--sgn,#041127);color:var(--sgp,#F6F6F2);border-radius:18px;padding:22px 20px 20px;max-width:1040px}\n.sg-wrap .card{background:var(--sgn2,#0B1A31);border:1px solid var(--sgl,#22345A);color:var(--sgp,#F6F6F2)}\n.sg-wrap .empty{color:var(--sgg,#AAB5C8)}\n.sg-meta{margin:0;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;line-height:1.55;color:var(--sgg,#AAB5C8)}\n.sg-meta b{color:var(--sgp,#F6F6F2);font-weight:700}\n.sg-h{margin:8px 0 2px;font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(40px,9vw,56px);line-height:.95;text-transform:uppercase;letter-spacing:.01em;color:var(--sgp,#F6F6F2)}\n.sg-h i{font-style:normal;color:var(--sgb,#2F8BEF)}\n.sg-paar{margin:8px 0 0;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase}\n.sg-paar em{font-style:normal;color:var(--sgo,#FF8731);padding:0 4px;text-transform:none}\n.sg-paar b{font-family:'Anton',sans-serif;font-weight:400;font-size:20px;margin-left:8px;color:var(--sgo,#FF8731)}\n.sg-wahl{display:flex;align-items:center;gap:10px;margin:14px 0 0;font-size:13px;color:var(--sgg,#AAB5C8)}\n.sg-wahl select{flex:1;min-width:0;max-width:420px;min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:15px}\n.sg-da{margin:16px 0 0;padding:13px 15px;border-radius:12px;background:var(--sgn2,#0B1A31);border:1px solid var(--sgl,#22345A);border-left:4px solid var(--sgo,#FF8731)}\n.sg-da strong{display:block;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:800;font-size:19px;letter-spacing:.03em;text-transform:uppercase}\n.sg-da span{display:block;margin:3px 0 10px;font-size:14px;line-height:1.4;color:var(--sgh,#C7D0DF)}\n.sg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0 0}\n.sg-grid.laedt{opacity:.45;pointer-events:none}\n@media(min-width:860px){.sg-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}\n.sg-karte{display:flex;flex-direction:column;gap:0;text-align:left;padding:10px;border-radius:14px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:inherit;font:inherit;cursor:pointer;min-width:0}\n.sg-karte:hover{border-color:var(--sgb,#2F8BEF)}\n.sg-karte:focus-visible,.sg-wrap button:focus-visible,.sg-wrap input:focus-visible,.sg-wrap select:focus-visible,.sg-wrap textarea:focus-visible,.sg-wrap summary:focus-visible{outline:2px solid var(--sgb,#2F8BEF);outline-offset:2px}\n.sg-mini{display:block;aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:var(--sgn,#041127);border:1px solid var(--sgl,#22345A)}\n.sg-mini canvas,.sg-bild canvas{display:block;width:100%;height:auto}\n.sg-mini.leer,.sg-bild.leer{display:grid;place-items:center;border-style:dashed}\n.sg-mini.leer i,.sg-bild.leer i{font-style:normal;font-family:'Anton',sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.02em;color:var(--sgq,#3E5480);text-align:center;padding:0 10px}\n.sg-karte b{margin:10px 2px 3px;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:800;font-size:17px;letter-spacing:.05em;text-transform:uppercase}\n.sg-st{display:flex;gap:7px;align-items:flex-start;margin:0 2px;font-size:13px;line-height:1.35;color:var(--sgh,#C7D0DF)}\n.sg-st::before{content:\"\";flex:none;width:9px;height:9px;border-radius:50%;margin-top:4px;background:var(--sgq,#3E5480)}\n.sg-st[data-art=\"fertig\"]::before{background:var(--sgok,#39C27D)}\n.sg-st[data-art=\"bereit\"]::before{background:var(--sgb,#2F8BEF)}\n.sg-st[data-art=\"du\"]::before{background:var(--sgo,#FF8731)}\n.sg-st[data-art=\"du\"]{color:var(--sgp,#F6F6F2)}\n.sg-fuss{margin:16px 2px 0;font-size:12.5px;line-height:1.45;color:var(--sgg,#AAB5C8)}\n.sg-wrap .btn,.sg-wrap .btn.sm{min-height:44px!important}\n.sg-wrap .btn.ghost{background:transparent;border:1px solid var(--sgq2,#33456A);color:var(--sgp,#F6F6F2)}\n.sg-wrap .btn[disabled]{opacity:.45;cursor:not-allowed}\n/* Einzelansicht */\n.sg-dkopf{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:0 0 14px}\n.sg-dkopf h3{margin:0;font-family:'Anton',sans-serif;font-weight:400;font-size:28px;text-transform:uppercase;letter-spacing:.01em;color:var(--sgp,#F6F6F2)}\n.sg-zur{display:inline-flex;transform:rotate(180deg)}\n.sg-zur svg{width:15px;height:15px}\n.sg-zwei-sp{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}\n@media(min-width:900px){.sg-zwei-sp{grid-template-columns:minmax(0,440px) minmax(0,1fr);align-items:start}}\n.sg-bild{border-radius:10px;overflow:hidden;border:1px solid var(--sgl,#22345A);background:var(--sgn,#041127);aspect-ratio:4/5;cursor:pointer}\n.sg-pruef{list-style:none;margin:12px 0 0;padding:0;font-size:14px}\n.sg-pruef li{display:flex;gap:9px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--sgl,#22345A);line-height:1.4}\n.sg-pruef li:first-child{border-top:0}\n.sg-pruef li::before{content:\"\";flex:none;width:9px;height:9px;border-radius:50%;margin-top:5px;background:var(--sgq,#3E5480)}\n.sg-pruef li.ok::before{background:var(--sgok,#39C27D)}\n.sg-pruef li.h::before{background:var(--sgo,#FF8731)}\n.sg-pruef li.f::before{background:var(--sgrot,#F0564A)}\n.sg-pruef li.f{font-weight:600}\n.sg-pruef li.n{color:var(--sgg,#AAB5C8);font-size:13px}\n.sg-akt{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 0}\n.sg-akt .btn{display:inline-flex;align-items:center;gap:8px}\n.sg-akt .btn svg{width:17px;height:17px}\n.sg-frei{flex-basis:100%;margin:0;font-size:13.5px;color:var(--sgok2,#7BE0AC)}\n.sg-hin{margin:6px 0 0;font-size:12.5px;line-height:1.45;color:var(--sgg,#AAB5C8)}\n.sg-akt .sg-hin{flex-basis:100%;margin:0}\n.sg-form{min-width:0}\n.sg-tipp{margin:0 0 12px;font-size:12.5px;color:var(--sgg,#AAB5C8)}\n.sg-l{margin:16px 0 8px;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase}\n.sg-form>.sg-l:first-of-type{margin-top:0}\n.sg-f{display:block;margin:0 0 12px}\n.sg-f span{display:block;margin:0 0 5px;font-size:12.5px;color:var(--sgg,#AAB5C8)}\n.sg-wrap input[type=text],.sg-wrap input[type=number],.sg-wrap input[type=time],.sg-wrap .sg-tor select{width:100%;min-width:0;min-height:44px;padding:0 11px;border-radius:9px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:15px;box-sizing:border-box}\n.sg-wrap input::placeholder{color:var(--sgq,#5A6E96)}\n.sg-zwei{display:grid;grid-template-columns:1fr 1fr;gap:10px}\n.sg-vor{display:grid;gap:8px;margin:0 0 6px}\n.sg-vor button{text-align:left;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:var(--sgo,#FF8731);font-family:'Anton',sans-serif;font-size:17px;text-transform:uppercase;letter-spacing:.02em;cursor:pointer}\n.sg-vor button b{font-weight:400;color:var(--sgp,#F6F6F2)}\n.sg-vor button.on{border-color:var(--sgb,#2F8BEF);box-shadow:inset 0 0 0 1px var(--sgb,#2F8BEF)}\n.sg-bib{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}\n.sg-bib button{padding:0;aspect-ratio:1;border-radius:9px;overflow:hidden;border:2px solid transparent;background:var(--sgn2,#0B1A31);cursor:pointer}\n.sg-bib button.on{border-color:var(--sgb,#2F8BEF)}\n.sg-bib img{display:block;width:100%;height:100%;object-fit:cover}\n.sg-up{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;aspect-ratio:1;border-radius:9px;border:1px dashed var(--sgq2,#33456A);color:var(--sgg,#AAB5C8);font-size:11.5px;text-align:center;cursor:pointer;padding:4px}\n.sg-up svg{width:20px;height:20px}\n.sg-up.sb-laedt{opacity:.6}\n.sg-tore,.sg-elf{display:grid;gap:8px}\n.sg-tor{display:grid;grid-template-columns:64px 54px 96px minmax(0,1fr) 44px;gap:6px;align-items:center;padding:8px;border-radius:10px;background:var(--sgn2,#0B1A31);border-left:4px solid var(--sgq,#7C8799)}\n.sg-tor[data-wir=\"1\"]{border-left-color:var(--sgb,#2F8BEF)}\n.sg-tor [data-sgt=\"vorlage\"]{grid-column:1/4}\n.sg-tor .sg-ohne{grid-column:4/6}\n.sg-sp{display:grid;grid-template-columns:62px minmax(0,1fr) auto auto 44px;gap:6px;align-items:center}\n.sg-sp[data-art=\"bank\"]{grid-template-columns:62px minmax(0,1fr) 70px auto 44px}\n.sg-ohne{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:13px;color:var(--sgh,#C7D0DF);white-space:nowrap}\n.sg-ohne input{width:18px;height:18px;flex:none}\n.sg-weg{width:44px;height:44px;display:grid;place-items:center;border-radius:9px;border:1px solid var(--sgl,#22345A);background:transparent;color:var(--sgg,#AAB5C8);cursor:pointer}\n.sg-weg svg{width:16px;height:16px}\n.sg-zeile{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}\n.sg-quelle{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;padding:12px 14px;border-radius:12px;background:var(--sgn2,#0B1A31);border-left:4px solid var(--sgo,#FF8731)}\n.sg-quelle b{flex-basis:100%;font-size:14.5px}\n.sg-quelle span{flex-basis:100%;font-size:13px;color:var(--sgg,#AAB5C8)}\n.sg-mehr{margin:18px 0 0;border-top:1px solid var(--sgl,#22345A);padding-top:12px}\n.sg-mehr summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase}\n@media(max-width:480px){.sg-wrap{padding:18px 14px 16px;border-radius:14px}.sg-tor{grid-template-columns:58px 48px minmax(0,1fr) 44px}.sg-tor [data-sgt=\"wir\"]{grid-column:3/4}.sg-tor [data-sgt=\"name\"]{grid-column:1/5}.sg-tor [data-sgt=\"vorlage\"]{grid-column:1/5}.sg-tor .sg-ohne{grid-column:1/4}.sg-tor .sg-weg{grid-column:4/5;grid-row:1}}\n/* Die alten Event-Regeln (svm89) kommen später im Bündel und verteilen mobile\n   Knöpfe auf Bruchteile einer Zeile. Hier ist die Leiste bewusst ein Scrollband. */\n#panel-plakat .tk-modus{display:flex;flex-wrap:nowrap;align-items:stretch;gap:8px;width:100%;min-width:0;max-width:100%;padding:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scroll-snap-type:x proximity;background:var(--sgn2,#0B1A31)}\n#panel-plakat .tk-modus button{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;gap:8px;width:auto;min-width:max-content;max-width:none;min-height:44px;padding:0 14px;white-space:nowrap;line-height:1.25;font-size:14px;scroll-snap-align:start;background:transparent;color:var(--sgp,#F6F6F2)}\n#panel-plakat .tk-modus button.on{background:var(--sgb,#2F8BEF)!important;color:var(--sgn,#041127)!important;box-shadow:none!important}\n#panel-plakat .tk-modus button svg{display:inline-block;flex:none;width:17px;height:17px}\n#panel-plakat .tk-modus button:focus-visible{outline:2px solid var(--sgb,#2F8BEF);outline-offset:-2px}\n/* Wappen des Gegners hochladen */\n.sg-wap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 0}\n.sg-wap.fehlt{margin:0 0 16px;padding:12px 14px;border-radius:12px;background:var(--sgn2,#0B1A31);border-left:4px solid var(--sgrot,#F0564A)}\n.sg-wap b{flex-basis:100%;font-size:14.5px}\n.sg-wap span:not([data-sbt]){flex-basis:100%;font-size:13px;line-height:1.4;color:var(--sgg,#AAB5C8)}\n.sg-wapk{display:inline-flex;align-items:center;gap:8px;cursor:pointer}\n.sg-wapk svg{width:16px;height:16px}\n.sg-wapk.sb-laedt{opacity:.6}\n/* Story 9:16 in der Einzelansicht */\n.sg-bild[data-fmt=\"story\"]{aspect-ratio:9/16;max-width:320px}\n.sg-fmt{margin:0 0 10px}\n.sg-bild[data-fmt=\"quer\"]{aspect-ratio:16/9;max-width:none}\n.sg-bild[data-fmt=\"quer\"] canvas{touch-action:none;user-select:none;-webkit-user-select:none}\n.sg-bild[data-fmt=\"quer\"][data-quer-beweglich=\"1\"]{cursor:grab}\n.sg-bild[data-fmt=\"quer\"].sg-zieht{cursor:grabbing}\n.sg-quer-ausschnitt{margin:12px 0 18px;padding:12px;border:1px solid var(--sgl,#22345A);border-radius:9px;background:var(--sgn2,#0B1A31)}\n.sg-quer-ausschnitt .sg-f{margin-bottom:4px}.sg-quer-ausschnitt .sg-f span{display:flex;justify-content:space-between;gap:8px}\n.sg-quer-ausschnitt input[type=range]{width:100%;min-height:44px;accent-color:var(--sgb,#2F8BEF)}\n.sg-quer-ausschnitt input:disabled{opacity:.4}.sg-quer-enden{display:flex;justify-content:space-between;gap:10px;margin:0 0 12px;font-size:11px;color:var(--sgg,#AAB5C8)}\n.sg-quer-ausschnitt .btn{margin-top:10px}\n.sg-texte{margin-top:24px;padding-top:8px;border-top:1px solid var(--sgl,#22345A)}\n.sg-texte textarea{display:block;width:100%;box-sizing:border-box;min-height:120px;margin:0;padding:10px 12px;border:1px solid var(--sgq2,#33456A);border-radius:9px;background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:16px;line-height:1.5;resize:vertical}\n.sg-texte>.btn{margin:0 0 16px}\n.sg-texte select{display:block;width:100%;min-height:44px;box-sizing:border-box;padding:10px 12px;border:1px solid var(--sgq2,#33456A);border-radius:9px;background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:16px}\n.sg-rueckblick{margin:16px 0 20px;padding:14px;border:1px solid var(--sgl,#22345A);border-radius:10px;background:var(--sgn2,#0B1A31)}\n.sg-rueckblick .sg-ohne{white-space:normal;line-height:1.45;gap:10px;margin:6px 0 12px}\n.sg-grundlage{margin:4px 0 8px;font-size:13px;line-height:1.5;color:var(--sgh,#C7D0DF)}\n.sg-grundlage summary{display:flex;align-items:center;min-height:44px;cursor:pointer;text-decoration:underline;text-underline-offset:4px}\n.sg-grundlage ul{padding-left:20px;margin:8px 0;overflow-wrap:anywhere}\n.sg-rueckblick textarea{min-height:110px}\n.sg-abruf{margin:16px 0;padding:14px;border:1px solid var(--sgl,#22345A);border-left:3px solid var(--sgb,#2F8BEF);border-radius:10px;background:var(--sgn2,#0B1A31)}\n.sg-abruf .sg-l{margin:0 0 6px}.sg-abruf .sg-hin{margin:6px 0;overflow-wrap:anywhere;font-size:13px}\n.sg-abruf [data-sgabruf-status]:focus-visible{outline:2px solid var(--sgb,#2F8BEF);outline-offset:4px}\n.sg-abruf .sg-zeile{margin:12px 0 10px}.sg-abruf .btn{white-space:normal;text-align:center}\n.sg-abruf .sg-quelle{margin-top:14px;margin-bottom:0}\n"; document.head.appendChild(s); }catch(e){} })();
+(function(){ try{ const s=document.createElement('style'); s.id='svm127css'; s.textContent="/* Beta 0.99.92 · Spieltagsstudio: Spieltag. Die Fläche bleibt in beiden Modi dunkel, wie die Motive selbst:\n   feste dunkle Farben stehen darum als var(--name, #farbe), sonst rechnet der helle Modus sie um. */\n.sg-wrap{--sgn:#041127;--sgn2:#0B1A31;--sgb:#2F8BEF;--sgo:#FF8731;--sgp:#F6F6F2;--sgg:#AAB5C8;--sgl:#22345A;\n  background:var(--sgn,#041127);color:var(--sgp,#F6F6F2);border-radius:18px;padding:22px 20px 20px;max-width:1040px}\n.sg-wrap .card{background:var(--sgn2,#0B1A31);border:1px solid var(--sgl,#22345A);color:var(--sgp,#F6F6F2)}\n.sg-wrap .empty{color:var(--sgg,#AAB5C8)}\n.sg-meta{margin:0;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;line-height:1.55;color:var(--sgg,#AAB5C8)}\n.sg-meta b{color:var(--sgp,#F6F6F2);font-weight:700}\n.sg-h{margin:8px 0 2px;font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(40px,9vw,56px);line-height:.95;text-transform:uppercase;letter-spacing:.01em;color:var(--sgp,#F6F6F2)}\n.sg-h i{font-style:normal;color:var(--sgb,#2F8BEF)}\n.sg-paar{margin:8px 0 0;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:700;font-size:17px;letter-spacing:.06em;text-transform:uppercase}\n.sg-paar em{font-style:normal;color:var(--sgo,#FF8731);padding:0 4px;text-transform:none}\n.sg-paar b{font-family:'Anton',sans-serif;font-weight:400;font-size:20px;margin-left:8px;color:var(--sgo,#FF8731)}\n.sg-wahl{display:flex;align-items:center;gap:10px;margin:14px 0 0;font-size:13px;color:var(--sgg,#AAB5C8)}\n.sg-wahl select{flex:1;min-width:0;max-width:420px;min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:15px}\n.sg-da{margin:16px 0 0;padding:13px 15px;border-radius:12px;background:var(--sgn2,#0B1A31);border:1px solid var(--sgl,#22345A);border-left:4px solid var(--sgo,#FF8731)}\n.sg-da strong{display:block;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:800;font-size:19px;letter-spacing:.03em;text-transform:uppercase}\n.sg-da span{display:block;margin:3px 0 10px;font-size:14px;line-height:1.4;color:var(--sgh,#C7D0DF)}\n.sg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0 0}\n.sg-grid.laedt{opacity:.45;pointer-events:none}\n@media(min-width:860px){.sg-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}\n.sg-karte{display:flex;flex-direction:column;gap:0;text-align:left;padding:10px;border-radius:14px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:inherit;font:inherit;cursor:pointer;min-width:0}\n.sg-karte:hover{border-color:var(--sgb,#2F8BEF)}\n.sg-karte:focus-visible,.sg-wrap button:focus-visible,.sg-wrap input:focus-visible,.sg-wrap select:focus-visible,.sg-wrap textarea:focus-visible,.sg-wrap summary:focus-visible{outline:2px solid var(--sgb,#2F8BEF);outline-offset:2px}\n.sg-mini{display:block;aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:var(--sgn,#041127);border:1px solid var(--sgl,#22345A)}\n.sg-mini canvas,.sg-bild canvas{display:block;width:100%;height:auto}\n.sg-mini.leer,.sg-bild.leer{display:grid;place-items:center;border-style:dashed}\n.sg-mini.leer i,.sg-bild.leer i{font-style:normal;font-family:'Anton',sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:.02em;color:var(--sgq,#3E5480);text-align:center;padding:0 10px}\n.sg-karte b{margin:10px 2px 3px;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:800;font-size:17px;letter-spacing:.05em;text-transform:uppercase}\n.sg-st{display:flex;gap:7px;align-items:flex-start;margin:0 2px;font-size:13px;line-height:1.35;color:var(--sgh,#C7D0DF)}\n.sg-st::before{content:\"\";flex:none;width:9px;height:9px;border-radius:50%;margin-top:4px;background:var(--sgq,#3E5480)}\n.sg-st[data-art=\"fertig\"]::before{background:var(--sgok,#39C27D)}\n.sg-st[data-art=\"bereit\"]::before{background:var(--sgb,#2F8BEF)}\n.sg-st[data-art=\"du\"]::before{background:var(--sgo,#FF8731)}\n.sg-st[data-art=\"du\"]{color:var(--sgp,#F6F6F2)}\n.sg-fuss{margin:16px 2px 0;font-size:13px;line-height:1.45;color:var(--sgg,#AAB5C8)}\n.sg-wrap .btn,.sg-wrap .btn.sm{min-height:44px!important}\n.sg-wrap .btn.ghost{background:transparent;border:1px solid var(--sgq2,#33456A);color:var(--sgp,#F6F6F2)}\n.sg-wrap .btn[disabled]{opacity:.45;cursor:not-allowed}\n/* Einzelansicht */\n.sg-dkopf{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:0 0 14px}\n.sg-dkopf h3{margin:0;font-family:'Anton',sans-serif;font-weight:400;font-size:28px;text-transform:uppercase;letter-spacing:.01em;color:var(--sgp,#F6F6F2)}\n.sg-zur{display:inline-flex;transform:rotate(180deg)}\n.sg-zur svg{width:15px;height:15px}\n.sg-zwei-sp{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}\n@media(min-width:900px){.sg-zwei-sp{grid-template-columns:minmax(0,440px) minmax(0,1fr);align-items:start}}\n.sg-bild{border-radius:10px;overflow:hidden;border:1px solid var(--sgl,#22345A);background:var(--sgn,#041127);aspect-ratio:4/5;cursor:pointer}\n.sg-pruef{list-style:none;margin:12px 0 0;padding:0;font-size:14px}\n.sg-pruef li{display:flex;gap:9px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--sgl,#22345A);line-height:1.4}\n.sg-pruef li:first-child{border-top:0}\n.sg-pruef li::before{content:\"\";flex:none;width:9px;height:9px;border-radius:50%;margin-top:5px;background:var(--sgq,#3E5480)}\n.sg-pruef li.ok::before{background:var(--sgok,#39C27D)}\n.sg-pruef li.h::before{background:var(--sgo,#FF8731)}\n.sg-pruef li.f::before{background:var(--sgrot,#F0564A)}\n.sg-pruef li.f{font-weight:600}\n.sg-pruef li.n{color:var(--sgg,#AAB5C8);font-size:13px}\n.sg-akt{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 0}\n.sg-akt .btn{display:inline-flex;align-items:center;gap:8px}\n.sg-akt .btn svg{width:17px;height:17px}\n.sg-frei{flex-basis:100%;margin:0;font-size:13.5px;color:var(--sgok2,#7BE0AC)}\n.sg-hin{margin:6px 0 0;font-size:13px;line-height:1.45;color:var(--sgg,#AAB5C8)}\n.sg-akt .sg-hin{flex-basis:100%;margin:0}\n.sg-form{min-width:0}\n.sg-tipp{margin:0 0 12px;font-size:12.5px;color:var(--sgg,#AAB5C8)}\n.sg-l{margin:16px 0 8px;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase}\n.sg-form>.sg-l:first-of-type{margin-top:0}\n.sg-f{display:block;margin:0 0 12px}\n.sg-f span{display:block;margin:0 0 5px;font-size:12.5px;color:var(--sgg,#AAB5C8)}\n.sg-wrap input[type=text],.sg-wrap input[type=number],.sg-wrap input[type=time],.sg-wrap .sg-tor select{width:100%;min-width:0;min-height:44px;padding:0 11px;border-radius:9px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:15px;box-sizing:border-box}\n.sg-wrap input::placeholder{color:var(--sgq,#5A6E96)}\n.sg-zwei{display:grid;grid-template-columns:1fr 1fr;gap:10px}\n.sg-vor{display:grid;gap:8px;margin:0 0 6px}\n.sg-vor button{text-align:left;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--sgl,#22345A);background:var(--sgn2,#0B1A31);color:var(--sgo,#FF8731);font-family:'Anton',sans-serif;font-size:17px;text-transform:uppercase;letter-spacing:.02em;cursor:pointer}\n.sg-vor button b{font-weight:400;color:var(--sgp,#F6F6F2)}\n.sg-vor button.on{border-color:var(--sgb,#2F8BEF);box-shadow:inset 0 0 0 1px var(--sgb,#2F8BEF)}\n.sg-bib{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}\n.sg-bib button{padding:0;aspect-ratio:1;border-radius:9px;overflow:hidden;border:2px solid transparent;background:var(--sgn2,#0B1A31);cursor:pointer}\n.sg-bib button.on{border-color:var(--sgb,#2F8BEF)}\n.sg-bib img{display:block;width:100%;height:100%;object-fit:cover}\n.sg-up{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;aspect-ratio:1;border-radius:9px;border:1px dashed var(--sgq2,#33456A);color:var(--sgg,#AAB5C8);font-size:11.5px;text-align:center;cursor:pointer;padding:4px}\n.sg-up svg{width:20px;height:20px}\n.sg-up.sb-laedt{opacity:.6}\n.sg-tore,.sg-elf{display:grid;gap:8px}\n.sg-tor{display:grid;grid-template-columns:64px 54px 96px minmax(0,1fr) 44px;gap:6px;align-items:center;padding:8px;border-radius:10px;background:var(--sgn2,#0B1A31);border-left:4px solid var(--sgq,#7C8799)}\n.sg-tor[data-wir=\"1\"]{border-left-color:var(--sgb,#2F8BEF)}\n.sg-tor [data-sgt=\"vorlage\"]{grid-column:1/4}\n.sg-tor .sg-ohne{grid-column:4/6}\n.sg-sp{display:grid;grid-template-columns:62px minmax(0,1fr) auto auto 44px;gap:6px;align-items:center}\n.sg-sp[data-art=\"bank\"]{grid-template-columns:62px minmax(0,1fr) 70px auto 44px}\n.sg-ohne{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:13px;color:var(--sgh,#C7D0DF);white-space:nowrap}\n.sg-ohne input{width:18px;height:18px;flex:none}\n.sg-weg{width:44px;height:44px;display:grid;place-items:center;border-radius:9px;border:1px solid var(--sgl,#22345A);background:transparent;color:var(--sgg,#AAB5C8);cursor:pointer}\n.sg-weg svg{width:16px;height:16px}\n.sg-zeile{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}\n.sg-quelle{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px;padding:12px 14px;border-radius:12px;background:var(--sgn2,#0B1A31);border-left:4px solid var(--sgo,#FF8731)}\n.sg-quelle b{flex-basis:100%;font-size:14.5px}\n.sg-quelle span{flex-basis:100%;font-size:13px;color:var(--sgg,#AAB5C8)}\n.sg-mehr{margin:18px 0 0;border-top:1px solid var(--sgl,#22345A);padding-top:12px}\n.sg-mehr summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-family:'Barlow Condensed','BarlowC',sans-serif;font-weight:800;font-size:15px;letter-spacing:.08em;text-transform:uppercase}\n@media(max-width:480px){.sg-wrap{padding:18px 14px 16px;border-radius:14px}.sg-tor{grid-template-columns:58px 48px minmax(0,1fr) 44px}.sg-tor [data-sgt=\"wir\"]{grid-column:3/4}.sg-tor [data-sgt=\"name\"]{grid-column:1/5}.sg-tor [data-sgt=\"vorlage\"]{grid-column:1/5}.sg-tor .sg-ohne{grid-column:1/4}.sg-tor .sg-weg{grid-column:4/5;grid-row:1}}\n/* Die alten Event-Regeln (svm89) kommen später im Bündel und verteilen mobile\n   Knöpfe auf Bruchteile einer Zeile. Hier ist die Leiste bewusst ein Scrollband. */\n#panel-plakat .tk-modus{display:flex;flex-wrap:nowrap;align-items:stretch;gap:8px;width:100%;min-width:0;max-width:100%;padding:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scroll-snap-type:x proximity;background:var(--sgn2,#0B1A31)}\n#panel-plakat .tk-modus button{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;gap:8px;width:auto;min-width:max-content;max-width:none;min-height:44px;padding:0 14px;white-space:nowrap;line-height:1.25;font-size:14px;scroll-snap-align:start;background:transparent;color:var(--sgp,#F6F6F2)}\n#panel-plakat .tk-modus button.on{background:var(--sgb,#2F8BEF)!important;color:var(--sgn,#041127)!important;box-shadow:none!important}\n#panel-plakat .tk-modus button svg{display:inline-block;flex:none;width:17px;height:17px}\n#panel-plakat .tk-modus button:focus-visible{outline:2px solid var(--sgb,#2F8BEF);outline-offset:-2px}\n/* Wappen des Gegners hochladen */\n.sg-wap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 0}\n.sg-wap.fehlt{margin:0 0 16px;padding:12px 14px;border-radius:12px;background:var(--sgn2,#0B1A31);border-left:4px solid var(--sgrot,#F0564A)}\n.sg-wap b{flex-basis:100%;font-size:14.5px}\n.sg-wap span:not([data-sbt]){flex-basis:100%;font-size:13px;line-height:1.4;color:var(--sgg,#AAB5C8)}\n.sg-wapk{display:inline-flex;align-items:center;gap:8px;cursor:pointer}\n.sg-wapk svg{width:16px;height:16px}\n.sg-wapk.sb-laedt{opacity:.6}\n/* Story 9:16 in der Einzelansicht */\n.sg-bild[data-fmt=\"story\"]{aspect-ratio:9/16;max-width:320px}\n.sg-fmt{margin:0 0 10px}\n.sg-bild[data-fmt=\"quer\"]{aspect-ratio:16/9;max-width:none}\n.sg-bild[data-fmt=\"quer\"] canvas{touch-action:none;user-select:none;-webkit-user-select:none}\n.sg-bild[data-fmt=\"quer\"][data-quer-beweglich=\"1\"]{cursor:grab}\n.sg-bild[data-fmt=\"quer\"].sg-zieht{cursor:grabbing}\n.sg-quer-ausschnitt{margin:12px 0 18px;padding:12px;border:1px solid var(--sgl,#22345A);border-radius:9px;background:var(--sgn2,#0B1A31)}\n.sg-quer-ausschnitt .sg-f{margin-bottom:4px}.sg-quer-ausschnitt .sg-f span{display:flex;justify-content:space-between;gap:8px}\n.sg-quer-ausschnitt input[type=range]{width:100%;min-height:44px;accent-color:var(--sgb,#2F8BEF)}\n.sg-quer-ausschnitt input:disabled{opacity:.4}.sg-quer-enden{display:flex;justify-content:space-between;gap:10px;margin:0 0 12px;font-size:11px;color:var(--sgg,#AAB5C8)}\n.sg-quer-ausschnitt .btn{margin-top:10px}\n.sg-texte{margin-top:24px;padding-top:8px;border-top:1px solid var(--sgl,#22345A)}\n.sg-texte textarea{display:block;width:100%;box-sizing:border-box;min-height:120px;margin:0;padding:10px 12px;border:1px solid var(--sgq2,#33456A);border-radius:9px;background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:16px;line-height:1.5;resize:vertical}\n.sg-texte>.btn{margin:0 0 16px}\n.sg-texte select{display:block;width:100%;min-height:44px;box-sizing:border-box;padding:10px 12px;border:1px solid var(--sgq2,#33456A);border-radius:9px;background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:16px}\n.sg-rueckblick{margin:16px 0 20px;padding:14px;border:1px solid var(--sgl,#22345A);border-radius:10px;background:var(--sgn2,#0B1A31)}\n.sg-rueckblick .sg-ohne{white-space:normal;line-height:1.45;gap:10px;margin:6px 0 12px}\n.sg-grundlage{margin:4px 0 8px;font-size:13px;line-height:1.5;color:var(--sgh,#C7D0DF)}\n.sg-grundlage summary{display:flex;align-items:center;min-height:44px;cursor:pointer;text-decoration:underline;text-underline-offset:4px}\n.sg-grundlage ul{padding-left:20px;margin:8px 0;overflow-wrap:anywhere}\n.sg-rueckblick textarea{min-height:110px}\n.sg-abruf{margin:16px 0;padding:14px;border:1px solid var(--sgl,#22345A);border-left:3px solid var(--sgb,#2F8BEF);border-radius:10px;background:var(--sgn2,#0B1A31)}\n.sg-abruf .sg-l{margin:0 0 6px}.sg-abruf .sg-hin{margin:6px 0;overflow-wrap:anywhere;font-size:13px}\n.sg-abruf [data-sgabruf-status]:focus-visible{outline:2px solid var(--sgb,#2F8BEF);outline-offset:4px}\n.sg-abruf .sg-zeile{margin:12px 0 10px}.sg-abruf .btn{white-space:normal;text-align:center}\n.sg-abruf .sg-quelle{margin-top:14px;margin-bottom:0}\n\n.sg-ergebnis-tore{display:flex;align-items:center;gap:12px;min-height:44px;margin:16px 0 4px;color:var(--sgp,#F6F6F2);font-size:15px;line-height:1.4;cursor:pointer}\n.sg-ergebnis-tore input{flex:0 0 22px;width:22px;height:22px;accent-color:var(--sgb,#2F8BEF)}\n.sg-fotoqualitaet{border-left:3px solid var(--sgo,#FF8731);padding-left:12px}\n.sg-fotoqualitaet[hidden]{display:none}\n\n[data-sgbildstatus][hidden]{display:none}\n\n.sg-fotowahl{min-width:0}\n.sg-fotohin{margin:5px 0 10px;color:var(--sgh,#C7D0DF);font-size:13px;line-height:1.45}\n.sg-fotoreihe{display:flex;gap:9px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;padding:5px 4px 12px;scroll-padding-left:4px;-webkit-overflow-scrolling:touch}\n.sg-fotoreihe button{display:flex;flex:0 0 92px;flex-direction:column;gap:7px;align-items:stretch;scroll-snap-align:start;min-width:44px;min-height:44px;padding:6px;border:2px solid var(--sgl,#22345A);border-radius:8px;background:var(--sgn2,#0B1A31);color:var(--sgp,#F6F6F2);font:inherit;font-size:13px;line-height:1.3;text-align:left;cursor:pointer}\n.sg-fotoreihe button[aria-pressed=\"true\"],.sg-fotobibliothek button[aria-pressed=\"true\"]{border-color:var(--sgb,#2F8BEF);outline:2px solid var(--sgo,#FF8731);outline-offset:1px}\n.sg-fotoreihe img{display:block;width:100%;height:138px;object-fit:cover;border-radius:4px}\n.sg-fotoreihe button>span{display:block;overflow-wrap:anywhere}\n.sg-fotoreihe .sg-fotoauto{justify-content:center;background:var(--sgn,#041127)}\n.sg-fotoauto b{font-family:'Barlow Condensed','SGC',sans-serif;font-size:22px;color:var(--sgo,#FF8731)}\n.sg-fotowahl button:focus-visible,.sg-fotobibliothek summary:focus-visible,.sg-fotoupload:focus-within{outline:3px solid var(--sgb,#2F8BEF);outline-offset:2px}\n.sg-fotobibliothek{margin:8px 0 12px;border-top:1px solid var(--sgl,#22345A);border-bottom:1px solid var(--sgl,#22345A)}\n.sg-fotobibliothek summary{display:list-item;min-height:44px;box-sizing:border-box;padding:12px 4px;cursor:pointer;color:var(--sgp,#F6F6F2);font-size:14px;line-height:1.4}\n.sg-fotobibliothek .sg-bib{padding:5px 4px 12px;grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}\n.sg-fotobibliothek .sg-fotobibmotiv{display:flex;flex-direction:column;gap:6px;aspect-ratio:auto;min-height:44px;padding:5px;color:var(--sgp,#F6F6F2);font:inherit;font-size:13px;line-height:1.3;text-align:left}\n.sg-fotobibliothek .sg-fotobibmotiv img{height:90px;flex:none;border-radius:4px}\n.sg-fotobibliothek .sg-fotobibmotiv>span{overflow-wrap:anywhere}\n.sg-fotoplatz{display:grid;place-items:center;height:90px;background:var(--sgn,#041127);color:var(--sgg,#AAB5C8)}\n.sg-fotowahl .sg-fotoupload{display:inline-flex;flex-direction:row;aspect-ratio:auto;min-height:44px;box-sizing:border-box;padding:10px 14px;color:var(--sgp,#F6F6F2);font-size:13px;line-height:1.4}\n"; document.head.appendChild(s); }catch(e){} })();
 /* =====================================================================
    Beta 0.99.93 · Spieltagsstudio: Kommunikationsassistent
    Albert und Lukas, 18.11.2026: „Ich brauche für das hier ein Plakat“, gesprochen, getippt oder als Datei, und es entsteht ein Vorschlag.
@@ -44388,7 +44602,7 @@ function tkPflege(){ const sub = TKR.sub, L = (TKR.kader[sub] = TKR.kader[sub] |
 const ERG = { spiele:[], idx:0, format:'quadrat', wort:'', bg:'', spieler:'', zeigeSpieler:true, text:'', variante:0, bib:[], neu:false,
   hand:{ gegner:'', heim:true, wir:'', ihr:'', sub:'A' },
   ebenen:{ bg:true, stimmung:true, wort:true, spieler:true, tafel:true, info:true } };
-const ER_EBENEN = [['bg','Hintergrund'],['stimmung','Stimmung und Licht'],['wort','Schriftzug'],['spieler','Matchwinner'],['tafel','Ergebnistafel'],['info','Mannschaft, Datum, Torschützen']];
+const ER_EBENEN = [['bg','Hintergrund'],['stimmung','Leseschutz'],['wort','Schriftzug'],['spieler','Matchwinner'],['tafel','Ergebnistafel'],['info','Mannschaft, Datum, Torschützen']];
 const ER_BG = { night:['plakat/foto/night.webp','Flutlicht'], summer:['plakat/foto/summer.webp','Ball'], autumn:['plakat/foto/autumn.webp','Herbst'], winter:['plakat/foto/winter.webp','Frost'] };
 const ER_STIL = {
   sieg:{ akzent:'#ffc23d', wortVon:'#ffffff', wortBis:'#ffd36b', bg:'night' },
@@ -44479,28 +44693,21 @@ function erRegen(ctx, W, H){ ctx.save(); ctx.strokeStyle = 'rgba(190,210,240,.10
 function erTextPasst(ctx, t, schrift, max, groesse, min){ let fs = groesse; ctx.font = schrift.replace('#', fs); let w = ctx.measureText(t).width;
   if(w > max){ fs = Math.max(min, fs * max / w); ctx.font = schrift.replace('#', fs); } return fs; }
 
+function erWappenKlar(ctx, img, x, y, bw, bh){
+  if(!img) return; const nw = img.naturalWidth || img.width, nh = img.naturalHeight || img.height;
+  if(!nw || !nh) return; const f = Math.min(bw / nw, bh / nh), w = nw * f, h = nh * f;
+  ctx.drawImage(img, x + (bw - w) / 2, y + (bh - h) / 2, w, h);
+}
+
 function erMalen(cv, S, A){
   const [W, H] = TK_FORMATE[S.format] || TK_FORMATE.quadrat; cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d'); ctx.imageSmoothingQuality = 'high';
-  const s = S.spiel, E = S.ebenen, st = ER_STIL[s ? s.ausgang : 'remis'], dy = H - 1080, story = dy > 400, mw = S.matchwinner && A.foto && E.spieler;
-  // 1 Hintergrund
-  ctx.fillStyle = '#050c1f'; ctx.fillRect(0, 0, W, H);
+  const s = S.spiel, E = S.ebenen, st = { akzent:s && s.ausgang === 'sieg' ? CI.orange : CI.blau }, dy = H - 1080, story = dy > 400, mw = S.matchwinner && A.foto && E.spieler;
+  // Originalfoto mit ruhigem Leseschutz, ohne künstliche Unschärfe.
+  ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, W, H);
   if(E.bg && A.bg){ const b = A.bg, bw0 = b.naturalWidth || b.width, bh0 = b.naturalHeight || b.height, sc = Math.max(W / bw0, H / bh0), bw = bw0 * sc, bh = bh0 * sc;
-    // Mit Matchwinner wird der Hintergrund weich (Tiefenschärfe), damit der Spieler vorne steht
-    ctx.save(); ctx.filter = (s && s.ausgang === 'niederlage' ? 'saturate(.35) brightness(.86)' : s && s.ausgang === 'sieg' ? 'saturate(.85) brightness(.95)' : 'saturate(.6) brightness(.88)') + (mw ? ' blur(7px)' : '');
-    ctx.drawImage(b, (W - bw) / 2, (H - bh) / 2, bw, bh); ctx.restore(); }
-  // 2 Stimmung
-  if(E.stimmung && s){ ctx.save();
-    ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = s.ausgang === 'sieg' ? 'rgba(40,30,70,.55)' : s.ausgang === 'niederlage' ? 'rgba(20,32,58,.55)' : 'rgba(6,22,64,.55)'; ctx.fillRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'screen';
-    if(s.ausgang === 'sieg'){ const g = ctx.createRadialGradient(W * .5, 260 + dy * .3, 20, W * .5, 260 + dy * .3, W * .75); g.addColorStop(0, 'rgba(255,190,70,.42)'); g.addColorStop(.5, 'rgba(255,140,30,.12)'); g.addColorStop(1, 'rgba(255,140,30,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = .16; for(let i = 0; i < 7; i++){ const a = -1.25 + i * .19; ctx.save(); ctx.translate(W * .5, -60); ctx.rotate(a); const l = ctx.createLinearGradient(0, 0, 0, H); l.addColorStop(0, 'rgba(255,220,150,.9)'); l.addColorStop(1, 'rgba(255,220,150,0)'); ctx.fillStyle = l; ctx.fillRect(-18 - i % 2 * 14, 0, 36 + i % 2 * 28, H * 1.2); ctx.restore(); }
-      ctx.globalAlpha = 1; }
-    else { const g = ctx.createRadialGradient(W * .5, 300 + dy * .3, 20, W * .5, 300 + dy * .3, W * .7); g.addColorStop(0, s.ausgang === 'remis' ? 'rgba(40,120,255,.28)' : 'rgba(120,150,200,.12)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
-    ctx.restore();
-    const v = ctx.createRadialGradient(W * .5, H * .45, W * .2, W * .5, H * .5, Math.max(W, H) * .78); v.addColorStop(0, 'rgba(2,6,20,0)'); v.addColorStop(1, s.ausgang === 'niederlage' ? 'rgba(2,6,20,.9)' : 'rgba(2,6,20,.8)'); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
-    if(s.ausgang === 'sieg') erFunken(ctx, W, H, st.akzent, 70, 1959);
-    if(s.ausgang === 'niederlage') erRegen(ctx, W, H); }
+    ctx.drawImage(b, (W - bw) / 2, (H - bh) / 2, bw, bh); }
+  if(E.stimmung){ ctx.fillStyle = 'rgba(4,17,39,.44)'; ctx.fillRect(0, 0, W, H); }
   // Kopfzeile: Mannschaft links, Datum rechts
   if(E.info && s){ ctx.save(); ctx.font = '600 28px TKB'; try{ ctx.letterSpacing = '6px'; }catch(e){} ctx.fillStyle = st.akzent; ctx.textBaseline = 'alphabetic';
     const oben = story ? 130 : 78; ctx.fillText(s.sub === 'D2' ? 'ZWEITE MANNSCHAFT' : 'ERSTE MANNSCHAFT', 80, oben); ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,.8)';
@@ -44510,37 +44717,33 @@ function erMalen(cv, S, A){
   // Schriftgröße zuerst, dann die Grundlinie so, dass der Schriftzug nie in die Kopfzeile ragt
   let wfs = 300; if(S.wort){ ctx.save(); ctx.font = `900 300px TKC`; wfs = Math.min(270, 300 * (W * .9) / Math.max(1, ctx.measureText(S.wort).width)); ctx.restore(); }
   const wortY = Math.max((mw ? 330 : 300) + dy * (story ? .28 : .3), (story ? 200 : 132) + wfs * .74);
-  if(E.wort && S.wort){ const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-    const fs = wfs; x.font = `900 ${fs}px TKC`; x.textAlign = 'center';
-    const g = x.createLinearGradient(0, wortY - fs * .72, 0, wortY); g.addColorStop(0, st.wortVon); g.addColorStop(1, st.wortBis); x.fillStyle = g; x.fillText(S.wort, W / 2, wortY);
-    x.globalCompositeOperation = 'source-atop'; x.globalAlpha = .45; x.fillStyle = tkKornMuster(x); x.fillRect(0, 0, W, H);
-    ctx.save(); ctx.shadowColor = s && s.ausgang === 'sieg' ? 'rgba(255,170,40,.45)' : 'rgba(30,120,255,.3)'; ctx.shadowBlur = 44; ctx.globalAlpha = s && s.ausgang === 'niederlage' ? .88 : 1; ctx.drawImage(c, 0, 0); ctx.restore(); }
+  if(E.wort && S.wort){ ctx.save(); ctx.font = `900 ${wfs}px TKC`; ctx.textAlign = 'center';
+    ctx.fillStyle = s && s.ausgang === 'sieg' ? CI.orange : CI.weiss; ctx.fillText(S.wort, W / 2, wortY); ctx.restore(); }
   // 4 Matchwinner (freigestellt, steht auf der Unterkante hinter der Tafel)
   if(mw){ const img = A.foto, m = tkUmriss(img), top = wortY - 150, hoch = H - top, unten = m.y + m.h >= img.naturalHeight * .97;
     const sc = Math.min(hoch / m.h, (W * (unten ? .9 : .7)) / m.w), dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
     const x0 = W * .5 - (m.x + m.w / 2) * sc, y0 = unten ? H + 2 - (m.y + m.h) * sc : top - m.y * sc;
-    ctx.save(); ctx.shadowColor = s.ausgang === 'sieg' ? 'rgba(255,180,60,.55)' : 'rgba(50,130,255,.5)'; ctx.shadowBlur = 36; ctx.drawImage(img, x0, y0, dw, dh); ctx.restore();
-    ctx.save(); ctx.shadowColor = 'rgba(0,6,24,.6)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 16; ctx.drawImage(img, x0, y0, dw, dh); ctx.restore();
+    ctx.drawImage(img, x0, y0, dw, dh);
     if(!m.frei){ const g = ctx.createLinearGradient(0, y0 + dh * .7, 0, y0 + dh); g.addColorStop(0, 'rgba(5,12,31,0)'); g.addColorStop(1, 'rgba(5,12,31,1)'); ctx.fillStyle = g; ctx.fillRect(x0, y0 + dh * .7, dw, dh * .3 + 2); } }
   // 5 Ergebnistafel
   if(E.tafel && s){ const wirName = s.sub === 'D2' ? 'SV/BSC II' : 'SV/BSC', gName = String(s.gegner || '').toUpperCase();
     const links = { bild:A.logo, name:wirName }, rechts = { bild:A.gegner, name:gName }, [L, R] = s.heim ? [links, rechts] : [rechts, links];
     const tl = s.heim ? s.wir : s.ihr, tr = s.heim ? s.ihr : s.wir;
     if(mw){ const y = H - 330, h = 250, x = 56, w = W - 112;
-      ctx.save(); const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, 'rgba(6,14,36,.78)'); g.addColorStop(1, 'rgba(3,8,24,.92)'); ctx.fillStyle = g; ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 40;
+      ctx.save(); ctx.fillStyle = CI.navy;
       ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 18) : ctx.rect(x, y, w, h); ctx.fill(); ctx.restore();
       ctx.fillStyle = st.akzent; ctx.fillRect(x + 40, y, w - 80, 4);
-      pkWappenMalen(ctx, L.bild, x + 30, y + 34, 200, 128); pkWappenMalen(ctx, R.bild, x + w - 230, y + 34, 200, 128);
-      ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = '900 150px TKC'; ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 18; ctx.fillText(`${tl}:${tr}`, W / 2, y + 160); ctx.restore();
+      erWappenKlar(ctx, L.bild, x + 30, y + 34, 200, 128); erWappenKlar(ctx, R.bild, x + w - 230, y + 34, 200, 128);
+      ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = '900 150px TKC'; ctx.fillText(`${tl}:${tr}`, W / 2, y + 160); ctx.restore();
       ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.88)'; erTextPasst(ctx, L.name, '700 #px TKC', 220, 30, 18); ctx.fillText(L.name, x + 130, y + 206); erTextPasst(ctx, R.name, '700 #px TKC', 220, 30, 18); ctx.fillText(R.name, x + w - 130, y + 206); ctx.restore(); }
     else { const cy = 560 + dy * .5, gw = 250, gh = 250;
-      pkWappenMalen(ctx, L.bild, W * .2 - gw / 2, cy - gh / 2, gw, gh); pkWappenMalen(ctx, R.bild, W * .8 - gw / 2, cy - gh / 2, gw, gh);
-      ctx.save(); ctx.textAlign = 'center'; ctx.font = '900 230px TKC'; ctx.fillStyle = '#ffffff'; ctx.shadowColor = s.ausgang === 'sieg' ? 'rgba(255,170,40,.5)' : 'rgba(0,0,0,.5)'; ctx.shadowBlur = 30; ctx.fillText(`${tl}:${tr}`, W / 2, cy + 80); ctx.restore();
+      erWappenKlar(ctx, L.bild, W * .2 - gw / 2, cy - gh / 2, gw, gh); erWappenKlar(ctx, R.bild, W * .8 - gw / 2, cy - gh / 2, gw, gh);
+      ctx.save(); ctx.textAlign = 'center'; ctx.font = '900 230px TKC'; ctx.fillStyle = '#ffffff'; ctx.fillText(`${tl}:${tr}`, W / 2, cy + 80); ctx.restore();
       ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.9)'; erTextPasst(ctx, L.name, '700 #px TKC', 300, 38, 20); ctx.fillText(L.name, W * .2, cy + gh / 2 + 52); erTextPasst(ctx, R.name, '700 #px TKC', 300, 38, 20); ctx.fillText(R.name, W * .8, cy + gh / 2 + 52); ctx.restore(); } }
   // 6 Torschützen und nächstes Spiel
   if(E.info && s){ const tore = erTorText(s), y = mw ? H - 50 : H - (story ? 260 : 150);
     if(tore){ ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.92)'; const t = '⚽  ' + tore.toUpperCase(); try{ ctx.letterSpacing = '2px'; }catch(e){}
-      erTextPasst(ctx, t, '600 #px TKB', W - 160, mw ? 28 : 34, 18); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 10; ctx.fillText(t, W / 2, y); try{ ctx.letterSpacing = '0px'; }catch(e){} ctx.restore(); }
+      erTextPasst(ctx, t, '600 #px TKB', W - 160, mw ? 28 : 34, 18); ctx.fillText(t, W / 2, y); try{ ctx.letterSpacing = '0px'; }catch(e){} ctx.restore(); }
     const n = erNaechstes(s);
     if(n && !mw){ ctx.save(); ctx.textAlign = 'center'; ctx.font = '600 26px TKB'; try{ ctx.letterSpacing = '4px'; }catch(e){} ctx.fillStyle = st.akzent;
       ctx.fillText(`NÄCHSTES SPIEL  ${erDatum(n.datum).toUpperCase().replace(/\.$/, '')}  ${erWir(n.heim_key) ? 'GEGEN ' + n.gast : 'BEI ' + n.heim}`.toUpperCase(), W / 2, y + (story ? 90 : 62)); try{ ctx.letterSpacing = '0px'; }catch(e){} ctx.restore(); } }

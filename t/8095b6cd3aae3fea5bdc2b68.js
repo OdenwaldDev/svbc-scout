@@ -507,6 +507,201 @@ if(typeof dpRender === 'function'){ const _dp126 = dpRender; dpRender = function
   return r; }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm126css'; s.textContent="/* Beta 0.99.91 · Datenprüfung: Ansicht „Vereinswechsel“ (svm126.js) */\n.dpw-z{display:grid;gap:3px;padding:10px 0;border-top:1px solid var(--linie);}\n.dpw-z .lnk{justify-self:start;font-weight:700;font-size:15.5px;background:none;border:0;padding:0;color:var(--blau);cursor:pointer;text-align:left;min-height:28px;}\n.dpw-z span{font-size:14px;line-height:1.4;}\n.dpw-z em{font-style:normal;font-size:13px;font-weight:600;color:var(--gruen,#2c6b3a);}\n.dpw-z.warn em{color:#a11b12;}\n.dpw-d{border:1px solid var(--linie);border-radius:12px;padding:0 12px;margin-top:6px;}\n.dpw-d summary{min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer;}\n.dpw-tw{overflow-x:auto;margin:0 -4px 10px;}\n.dpw-d table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:420px;}\n.dpw-d th{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);padding:6px;border-bottom:1.5px solid var(--linie);}\n.dpw-d td{padding:6px;border-bottom:1px solid var(--linie);vertical-align:top;}\n.dpw-d td .lnk{background:none;border:0;padding:0;color:var(--blau);cursor:pointer;font:inherit;font-weight:600;text-align:left;}\n.g1-dq .s1-gruppe .dpw-zu{margin-left:10px;vertical-align:middle;}\n"; document.head.appendChild(s); }catch(e){} })();
+/* Vorhandene Vereinsmotive: kleine Galeriebilder, feste Originalquellen für die Ausgabe. */
+const SG_FOTO_FUNDUS = Object.freeze([
+  ['linie-abend','Linie am Abend'], ['night','Flutlicht'], ['ball-flutlicht','Ball unter Flutlicht'],
+  ['netz-nacht','Netz bei Nacht'], ['regen-nacht','Regen bei Nacht'], ['kunstrasen-flutlicht','Kunstrasen'],
+  ['mittelkreis-nebel','Mittelkreis im Nebel'], ['autumn','Herbstlaub'], ['elfmeter-herbst','Elfmeterpunkt'],
+  ['pfosten-nebel','Pfosten im Nebel'], ['eckfahne-abend','Eckfahne'], ['schuhe-abend','Schuhe'],
+  ['summer','Ball im Gras'], ['ball-gegenlicht','Gegenlicht'], ['winter','Raureif'],
+  ['tau-linie','Tau an der Linie'], ['ball-frost','Ball im Frost']
+].map(([id,titel]) => Object.freeze({id,titel})));
+const sgFotoFundus = id => SG_FOTO_FUNDUS.find(f => f.id === id) || null;
+const sgFotoFeld = feld => feld === 'fotoH' || feld === 'fotoE';
+const sgFotoEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function sgFotoPfad(p){ return typeof p === 'string' && p.length <= 300 && /^assets\/[a-z0-9_.-]+(?:\/[a-z0-9_.-]+)*\.(?:jpe?g|png|webp)$/i.test(p) && p.split('/').every(s => s !== '.' && s !== '..'); }
+function sgFotoWahl(wahl){
+  if(typeof wahl !== 'string' || wahl.length > 512) return {art:'auto'};
+  const w = wahl.trim(), id = w.startsWith('fundus:') ? w.slice(7) : w;
+  if(sgFotoFundus(id)) return {art:'fundus',id};
+  if(w.startsWith('bib:') && sgFotoPfad(w.slice(4))) return {art:'bibliothek',pfad:w.slice(4)};
+  return {art:'auto'};
+}
+function sgFotoTermin(D, feld){
+  const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(D.datum || ''));
+  const t = /^(\d{1,2}):([0-5]\d)(?::[0-5]\d)?$/.exec(String(D.zeit || '15:00'));
+  if(!d || !t || +t[1] > 23) return {datum:'',zeit:'15:00'};
+  const z = new Date(0); z.setUTCFullYear(+d[1], +d[2] - 1, +d[3]); z.setUTCHours(+t[1], +t[2], 0, 0);
+  if(z.getUTCFullYear() !== +d[1] || z.getUTCMonth() !== +d[2] - 1 || z.getUTCDate() !== +d[3]) return {datum:'',zeit:'15:00'};
+  if(feld === 'fotoE') z.setUTCMinutes(z.getUTCMinutes() + 105);
+  return {datum:z.toISOString().slice(0,10),zeit:z.toISOString().slice(11,16)};
+}
+function sgFotoAuto(D, feld){
+  const termin = sgFotoTermin(D || {}, feld), licht = typeof pkLicht === 'function' ? pkLicht(termin.datum, termin.zeit, 'auto') : {stimmung:'summer'};
+  const stimmung = ['night','summer','autumn','winter'].includes(licht && licht.stimmung) ? licht.stimmung : 'summer';
+  const auswahl = typeof pkFotoAuswahl === 'function' ? pkFotoAuswahl({datum:termin.datum,gegner:D && D.gegner || ''}, stimmung) : stimmung;
+  return sgFotoFundus(auswahl) || sgFotoFundus(stimmung);
+}
+async function sgFotoQuelle(wahl, D, feld){
+  const w = sgFotoWahl(wahl);
+  if(w.art === 'bibliothek'){
+    try{ const url = typeof sbUrl === 'function' ? await sbUrl(w.pfad) : null; if(typeof url === 'string' && url){
+      const L = typeof sbListe === 'function' ? sbListe(60) : [], m = L.find(m => m && m.pfad === w.pfad);
+      return {url,titel:String(m && m.name || 'Eigenes Foto').slice(0,120),art:'bibliothek',echt:true};
+    } }catch(e){ /* Die ausdrückliche Bildwahl bleibt bestehen und wird als fehlend geprüft. */ }
+    return {url:null,titel:'Eigenes Foto nicht erreichbar',art:'bibliothek',echt:true};
+  }
+  const f = w.art === 'fundus' ? sgFotoFundus(w.id) : sgFotoAuto(D || {}, feld);
+  return {url:'plakat/foto/' + f.id + '.webp',titel:f.titel,art:'fundus',echt:false};
+}
+function sgFotoBibliothek(A){
+  const L = A && (Array.isArray(A.bibliothek) ? A.bibliothek : Array.isArray(A.eigene) ? A.eigene : []) || [], seen = new Set();
+  return L.filter(m => m && sgFotoPfad(m.pfad) && !seen.has(m.pfad) && seen.add(m.pfad)).slice(0,60);
+}
+function sgFotoGalerieHtml(feld, wahl, A){
+  if(!sgFotoFeld(feld)) return '';
+  const w = sgFotoWahl(wahl), L = sgFotoBibliothek(A), esc = sgFotoEsc;
+  const knopf = f => `<button type="button" class="sg-fotomotiv" data-sgfundus="${f.id}" aria-pressed="${w.art === 'fundus' && w.id === f.id}" aria-label="Hintergrundmotiv: ${esc(f.titel)}"><img src="plakat/foto/klein/${f.id}.webp" alt="" loading="lazy" width="180" height="320"><span>${esc(f.titel)}</span></button>`;
+  const eigene = L.map(m => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(m.pfad) : '', an = w.art === 'bibliothek' && w.pfad === m.pfad, name = String(m.name || 'Eigenes Foto').slice(0,120);
+    return `<button type="button" class="sg-fotobibmotiv${an ? ' on' : ''}" data-sgbib="${esc(m.pfad)}" aria-pressed="${an}" aria-label="Eigenes Foto: ${esc(name)}">${u ? `<img src="${esc(u)}" alt="" loading="lazy">` : '<span class="sg-fotoplatz" aria-hidden="true">Foto</span>'}<span>${esc(name)}</span></button>`;
+  }).join('');
+  return `<div class="sg-foto sg-fotowahl" data-sgfoto="${feld}"><p class="sg-l">${feld === 'fotoE' ? 'Ergebnis-Hintergrund' : 'Ankündigungs-Hintergrund'}</p>
+    <p class="sg-fotohin">Vereinsmotive auswählen oder ein eigenes Foto verwenden.</p>
+    <div class="sg-fotoreihe" role="group" aria-label="Vereinsmotive"><button type="button" class="sg-fotoauto" data-sgfotoauto aria-pressed="${w.art === 'auto'}"><b>Auto</b><span>${feld === 'fotoE' ? 'Lichtstimmung nach dem Spiel' : 'Lichtstimmung zum Anstoß'}</span></button>${SG_FOTO_FUNDUS.map(knopf).join('')}</div>
+    <details class="sg-fotobibliothek"${w.art === 'bibliothek' ? ' open' : ''}><summary>Eigene Bibliothek (${L.length})</summary>${L.length ? `<div class="sg-bib">${eigene}</div>` : '<p class="sg-fotohin">Noch keine eigenen Hintergrundfotos in der Bibliothek.</p>'}</details>
+    <label class="sg-up sg-fotoupload" role="button" tabindex="0" data-sgfotohoch aria-label="Eigenes Foto hochladen"><span data-sbt>Eigenes Foto hochladen</span><input type="file" accept="image/*" data-sgup="${feld}" hidden></label></div>`;
+}
+function sgFotoBinden(h){
+  if(!h || typeof h.querySelectorAll !== 'function') return;
+  h.querySelectorAll('[data-sgfotohoch]').forEach(l => { l.onkeydown = ev => {
+    if(ev.key !== 'Enter' && ev.key !== ' ') return; const inp = l.querySelector('[data-sgup]');
+    if(inp && !inp.disabled){ ev.preventDefault(); inp.click(); }
+  }; });
+  const binden = (selector, wert) => h.querySelectorAll(selector).forEach(b => { b.onclick = () => {
+    if(h.isConnected === false || typeof h.contains === 'function' && !h.contains(b)) return;
+    const p = b.closest('[data-sgfoto]'), feld = p && p.dataset.sgfoto, v = wert(b);
+    if(!sgFotoFeld(feld) || v === null || typeof sgSetzen !== 'function' || typeof sgBald !== 'function') return;
+    sgSetzen(feld, v); sgBald(true, true);
+  }; });
+  binden('[data-sgfundus]', b => sgFotoFundus(b.dataset.sgfundus) ? 'fundus:' + b.dataset.sgfundus : null);
+  binden('[data-sgfotoauto]', () => '');
+}
+function sgFotoQualitaet(D, A, feld, fmt){
+  if(!sgFotoFeld(feld)) return '';
+  const im = A && A[feld], iw = im && (im.naturalWidth || im.width), ih = im && (im.naturalHeight || im.height);
+  if(!(Number.isFinite(iw) && Number.isFinite(ih) && iw > 0 && ih > 0)) return '';
+  const quer = fmt === 'quer' && feld === 'fotoH'; const hoehe = feld === 'fotoE' ? fmt === 'story' ? 1920 : 1350 : (D && D.wirHeim === false ? 940 : 1000) + (fmt === 'story' ? 285 : 0); let scale = Math.max(1080 / iw, hoehe / ih);
+  if(quer){
+    const zoom = D && Number.isFinite(Number(D.querZoom)) ? Math.max(1, Math.min(2, Number(D.querZoom))) : 1;
+    const crop = typeof sgQuerCrop === 'function' ? sgQuerCrop(iw, ih, D && D.querY, zoom) : {sw:1920 / (Math.max(1920 / iw, 1080 / ih) * zoom)};
+    if(!crop || !(crop.sw > 0)) return ''; scale = 1920 / crop.sw;
+  }
+  if(!(scale > 1.5)) return '';
+  const faktor = scale.toFixed(1).replace('.', ',');
+  return `${iw} × ${ih} Pixel: ${quer ? 'im Querbanner' : 'im Motiv'} ${faktor}-fach vergrößert. ${quer ? 'Nutze möglichst ein größeres Querfoto oder weniger Zoom.' : 'Nutze möglichst ein größeres Original.'}`;
+}
+
+/* Auswahl und Tastaturposition bleiben auch nach einer neuen Bildladung stehen. */
+function sgFotoZustand(h){
+  const A = document.activeElement, innen = A && h.contains(A), p = innen && typeof A.closest === 'function' ? A.closest('[data-sgfoto]') : null;
+  let fokus = '';
+  if(p && sgFotoFeld(p.dataset.sgfoto)){
+    const basis = '[data-sgfoto="' + p.dataset.sgfoto + '"] ', d = A.dataset || {};
+    if(sgFotoFundus(d.sgfundus)) fokus = basis + '[data-sgfundus="' + d.sgfundus + '"]';
+    else if(d.sgfotoauto != null) fokus = basis + '[data-sgfotoauto]';
+    else if(sgFotoPfad(d.sgbib)) fokus = basis + '[data-sgbib="' + d.sgbib + '"]';
+    else if(d.sgfotohoch != null) fokus = basis + '[data-sgfotohoch]';
+  }
+  const reihen = [...h.querySelectorAll('.sg-fotoreihe')].map(e => ({feld:e.closest('[data-sgfoto]').dataset.sgfoto,links:e.scrollLeft}));
+  const offen = [...h.querySelectorAll('.sg-fotobibliothek')].filter(e => e.open).map(e => e.closest('[data-sgfoto]').dataset.sgfoto);
+  return {fokus,reihen,offen};
+}
+function sgFotoWiederherstellen(h, z){
+  if(!z) return;
+  for(const r of z.reihen){ const e = h.querySelector('[data-sgfoto="' + r.feld + '"] .sg-fotoreihe'); if(e) e.scrollLeft = r.links; }
+  for(const feld of z.offen){ const e = h.querySelector('[data-sgfoto="' + feld + '"] .sg-fotobibliothek'); if(e) e.open = true; }
+  if(z.fokus){ const e = h.querySelector(z.fokus); if(e) e.focus({preventScroll:true}); }
+}
+
+/* Ergebnis: Originalfoto, Wappen und belegte Tore. Keine erzeugten Bildtexte. */
+const sgTorMinuteGueltig = t => Number.isInteger(t.m) && t.m >= 1 && t.m <= 130 && Number.isInteger(t.x || 0) && (t.x || 0) >= 0 && (t.x || 0) <= 20;
+function sgErgebnisTore(D){
+  const tore = (D.tore || []).filter(t => t.wir), gruppen = [], map = new Map();
+  let fehlendeNamen = 0, fehlendeMinuten = 0;
+  const erwartet = D.wirHeim ? D.toreH : D.toreG;
+  const sortiert = tore.slice().sort((a,b) => (+a.m || 0) - (+b.m || 0) || (+a.x || 0) - (+b.x || 0));
+  for(const t of sortiert){
+    const name = String(t.name || '').trim(), minute = sgTorMinuteGueltig(t);
+    if(!name) fehlendeNamen++; if(!minute) fehlendeMinuten++;
+    if(!name) continue;
+    const eigentor = t.art === 'et', key = name.toLocaleLowerCase('de') + ':' + eigentor;
+    let g = map.get(key); if(!g){ g = { name, eigentor, zeiten:[] }; map.set(key, g); gruppen.push(g); }
+    if(minute) g.zeiten.push(sgMin(t) + (t.art === 'elf' ? ' (Elfmeter)' : ''));
+  }
+  return { gruppen, erwartet, anzahl:tore.length, fehlendeNamen, fehlendeMinuten,
+    vollstaendig:Number.isInteger(erwartet) && erwartet >= 0 && erwartet === tore.length && !fehlendeNamen && !fehlendeMinuten };
+}
+
+/* Umbruch an Wortgrenzen statt abgeschnittener Namen. Passt selbst ein Wort
+   nicht, meldet das Motiv den Überlauf und bleibt vor dem Export gesperrt. */
+function sgErgebnisZeilen(ctx, text, breite, schrift){
+  ctx.font = schrift; const zeilen = []; let zeile = '';
+  for(const wort of String(text || '').trim().split(/\s+/).filter(Boolean)){
+    const neu = zeile ? zeile + ' ' + wort : wort;
+    if(zeile && ctx.measureText(neu).width > breite){ zeilen.push(zeile); zeile = wort; } else zeile = neu;
+  }
+  if(zeile) zeilen.push(zeile); return zeilen;
+}
+function sgErgebnisName(ctx, name, cx, y, breite, key){
+  let s = 44, zeilen;
+  do{ zeilen = sgErgebnisZeilen(ctx, String(name).toUpperCase(), breite, '800 ' + s + 'px SGC'); if(zeilen.length <= 2) break; s -= 2; }while(s >= 32);
+  if(zeilen.length > 2) SG.ueber[key] = true;
+  zeilen.forEach((z,i) => sgT(ctx, z, cx, y + i * (s + 5), {fam:'SGC',w:800,s,c:CI.weiss,a:'c',max:breite,min:1,k:key}));
+}
+function sgErgebnisMalen(ctx, D, A){
+  const oy = SG.oy || 0;
+  ctx.save(); ctx.filter = 'none'; ctx.shadowBlur = 0; ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = CI.navy; ctx.fillRect(0, -oy, SG_W, SG_H + oy * 2);
+  sgCover(ctx, A.fotoE, 0, -oy, SG_W, SG_H + oy * 2, .35);
+  /* Ein ruhiger Leseschutz, ohne Lichtstrahlen, Glanz oder Weichzeichnung. */
+  ctx.fillStyle = 'rgba(4,17,39,.24)'; ctx.fillRect(0, -oy, SG_W, 640 + oy);
+  sgKopf(ctx, D, true);
+  sgT(ctx, D.h1.toUpperCase(), SG_X, D.h2 ? 372 : 435, {fam:'Anton',w:400,cap:100,c:CI.weiss,max:936,min:.66,k:'h1'});
+  sgT(ctx, D.h2.toUpperCase(), SG_X, 499, {fam:'Anton',w:400,cap:100,c:CI.orange,max:936,min:.66,k:'h2'});
+  ctx.fillStyle = 'rgba(4,17,39,.78)'; ctx.fillRect(0, 640, SG_W, SG_H - 640 + oy);
+  ctx.fillStyle = CI.orange; ctx.fillRect(SG_X, 640, 72, 5);
+  sgT(ctx, 'ENDSTAND', SG_W / 2, 701, {fam:'SGB',w:700,s:23,c:CI.grau,a:'c',sp:4});
+  const links = D.wirHeim ? A.wWir : A.wGeg, rechts = D.wirHeim ? A.wGeg : A.wWir;
+  for(const [im,cx] of [[links,190],[rechts,890]]) if(im){
+    let h = 160; const w = sgWappenBreite(im,h); if(w > 210) h *= 210 / w;
+    sgWappenMalen(ctx, im, cx - sgWappenBreite(im,h) / 2, 811, h);
+  }
+  const basis = 201, schrift = basis / sgCapR(ctx, 'Anton', 400);
+  ctx.font = '400 ' + schrift + 'px Anton';
+  const faktor = Math.min(1, 178 / Math.max(ctx.measureText(String(D.toreH)).width, ctx.measureText(String(D.toreG)).width)), cap = basis * faktor, scoreY = 909 - (basis - cap) / 2;
+  sgT(ctx, D.toreH, 502, scoreY, {fam:'Anton',w:400,cap,c:CI.weiss,a:'r',max:178,min:1,k:'toreH'});
+  sgT(ctx, D.toreG, 578, scoreY, {fam:'Anton',w:400,cap,c:CI.weiss,max:178,min:1,k:'toreG'});
+  ctx.fillStyle = CI.orange; ctx.fillRect(530, 767, 20, 20); ctx.fillRect(530, 844, 20, 20);
+  sgErgebnisName(ctx, D.heim, 249, 971, 354, D.wirHeim ? 'wir' : 'gegner');
+  sgErgebnisName(ctx, D.gast, 831, 971, 354, D.wirHeim ? 'gegner' : 'wir');
+  const T = sgErgebnisTore(D), L = T.gruppen;
+  if(D.zeigeTore !== false && T.erwartet > 0 && L.length){
+    sgLinie(ctx, SG_X, 1046, SG_R, CI.linie, 2);
+    sgT(ctx, 'UNSERE TORE', SG_X, 1082, {fam:'SGB',w:700,s:22,c:CI.blau,sp:2.2});
+    if(L.length > 8) SG.ueber.ergebnisTore = true;
+    const zwei = L.length > 4, spalten = zwei ? 2 : 1, zeilen = Math.ceil(Math.min(8,L.length) / spalten), schritt = Math.min(69, 230 / Math.max(1,zeilen));
+    L.slice(0,8).forEach((g,i) => {
+      const sp = zwei ? i >= zeilen ? 1 : 0 : 0, row = zwei ? i % zeilen : i;
+      const x = sp ? 570 : SG_X, y = 1127 + row * schritt, max = zwei ? 438 : 936, s = zwei ? 32 : 42;
+      const name = g.name + (g.eigentor ? ' (Eigentor)' : ''), zeiten = g.zeiten.join(', ');
+      /* Namen und Minuten haben feste Zeilen; selbst lange Namen bleiben Text. */
+      sgT(ctx, name, x, y, {fam:'SGB',w:600,s,c:CI.weiss,max,min:zwei ? .80 : .78,k:'ergebnisTor' + i});
+      sgT(ctx, zeiten, x, y + 27, {fam:'SGB',w:500,s:zwei ? 23 : 26,c:CI.grau,max,min:.8,k:'ergebnisMinute' + i});
+    });
+  }
+  ctx.restore();
+}
+
 /* =====================================================================
    Beta 0.99.92 · Spieltagsstudio: der Spieltag mit den vier Motiven der Designbibel
    Albert und Lukas, 18.11.2026: „Aufmachen, und es ist schon vorbelegt.“
@@ -527,7 +722,7 @@ const SG_W = 1080, SG_H = 1350, SG_X = 72, SG_R = 1008;
 /* Story 9:16: dasselbe Motiv, 285 Pixel tiefer gesetzt, damit oben und unten frei bleibt, was Instagram mit Bedienung überdeckt; der Grund läuft weiter */
 const SG_STORY_H = 1920, SG_OY = 285;
 const SG_QUER_W = 1920, SG_QUER_H = 1080;
-const SG_VERSION = { H:'H 1.1', A:'A 1.0', E:'E 1.0', S:'S 1.0' };
+const SG_VERSION = { H:'H 1.1', A:'A 1.0', E:'E 2.0', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const SG_TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -552,7 +747,7 @@ function sgDatumTeile(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '')
   const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return { lang:`${+m[3]}. ${SG_MONAT[+m[2] - 1]} ${m[1]}`, kurz:`${m[3]}.${m[2]}.${m[1]}`, tag:SG_TAG[d.getUTCDay()] }; }
 const sgSaison = s => /^\d{4}$/.test(s || '') ? `20${s.slice(0, 2)}/${s.slice(2)}` : String(s || '');
 const sgSlug = n => String(n || '').replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/Ä/g, 'Ae').replace(/Ö/g, 'Oe').replace(/Ü/g, 'Ue').replace(/ß/g, 'ss').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-const sgMin = t => t.m + (t.x ? '+' + t.x : '') + '’';
+const sgMin = t => t.m > 0 ? t.m + (t.x ? '+' + t.x : '') + '’' : 'XX’';
 
 /* ---------- Zeichnen: Text mit Laufweite, Größe über die Versalhöhe, Überlauf merken ---------- */
 const sgCapCache = new Map();
@@ -682,24 +877,8 @@ function sgQuer(ctx, D, A){
   sgT(ctx, D.ort ? 'Spielort: ' + D.ort : 'Spielort bitte ergänzen', 96, 1000, { fam:'SGB', w:700, s:42, c:CI.weiss, max:1728, min:.85, k:'querOrt' });
 }
 
-/* ---------- Motiv E: Endergebnis, bewusst ohne Torschützen ---------- */
-function sgEMalen(ctx, D, A){
-  ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_W, SG_H);
-  sgCover(ctx, A.fotoE, 0, 197, SG_W, 646, .3);
-  const g = ctx.createLinearGradient(0, 430, 0, 843); g.addColorStop(0, 'rgba(4,17,39,0)'); g.addColorStop(.7, 'rgba(4,17,39,.74)'); g.addColorStop(1, 'rgba(4,17,39,.94)'); ctx.fillStyle = g; ctx.fillRect(0, 430, SG_W, 413);
-  sgKopf(ctx, D, true); sgWappen(ctx, A);
-  if(D.h2){ sgT(ctx, D.h1.toUpperCase(), SG_X, 664, { fam:'Anton', w:400, cap:69, c:CI.weiss, max:936, min:.7, k:'h1' }); sgT(ctx, D.h2.toUpperCase(), SG_X, 787, { fam:'Anton', w:400, cap:108, c:CI.orange, max:936, min:.6, k:'h2' }); }
-  else sgT(ctx, D.h1.toUpperCase(), SG_X, 787, { fam:'Anton', w:400, cap:108, c:CI.orange, max:936, min:.6, k:'h1' });
-  sgLinie(ctx, SG_X, 842, SG_R, 'rgba(170,181,200,.32)', 2); sgLinie(ctx, SG_X, 841, 158, CI.orange, 4);
-  /* Ergebnis: Ziffern um den Doppelpunkt, Vereinsnamen außen in zwei kurzen Zeilen */
-  const cap = 272, mitte = 540, a = String(D.toreH), b = String(D.toreG); ctx.font = `400 ${cap / sgCapR(ctx, 'Anton', 400)}px Anton`;
-  const wa = ctx.measureText(a).width, wb = ctx.measureText(b).width, f = Math.min(1, 300 / Math.max(wa, wb));
-  sgT(ctx, a, mitte - 44, 1216 - (1 - f) * cap * .5, { fam:'Anton', w:400, cap:cap * f, c:CI.weiss, a:'r', k:'toreH' }); sgT(ctx, b, mitte + 44, 1216 - (1 - f) * cap * .5, { fam:'Anton', w:400, cap:cap * f, c:CI.weiss, k:'toreG' });
-  ctx.fillStyle = CI.orange; ctx.fillRect(mitte - 23, 1006, 46, 46); ctx.fillRect(mitte - 23, 1112, 46, 46);
-  const aussen = Math.max(wa, wb) * f + 44 + 28, platz = mitte - aussen - SG_X;
-  const label = (name, links, k) => { const Z = sgZweiZeilen(name), y0 = Z.length === 1 ? 1092 : 1047;
-    Z.forEach((z, i) => sgT(ctx, z, links ? SG_X : SG_R, y0 + i * 58, { fam:'SGC', w:800, cap:30, c:CI.weiss, a:links ? 'l' : 'r', max:Math.max(150, platz), min:.62, k })); };
-  label(D.heim, true, D.wirHeim ? 'wir' : 'gegner'); label(D.gast, false, D.wirHeim ? 'gegner' : 'wir'); }
+/* ---------- Motiv E: Ergebnis mit Originalfoto und unseren Torschützen ---------- */
+function sgEMalen(ctx, D, A){ sgErgebnisMalen(ctx, D, A); }
 
 /* ---------- Motiv S: Spielverlauf, Tor für Tor ---------- */
 function sgS(ctx, D, A, seite){
@@ -773,10 +952,10 @@ function sgQuelle(S){ const nm = k => sgName((S.namen || {})[k] || ''), wirS = S
   const A = S.aufstellung || {}, start = (A.start || []).map(k => Object.assign({ name:nm(k), c:k === A.c }, A.tw ? { tw:k === A.tw } : {})).filter(p => p.name);
   const bank = (A.bank || []).map(k => ({ name:nm(k), ein:ein.get(nm(k)) || '' })).filter(p => p.name);
   return { tore, start, bank }; }
-function sgVorschlaege(D){ const g = D.gegner.toUpperCase(), a = D.wirHeim ? D.toreH : D.toreG, b = D.wirHeim ? D.toreG : D.toreH, heim = D.wirHeim, L = [];
-  if(a > b){ L.push([heim ? 'Heimsieg gegen' : 'Auswärtssieg bei', g + '.']); L.push(['Drei Punkte', heim ? 'zuhause.' : 'mitgenommen.']); if(a - b >= 3) L.push([`${a}:${b}.`, 'Klare Sache.']); else L.push([`${a}:${b} gegen`, g + '.']); }
-  else if(a === b){ L.push(['Punkt gegen', g + '.']); L.push(['Punkteteilung', heim ? 'zuhause.' : 'auswärts.']); L.push(a ? [`${a + b} Tore,`, 'ein Punkt.'] : ['Keine Tore,', 'ein Punkt.']); }
-  else { L.push(['Niederlage gegen', g + '.']); L.push([`${a}:${b} gegen`, g + '.']); L.push(['Heute', 'keine Punkte.']); }
+function sgVorschlaege(D){ const punkte = ['A','D2'].includes(D.sub) && !/pokal|freundschaft|testspiel/i.test(D.wettbewerb || ''), g = D.gegner.toUpperCase(), a = D.wirHeim ? D.toreH : D.toreG, b = D.wirHeim ? D.toreG : D.toreH, heim = D.wirHeim, L = [];
+  if(a > b){ L.push([heim ? 'Heim' : 'Auswärts', 'Sieg.']); L.push([heim ? 'Heimsieg gegen' : 'Auswärtssieg bei', g + '.']); if(punkte) L.push(['Drei Punkte', heim ? 'zuhause.' : 'mitgenommen.']); if(a - b >= 3) L.push([`${a}:${b}.`, 'Klare Sache.']); else L.push([`${a}:${b} gegen`, g + '.']); }
+  else if(a === b){ L.push(['Unentschieden.', '']); L.push([`${a}:${b} gegen`, g + '.']); if(punkte){ L.push(['Punkteteilung', heim ? 'zuhause.' : 'auswärts.']); L.push(a ? [`${a + b} Tore,`, 'ein Punkt.'] : ['Keine Tore,', 'ein Punkt.']); } }
+  else { L.push(['Niederlage.', '']); L.push(['Niederlage gegen', g + '.']); L.push([`${a}:${b} gegen`, g + '.']); }
   return L; }
 function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S), person = sgPerson(S.sub);
   const ohne = n => String(n || '').replace(/\s*\((FB|H|FB, ?H)[^)]*\)\s*$/i, '').trim();

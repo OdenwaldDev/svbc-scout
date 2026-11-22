@@ -423,7 +423,7 @@ function tkPflege(){ const sub = TKR.sub, L = (TKR.kader[sub] = TKR.kader[sub] |
 const ERG = { spiele:[], idx:0, format:'quadrat', wort:'', bg:'', spieler:'', zeigeSpieler:true, text:'', variante:0, bib:[], neu:false,
   hand:{ gegner:'', heim:true, wir:'', ihr:'', sub:'A' },
   ebenen:{ bg:true, stimmung:true, wort:true, spieler:true, tafel:true, info:true } };
-const ER_EBENEN = [['bg','Hintergrund'],['stimmung','Stimmung und Licht'],['wort','Schriftzug'],['spieler','Matchwinner'],['tafel','Ergebnistafel'],['info','Mannschaft, Datum, Torschützen']];
+const ER_EBENEN = [['bg','Hintergrund'],['stimmung','Leseschutz'],['wort','Schriftzug'],['spieler','Matchwinner'],['tafel','Ergebnistafel'],['info','Mannschaft, Datum, Torschützen']];
 const ER_BG = { night:['plakat/foto/night.webp','Flutlicht'], summer:['plakat/foto/summer.webp','Ball'], autumn:['plakat/foto/autumn.webp','Herbst'], winter:['plakat/foto/winter.webp','Frost'] };
 const ER_STIL = {
   sieg:{ akzent:'#ffc23d', wortVon:'#ffffff', wortBis:'#ffd36b', bg:'night' },
@@ -514,28 +514,21 @@ function erRegen(ctx, W, H){ ctx.save(); ctx.strokeStyle = 'rgba(190,210,240,.10
 function erTextPasst(ctx, t, schrift, max, groesse, min){ let fs = groesse; ctx.font = schrift.replace('#', fs); let w = ctx.measureText(t).width;
   if(w > max){ fs = Math.max(min, fs * max / w); ctx.font = schrift.replace('#', fs); } return fs; }
 
+function erWappenKlar(ctx, img, x, y, bw, bh){
+  if(!img) return; const nw = img.naturalWidth || img.width, nh = img.naturalHeight || img.height;
+  if(!nw || !nh) return; const f = Math.min(bw / nw, bh / nh), w = nw * f, h = nh * f;
+  ctx.drawImage(img, x + (bw - w) / 2, y + (bh - h) / 2, w, h);
+}
+
 function erMalen(cv, S, A){
   const [W, H] = TK_FORMATE[S.format] || TK_FORMATE.quadrat; cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d'); ctx.imageSmoothingQuality = 'high';
-  const s = S.spiel, E = S.ebenen, st = ER_STIL[s ? s.ausgang : 'remis'], dy = H - 1080, story = dy > 400, mw = S.matchwinner && A.foto && E.spieler;
-  // 1 Hintergrund
-  ctx.fillStyle = '#050c1f'; ctx.fillRect(0, 0, W, H);
+  const s = S.spiel, E = S.ebenen, st = { akzent:s && s.ausgang === 'sieg' ? CI.orange : CI.blau }, dy = H - 1080, story = dy > 400, mw = S.matchwinner && A.foto && E.spieler;
+  // Originalfoto mit ruhigem Leseschutz, ohne künstliche Unschärfe.
+  ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, W, H);
   if(E.bg && A.bg){ const b = A.bg, bw0 = b.naturalWidth || b.width, bh0 = b.naturalHeight || b.height, sc = Math.max(W / bw0, H / bh0), bw = bw0 * sc, bh = bh0 * sc;
-    // Mit Matchwinner wird der Hintergrund weich (Tiefenschärfe), damit der Spieler vorne steht
-    ctx.save(); ctx.filter = (s && s.ausgang === 'niederlage' ? 'saturate(.35) brightness(.86)' : s && s.ausgang === 'sieg' ? 'saturate(.85) brightness(.95)' : 'saturate(.6) brightness(.88)') + (mw ? ' blur(7px)' : '');
-    ctx.drawImage(b, (W - bw) / 2, (H - bh) / 2, bw, bh); ctx.restore(); }
-  // 2 Stimmung
-  if(E.stimmung && s){ ctx.save();
-    ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = s.ausgang === 'sieg' ? 'rgba(40,30,70,.55)' : s.ausgang === 'niederlage' ? 'rgba(20,32,58,.55)' : 'rgba(6,22,64,.55)'; ctx.fillRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'screen';
-    if(s.ausgang === 'sieg'){ const g = ctx.createRadialGradient(W * .5, 260 + dy * .3, 20, W * .5, 260 + dy * .3, W * .75); g.addColorStop(0, 'rgba(255,190,70,.42)'); g.addColorStop(.5, 'rgba(255,140,30,.12)'); g.addColorStop(1, 'rgba(255,140,30,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = .16; for(let i = 0; i < 7; i++){ const a = -1.25 + i * .19; ctx.save(); ctx.translate(W * .5, -60); ctx.rotate(a); const l = ctx.createLinearGradient(0, 0, 0, H); l.addColorStop(0, 'rgba(255,220,150,.9)'); l.addColorStop(1, 'rgba(255,220,150,0)'); ctx.fillStyle = l; ctx.fillRect(-18 - i % 2 * 14, 0, 36 + i % 2 * 28, H * 1.2); ctx.restore(); }
-      ctx.globalAlpha = 1; }
-    else { const g = ctx.createRadialGradient(W * .5, 300 + dy * .3, 20, W * .5, 300 + dy * .3, W * .7); g.addColorStop(0, s.ausgang === 'remis' ? 'rgba(40,120,255,.28)' : 'rgba(120,150,200,.12)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
-    ctx.restore();
-    const v = ctx.createRadialGradient(W * .5, H * .45, W * .2, W * .5, H * .5, Math.max(W, H) * .78); v.addColorStop(0, 'rgba(2,6,20,0)'); v.addColorStop(1, s.ausgang === 'niederlage' ? 'rgba(2,6,20,.9)' : 'rgba(2,6,20,.8)'); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
-    if(s.ausgang === 'sieg') erFunken(ctx, W, H, st.akzent, 70, 1959);
-    if(s.ausgang === 'niederlage') erRegen(ctx, W, H); }
+    ctx.drawImage(b, (W - bw) / 2, (H - bh) / 2, bw, bh); }
+  if(E.stimmung){ ctx.fillStyle = 'rgba(4,17,39,.44)'; ctx.fillRect(0, 0, W, H); }
   // Kopfzeile: Mannschaft links, Datum rechts
   if(E.info && s){ ctx.save(); ctx.font = '600 28px TKB'; try{ ctx.letterSpacing = '6px'; }catch(e){} ctx.fillStyle = st.akzent; ctx.textBaseline = 'alphabetic';
     const oben = story ? 130 : 78; ctx.fillText(s.sub === 'D2' ? 'ZWEITE MANNSCHAFT' : 'ERSTE MANNSCHAFT', 80, oben); ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,255,255,.8)';
@@ -545,37 +538,33 @@ function erMalen(cv, S, A){
   // Schriftgröße zuerst, dann die Grundlinie so, dass der Schriftzug nie in die Kopfzeile ragt
   let wfs = 300; if(S.wort){ ctx.save(); ctx.font = `900 300px TKC`; wfs = Math.min(270, 300 * (W * .9) / Math.max(1, ctx.measureText(S.wort).width)); ctx.restore(); }
   const wortY = Math.max((mw ? 330 : 300) + dy * (story ? .28 : .3), (story ? 200 : 132) + wfs * .74);
-  if(E.wort && S.wort){ const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-    const fs = wfs; x.font = `900 ${fs}px TKC`; x.textAlign = 'center';
-    const g = x.createLinearGradient(0, wortY - fs * .72, 0, wortY); g.addColorStop(0, st.wortVon); g.addColorStop(1, st.wortBis); x.fillStyle = g; x.fillText(S.wort, W / 2, wortY);
-    x.globalCompositeOperation = 'source-atop'; x.globalAlpha = .45; x.fillStyle = tkKornMuster(x); x.fillRect(0, 0, W, H);
-    ctx.save(); ctx.shadowColor = s && s.ausgang === 'sieg' ? 'rgba(255,170,40,.45)' : 'rgba(30,120,255,.3)'; ctx.shadowBlur = 44; ctx.globalAlpha = s && s.ausgang === 'niederlage' ? .88 : 1; ctx.drawImage(c, 0, 0); ctx.restore(); }
+  if(E.wort && S.wort){ ctx.save(); ctx.font = `900 ${wfs}px TKC`; ctx.textAlign = 'center';
+    ctx.fillStyle = s && s.ausgang === 'sieg' ? CI.orange : CI.weiss; ctx.fillText(S.wort, W / 2, wortY); ctx.restore(); }
   // 4 Matchwinner (freigestellt, steht auf der Unterkante hinter der Tafel)
   if(mw){ const img = A.foto, m = tkUmriss(img), top = wortY - 150, hoch = H - top, unten = m.y + m.h >= img.naturalHeight * .97;
     const sc = Math.min(hoch / m.h, (W * (unten ? .9 : .7)) / m.w), dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
     const x0 = W * .5 - (m.x + m.w / 2) * sc, y0 = unten ? H + 2 - (m.y + m.h) * sc : top - m.y * sc;
-    ctx.save(); ctx.shadowColor = s.ausgang === 'sieg' ? 'rgba(255,180,60,.55)' : 'rgba(50,130,255,.5)'; ctx.shadowBlur = 36; ctx.drawImage(img, x0, y0, dw, dh); ctx.restore();
-    ctx.save(); ctx.shadowColor = 'rgba(0,6,24,.6)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 16; ctx.drawImage(img, x0, y0, dw, dh); ctx.restore();
+    ctx.drawImage(img, x0, y0, dw, dh);
     if(!m.frei){ const g = ctx.createLinearGradient(0, y0 + dh * .7, 0, y0 + dh); g.addColorStop(0, 'rgba(5,12,31,0)'); g.addColorStop(1, 'rgba(5,12,31,1)'); ctx.fillStyle = g; ctx.fillRect(x0, y0 + dh * .7, dw, dh * .3 + 2); } }
   // 5 Ergebnistafel
   if(E.tafel && s){ const wirName = s.sub === 'D2' ? 'SV/BSC II' : 'SV/BSC', gName = String(s.gegner || '').toUpperCase();
     const links = { bild:A.logo, name:wirName }, rechts = { bild:A.gegner, name:gName }, [L, R] = s.heim ? [links, rechts] : [rechts, links];
     const tl = s.heim ? s.wir : s.ihr, tr = s.heim ? s.ihr : s.wir;
     if(mw){ const y = H - 330, h = 250, x = 56, w = W - 112;
-      ctx.save(); const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, 'rgba(6,14,36,.78)'); g.addColorStop(1, 'rgba(3,8,24,.92)'); ctx.fillStyle = g; ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 40;
+      ctx.save(); ctx.fillStyle = CI.navy;
       ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 18) : ctx.rect(x, y, w, h); ctx.fill(); ctx.restore();
       ctx.fillStyle = st.akzent; ctx.fillRect(x + 40, y, w - 80, 4);
-      pkWappenMalen(ctx, L.bild, x + 30, y + 34, 200, 128); pkWappenMalen(ctx, R.bild, x + w - 230, y + 34, 200, 128);
-      ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = '900 150px TKC'; ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 18; ctx.fillText(`${tl}:${tr}`, W / 2, y + 160); ctx.restore();
+      erWappenKlar(ctx, L.bild, x + 30, y + 34, 200, 128); erWappenKlar(ctx, R.bild, x + w - 230, y + 34, 200, 128);
+      ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = '900 150px TKC'; ctx.fillText(`${tl}:${tr}`, W / 2, y + 160); ctx.restore();
       ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.88)'; erTextPasst(ctx, L.name, '700 #px TKC', 220, 30, 18); ctx.fillText(L.name, x + 130, y + 206); erTextPasst(ctx, R.name, '700 #px TKC', 220, 30, 18); ctx.fillText(R.name, x + w - 130, y + 206); ctx.restore(); }
     else { const cy = 560 + dy * .5, gw = 250, gh = 250;
-      pkWappenMalen(ctx, L.bild, W * .2 - gw / 2, cy - gh / 2, gw, gh); pkWappenMalen(ctx, R.bild, W * .8 - gw / 2, cy - gh / 2, gw, gh);
-      ctx.save(); ctx.textAlign = 'center'; ctx.font = '900 230px TKC'; ctx.fillStyle = '#ffffff'; ctx.shadowColor = s.ausgang === 'sieg' ? 'rgba(255,170,40,.5)' : 'rgba(0,0,0,.5)'; ctx.shadowBlur = 30; ctx.fillText(`${tl}:${tr}`, W / 2, cy + 80); ctx.restore();
+      erWappenKlar(ctx, L.bild, W * .2 - gw / 2, cy - gh / 2, gw, gh); erWappenKlar(ctx, R.bild, W * .8 - gw / 2, cy - gh / 2, gw, gh);
+      ctx.save(); ctx.textAlign = 'center'; ctx.font = '900 230px TKC'; ctx.fillStyle = '#ffffff'; ctx.fillText(`${tl}:${tr}`, W / 2, cy + 80); ctx.restore();
       ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.9)'; erTextPasst(ctx, L.name, '700 #px TKC', 300, 38, 20); ctx.fillText(L.name, W * .2, cy + gh / 2 + 52); erTextPasst(ctx, R.name, '700 #px TKC', 300, 38, 20); ctx.fillText(R.name, W * .8, cy + gh / 2 + 52); ctx.restore(); } }
   // 6 Torschützen und nächstes Spiel
   if(E.info && s){ const tore = erTorText(s), y = mw ? H - 50 : H - (story ? 260 : 150);
     if(tore){ ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,255,255,.92)'; const t = '⚽  ' + tore.toUpperCase(); try{ ctx.letterSpacing = '2px'; }catch(e){}
-      erTextPasst(ctx, t, '600 #px TKB', W - 160, mw ? 28 : 34, 18); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 10; ctx.fillText(t, W / 2, y); try{ ctx.letterSpacing = '0px'; }catch(e){} ctx.restore(); }
+      erTextPasst(ctx, t, '600 #px TKB', W - 160, mw ? 28 : 34, 18); ctx.fillText(t, W / 2, y); try{ ctx.letterSpacing = '0px'; }catch(e){} ctx.restore(); }
     const n = erNaechstes(s);
     if(n && !mw){ ctx.save(); ctx.textAlign = 'center'; ctx.font = '600 26px TKB'; try{ ctx.letterSpacing = '4px'; }catch(e){} ctx.fillStyle = st.akzent;
       ctx.fillText(`NÄCHSTES SPIEL  ${erDatum(n.datum).toUpperCase().replace(/\.$/, '')}  ${erWir(n.heim_key) ? 'GEGEN ' + n.gast : 'BEI ' + n.heim}`.toUpperCase(), W / 2, y + (story ? 90 : 62)); try{ ctx.letterSpacing = '0px'; }catch(e){} ctx.restore(); } }
