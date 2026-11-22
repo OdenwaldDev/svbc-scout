@@ -526,6 +526,7 @@ const CI = { navy:'#041127', navy2:'#0B1A31', blau:'#2F8BEF', orange:'#FF8731', 
 const SG_W = 1080, SG_H = 1350, SG_X = 72, SG_R = 1008;
 /* Story 9:16: dasselbe Motiv, 285 Pixel tiefer gesetzt, damit oben und unten frei bleibt, was Instagram mit Bedienung überdeckt; der Grund läuft weiter */
 const SG_STORY_H = 1920, SG_OY = 285;
+const SG_QUER_W = 1920, SG_QUER_H = 1080;
 const SG_VERSION = { H:'H 1.0', A:'A 1.0', E:'E 1.0', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
@@ -639,6 +640,33 @@ function sgH(ctx, D, A){
   ctx.fillStyle = 'rgba(246,246,242,.7)'; ctx.fillRect(538, 1222, 2, 96);
   sgT(ctx, 'ANSTOSS', 588, 1238, { fam:'SGB', w:500, s:21.5, c:CI.weiss, sp:3 }); sgT(ctx, D.zeit ? `${D.zeit} UHR` : '', 588, 1311, { fam:'Anton', w:400, cap:50, c:CI.weiss, k:'zeit' }); }
 
+/* WhatsApp-Ankündigung: eigener Querformat-Satz, unverzerrte Originalbilder.
+   Text links und Foto rechts bleiben getrennt. Die Hochkant-Master bleiben unverändert. */
+function sgQuer(ctx, D, A){
+  ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_QUER_W, SG_QUER_H);
+  sgT(ctx, `${D.wettbewerb || ''}${D.saison ? ' / Saison ' + D.saison : ''}`.toUpperCase(), 96, 108, { fam:'SGB', w:700, s:30, c:CI.weiss, max:900, k:'querKopf' });
+  const dt = sgDatumTeile(D.datum);
+  sgT(ctx, [D.nr ? D.nr + '. SAISONSPIEL' : '', dt ? dt.lang.toUpperCase() : ''].filter(Boolean).join(' / '), 96, 157, { fam:'SGB', w:600, s:28, c:CI.grau, max:900, k:'querKopf' });
+  let x = 1824;
+  for(const im of [A.wGeg, A.wWir].filter(Boolean)){
+    const b = sgBox(im), h = (b.w * b.iw) / (b.h * b.ih) >= 1.25 ? 104 : 122, w = sgWappenBreite(im, h);
+    x -= w; sgWappenMalen(ctx, im, x, 128, h); x -= 28;
+  }
+  ctx.fillStyle = CI.navy2; ctx.fillRect(1056, 232, 768, 660);
+  if(A.fotoH){ const iw = A.fotoH.naturalWidth || A.fotoH.width, ih = A.fotoH.naturalHeight || A.fotoH.height;
+    const s = Math.min(768 / iw, 660 / ih); ctx.drawImage(A.fotoH, 1056 + (768 - iw * s) / 2, 232 + (660 - ih * s) / 2, iw * s, ih * s); }
+  if(D.wirHeim){ const w = sgTeile(ctx, [['HEIM', CI.weiss], ['SPIEL', CI.blau]], 96, 429, { fam:'Anton', w:400, cap:142 }); if(w > 888) SG.ueber.querTitel = true; }
+  else { sgT(ctx, 'AUSWÄRTS', 96, 354, { fam:'Anton', w:400, cap:112, c:CI.weiss, max:888, k:'querTitel' });
+    sgT(ctx, 'SPIEL', 96, 494, { fam:'Anton', w:400, cap:112, c:CI.blau, max:888, k:'querTitel' }); }
+  if(D.teaser) sgT(ctx, D.teaser, 96, D.wirHeim ? 513 : 558, { fam:'SGB', w:700, cap:42, c:CI.orange, max:888, min:.8, k:'querTeaser' });
+  sgT(ctx, String(D.heim || '').toUpperCase(), 96, 654, { fam:'SGC', w:800, cap:40, c:CI.weiss, max:888, k:'querPaarung' });
+  sgT(ctx, 'VS. ' + String(D.gast || '').toUpperCase(), 96, 719, { fam:'SGC', w:800, cap:40, c:CI.weiss, max:888, k:'querPaarung' });
+  sgLinie(ctx, 96, 771, 984, CI.linie, 2); sgLinie(ctx, 96, 770, 160, CI.orange, 4);
+  if(dt) sgT(ctx, dt.tag.toUpperCase() + ', ' + dt.kurz, 96, 845, { fam:'SGB', w:700, s:34, c:CI.weiss, max:888, k:'querDatum' });
+  if(D.zeit) sgT(ctx, 'ANSTOSS ' + D.zeit + ' UHR', 96, 904, { fam:'SGB', w:700, s:34, c:CI.weiss, max:888, k:'querZeit' });
+  if(D.ort) sgT(ctx, D.ort, 96, 1000, { fam:'SGB', w:600, s:32, c:CI.grau, max:1728, min:.85, k:'querOrt' });
+}
+
 /* ---------- Motiv E: Endergebnis, bewusst ohne Torschützen ---------- */
 function sgEMalen(ctx, D, A){
   ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_W, SG_H);
@@ -713,10 +741,10 @@ function sgA(ctx, D, A){
   if(D.trainer){ const t = D.trainer.toUpperCase(); ctx.font = '700 22px SGB'; const w = sgBreite(ctx, t, .8); sgT(ctx, t, SG_R - 18, 1291, { fam:'SGB', w:700, s:22, c:tinte, sp:.8, a:'r', k:'trainer' });
     ctx.font = '700 14.5px SGB'; const mw = sgBreite(ctx, 'TRAINER', .6) + 16; marke('TRAINER', SG_R - 18 - w - 10 - mw, 1283); } }
 
-function sgMalen(cv, motiv, D, A, seite, fmt){ const story = fmt === 'story', oy = story ? SG_OY : 0; cv.width = SG_W; cv.height = story ? SG_STORY_H : SG_H;
+function sgMalen(cv, motiv, D, A, seite, fmt){ const quer = fmt === 'quer' && motiv === 'H', story = fmt === 'story', oy = story ? SG_OY : 0; cv.width = quer ? SG_QUER_W : SG_W; cv.height = quer ? SG_QUER_H : story ? SG_STORY_H : SG_H;
   const ctx = cv.getContext('2d'); SG.ueber = {}; SG.reg._an = []; SG.reg[motiv] = SG.reg._an; SG.oy = oy; ctx.setTransform(1, 0, 0, 1, 0, 0);
   if(story){ ctx.fillStyle = motiv === 'A' ? CI.papier : CI.navy; ctx.fillRect(0, 0, SG_W, SG_STORY_H); ctx.translate(0, oy); }
-  try{ if(motiv === 'H') sgH(ctx, D, A); else if(motiv === 'E') sgEMalen(ctx, D, A); else if(motiv === 'S') sgS(ctx, D, A, seite); else sgA(ctx, D, A); }
+  try{ if(quer) sgQuer(ctx, D, A); else if(motiv === 'H') sgH(ctx, D, A); else if(motiv === 'E') sgEMalen(ctx, D, A); else if(motiv === 'S') sgS(ctx, D, A, seite); else sgA(ctx, D, A); }
   catch(e){ console.warn('Spieltag zeichnen', motiv, e); }
   ctx.setTransform(1, 0, 0, 1, 0, 0); SG.reg._an.forEach(g => { g.y += oy; }); SG.reg._an = null; SG.oy = 0; return Object.assign({}, SG.ueber); }
 
@@ -745,4 +773,5 @@ function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S
   if(Array.isArray(N.start)){ if(!Array.isArray(N.bank)) N.bank = []; [N.start, N.bank].forEach(L => { L.forEach(p => { if(p.nr == null || p.nr === ''){ const k = person(p.name); p.nr = k.nr; } }); L.sort(nachNr); }); }
   const toreH = zahl(f.toreH, S.tore_h), toreG = zahl(f.toreG, S.tore_g), gespielt = toreH != null && toreG != null;
   const D = { sub:S.sub, wettbewerb:f.wettbewerb || SG_LIGA[S.sub] || 'Spiel', saison:sgSaison(S.saison), nr:f.nr === 0 ? null : zahl(f.nr, S.nr), datum:S.datum, zeit:f.zeit || S.zeit || '',
+    ort:f.ort != null ? String(f.ort) : String(S.ort || ''),
     wirHeim:!!S.wir_heim, wir, gegner, heim:S.wir_heim ? wir : gegner, gast:S.wir_heim ? gegner : wir, toreH, toreG, gespielt,
