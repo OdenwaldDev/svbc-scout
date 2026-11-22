@@ -59,6 +59,52 @@ function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[
     if(ohneBild) R.notizen.push(`${ohneBild} ohne Porträt: Dort steht ein neutraler Kreis. Fotos pflegst du im Live-Ticker unter Kader.`);
     if(ohneNr) R.notizen.push(`${ohneNr} ohne Rückennummer.`); if(!D.trainer) R.notizen.push('Kein Trainer eingetragen.'); }
   return R; }
+function sgKontextPassend(k, S){
+  if(!k || !S || k.ok !== true || k.schema !== 'spieltag-kontext-v1' || k.spiel !== S.spiel || k.sub !== S.sub || k.datum !== S.datum || k.saison !== S.saison || k.quelle !== 'FUSSBALL.DE') return null;
+  if(!['svbscmoerlenbach','svbscmoerlenbachii'].includes(k.team) || typeof k.gegner_key !== 'string' || !k.gegner_key.trim() || ['svbscmoerlenbach','svbscmoerlenbachii'].includes(k.gegner_key) || (S.sub === 'A' && k.team !== 'svbscmoerlenbach') || (S.sub === 'D2' && k.team !== 'svbscmoerlenbachii')) return null;
+  if(!k.abdeckung || typeof k.abdeckung.form_vollstaendig !== 'boolean' || typeof k.abdeckung.saison_vollstaendig !== 'boolean') return null;
+  const tag = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && Number.isFinite(Date.parse(d)) && new Date(d).toISOString().slice(0,10) === d && d < S.datum;
+  const tore = x => Number.isInteger(x) && x >= 0 && x <= 40;
+  if(!Array.isArray(k.form) || k.form.length > 5 || k.form.some((s,i) => !s || typeof s.id !== 'string' || !tag(s.datum) || !tore(s.wir) || !tore(s.gegner_tore) || typeof s.gegner !== 'string' || (i && s.datum > k.form[i-1].datum)) || new Set(k.form.map(s => s.id)).size !== k.form.length) return null;
+  if(k.duell && (!tag(k.duell.datum) || !tore(k.duell.wir) || !tore(k.duell.gegner_tore) || !['hinspiel','letztes_duell'].includes(k.duell.art) || (k.duell.art === 'hinspiel' && k.duell.saison !== k.saison))) return null;
+  const gleich = k.duell && k.form.find(s => s.id === k.duell.id); if(gleich && (gleich.datum !== k.duell.datum || gleich.wir !== k.duell.wir || gleich.gegner_tore !== k.duell.gegner_tore)) return null;
+  const b = k.bilanz; if(!b || ['spiele','siege','remis','niederlagen'].some(p => !Number.isInteger(b[p]) || b[p] < 0 || b[p] > 80) || b.siege + b.remis + b.niederlagen !== b.spiele) return null;
+  if(b.spiele < k.form.length || b.siege < k.form.filter(s => s.wir > s.gegner_tore).length || b.remis < k.form.filter(s => s.wir === s.gegner_tore).length || b.niederlagen < k.form.filter(s => s.wir < s.gegner_tore).length) return null;
+  return k;
+}
+function sgGeschichte(D){ const teile = [], k = D.rueckblick !== false && D.kontext;
+  let kurz = '';
+  if(k){ const F = k.abdeckung.form_vollstaendig ? k.form : [], anzahl = ['null','ein','zwei','drei','vier','fünf']; let siege = 0, ungeschlagen = 0;
+    for(const s of F){ if(s.wir <= s.gegner_tore) break; siege++; }
+    for(const s of F){ if(s.wir < s.gegner_tore) break; ungeschlagen++; }
+    if(siege >= 3){ teile.push(`Unsere Jungs haben die letzten ${anzahl[siege]} Ligaspiele gewonnen.`); kurz = `${anzahl[siege][0].toUpperCase() + anzahl[siege].slice(1)} Siege in Folge.`; }
+    else if(ungeschlagen >= 3){ teile.push(`In den letzten ${anzahl[ungeschlagen]} Ligaspielen ist unsere Mannschaft ungeschlagen geblieben.`); kurz = `Seit ${anzahl[ungeschlagen]} Ligaspielen ungeschlagen.`; }
+    else { const gewonnen = F.filter(s => s.wir > s.gegner_tore).length;
+      if(F.length >= 3 && gewonnen >= 3){ teile.push(`Aus den letzten ${anzahl[F.length]} Ligaspielen hat unsere Mannschaft ${anzahl[gewonnen]} Siege geholt.`); kurz = `${gewonnen} Siege aus den letzten ${F.length} Ligaspielen.`; }
+      else if(k.abdeckung.saison_vollstaendig && k.bilanz.spiele >= 5 && k.bilanz.siege * 2 >= k.bilanz.spiele){ teile.push(`In dieser Runde stehen bisher ${k.bilanz.siege} Siege aus ${k.bilanz.spiele} Ligaspielen.`); kurz = `${k.bilanz.siege} Siege aus ${k.bilanz.spiele} Ligaspielen.`; }
+    }
+    const h = k.duell; if(h){ const ergebnis = `${h.wir}:${h.gegner_tore}`, datum = sgDatumTeile(h.datum), bezug = h.art === 'hinspiel' ? 'Das Hinspiel' : 'Das letzte Ligaduell' + (datum ? ' am ' + datum.lang : '');
+      if(h.wir < h.gegner_tore) teile.push(`${bezug} gegen ${D.gegner} ging ${h.gegner_tore - h.wir === 1 ? 'knapp ' : ''}mit ${ergebnis} verloren.`);
+      else if(h.wir > h.gegner_tore) teile.push(`${bezug} gegen ${D.gegner} haben unsere Jungs mit ${ergebnis} gewonnen.`);
+      else teile.push(`${bezug} gegen ${D.gegner} endete ${ergebnis}.`);
+      if(!kurz) kurz = h.art === 'hinspiel' ? h.gegner_tore - h.wir >= 4 ? 'Zeit für das Rückspiel.' : `Hinspiel: ${ergebnis}${h.wir < h.gegner_tore ? ' verloren' : h.wir > h.gegner_tore ? ' gewonnen' : ''}.` : 'Die Mannschaften treffen wieder aufeinander.';
+    }
+  }
+  const eigen = String(D.geschichte || '').trim().slice(0,600);
+  if(eigen){ const auszug = eigen.replace(/\s+/g, ' '); kurz = auszug.length <= 140 ? auszug : auszug.slice(0,137).replace(/\s+\S*$/, '') + '…'; }
+  return { auto:teile, eigen, alle:[...teile, eigen].filter(Boolean), kurz };
+}
+function sgKontextVorschau(D){ const G = sgGeschichte(D);
+  return G.auto.map(t => `<p class="sg-hin">${sgE(t)}</p>`).join('') || `<p class="sg-hin">${D.rueckblick === false ? 'Der automatische Rückblick ist ausgeschaltet.' : 'Gerade ist kein automatischer Rückblick verfügbar. Deinen Blick aufs Spiel kannst du unten ergänzen.'}</p>`;
+}
+function sgKontextHtml(D){ const k = D.kontext;
+  const ergebnis = s => `${s.wir}:${s.gegner_tore}`, tag = s => { const d = sgDatumTeile(s.datum); return d ? d.lang : s.datum; };
+  const quelle = k ? `<details class="sg-grundlage"><summary>Grundlage ansehen</summary><p class="sg-hin">${sgE(D.wir)}. Ligaergebnisse von FUSSBALL.DE vor diesem Spiel.</p><ul>${k.form.map(s => `<li>${sgE(tag(s))}: ${sgE(s.gegner)}, ${ergebnis(s)}</li>`).join('')}${k.duell ? `<li>${k.duell.art === 'hinspiel' ? 'Hinspiel' : 'Letztes Ligaduell'} am ${sgE(tag(k.duell))}: ${ergebnis(k.duell)}</li>` : ''}</ul><p class="sg-hin">${k.abdeckung.saison_vollstaendig ? `${k.bilanz.spiele} erfasste Ligaspiele in dieser Saison.` : 'Saisonergebnisse sind noch unvollständig. Eine Saisonbilanz wird deshalb nicht formuliert.'}${k.abdeckung.form_vollstaendig ? '' : ' In den jüngsten Ligaterminen fehlen Ergebnisse. Eine Serie wird deshalb nicht behauptet.'}</p></details>` : '';
+  return `<div class="sg-rueckblick"><p class="sg-l">Die Geschichte zum Spiel</p><div data-sgkontext-vorschau aria-live="polite">${sgKontextVorschau(D)}</div>${quelle}
+    <label class="sg-ohne"><input type="checkbox" data-sgrueckblick${D.rueckblick !== false ? ' checked' : ''}> Form und frühere Duelle einbeziehen</label>
+    <label class="sg-f"><span>Dein Blick aufs Spiel (optional)</span><textarea data-sggeschichte rows="3" maxlength="600" placeholder="Was war im Hinspiel besonders? Was macht dieses Spiel aus?">${sgE(D.geschichte || '')}</textarea></label>
+    <p class="sg-hin">Hier ist Platz für deine Einschätzung, etwa einen unglücklichen Spielverlauf. In der Story steht ein kurzer Auszug. Eigene Änderungen in den fertigen Texten bleiben erhalten.</p></div>`;
+}
 /* Die früheren Einladungen kehren zurück. Fakten kommen aus demselben
    Spielstand wie das Motiv, ohne geratenen Platz oder Flutlicht. */
 function sgTexteBauen(D, m, ton = 'normal'){
@@ -76,9 +122,10 @@ function sgTexteBauen(D, m, ton = 'normal'){
     const mitte = ton === 'kurz' ? ruf : ton === 'energie' ? 'Unsere Mannschaft braucht euch am Spielfeldrand! ⚽\n\n' + ruf + '\n\nLasst uns gemeinsam alles geben! 💙🧡' : lang;
     const fakten = [D.wettbewerb && D.wettbewerb !== 'Spiel' ? D.wettbewerb : '', paarung, termin, ort ? '📍 ' + ort : ''].filter(Boolean).join('\n');
     const kurz = ton === 'kurz', schlussStory = ton === 'energie' ? '💙🧡 Kommt mit an den Platz und unterstützt unsere Jungs!' : kurz ? '💙🧡 Wir sehen uns am Platz!' : '💙🧡 Gemeinsam hinter unserer Mannschaft!';
-    return { post:'💙🧡 ' + auftakt + '\n\n' + fakten + '\n\n' + mitte + '\n\nBis zum Spiel am Platz! ⚽',
-      whatsapp:(kurz ? titel : '💙🧡 ' + auftakt) + '\n\n' + fakten + '\n\n' + ruf + (ton === 'energie' ? '\n\nLasst uns gemeinsam alles geben! 💙🧡' : ''),
-      story:[(D.wirHeim ? 'HEIMSPIEL' : 'AUSWÄRTSSPIEL') + ' ⚽', paarung, termin, ort ? '📍 ' + ort : '', schlussStory].filter(Boolean).join('\n') };
+    const G = sgGeschichte(D), postGeschichte = (kurz ? [G.kurz] : G.alle).filter(Boolean).join('\n\n'), waGeschichte = (kurz ? [G.kurz] : G.alle).filter(Boolean).join('\n\n');
+    return { post:['💙🧡 ' + auftakt, fakten, postGeschichte, mitte, 'Bis zum Spiel am Platz! ⚽'].filter(Boolean).join('\n\n'),
+      whatsapp:[kurz ? titel : '💙🧡 ' + auftakt, fakten, waGeschichte, ruf, ton === 'energie' ? 'Lasst uns gemeinsam alles geben! 💙🧡' : ''].filter(Boolean).join('\n\n'),
+      story:[(D.wirHeim ? 'HEIMSPIEL' : 'AUSWÄRTSSPIEL') + ' ⚽', paarung, termin, ort ? '📍 ' + ort : '', G.kurz, schlussStory].filter(Boolean).join('\n') };
   }
   return { post:teile.join('\n\n'), whatsapp:teile.join('\n'), story:[titel, paarung, ergebnis, termin, ort].filter(Boolean).join('\n') };
 }
@@ -87,11 +134,12 @@ function sgTexte(m, D){ const auto = sgTexteBauen(D || SG.d, m, SG.neu.textTon |
 function sgTexteHtml(m){ const T = sgTexte(m);
   return `<section class="sg-texte" id="sgTexte" tabindex="-1"><p class="sg-l">Texte zum Kopieren</p><p class="sg-hin">${m === 'H' ? 'Die Einladungen für eure Gruppen und Storys sind wieder da. Spielort und Anstoß kommen aus deinen Angaben.' : 'Aus den vorhandenen Spieldaten vorbelegt.'} Du kannst jeden Text bearbeiten.</p>
     ${m === 'H' ? `<label class="sg-f"><span>Tonfall</span><select data-sgton>${[['normal','Ausführlich'],['kurz','Kurz'],['energie','Anfeuernd']].map(([k,t]) => `<option value="${k}"${(SG.neu.textTon || 'normal') === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>` : ''}
+    ${m === 'H' ? sgKontextHtml(SG.d) : ''}
     ${[['post','Instagram und Facebook'],['whatsapp','WhatsApp-Ankündigungsgruppe'],['story','Story']].map(([k,t]) => `<label class="sg-f"><span>${t}</span><textarea data-sgtext="${k}" maxlength="2200" rows="${k === 'post' ? 7 : 6}">${sgE(T[k])}</textarea></label><button type="button" class="btn sm ghost" data-sgkopie="${k}">${SVI('copy')} ${k === 'whatsapp' ? 'WhatsApp-Text' : k === 'post' ? 'Beitragstext' : 'Storytext'} kopieren</button>`).join('')}
     <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgtexte-neu>Texte neu erzeugen</button></div><p class="sg-hin">Eigene Textänderungen bleiben erhalten. „Texte neu erzeugen“ ersetzt sie durch die aktuelle Vorlage. Kopieren verschickt nichts.</p></section>`;
 }
 function sgTexteHoehen(h){ h.querySelectorAll('[data-sgtext]').forEach(e => { if(!e.style || !Number.isFinite(e.scrollHeight)) return; e.style.height = 'auto'; e.style.height = Math.max(120, e.scrollHeight + 2) + 'px'; }); }
-function sgTexteAktualisieren(h){ const T = sgTexte(SG.motiv); h.querySelectorAll('[data-sgtext]').forEach(e => { if(e !== document.activeElement && e.value !== T[e.dataset.sgtext]) e.value = T[e.dataset.sgtext]; }); sgTexteHoehen(h); }
+function sgTexteAktualisieren(h){ const T = sgTexte(SG.motiv); h.querySelectorAll('[data-sgtext]').forEach(e => { if(e !== document.activeElement && e.value !== T[e.dataset.sgtext]) e.value = T[e.dataset.sgtext]; }); const v = h.querySelector('[data-sgkontext-vorschau]'); if(v) v.innerHTML = sgKontextVorschau(SG.d); sgTexteHoehen(h); }
 async function sgTextKopieren(m, key, feld){ if(SG.satz) SG.d = sgDaten(); const text = sgTexte(m)[key] || ''; if(!text.trim()){ kToast('Der Text ist leer. Bitte zuerst ergänzen.'); return; }
   try{ await navigator.clipboard.writeText(text); kToast('Text kopiert'); }catch(e){ if(feld){ feld.value = text; feld.focus(); feld.select(); } kToast('Text ist markiert. Bitte über das Kopieren-Menü kopieren.'); } }
 /* Prüfsumme des Stands, den eine Freigabe meint: alles, was im Motiv zu sehen ist */
@@ -147,22 +195,35 @@ async function sgSpieleLaden(){ const wir = k => String(k || '').startsWith(PK_E
   const frisch = SG.spiele.filter(s => s.datum >= d3 && s.datum <= heute && s.sub !== 'D2').pop() || SG.spiele.filter(s => s.datum >= d3 && s.datum <= heute).pop();
   const naechstes = SG.spiele.findIndex(s => s.datum >= heute && s.sub !== 'D2'), irgend = SG.spiele.findIndex(s => s.datum >= heute);
   SG.idx = frisch ? SG.spiele.indexOf(frisch) : naechstes >= 0 ? naechstes : irgend >= 0 ? irgend : Math.max(0, SG.spiele.length - 1); }
-async function sgSatzLaden(){ const s = SG.spiele[SG.idx], vorgemerkt = s && SG_MERKPLAENE.get(s.id); SG.satz = null; SG.neu = {}; if(!s) return;
-  const r = await svtRpc('spieltag_satz', { p_spiel:s.id }); if(!r || !r.ok) throw new Error('Zu diesem Spiel gibt es keine Daten.');
-  SG.satz = r; const lokal = SG_MERKPLAENE.get(s.id) || vorgemerkt;
-  SG.neu = lokal ? JSON.parse(lokal.stand) : r.neu && typeof r.neu === 'object' ? r.neu : {}; if(!SG.neu.f) SG.neu.f = {}; }
+let sgSatzLauf = 0, sgBildLauf = 0;
+const sgKonto = () => typeof SVB !== 'undefined' && SVB.user ? SVB.user.id : null;
+function sgKontextLaden(id){ let timer;
+  const laden = Promise.resolve().then(() => svtRpc('spieltag_kontext', { p_spiel:id })).catch(() => null);
+  return Promise.race([laden, new Promise(ok => { timer = setTimeout(() => ok(null), 3500); })]).finally(() => clearTimeout(timer)); }
+async function sgSatzLaden(){ const nr = ++sgSatzLauf, s = SG.spiele[SG.idx], vorgemerkt = s && SG_MERKPLAENE.get(s.id), konto = sgKonto(); ++sgBildLauf; clearTimeout(sgZeichenT); SG.satz = null; SG.kontext = null; SG.neu = {}; if(!s) return false;
+  const [satz, kontext] = await Promise.allSettled([svtRpc('spieltag_satz', { p_spiel:s.id }), sgKontextLaden(s.id)]);
+  if(nr !== sgSatzLauf || konto !== sgKonto()) return false;
+  if(satz.status === 'rejected') throw satz.reason; const r = satz.value, k = kontext.status === 'fulfilled' ? kontext.value : null;
+  if(!r || !r.ok || r.spiel !== s.id) throw new Error('Zu diesem Spiel gibt es keine Daten.'); SG.kontext = sgKontextPassend(k, r);
+  SG.satz = r; const plan = SG_MERKPLAENE.get(s.id) || vorgemerkt, lokal = plan && plan.konto === konto ? plan : null;
+  SG.neu = lokal ? JSON.parse(lokal.stand) : r.neu && typeof r.neu === 'object' ? r.neu : {}; if(!SG.neu.f) SG.neu.f = {}; return true; }
 const SG_MERKPLAENE = new Map();
 function sgMerken(){ const id = SG.satz && SG.satz.spiel; if(!id) return;
   let stand, neu; try{ stand = JSON.stringify(SG.neu); neu = JSON.parse(stand); }catch(e){ console.warn('Spieltag speichern', e); kToast('Speichern hat nicht geklappt'); return; }
-  let plan = SG_MERKPLAENE.get(id); if(!plan){ plan = { id, timer:null, laeuft:false }; SG_MERKPLAENE.set(id, plan); }
+  let plan = SG_MERKPLAENE.get(id); if(!plan || plan.konto !== sgKonto()){ plan = { id, konto:sgKonto(), timer:null, laeuft:false }; SG_MERKPLAENE.set(id, plan); }
   clearTimeout(plan.timer); plan.neu = neu; plan.stand = stand;
   plan.timer = setTimeout(() => { plan.timer = null; return sgMerkSenden(plan); }, 700); }
-async function sgMerkSenden(plan){ if(plan.laeuft || !plan.neu) return;
+function sgMerkSenden(plan){ if(plan.laeuft || !plan.neu) return;
+  if(plan.konto !== sgKonto()){ clearTimeout(plan.timer); plan.timer = null; plan.neu = null; plan.fehler = new Error('Das Konto wurde gewechselt. Bitte den Spieltag neu öffnen.'); if(SG_MERKPLAENE.get(plan.id) === plan) SG_MERKPLAENE.delete(plan.id); return Promise.resolve(); }
   const neu = plan.neu, stand = plan.stand; plan.neu = null; plan.laeuft = true;
-  try{ const r = await svtRpc('spieltag_merken', { p_spiel:plan.id, p_neu:neu });
-    if(r && r.neu && SG.satz && SG.satz.spiel === plan.id && JSON.stringify(SG.neu) === stand) SG.neu.frei = r.neu.frei || {}; }
-  catch(e){ console.warn('Spieltag speichern', e); kToast('Speichern hat nicht geklappt'); }
-  finally{ plan.laeuft = false; if(plan.timer === null){ if(plan.neu) return sgMerkSenden(plan); SG_MERKPLAENE.delete(plan.id); } } }
+  plan.lauf = (async () => { try{ const r = await svtRpc('spieltag_merken', { p_spiel:plan.id, p_neu:neu });
+    if(!r || !r.neu) throw new Error('Der Spieltag wurde nicht gespeichert. Bitte erneut versuchen.'); plan.fehler = null;
+    if(r && r.neu && plan.konto === sgKonto() && SG.satz && SG.satz.spiel === plan.id && JSON.stringify(SG.neu) === stand) SG.neu.frei = r.neu.frei || {}; }
+  catch(e){ plan.fehler = e; console.warn('Spieltag speichern', e); kToast('Speichern hat nicht geklappt'); }
+  finally{ plan.laeuft = false; if(plan.timer === null){ if(plan.neu) return sgMerkSenden(plan); if(SG_MERKPLAENE.get(plan.id) === plan) SG_MERKPLAENE.delete(plan.id); } } })(); return plan.lauf; }
+async function sgMerkSofort(id){ sgMerken(); const plan = SG_MERKPLAENE.get(id); if(!plan) throw new Error('Speichern hat nicht geklappt. Bitte erneut versuchen.');
+  do{ clearTimeout(plan.timer); plan.timer = null; await (plan.laeuft ? plan.lauf : sgMerkSenden(plan)); }while(plan.neu || plan.laeuft);
+  if(plan.fehler) throw plan.fehler; }
 
 /* ---------- Oberfläche ---------- */
 async function sgStart(P){
@@ -173,15 +234,18 @@ async function sgStart(P){
   if(!SG.spiele.length){ h.innerHTML = '<div class="card"><div class="empty">Im Spielplan steht gerade kein Spiel. Sobald eins eingetragen ist, liegt hier das Plakat bereit.</div></div>'; return; }
   await sgSpielZeigen(); }
 async function sgSpielZeigen(){ const h = document.getElementById('sgWrap'); if(!h) return; SG.motiv = '';
-  try{ await sgSatzLaden(); }catch(e){ h.innerHTML = `<div class="card"><div class="empty">${sgE(e.message || e)}</div></div>`; return; }
-  await sgNeu(true); }
+  h.innerHTML = '<div class="card"><div class="empty">Lade den Spieltag …</div></div>';
+  try{ if(!await sgSatzLaden()) return; await sgNeu(true); }catch(e){ h.innerHTML = `<div class="card"><div class="empty">${sgE(e.message || e)}</div></div>`; } }
 /* Alles neu rechnen und zeichnen. mitBildern: Fotos und Wappen neu holen (sonst nur Text). */
 async function sgNeu(mitBildern){ const h = document.getElementById('sgWrap'); if(!h || !SG.satz) return;
-  SG.d = sgDaten(); if(mitBildern || !SG.A.portrait) SG.A = await sgAssets(SG.d);
+  const lauf = ++sgBildLauf, satz = SG.satz, konto = sgKonto(), aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto();
+  const D = sgDaten(); let A = SG.A;
+  try{ if(mitBildern || !A.portrait) A = await sgAssets(D); }catch(e){ if(!aktuell()) return false; throw e; }
+  if(!aktuell()) return false; SG.d = D; SG.A = A;
   SG.pruef = {}; SG.cv = SG.cv || {};
   ['H', 'A', 'E', 'S'].forEach(m => { const cv = SG.cv[m] || (SG.cv[m] = document.createElement('canvas')); const vor = sgPruefen(m, SG.d, SG.A, {});
     const ue = vor.wartet ? {} : sgMalen(cv, m, SG.d, SG.A, m === 'S' ? (SG.seite || 0) : 0); SG.pruef[m] = sgPruefen(m, SG.d, SG.A, ue); });
-  if(SG.motiv) sgDetail(h); else sgUebersicht(h); }
+  if(SG.motiv) sgDetail(h); else sgUebersicht(h); return true; }
 function sgKopfHtml(){ const D = SG.d, dt = sgDatumTeile(D.datum) || { lang:'', tag:'' };
   const opt = SG.spiele.map((s, i) => `<option value="${i}"${i === SG.idx ? ' selected' : ''}>${sgE(s.datum.split('-').reverse().join('.'))} · ${s.sub === 'D2' ? 'Zweite' : s.sub === 'POKAL' ? 'Pokal' : 'Erste'} · ${s.heim ? 'H' : 'A'} · ${sgE(s.gegner)}</option>`).join('');
   return `<div class="sg-kopf"><p class="sg-meta"><b>${sgE(D.wettbewerb)} / Saison ${sgE(D.saison)}</b><br>${D.nr ? D.nr + '. Saisonspiel / ' : ''}${sgE(dt.lang)}</p>
@@ -288,7 +352,7 @@ function sgQuerBinden(h){ if(SG.motiv !== 'H' || sgFormat('H') !== 'quer') retur
 function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.pruef[m];
   const P = fmt === 'quer' && !vor.wartet ? sgPruefen(m, D, SG.A, sgMalen(SG.cvQuer || (SG.cvQuer = document.createElement('canvas')), m, D, SG.A, 0, 'quer')) : vor;
   const st = P.fehler.length ? { art:'du', text:'Braucht dich: ' + P.fehler[0] } : sgStand(m), fr = (SG.neu.frei || {})[m], frei = fr && fr.stand === sgStandHash(m, D);
-  const aktiv = document.activeElement, fokus = aktiv && h.contains(aktiv) && aktiv.dataset.sgtext, auswahl = fokus ? [aktiv.selectionStart, aktiv.selectionEnd] : null;
+  const aktiv = document.activeElement, fokus = aktiv && h.contains(aktiv) && (aktiv.dataset.sgtext ? `[data-sgtext="${aktiv.dataset.sgtext}"]` : aktiv.dataset.sggeschichte != null ? '[data-sggeschichte]' : ''), auswahl = fokus ? [aktiv.selectionStart, aktiv.selectionEnd] : null;
   const querFokus = aktiv && h.contains(aktiv) && ['sgQuerY','sgQuerZoom'].includes(aktiv.id) ? aktiv.id : '';
   const offen = !!P.wartet || P.fehler.length > 0, seiten = m === 'S' ? sgSeitenS(D) : 1;
   const liste = [...P.fehler.map(t => `<li class="f">${sgE(t)}</li>`), ...P.hinweise.map(t => `<li class="h">${sgE(t)}</li>`), ...(!offen && !P.hinweise.length ? ['<li class="ok">Angaben vollständig, nichts läuft über</li>'] : []), ...P.notizen.map(t => `<li class="n">${sgE(t)}</li>`)].join('');
@@ -304,7 +368,7 @@ function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.
           : `<button type="button" class="btn" data-sgx="frei" ${offen ? 'disabled' : ''}>${SVI('check')} Stimmt so</button>${offen ? `<p class="sg-hin">${sgE(P.wartet || 'Erst wenn nichts mehr fehlt, lässt sich das Motiv freigeben.')}</p>` : '<p class="sg-hin">Mit „Stimmt so“ gibst du diesen Stand frei. Danach kannst du teilen.</p>'}`}</div></div>
       <div class="sg-form" id="sgForm">${SG.A.wGeg ? '' : sgWappenHtml()}<p class="sg-tipp">Tipp auf ein Wort im Bild, und du landest im passenden Feld.</p>${sgFormular(m)}${sgTexteHtml(m)}</div></div>`;
   if(!P.wartet){ const z = h.querySelector('#sgBild'); z.appendChild(sgSchau(m)); }
-  sgBinden(h); sgTexteHoehen(h); if(fokus || querFokus){ const ziel = h.querySelector(fokus ? `[data-sgtext="${fokus}"]` : '#' + querFokus); if(ziel){ ziel.focus({ preventScroll:true }); if(auswahl) try{ ziel.setSelectionRange(...auswahl); }catch(e){} } } }
+  sgBinden(h); sgTexteHoehen(h); if(fokus || querFokus){ const ziel = h.querySelector(fokus || '#' + querFokus); if(ziel){ ziel.focus({ preventScroll:true }); if(auswahl) try{ ziel.setSelectionRange(...auswahl); }catch(e){} } } }
 /* Die Leinwand der Einzelansicht: der Beitrag aus der Übersicht oder dasselbe Motiv als Story, frisch gezeichnet */
 function sgSchau(m){ const fmt = sgFormat(m); if(fmt === 'beitrag') return SG.cv[m]; const key = fmt === 'quer' ? 'cvQuer' : 'cvStory', cv = SG[key] || (SG[key] = document.createElement('canvas')); sgMalen(cv, m, SG.d, SG.A, m === 'S' ? (SG.seite || 0) : 0, fmt); return cv; }
 function sgSetzen(k, v){ SG.neu.f = SG.neu.f || {}; if(k === 'ort') SG.neu.f[k] = String(v || ''); else if(v === '' || v == null) delete SG.neu.f[k]; else SG.neu.f[k] = v; }
@@ -312,77 +376,12 @@ function sgToreHand(){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore = SG.d.tore.
 function sgElfHand(){ if(!Array.isArray(SG.neu.start)){ const z = p => ({ name:p.name, nr:p.nr, tw:p.tw, c:p.c, ein:p.ein }); SG.neu.start = SG.d.start.map(z); SG.neu.bank = SG.d.bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); }
   if(!Array.isArray(SG.neu.bank)) SG.neu.bank = []; return SG.neu; }
 let sgZeichenT = null;
-function sgBald(mitBildern, ganz){ sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(ganz) return sgNeu(mitBildern);
+function sgBald(mitBildern, ganz){ const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz) return sgNeu(mitBildern);
     /* Beim Tippen bleibt das Formular stehen: nur Bild, Prüfliste und Zustand werden frisch */
-    const m = SG.motiv; SG.d = sgDaten(); if(mitBildern) SG.A = await sgAssets(SG.d);
+    const m = SG.motiv, D = sgDaten(); let A = SG.A;
+    try{ if(mitBildern) A = await sgAssets(D); }catch(e){ if(aktuell()) kToast('Die Bilder konnten nicht geladen werden. Bitte erneut versuchen.'); return; }
+    if(!aktuell()) return; SG.d = D; SG.A = A;
     ['H', 'A', 'E', 'S'].forEach(x => { const vor = sgPruefen(x, SG.d, SG.A, {}); const ue = vor.wartet ? {} : sgMalen(SG.cv[x], x, SG.d, SG.A, x === 'S' ? (SG.seite || 0) : 0); SG.pruef[x] = sgPruefen(x, SG.d, SG.A, ue); });
     const h = document.getElementById('sgWrap'); if(!h || !m) return; if(sgFormat(m) !== 'beitrag' && !SG.pruef[m].wartet) sgSchau(m);
     const P = sgFormat(m) === 'quer' && !SG.pruef[m].wartet ? sgPruefen(m, SG.d, SG.A, SG.ueber) : SG.pruef[m], st = P.fehler.length ? { art:'du', text:'Braucht dich: ' + P.fehler[0] } : sgStand(m), kopf = h.querySelector('.sg-dkopf .sg-st'); if(kopf){ kopf.dataset.art = st.art; kopf.textContent = st.text; }
     sgTexteAktualisieren(h);
-    sgQuerReglerAktualisieren(h);
-    const fr = (SG.neu.frei || {})[m], warFrei = !!h.querySelector('[data-sgx="teilen"]'), istFrei = !!(fr && fr.stand === sgStandHash(m, SG.d));
-    if(warFrei !== istFrei || !!P.wartet !== !!h.querySelector('#sgBild.leer')) return sgDetail(h);
-    const offen = !!P.wartet || P.fehler.length > 0, ul = h.querySelector('#sgPruef');
-    if(ul) ul.innerHTML = [...P.fehler.map(t => `<li class="f">${sgE(t)}</li>`), ...P.hinweise.map(t => `<li class="h">${sgE(t)}</li>`), ...(!offen && !P.hinweise.length ? ['<li class="ok">Angaben vollständig, nichts läuft über</li>'] : []), ...P.notizen.map(t => `<li class="n">${sgE(t)}</li>`)].join('');
-    const b = h.querySelector('[data-sgx="frei"]'); if(b) b.disabled = offen; }, 220); }
-function sgBinden(h){
-  const sel = h.querySelector('#sgSpiel'); if(sel) sel.onchange = () => { SG.idx = +sel.value; SG.seite = 0; h.querySelector('.sg-grid')?.classList.add('laedt'); sgSpielZeigen(); };
-  h.querySelectorAll('[data-sgm]').forEach(b => b.onclick = () => { SG.motiv = b.dataset.sgm; SG.seite = 0; sgDetail(h); window.scrollTo({ top:0, behavior:'instant' in window ? 'instant' : 'auto' }); });
-  const z = h.querySelector('#sgZurueck'); if(z) z.onclick = () => { SG.motiv = ''; sgUebersicht(h); };
-  h.querySelectorAll('[data-sgfmt]').forEach(b => b.onclick = () => { SG.fmt = b.dataset.sgfmt; sgDetail(h); });
-  h.querySelectorAll('[data-sgseite]').forEach(b => b.onclick = () => { SG.seite = +b.dataset.sgseite; sgNeu(false); });
-  h.querySelectorAll('[data-sgtext]').forEach(e => e.oninput = () => { SG.neu.texte = SG.neu.texte || {}; const t = SG.neu.texte[SG.motiv] || (SG.neu.texte[SG.motiv] = {}); t[e.dataset.sgtext] = e.value; sgBald(false, false); });
-  h.querySelectorAll('[data-sgkopie]').forEach(b => b.onclick = () => sgTextKopieren(SG.motiv, b.dataset.sgkopie, h.querySelector(`[data-sgtext="${b.dataset.sgkopie}"]`)));
-  const texteZeigen = h.querySelector('[data-sgtexte-zeigen]'); if(texteZeigen) texteZeigen.onclick = () => { const t = h.querySelector('#sgTexte'); if(t){ t.scrollIntoView({ block:'start', behavior:'smooth' }); t.focus({ preventScroll:true }); } };
-  const ton = h.querySelector('[data-sgton]'); if(ton) ton.onchange = () => { SG.neu.textTon = ['normal','kurz','energie'].includes(ton.value) ? ton.value : 'normal'; sgBald(false, false); };
-  const texteNeu = h.querySelector('[data-sgtexte-neu]'); if(texteNeu) texteNeu.onclick = () => { if(SG.neu.texte) delete SG.neu.texte[SG.motiv]; sgBald(false, false); };
-  h.querySelectorAll('[data-sgf]').forEach(inp => inp.oninput = () => { const k = inp.dataset.sgf; let v = inp.value;
-    if(inp.type === 'number') v = v === '' ? '' : Math.max(0, Math.round(+v)); if(k === 'nr' && v === 0) v = 0;
-    if(k === 'h1' || k === 'h2'){ const f = SG.neu.f = SG.neu.f || {}; if(f.h1 == null){ f.h1 = SG.d.h1; f.h2 = SG.d.h2; } f[k] = String(v); h.querySelectorAll('[data-sgvor]').forEach(b => b.classList.remove('on')); }
-    else if(k === 'nr' && v === '') delete (SG.neu.f || {}).nr; else if(k === 'nr') SG.neu.f.nr = v; else sgSetzen(k, v);
-    sgBald(false, false); });
-  h.querySelectorAll('[data-sgvor]').forEach(b => b.onclick = () => { const v = SG.d.vorschlaege[+b.dataset.sgvor]; SG.neu.f = SG.neu.f || {}; SG.neu.f.h1 = v[0]; SG.neu.f.h2 = v[1]; sgBald(false, true); });
-  h.querySelectorAll('[data-sgbib]').forEach(b => b.onclick = () => { const feld = b.closest('[data-sgfoto]').dataset.sgfoto, w = 'bib:' + b.dataset.sgbib; sgSetzen(feld, SG.neu.f[feld] === w ? '' : w); sgBald(true, true); });
-  h.querySelectorAll('[data-sgup]').forEach(inp => inp.onchange = async () => { const file = inp.files && inp.files[0]; if(!file) return; sbKnopf(inp, true);
-    const r = await sbHochladen(file); sbKnopf(inp, false); if(!r.ok){ kToast(r.text); return; } sgSetzen(inp.dataset.sgup, 'bib:' + r.eintrag.pfad); kToast(SB_GESPEICHERT); sgBald(true, true); });
-  h.querySelectorAll('[data-sgwap]').forEach(inp => inp.onchange = async () => { const file = inp.files && inp.files[0]; if(!file) return; sbKnopf(inp, true);
-    const r = await sgWappenHoch(file); sbKnopf(inp, false); if(!r.ok){ kToast(r.text); return; } sgSetzen('wappen', 'bib:' + r.pfad); kToast('Wappen gespeichert. Es gilt für dieses Spiel.'); sgBald(true, true); });
-  h.querySelectorAll('.sg-tor').forEach(row => { const i = +row.dataset.i;
-    row.querySelectorAll('[data-sgt]').forEach(el => { const k = el.dataset.sgt, tun = () => { const T = sgToreHand(), t = T[i]; if(!t) return;
-        if(k === 'weg'){ T.splice(i, 1); return sgBald(false, true); }
-        if(k === 'm' || k === 'x') t[k] = Math.max(0, Math.round(+el.value || 0)); else if(k === 'wir'){ t.wir = el.value === '1'; if(!t.wir) t.vorlage = ''; return sgBald(false, true); }
-        else if(k === 'ohne'){ t.vorlage = el.checked ? '-' : ''; return sgBald(false, true); } else t[k] = el.value.trim();
-        sgBald(k === 'name' || k === 'vorlage', false); };
-      if(k === 'weg') el.onclick = tun; else if(el.type === 'checkbox' || el.tagName === 'SELECT') el.onchange = tun; else if(k === 'm' || k === 'x') el.onchange = () => { tun(); sgBald(false, true); }; else el.onchange = tun; }); });
-  h.querySelectorAll('.sg-sp').forEach(row => { const i = +row.dataset.i, art = row.dataset.art;
-    row.querySelectorAll('[data-sgp]').forEach(el => { const k = el.dataset.sgp, tun = () => { const N = sgElfHand(), L = art === 'start' ? N.start : N.bank, p = L[i]; if(!p) return;
-        if(k === 'weg'){ L.splice(i, 1); return sgBald(false, true); }
-        if(k === 'nr') p.nr = el.value === '' ? null : Math.max(0, Math.round(+el.value)); else if(k === 'c'){ N.start.forEach(q => q.c = false); p.c = el.checked; return sgBald(false, true); }
-        else if(k === 'tw') p.tw = el.checked; else if(k === 'name'){ p.name = el.value.trim(); const kd = sgPerson(SG.d.sub)(p.name); if(kd.nr != null) p.nr = kd.nr; p.tw = kd.tw; return sgBald(true, true); } else p[k] = el.value.trim().replace(/[^0-9+]/g, '');
-        sgBald(false, k === 'nr'); };
-      if(k === 'weg') el.onclick = tun; else el.onchange = tun; }); });
-  h.querySelectorAll('[data-sgq]').forEach(b => b.onclick = () => { const q = b.dataset.sgq, N = SG.neu;
-    if(q === 'tor-neu'){ const T = sgToreHand(), letzte = T[T.length - 1]; T.push({ m:letzte ? Math.min(90, letzte.m + 1) : 1, x:0, wir:true, name:'', vorlage:'' }); }
-    if(q === 'tore-quelle'){ delete N.tore; delete N.toreQ; }
-    if(q === 'tore-meins') N.toreQ = sgHash(JSON.stringify(SG.d.quelle.tore));
-    if(q === 'start-neu') sgElfHand().start.push({ name:'', nr:null, tw:false, c:false });
-    if(q === 'bank-neu') sgElfHand().bank.push({ name:'', nr:null, tw:false, ein:'' });
-    if(q === 'elf-quelle'){ delete N.start; delete N.bank; delete N.elfQ; }
-    if(q === 'elf-meins') N.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank]));
-    sgBald(true, true); });
-  h.querySelectorAll('[data-sgx]').forEach(b => b.onclick = () => sgAktion(b.dataset.sgx, b));
-  /* Tipp ins Bild: das passende Feld bekommt den Fokus */
-  const bild = h.querySelector('#sgBild'); if(bild && SG.motiv) bild.onclick = ev => { if(bild.sgQuerKlickSperre){ bild.sgQuerKlickSperre = false; ev.preventDefault(); return; }
-    const cv = bild.querySelector('canvas'); if(!cv) return; const t = sgBildTreffer(cv, ev); if(!t) return;
-    const feld = { querZeit:'zeit', querOrt:'ort', querPaarung:'gegner', querTeaser:'teaser', querKopf:'wettbewerb' }[t.k] || t.k;
-    let ziel = h.querySelector(`[data-sgf="${feld}"]`); const mt = /^(tor|start|bank)(\d+)$/.exec(t.k);
-    if(mt) ziel = h.querySelector(mt[1] === 'tor' ? `.sg-tor[data-i="${mt[2]}"] [data-sgt="name"]` : `.sg-sp[data-art="${mt[1]}"][data-i="${mt[2]}"] [data-sgp="name"]`);
-    if(t.k === 'paarung') ziel = h.querySelector('[data-sgf="gegner"]');
-    if(t.k === 'querDatum'){ kToast('Das Datum kommt aus dem Spielplan. Bitte dort ändern.'); return; }
-    if(ziel){ const d = ziel.closest('details'); if(d) d.open = true; ziel.scrollIntoView({ block:'center', behavior:'smooth' }); ziel.focus({ preventScroll:true }); if(ziel.select) try{ ziel.select(); }catch(e){} } }; sgQuerBinden(h); }
-function sgDatei(m, seite){ const D = SG.d, art = m === 'H' ? (D.wirHeim ? 'heimspiel' : 'auswaertsspiel') : m === 'A' ? 'aufstellung' : m === 'E' ? 'ergebnis' : 'spielverlauf';
-  const fmt = sgFormat(m); return `${D.datum}_${sgSlug(D.heim)}_${sgSlug(D.gast)}_${art}${seite ? '-' + (seite + 1) : ''}${fmt === 'story' ? '_story' : fmt === 'quer' ? '_quer' : ''}_v01.png`; }
-async function sgBlobs(m, alle = true){ const n = m === 'S' ? sgSeitenS(SG.d) : 1, L = [], fmt = sgFormat(m);
-  const seiten = alle ? Array.from({ length:n }, (_, i) => i) : [Math.max(0, Math.min(n - 1, SG.seite || 0))];
-  for(const i of seiten){ const cv = document.createElement('canvas'), ue = sgMalen(cv, m, SG.d, SG.A, i, fmt), P = sgPruefen(m, SG.d, SG.A, ue);
-    if(P.wartet || P.fehler.length) throw new Error(P.wartet || P.fehler.join('. '));

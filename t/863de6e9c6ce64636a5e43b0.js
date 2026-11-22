@@ -531,7 +531,7 @@ const SG_VERSION = { H:'H 1.1', A:'A 1.0', E:'E 1.0', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const SG_TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-const SG = { spiele:[], idx:0, satz:null, neu:{}, motiv:'', A:{}, laedt:false, merkT:null, ueber:{}, reg:{} };
+const SG = { spiele:[], idx:0, satz:null, kontext:null, neu:{}, motiv:'', A:{}, laedt:false, merkT:null, ueber:{}, reg:{} };
 const sgE = s => svEsc(s == null ? '' : String(s));
 
 /* ---------- Schriften ---------- */
@@ -790,4 +790,5 @@ function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S
   const D = { sub:S.sub, wettbewerb:f.wettbewerb || SG_LIGA[S.sub] || 'Spiel', saison:sgSaison(S.saison), nr:f.nr === 0 ? null : zahl(f.nr, S.nr), datum:S.datum, zeit:f.zeit || S.zeit || '',
     ort:f.ort != null ? String(f.ort) : String(S.ort || ''),
     querY:sgQuerNorm(f.querY, .5, 0, 1), querZoom:sgQuerNorm(f.querZoom, 1, 1, 2),
+    kontext:sgKontextPassend(SG.kontext, S), rueckblick:f.rueckblick !== false, geschichte:typeof f.geschichte === 'string' ? f.geschichte.trim().slice(0,600) : '',
     wirHeim:!!S.wir_heim, wir, gegner, heim:S.wir_heim ? wir : gegner, gast:S.wir_heim ? gegner : wir, toreH, toreG, gespielt,
