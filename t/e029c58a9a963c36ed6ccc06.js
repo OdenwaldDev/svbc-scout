@@ -527,7 +527,7 @@ const SG_W = 1080, SG_H = 1350, SG_X = 72, SG_R = 1008;
 /* Story 9:16: dasselbe Motiv, 285 Pixel tiefer gesetzt, damit oben und unten frei bleibt, was Instagram mit Bedienung überdeckt; der Grund läuft weiter */
 const SG_STORY_H = 1920, SG_OY = 285;
 const SG_QUER_W = 1920, SG_QUER_H = 1080;
-const SG_VERSION = { H:'H 1.0', A:'A 1.0', E:'E 1.0', S:'S 1.0' };
+const SG_VERSION = { H:'H 1.1', A:'A 1.0', E:'E 1.0', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const SG_TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -631,6 +631,7 @@ function sgH(ctx, D, A){
   if(D.teaser){ const t = D.teaser.trim(), punkt = /[.!?]$/.test(t), o = { fam:'SGB', w:700, cap:55 };
     ctx.font = `700 ${55 / sgCapR(ctx, 'SGB', 700)}px SGB`; const w = ctx.measureText(t).width, f = w > 924 ? Math.max(.6, 924 / w) : 1; if(w * f > 925) SG.ueber.teaser = true;
     const oo = Object.assign({}, o, { cap:55 * f, k:'teaser' }), w1 = sgT(ctx, punkt ? t.slice(0, -1) : t, x, 1046, Object.assign({}, oo, { c:CI.orange })); if(punkt) sgT(ctx, t.slice(-1), x + w1, 1046, Object.assign({}, oo, { c:CI.weiss, k:null })); }
+  sgT(ctx, D.ort ? 'SPIELORT: ' + D.ort : 'SPIELORT BITTE ERGÄNZEN', x, 1095, { fam:'SGB', w:600, s:28, c:CI.weiss, max:924, min:.75, k:'ort' });
   { const teile = [[D.heim.toUpperCase(), CI.weiss], ['   vs.   ', CI.orange], [D.gast.toUpperCase(), CI.weiss]], o = { fam:'SGC', w:800, cap:34 };
     const w = sgTeileBreite(ctx, teile, o), f = w > 924 ? Math.max(.74, 924 / w) : 1; if(w * f > 926) SG.ueber.paarung = true;
     let cx = x; teile.forEach(([t, c], i) => { cx += sgT(ctx, t, cx, 1150, { fam:'SGC', w:i === 1 ? 700 : 800, cap:(i === 1 ? 24 : 34) * f, c, k:i === 0 ? (D.wirHeim ? 'wir' : 'gegner') : i === 2 ? (D.wirHeim ? 'gegner' : 'wir') : null }); }); }
@@ -678,7 +679,7 @@ function sgQuer(ctx, D, A){
   sgLinie(ctx, 96, 771, 984, CI.linie, 2); sgLinie(ctx, 96, 770, 160, CI.orange, 4);
   if(dt) sgT(ctx, dt.tag.toUpperCase() + ', ' + dt.kurz, 96, 845, { fam:'SGB', w:700, s:34, c:CI.weiss, max:888, k:'querDatum' });
   if(D.zeit) sgT(ctx, 'ANSTOSS ' + D.zeit + ' UHR', 96, 904, { fam:'SGB', w:700, s:34, c:CI.weiss, max:888, k:'querZeit' });
-  if(D.ort) sgT(ctx, D.ort, 96, 1000, { fam:'SGB', w:600, s:32, c:CI.grau, max:1728, min:.85, k:'querOrt' });
+  sgT(ctx, D.ort ? 'Spielort: ' + D.ort : 'Spielort bitte ergänzen', 96, 1000, { fam:'SGB', w:700, s:42, c:CI.weiss, max:1728, min:.85, k:'querOrt' });
 }
 
 /* ---------- Motiv E: Endergebnis, bewusst ohne Torschützen ---------- */
