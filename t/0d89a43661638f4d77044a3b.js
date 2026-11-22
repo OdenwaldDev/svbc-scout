@@ -640,10 +640,26 @@ function sgH(ctx, D, A){
   ctx.fillStyle = 'rgba(246,246,242,.7)'; ctx.fillRect(538, 1222, 2, 96);
   sgT(ctx, 'ANSTOSS', 588, 1238, { fam:'SGB', w:500, s:21.5, c:CI.weiss, sp:3 }); sgT(ctx, D.zeit ? `${D.zeit} UHR` : '', 588, 1311, { fam:'Anton', w:400, cap:50, c:CI.weiss, k:'zeit' }); }
 
-/* WhatsApp-Ankündigung: eigener Querformat-Satz, unverzerrte Originalbilder.
-   Text links und Foto rechts bleiben getrennt. Die Hochkant-Master bleiben unverändert. */
+const sgQuerNorm = (v, standard, min, max) => v == null || v === '' || !Number.isFinite(Number(v)) ? standard : Math.max(min, Math.min(max, Number(v)));
+/* Ein gemeinsamer Quellausschnitt für Vorschau, Regler, Ziehen und Export.
+   y=0 zeigt den oberen, y=1 den unteren Bildbereich. Kein Strecken. */
+function sgQuerCrop(iw, ih, y = .5, zoom = 1){
+  if(!(Number.isFinite(iw) && Number.isFinite(ih) && iw > 0 && ih > 0)) return null;
+  y = sgQuerNorm(y, .5, 0, 1); zoom = sgQuerNorm(zoom, 1, 1, 2);
+  const s = Math.max(SG_QUER_W / iw, SG_QUER_H / ih) * zoom, sw = Math.min(iw, SG_QUER_W / s), sh = Math.min(ih, SG_QUER_H / s);
+  return { sx:(iw - sw) / 2, sy:(ih - sh) * y, sw, sh, reserve:Math.max(0, ih * s - SG_QUER_H), y, zoom };
+}
+function sgQuerGeometrie(D = SG.d, A = SG.A){ const im = A && A.fotoH; return im ? sgQuerCrop(im.naturalWidth || im.width, im.naturalHeight || im.height, D.querY, D.querZoom) : null; }
+/* WhatsApp-Ankündigung: vollflächiges Originalfoto mit ruhiger dunkler
+   Textzone. Die Hochkant-Master bleiben unverändert. */
 function sgQuer(ctx, D, A){
   ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_QUER_W, SG_QUER_H);
+  const crop = sgQuerGeometrie(D, A);
+  if(crop) ctx.drawImage(A.fotoH, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, SG_QUER_W, SG_QUER_H);
+  let g = ctx.createLinearGradient(0, 0, SG_QUER_W, 0);
+  g.addColorStop(0, 'rgba(4,17,39,.90)'); g.addColorStop(.42, 'rgba(4,17,39,.86)'); g.addColorStop(.62, 'rgba(4,17,39,.38)'); g.addColorStop(1, 'rgba(4,17,39,.06)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SG_QUER_W, SG_QUER_H);
+  g = ctx.createLinearGradient(0, 0, 0, 380); g.addColorStop(0, 'rgba(4,17,39,.55)'); g.addColorStop(1, 'rgba(4,17,39,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SG_QUER_W, 380);
+  g = ctx.createLinearGradient(0, 760, 0, SG_QUER_H); g.addColorStop(0, 'rgba(4,17,39,0)'); g.addColorStop(1, 'rgba(4,17,39,.82)'); ctx.fillStyle = g; ctx.fillRect(0, 760, SG_QUER_W, SG_QUER_H - 760);
   sgT(ctx, `${D.wettbewerb || ''}${D.saison ? ' / Saison ' + D.saison : ''}`.toUpperCase(), 96, 108, { fam:'SGB', w:700, s:30, c:CI.weiss, max:900, k:'querKopf' });
   const dt = sgDatumTeile(D.datum);
   sgT(ctx, [D.nr ? D.nr + '. SAISONSPIEL' : '', dt ? dt.lang.toUpperCase() : ''].filter(Boolean).join(' / '), 96, 157, { fam:'SGB', w:600, s:28, c:CI.grau, max:900, k:'querKopf' });
@@ -652,10 +668,8 @@ function sgQuer(ctx, D, A){
     const b = sgBox(im), h = (b.w * b.iw) / (b.h * b.ih) >= 1.25 ? 104 : 122, w = sgWappenBreite(im, h);
     x -= w; sgWappenMalen(ctx, im, x, 128, h); x -= 28;
   }
-  ctx.fillStyle = CI.navy2; ctx.fillRect(1056, 232, 768, 660);
-  if(A.fotoH){ const iw = A.fotoH.naturalWidth || A.fotoH.width, ih = A.fotoH.naturalHeight || A.fotoH.height;
-    const s = Math.min(768 / iw, 660 / ih); ctx.drawImage(A.fotoH, 1056 + (768 - iw * s) / 2, 232 + (660 - ih * s) / 2, iw * s, ih * s); }
-  if(D.wirHeim){ const w = sgTeile(ctx, [['HEIM', CI.weiss], ['SPIEL', CI.blau]], 96, 429, { fam:'Anton', w:400, cap:142 }); if(w > 888) SG.ueber.querTitel = true; }
+  if(D.wirHeim){ const w = sgTeile(ctx, [['HEIM', CI.weiss], ['SPIEL', CI.blau]], 96, 429, { fam:'Anton', w:400, cap:142 }); if(w > 888) SG.ueber.querTitel = true;
+    if(SG.reg._an) SG.reg._an.push({ k:'querTitel', x:96, y:260, w, h:180 }); }
   else { sgT(ctx, 'AUSWÄRTS', 96, 354, { fam:'Anton', w:400, cap:112, c:CI.weiss, max:888, k:'querTitel' });
     sgT(ctx, 'SPIEL', 96, 494, { fam:'Anton', w:400, cap:112, c:CI.blau, max:888, k:'querTitel' }); }
   if(D.teaser) sgT(ctx, D.teaser, 96, D.wirHeim ? 513 : 558, { fam:'SGB', w:700, cap:42, c:CI.orange, max:888, min:.8, k:'querTeaser' });
@@ -774,4 +788,5 @@ function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S
   const toreH = zahl(f.toreH, S.tore_h), toreG = zahl(f.toreG, S.tore_g), gespielt = toreH != null && toreG != null;
   const D = { sub:S.sub, wettbewerb:f.wettbewerb || SG_LIGA[S.sub] || 'Spiel', saison:sgSaison(S.saison), nr:f.nr === 0 ? null : zahl(f.nr, S.nr), datum:S.datum, zeit:f.zeit || S.zeit || '',
     ort:f.ort != null ? String(f.ort) : String(S.ort || ''),
+    querY:sgQuerNorm(f.querY, .5, 0, 1), querZoom:sgQuerNorm(f.querZoom, 1, 1, 2),
     wirHeim:!!S.wir_heim, wir, gegner, heim:S.wir_heim ? wir : gegner, gast:S.wir_heim ? gegner : wir, toreH, toreG, gespielt,
