@@ -531,7 +531,7 @@ const SG_VERSION = { H:'H 1.1', A:'A 1.0', E:'E 1.0', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const SG_TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-const SG = { spiele:[], idx:0, satz:null, kontext:null, neu:{}, motiv:'', A:{}, laedt:false, merkT:null, ueber:{}, reg:{} };
+const SG = { spiele:[], idx:0, satz:null, kontext:null, abruf:null, neu:{}, motiv:'', A:{}, laedt:false, merkT:null, ueber:{}, reg:{} };
 const sgE = s => svEsc(s == null ? '' : String(s));
 
 /* ---------- Schriften ---------- */
@@ -717,7 +717,7 @@ function sgS(ctx, D, A, seite){
     ctx.fillStyle = t.wir ? CI.blau : CI.grau2; ctx.fillRect(SG_X, cy - 32 * k, 8, 64 * k);
     sgT(ctx, sgMin(t), 94, cy + 12 * k, { fam:'SGC', w:800, cap:23 * k, c:t.wir ? CI.blau : CI.grau2, max:86, min:.7 });
     sgT(ctx, `${h}:${gs}`, 193, cy + 25 * k, { fam:'Anton', w:400, cap:50 * k, c:t.wir ? CI.weiss : CI.hell, max:124, min:.7 });
-    sgT(ctx, t.name || 'Torschütze fehlt', 337, cy - 6 * k, { fam:'SGB', w:600, cap:23.5 * k, c:t.name ? (t.wir ? CI.weiss : '#E4E9F1') : CI.orange, max:450, min:.72, k:'tor' + (ab + i) });
+    sgT(ctx, t.name ? t.name + (t.art === 'et' ? ' (Eigentor)' : t.art === 'elf' ? ' (Elfmeter)' : '') : 'Torschütze fehlt', 337, cy - 6 * k, { fam:'SGB', w:600, cap:23.5 * k, c:t.name ? (t.wir ? CI.weiss : '#E4E9F1') : CI.orange, max:450, min:.72, k:'tor' + (ab + i) });
     if(t.wir){ const v = t.vorlage && t.vorlage !== '-' ? t.vorlage : '';
       sgT(ctx, 'Vorlage: ' + (v || '–'), 337, cy + 37 * k, { fam:'SGB', w:600, cap:16.5 * k, c:v ? CI.orange : CI.grau, max:450, min:.72 });
       sgKreis(ctx, A.portrait.get(t.bild) || null, 860, cy, 34 * k, CI.blau, { text:t.nr != null ? String(t.nr) : '' });
@@ -768,7 +768,7 @@ function sgKaderListe(sub){ try{ return ((TKR.kader || {})[sub === 'D2' ? 'D2' :
 function sgPerson(sub){ const m = new Map(); sgKaderListe(sub).forEach(p => m.set(pkNorm(String(p.vorname || '') + String(p.nachname || '')), p));
   return name => { const k = m.get(pkNorm(name)); return k ? { nr:k.nr === '' || k.nr == null ? null : +k.nr, bild:k.bild || '', tw:k.pos === 'TW' } : { nr:null, bild:'', tw:false }; }; }
 function sgQuelle(S){ const nm = k => sgName((S.namen || {})[k] || ''), wirS = S.wir_heim ? 'h' : 'g', V = S.verlauf || [];
-  const tore = V.filter(e => e.t === 'tor').map(e => ({ m:+e.m || 0, x:+e.x || 0, wir:e.s === wirS, name:nm(e.p), vorlage:'' }));
+  const tore = V.filter(e => e.t === 'tor').map(e => ({ m:+e.m || 0, x:+e.x || 0, wir:e.s === wirS, art:['elf','et'].includes(e.art) ? e.art : '', name:nm(e.p), vorlage:'' }));
   const ein = new Map(); V.filter(e => e.t === 'wechsel' && e.s === wirS).forEach(e => { const n = nm(e.p); if(n) ein.set(n, e.m + (e.x ? '+' + e.x : '')); });
   const A = S.aufstellung || {}, start = (A.start || []).map(k => Object.assign({ name:nm(k), c:k === A.c }, A.tw ? { tw:k === A.tw } : {})).filter(p => p.name);
   const bank = (A.bank || []).map(k => ({ name:nm(k), ein:ein.get(nm(k)) || '' })).filter(p => p.name);
