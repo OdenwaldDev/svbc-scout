@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.139', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.140', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18721,6 +18721,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.140',v:'0.99.140',datum:'2026-11-23',titel:'Spielfotos fürs Ergebnis',kurz:'Das Studio schlägt Bilder passend zum Spielausgang vor.',punkte:[{ic:'i',t:'Motive zum Spiel',d:'Nach einem Sieg stehen Jubelbilder weiter vorn, nach einer Niederlage etwa der Mannschaftskreis. Deine eigene Auswahl bleibt gespeichert.',r:'team'},{ic:'i',t:'Farben für Feed und Story',d:'Siege bekommen wärmere Lichter. Bei einer Niederlage bleibt das Foto ruhiger. Die Vorschau zeigt den Farblook des Downloads.',r:'team'}]},
   {id:'0.99.139',v:'0.99.139',datum:'2026-11-23',titel:'Spieltag nach Lukas’ Vorlage',kurz:'Großes Foto, klarer Endstand und deine Eingaben automatisch gesichert.',punkte:[{ic:'i',t:'Die Ergebnisvorlage ist zurück',d:'Standard ist wieder Lukas’ Vorlage mit Foto oben und großem Endstand darunter. Wenn du die Schützenliste einschaltest, erscheinen die belegten Tore beider Mannschaften samt Minuten.',r:'team'},{ic:'i',t:'Bilder auswählen und ausrichten',d:'Die Galerie lässt sich ziehen und über Regler oder Pfeile durchsehen. Vier neue Tagesmotive ergänzen den Fundus. Vorschläge richten sich nach Anstoß und Jahreszeit. Beitrag und Story haben eigene Bildausschnitte mit Position und Zoom.',r:'team'},{ic:'i',t:'Eingaben bleiben erhalten',d:'Änderungen werden sofort auf deinem Gerät gesichert und anschließend übertragen. Nach einer Unterbrechung stellt das Studio sie wieder her. Bei abweichenden Fassungen entscheidest du, womit es weitergeht.',r:'team'},{ic:'i',t:'Spielorte und Hinspiel',d:'Fehlende Orte werden aus der amtlichen Ansetzung ergänzt. Eigene Angaben bleiben erhalten. Vollständig belegte Torfolgen ergänzen den Rückblick, etwa bei einem aufgeholten Rückstand oder spätem Ausgleich.',r:'team'}]},
   {id:'0.99.138',v:'0.99.138',datum:'2026-11-23',titel:'Bandenbestand gezielt zuordnen',kurz:'Du wählst, welche Firmenverknüpfungen du bestätigst.',punkte:[{ic:'i',t:'Offene Vorschläge bleiben offen',d:'Bei der Sammelzuordnung ist keine Firma vorausgewählt. Nur angehakte Vorschläge werden verknüpft. Ohne Haken bleibt der Eintrag unverändert und wird später weiter vorgeschlagen.',r:'admin'},{ic:'i',t:'Unbekannte Maße bleiben leer',d:'Beim Speichern einer Bande wird ein leeres Maß nicht mehr durch das Standardmaß ersetzt.',r:'admin'}]},
   {id:'0.99.137',v:'0.99.137',datum:'2026-11-23',titel:'Spieler im Studio eindeutig zuordnen',kurz:'Fotos und Rückennummern gehören zum ausgewählten Spieler.',punkte:[{ic:'i',t:'Spieler aus dem Kader wählen',d:'Die Vorbelegung nutzt vorhandene Kennungen. Gleiche oder ähnliche Namen reichen für ein Foto nicht aus. Im Editor kannst du einen Spieler ausdrücklich zuordnen. Eigene Nummern und bewusst leere Felder bleiben erhalten.',r:'team'},{ic:'i',t:'Bildstand vor dem Teilen prüfen',d:'Wechselt ein Porträt zu einem neutralen Kreis oder wird nachgeladen, braucht das Motiv eine neue Freigabe. Ergebnisvorlage, Texte und Bildausschnitte bleiben erhalten.',r:'team'}]},
@@ -37765,10 +37766,32 @@ if(typeof dpRender === 'function'){ const _dp126 = dpRender; dpRender = function
    Die Positionen gehören zum Spiel, Motiv und Format, nicht zum Gerät. */
 function sgAusschnitt(D,m,fmt){const c=D?.bildausschnitt?.[m]?.[fmt]||{};return{x:sgQuerNorm(c.x,.5,0,1),y:sgQuerNorm(c.y,m==='E'&&D.zeigeTore===true?.35:.3,0,1),zoom:sgQuerNorm(c.zoom,1,1,3)};}
 function sgFotoGeometrie(iw,ih,w,h,c){if(!(iw>0&&ih>0&&w>0&&h>0))return null;const s=Math.max(w/iw,h/ih)*c.zoom,dw=iw*s,dh=ih*s;return{...c,scale:s,dw,dh,reserveX:Math.max(0,dw-w),reserveY:Math.max(0,dh-h),w,h};}
-function sgFotoMalen(ctx,img,x,y,w,h,D,m,standard){if(!img)return;const fmt=SG.oy?'story':'beitrag',c=sgAusschnitt(D,m,fmt);
-  if(!D?.bildausschnitt?.[m]?.[fmt])return sgCover(ctx,img,x,y,w,h,standard);
-  const g=sgFotoGeometrie(img.naturalWidth||img.width,img.naturalHeight||img.height,w,h,c);if(!g)return;
-  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.drawImage(img,x-g.reserveX*c.x,y-g.reserveY*c.y,g.dw,g.dh);ctx.restore();}
+/* Farbkorrektur auf der Fotofläche, bevor Texte und Wappen hinzukommen.
+   Soft Light erhält die Zeichnung in Haut, Trikots und hellen Spitzlichtern. */
+function sgFotoFarblook(ctx,x,y,w,h,D,m){
+  const ergebnis = sgFotoErgebnis(D, m === 'E' ? 'fotoE' : 'fotoH');
+  const farben = ergebnis === 'Sieg' ? ['#ffd6a4','#284361'] :
+    ergebnis === 'Niederlage' ? ['#c1cbd1','#35465e'] : ['#eadcc8','#344b65'];
+  ctx.save();
+  ctx.globalCompositeOperation = 'soft-light';
+  ctx.globalAlpha = .38;
+  const ton = ctx.createLinearGradient(x,y,x+w*.28,y+h);
+  ton.addColorStop(0,farben[0]); ton.addColorStop(1,farben[1]);
+  ctx.fillStyle = ton; ctx.fillRect(x,y,w,h);
+  ctx.restore();
+}
+function sgFotoMalen(ctx,img,x,y,w,h,D,m,standard){
+  if(!img)return;
+  const fmt=SG.oy?'story':'beitrag';
+  const ausschnitt=D?.bildausschnitt?.[m]?.[fmt];
+  if(ausschnitt){
+    const g=sgFotoGeometrie(img.naturalWidth||img.width,img.naturalHeight||img.height,w,h,sgAusschnitt(D,m,fmt));
+    if(!g)return;
+    ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+    ctx.drawImage(img,x-g.reserveX*g.x,y-g.reserveY*g.y,g.dw,g.dh);ctx.restore();
+  } else sgCover(ctx,img,x,y,w,h,standard);
+  sgFotoFarblook(ctx,x,y,w,h,D,m);
+}
 function sgAusschnittGeometrie(D=SG.d,A=SG.A,m=SG.motiv,fmt=sgFormat(m)){
   if(!['H','E'].includes(m)||fmt==='quer')return null;const im=A?.[m==='H'?'fotoH':'fotoE'];if(!im)return null;
   const oy=fmt==='story'?285:0,h=m==='H'?(D.wirHeim?1000:940)+oy:D.zeigeTore===true?1350+oy*2:646;
@@ -37891,10 +37914,37 @@ function sgFotoTermin(D, feld){
   if(feld === 'fotoE') z.setUTCMinutes(z.getUTCMinutes() + 105);
   return {datum:z.toISOString().slice(0,10),zeit:z.toISOString().slice(11,16)};
 }
+/* Redaktionelle Motiv-Tags aus Bibliothek und Fundus. Nur Ergebnisbilder
+   bekommen eine Spielwertung, immer aus Sicht des eigenen Vereins. */
+function sgFotoErgebnis(D, feld) {
+  if (feld !== 'fotoE' || !D?.gespielt || !Number.isInteger(D.toreH) || !Number.isInteger(D.toreG)) return '';
+  const differenz = (D.toreH - D.toreG) * (D.wirHeim ? 1 : -1);
+  return differenz > 0 ? 'Sieg' : differenz < 0 ? 'Niederlage' : 'Remis';
+}
+const SG_MOTIV_TAGS = {
+  Sieg: /jubel|sieg|feier|torjubel|gegenlicht|flutlicht|sommertag/i,
+  Niederlage: /zusammenhalt|mannschaftskreis|teamkreis|linie|schuhe|mittelkreis|herbstlaub|raureif/i,
+  Remis: /zweikampf|spielszene|aktion|elfmeterpunkt|eckfahne|ball im gras/i
+};
+function sgMotivWert(foto, ergebnis) {
+  if (!ergebnis) return 0;
+  const tags = Array.isArray(foto.tags) ? foto.tags : [];
+  const text = [foto.titel, foto.name, ...tags].join(' ');
+  const direkt = ['Sieg', 'Niederlage', 'Remis'].filter(w => tags.includes(w.toLowerCase()));
+  if (direkt.length) return direkt.includes(ergebnis) ? 2 : -1;
+  if (ergebnis !== 'Sieg' && /jubel|sieg|feier/i.test(text)) return -1;
+  return SG_MOTIV_TAGS[ergebnis].test(text) ? 1 : 0;
+}
 function sgFotoAuto(D, feld){
   const termin = sgFotoTermin(D || {}, feld); if(!termin.datum) return sgFotoFundus('summer');
   const licht = typeof pkLicht === 'function' ? pkLicht(termin.datum, termin.zeit, 'auto') : {stimmung:'summer'};
   const stimmung = ['night','spring','summer','autumn','winter'].includes(licht && licht.stimmung) ? licht.stimmung : 'summer';
+  const ergebnis = sgFotoErgebnis(D, feld);
+  const passend = SG_FOTO_FUNDUS.filter(f => f.auto && f.st.includes(stimmung) && sgMotivWert(f, ergebnis) > 0);
+  if (passend.length) {
+    const index = Array.from(String(D.spiel || D.gegner || '')).reduce((n,c) => (31*n + c.charCodeAt(0)) >>> 0, 0);
+    return passend[index % passend.length];
+  }
   const auswahl = typeof pkFotoAuswahl === 'function' ? pkFotoAuswahl({datum:termin.datum,gegner:D && D.gegner || ''}, stimmung) : stimmung;
   return sgFotoFundus(auswahl) || SG_FOTO_FUNDUS.find(f=>f.auto&&f.st.includes(stimmung)) || sgFotoFundus('summer');
 }
@@ -37902,8 +37952,32 @@ function sgFotoEmpfehlung(D,feld){const t=sgFotoTermin(D||{},feld);if(!t.datum)r
   const l=pkLicht(t.datum,t.zeit,'auto'),ids=SG_FOTO_FUNDUS.filter(f=>f.auto&&f.st.includes(l.stimmung)).map(f=>f.id);
   const jahreszeit={spring:'Frühling',summer:'Sommer',autumn:'Herbst',winter:'Winter'};
   return{ids,text:(feld==='fotoE'?'Nach dem Spiel':'Zum Anstoß')+' um '+t.zeit+' Uhr: '+(l.nacht?'Abend mit Flutlicht.':(jahreszeit[l.stimmung]||'Spieltag')+' bei Tageslicht.')};}
+async function sgSpielbildAusDrive(D){
+  if (typeof SVB === 'undefined' || !SVB.sb || !D?.gespielt ||
+      !/^[A-Z0-9]{20,40}$/.test(D.spiel) || !/^\d{4}-\d{2}-\d{2}$/.test(D.datum)) return null;
+  const prefix = `assets/spieltag/drive/${D.spiel.toLowerCase()}/${D.datum}/`;
+  try {
+    const {data, error} = await SVB.sb.from('studio_medien').select('pfad,name,tags')
+      .like('pfad', prefix + '%').contains('tags', ['drive-spielbild'])
+      .order('am', {ascending:false}).order('pfad').limit(60);
+    const ausgang = sgFotoErgebnis(D, 'fotoE');
+    const foto = (data || []).filter(f => sgFotoPfad(f?.pfad) && f.pfad.startsWith(prefix) && sgMotivWert(f, ausgang) >= 0)
+      .sort((a,b) => sgMotivWert(b, ausgang) - sgMotivWert(a, ausgang))[0];
+    if (!error && foto?.pfad.startsWith(prefix) && sgFotoPfad(foto.pfad)) return foto;
+  } catch (_) {}
+  return null;
+}
 async function sgFotoQuelle(wahl, D, feld){
   const w = sgFotoWahl(wahl);
+  if (feld === 'fotoE' && w.art === 'auto') {
+    const foto = await sgSpielbildAusDrive(D);
+    if (foto) {
+      let url = null;
+      try { url = await sbUrl(foto.pfad); } catch (_) {}
+      return {url, pfad:foto.pfad, spiel:D.spiel, datum:D.datum,
+        titel:'Spielbild · Gabi', art:'bibliothek', echt:true};
+    }
+  }
   if(w.art === 'bibliothek'){
     try{ const url = typeof sbUrl === 'function' ? await sbUrl(w.pfad) : null; if(typeof url === 'string' && url){
       const L = typeof sbListe === 'function' ? sbListe(60) : [], m = L.find(m => m && m.pfad === w.pfad);
@@ -37921,14 +37995,17 @@ function sgFotoBibliothek(A){
 function sgFotoGalerieHtml(feld, wahl, A, D){
   if(!sgFotoFeld(feld)) return '';
   const w = sgFotoWahl(wahl), L = sgFotoBibliothek(A), esc = sgFotoEsc,emp=sgFotoEmpfehlung(D||{},feld);
-  const motive=[...SG_FOTO_FUNDUS].sort((a,b)=>Number(emp.ids.includes(b.id))-Number(emp.ids.includes(a.id)));
-  const knopf = f => `<button type="button" class="sg-fotomotiv" data-sgfundus="${f.id}" aria-pressed="${w.art === 'fundus' && w.id === f.id}" aria-label="Hintergrundmotiv: ${esc(f.titel)}${emp.ids.includes(f.id)?', passend zum Termin':''}"><img src="plakat/foto/klein/${f.id}.webp" alt="" loading="lazy" draggable="false" width="180" height="320"><span>${esc(f.titel)}</span>${emp.ids.includes(f.id)?'<small>Passt zum Termin</small>':''}</button>`;
+  const ergebnis = sgFotoErgebnis(D, feld);
+  const gewicht = f => Number(emp.ids.includes(f.id)) * 3 + sgMotivWert(f, ergebnis);
+  L.sort((a,b) => sgMotivWert(b, ergebnis) - sgMotivWert(a, ergebnis));
+  const motive=[...SG_FOTO_FUNDUS].sort((a,b)=>gewicht(b)-gewicht(a));
+  const knopf = f => `<button type="button" class="sg-fotomotiv" data-sgfundus="${f.id}" aria-pressed="${w.art === 'fundus' && w.id === f.id}" aria-label="Hintergrundmotiv: ${esc(f.titel)}${emp.ids.includes(f.id) ? (sgMotivWert(f,ergebnis)>0 ? ', Vorschlag für '+ergebnis : ', passend zum Termin') : ''}"><img src="plakat/foto/klein/${f.id}.webp" alt="" loading="lazy" draggable="false" width="180" height="320"><span>${esc(f.titel)}</span>${emp.ids.includes(f.id) ? '<small>'+(sgMotivWert(f,ergebnis)>0 ? 'Vorschlag · '+ergebnis : 'Passt zum Termin')+'</small>' : ''}</button>`;
   const eigene = L.map(m => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(m.pfad) : '', an = w.art === 'bibliothek' && w.pfad === m.pfad, name = String(m.name || 'Eigenes Foto').slice(0,120);
-    return `<button type="button" class="sg-fotobibmotiv${an ? ' on' : ''}" data-sgbib="${esc(m.pfad)}" aria-pressed="${an}" aria-label="Eigenes Foto: ${esc(name)}">${u ? `<img src="${esc(u)}" alt="" loading="lazy">` : '<span class="sg-fotoplatz" aria-hidden="true">Foto</span>'}<span>${esc(name)}</span></button>`;
+    return `<button type="button" class="sg-fotobibmotiv${an ? ' on' : ''}" data-sgbib="${esc(m.pfad)}" aria-pressed="${an}" aria-label="Eigenes Foto: ${esc(name)}${sgMotivWert(m,ergebnis)>0 ? ', Vorschlag für '+ergebnis : ''}">${u ? `<img src="${esc(u)}" alt="" loading="lazy">` : '<span class="sg-fotoplatz" aria-hidden="true">Foto</span>'}<span>${esc(name)}</span>${sgMotivWert(m,ergebnis)>0 ? '<small>Vorschlag · '+ergebnis+'</small>' : ''}</button>`;
   }).join('');
   return `<div class="sg-foto sg-fotowahl" data-sgfoto="${feld}"><p class="sg-l">${feld === 'fotoE' ? 'Ergebnis-Hintergrund' : 'Ankündigungs-Hintergrund'}</p>
-    <p class="sg-fotohin">${esc(emp.text)} Passende Motive stehen zuerst. Du kannst jedes Motiv selbst wählen.</p>
-    <div class="sg-fotoreihe" role="group" tabindex="0" aria-label="Fußballmotive, seitlich blättern"><button type="button" class="sg-fotoauto" data-sgfotoauto aria-pressed="${w.art === 'auto'}"><b>Auto</b><span>${feld === 'fotoE' ? 'Lichtstimmung nach dem Spiel' : 'Lichtstimmung zum Anstoß'}</span></button>${motive.map(knopf).join('')}</div>
+    <p class="sg-fotohin">${esc(emp.text)} ${ergebnis ? 'Bildvorschläge für '+({Sieg:'den Sieg',Niederlage:'die Niederlage',Remis:'das Remis'}[ergebnis])+'.' : 'Passende Motive stehen zuerst.'} Du kannst jedes Motiv selbst wählen.</p>
+    <div class="sg-fotoreihe" role="group" tabindex="0" aria-label="Fußballmotive, seitlich blättern"><button type="button" class="sg-fotoauto" data-sgfotoauto aria-pressed="${w.art === 'auto'}"><b>Auto</b><span>${feld === 'fotoE' ? (A?.fotoWahlE?.pfad ? 'Spielbild · Gabi' : 'Spielbild oder Lichtstimmung') : 'Lichtstimmung zum Anstoß'}</span></button>${motive.map(knopf).join('')}</div>
     <div class="sg-fotoscroll"><button type="button" data-sgfoto-vor="-1" aria-label="Vorherige Motive">Zurück</button><label><span>Galerie durchsehen</span><input type="range" data-sgfoto-scroll min="0" max="0" step="1" value="0" aria-label="Position in der Motivgalerie"></label><button type="button" data-sgfoto-vor="1" aria-label="Weitere Motive">Weiter</button></div>
     <details class="sg-fotobibliothek"${w.art === 'bibliothek' ? ' open' : ''}><summary>Eigene Bibliothek (${L.length})</summary>${L.length ? `<div class="sg-bib">${eigene}</div>` : '<p class="sg-fotohin">Noch keine eigenen Hintergrundfotos in der Bibliothek.</p>'}</details>
     <label class="sg-up sg-fotoupload" role="button" tabindex="0" data-sgfotohoch aria-label="Eigenes Foto hochladen"><span data-sbt>Eigenes Foto hochladen</span><input type="file" accept="image/*" data-sgup="${feld}" hidden></label></div>`;
@@ -38259,7 +38336,10 @@ function sgQuerGeometrie(D = SG.d, A = SG.A){ const im = A && A.fotoH; return im
 function sgQuer(ctx, D, A){
   ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_QUER_W, SG_QUER_H);
   const crop = sgQuerGeometrie(D, A);
-  if(crop) ctx.drawImage(A.fotoH, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, SG_QUER_W, SG_QUER_H);
+  if(crop) {
+    ctx.drawImage(A.fotoH, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, SG_QUER_W, SG_QUER_H);
+    sgFotoFarblook(ctx,0,0,SG_QUER_W,SG_QUER_H,D,'H');
+  }
   let g = ctx.createLinearGradient(0, 0, SG_QUER_W, 0);
   g.addColorStop(0, 'rgba(4,17,39,.90)'); g.addColorStop(.42, 'rgba(4,17,39,.86)'); g.addColorStop(.62, 'rgba(4,17,39,.38)'); g.addColorStop(1, 'rgba(4,17,39,.06)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SG_QUER_W, SG_QUER_H);
   g = ctx.createLinearGradient(0, 0, 0, 380); g.addColorStop(0, 'rgba(4,17,39,.55)'); g.addColorStop(1, 'rgba(4,17,39,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, SG_QUER_W, 380);
@@ -38375,17 +38455,17 @@ function sgVorschlaege(D){ const punkte = ['A','D2'].includes(D.sub) && !/pokal|
   else if(a === b){ L.push(['Unentschieden.', '']); L.push([`${a}:${b} gegen`, g + '.']); if(punkte){ L.push(['Punkteteilung', heim ? 'zuhause.' : 'auswärts.']); L.push(a ? [`${a + b} Tore,`, 'ein Punkt.'] : ['Keine Tore,', 'ein Punkt.']); } }
   else { L.push(['Niederlage.', '']); L.push(['Niederlage gegen', g + '.']); L.push([`${a}:${b} gegen`, g + '.']); }
   return L; }
+const sgZahlMitQuelle = (v, q) => v === '' || v == null || isNaN(+v) ? q : +v;
 function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S), person = sgPerson(S.sub), alt = sgQuelleAlt(S,Q);
   const ohne = n => String(n || '').replace(/\s*\((FB|H|FB, ?H)[^)]*\)\s*$/i, '').trim();
   const wir = f.wir || ohne(S.wir_heim ? S.heim : S.gast), gegner = f.gegner || ohne(S.wir_heim ? S.gast : S.heim);
-  const zahl = (v, q) => v === '' || v == null || isNaN(+v) ? q : +v;
   /* Von Hand geführte Listen stehen in derselben Reihenfolge wie die Anzeige, damit Zeile i im Formular Eintrag i ist */
   const nummer=p=>Object.prototype.hasOwnProperty.call(p,'nr')&&p.nrHand!==false?(p.nr==null||p.nr===''?null:+p.nr):person(p).nr;
   const nachNr=(a,b)=>(nummer(a)??999)-(nummer(b)??999);
   if(Array.isArray(N.tore))N.tore.sort((a,b)=>(+a.m||0)-(+b.m||0)||(+a.x||0)-(+b.x||0));
   if(Array.isArray(N.start)){if(!Array.isArray(N.bank))N.bank=[];[N.start,N.bank].forEach(L=>L.sort(nachNr));}
-  const toreH = zahl(f.toreH, S.tore_h), toreG = zahl(f.toreG, S.tore_g), gespielt = toreH != null && toreG != null;
-  const D = { spiel:S.spiel,sub:S.sub, wettbewerb:f.wettbewerb || SG_LIGA[S.sub] || 'Spiel', saison:sgSaison(S.saison), nr:f.nr === 0 ? null : zahl(f.nr, S.nr), datum:S.datum, zeit:f.zeit || S.zeit || '',
+  const toreH = sgZahlMitQuelle(f.toreH, S.tore_h), toreG = sgZahlMitQuelle(f.toreG, S.tore_g), gespielt = toreH != null && toreG != null;
+  const D = { spiel:S.spiel,sub:S.sub, wettbewerb:f.wettbewerb || SG_LIGA[S.sub] || 'Spiel', saison:sgSaison(S.saison), nr:f.nr === 0 ? null : sgZahlMitQuelle(f.nr, S.nr), datum:S.datum, zeit:f.zeit || S.zeit || '',
     ort:f.ort != null ? String(f.ort) : String(S.ort || ''),
     querY:sgQuerNorm(f.querY, .5, 0, 1), querZoom:sgQuerNorm(f.querZoom, 1, 1, 2),bildausschnitt:f.bildausschnitt||{},
     kontext:sgKontextPassend(SG.kontext, S), rueckblick:f.rueckblick !== false, geschichte:typeof f.geschichte === 'string' ? f.geschichte.trim().slice(0,600) : '',
@@ -38572,7 +38652,10 @@ function sgPortraitStand(b,A){
 /* Prüfsumme des Stands, den eine Freigabe meint: alles, was im Motiv zu sehen ist */
 function sgStandHash(m, D){ const k = [SG_VERSION[m], D.wettbewerb, D.saison, D.nr, D.datum, D.heim, D.gast, D.wappen];
   k.push('Texte 1.0', D.ort, sgTexte(m, D));
-  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 2',w.art==='auto'?sgFotoAuto(D,feld).id:w,D.bildausschnitt?.[m]||{});}
+  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 3 · Farblook 1',w.art==='auto'?sgFotoAuto(D,feld).id:w,D.bildausschnitt?.[m]||{});}
+  const automatisch = SG.A?.fotoWahlE;
+  if (m === 'E' && sgFotoWahl(D.fotoE).art === 'auto' && automatisch?.pfad &&
+      automatisch.spiel === D.spiel && automatisch.datum === D.datum) k.push(automatisch.pfad);
   if(m === 'H') k.push('Quer 2.0', D.zeit, D.teaser, D.fotoH, sgQuerNorm(D.querY, .5, 0, 1), sgQuerNorm(D.querZoom, 1, 1, 2));
   if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE, D.zeigeTore === true, D.zeigeTore === true ? sgErgebnisBeide(D) : null);
   if(m === 'S') k.push('Personen 3',D.toreH,D.toreG,D.tore.map(t=>[t.m,t.x,t.wir,t.name,t.vorlage,t.art,t.nr,t.vnr,t.bild,sgPortraitStand(t.bild,SG.A),t.vbild,sgPortraitStand(t.vbild,SG.A)]));
@@ -38888,7 +38971,13 @@ function sgToreHand(vor=SG.d.tore){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore
 function sgElfHand(start=SG.d.start,bank=SG.d.bank){ if(!Array.isArray(SG.neu.start)){ const z = p => ({key:p.key,fupa:p.fupa,name:p.name,nr:p.nr,nrHand:p.nrHand,tw:p.tw,c:p.c,ein:p.ein}); SG.neu.start = start.map(z); SG.neu.bank = bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); SG.neu.elfQV=3; }
   if(!Array.isArray(SG.neu.bank)) SG.neu.bank = []; return SG.neu; }
 let sgZeichenT = null;
-function sgBald(mitBildern, ganz){ mitBildern = mitBildern || !!SG.bildOffen; if(mitBildern) sgBildWarten(); const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz){ try{ return await sgNeu(mitBildern); }catch(e){ if(satz === SG.satz && konto === sgKonto()) kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); return false; } }
+// Der alte Bildstand bleibt bis zur erfolgreichen Neuzeichnung derselbe.
+// Eine weitere Eingabe darf den ausstehenden Wechsel der Galerie nicht verlieren.
+let sgGalerieVorWechsel = null;
+function sgBald(mitBildern, ganz){
+  const wechsel = !!SG.d && sgGalerieVorWechsel === SG.d;
+  ganz = ganz || wechsel;
+  mitBildern = mitBildern || wechsel || !!SG.bildOffen; if(mitBildern) sgBildWarten(); const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz){ try{ return await sgNeu(mitBildern); }catch(e){ if(satz === SG.satz && konto === sgKonto()) kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); return false; } }
     /* Beim Tippen bleibt das Formular stehen: nur Bild, Prüfliste und Zustand werden frisch */
     const m = SG.motiv, D = sgDaten(); let A = SG.A;
     try{ if(mitBildern) A = await sgAssets(D); }catch(e){ if(aktuell()){ sgBildStatus('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); } return; }
@@ -38932,6 +39021,12 @@ function sgBinden(h){
     if(inp.type === 'number') v = v === '' ? '' : Math.max(0, Math.round(+v)); if(k === 'nr' && v === 0) v = 0;
     if(k === 'h1' || k === 'h2'){ const f = SG.neu.f = SG.neu.f || {}; if(f.h1 == null){ f.h1 = SG.d.h1; f.h2 = SG.d.h2; } f[k] = String(v); h.querySelectorAll('[data-sgvor]').forEach(b => b.classList.remove('on')); }
     else if(k === 'nr' && v === '') delete (SG.neu.f || {}).nr; else if(k === 'nr') SG.neu.f.nr = v; else sgSetzen(k, v);
+    if (k === 'toreH' || k === 'toreG') {
+      const toreH = sgZahlMitQuelle(SG.neu.f.toreH, SG.satz.tore_h);
+      const toreG = sgZahlMitQuelle(SG.neu.f.toreG, SG.satz.tore_g);
+      const stand = {toreH, toreG, wirHeim:SG.d.wirHeim, gespielt:toreH != null && toreG != null};
+      sgGalerieVorWechsel = sgFotoErgebnis(stand,'fotoE') === sgFotoErgebnis(SG.d,'fotoE') ? null : SG.d;
+    }
     sgBald(false, false); });
   h.querySelectorAll('[data-sgvor]').forEach(b => b.onclick = () => { const v = SG.d.vorschlaege[+b.dataset.sgvor]; SG.neu.f = SG.neu.f || {}; SG.neu.f.h1 = v[0]; SG.neu.f.h2 = v[1]; sgBald(false, true); });
   h.querySelectorAll('[data-sgbib]').forEach(b => b.onclick = () => { const feld = b.closest('[data-sgfoto]').dataset.sgfoto, w = 'bib:' + b.dataset.sgbib; sgSetzen(feld, SG.neu.f[feld] === w ? '' : w); sgBald(true, true); });

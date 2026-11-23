@@ -33,6 +33,12 @@ function sgBinden(h){
     if(inp.type === 'number') v = v === '' ? '' : Math.max(0, Math.round(+v)); if(k === 'nr' && v === 0) v = 0;
     if(k === 'h1' || k === 'h2'){ const f = SG.neu.f = SG.neu.f || {}; if(f.h1 == null){ f.h1 = SG.d.h1; f.h2 = SG.d.h2; } f[k] = String(v); h.querySelectorAll('[data-sgvor]').forEach(b => b.classList.remove('on')); }
     else if(k === 'nr' && v === '') delete (SG.neu.f || {}).nr; else if(k === 'nr') SG.neu.f.nr = v; else sgSetzen(k, v);
+    if (k === 'toreH' || k === 'toreG') {
+      const toreH = sgZahlMitQuelle(SG.neu.f.toreH, SG.satz.tore_h);
+      const toreG = sgZahlMitQuelle(SG.neu.f.toreG, SG.satz.tore_g);
+      const stand = {toreH, toreG, wirHeim:SG.d.wirHeim, gespielt:toreH != null && toreG != null};
+      sgGalerieVorWechsel = sgFotoErgebnis(stand,'fotoE') === sgFotoErgebnis(SG.d,'fotoE') ? null : SG.d;
+    }
     sgBald(false, false); });
   h.querySelectorAll('[data-sgvor]').forEach(b => b.onclick = () => { const v = SG.d.vorschlaege[+b.dataset.sgvor]; SG.neu.f = SG.neu.f || {}; SG.neu.f.h1 = v[0]; SG.neu.f.h2 = v[1]; sgBald(false, true); });
   h.querySelectorAll('[data-sgbib]').forEach(b => b.onclick = () => { const feld = b.closest('[data-sgfoto]').dataset.sgfoto, w = 'bib:' + b.dataset.sgbib; sgSetzen(feld, SG.neu.f[feld] === w ? '' : w); sgBald(true, true); });

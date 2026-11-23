@@ -180,7 +180,10 @@ function sgPortraitStand(b,A){
 /* Prüfsumme des Stands, den eine Freigabe meint: alles, was im Motiv zu sehen ist */
 function sgStandHash(m, D){ const k = [SG_VERSION[m], D.wettbewerb, D.saison, D.nr, D.datum, D.heim, D.gast, D.wappen];
   k.push('Texte 1.0', D.ort, sgTexte(m, D));
-  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 2',w.art==='auto'?sgFotoAuto(D,feld).id:w,D.bildausschnitt?.[m]||{});}
+  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 3 · Farblook 1',w.art==='auto'?sgFotoAuto(D,feld).id:w,D.bildausschnitt?.[m]||{});}
+  const automatisch = SG.A?.fotoWahlE;
+  if (m === 'E' && sgFotoWahl(D.fotoE).art === 'auto' && automatisch?.pfad &&
+      automatisch.spiel === D.spiel && automatisch.datum === D.datum) k.push(automatisch.pfad);
   if(m === 'H') k.push('Quer 2.0', D.zeit, D.teaser, D.fotoH, sgQuerNorm(D.querY, .5, 0, 1), sgQuerNorm(D.querZoom, 1, 1, 2));
   if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE, D.zeigeTore === true, D.zeigeTore === true ? sgErgebnisBeide(D) : null);
   if(m === 'S') k.push('Personen 3',D.toreH,D.toreG,D.tore.map(t=>[t.m,t.x,t.wir,t.name,t.vorlage,t.art,t.nr,t.vnr,t.bild,sgPortraitStand(t.bild,SG.A),t.vbild,sgPortraitStand(t.vbild,SG.A)]));
@@ -496,7 +499,13 @@ function sgToreHand(vor=SG.d.tore){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore
 function sgElfHand(start=SG.d.start,bank=SG.d.bank){ if(!Array.isArray(SG.neu.start)){ const z = p => ({key:p.key,fupa:p.fupa,name:p.name,nr:p.nr,nrHand:p.nrHand,tw:p.tw,c:p.c,ein:p.ein}); SG.neu.start = start.map(z); SG.neu.bank = bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); SG.neu.elfQV=3; }
   if(!Array.isArray(SG.neu.bank)) SG.neu.bank = []; return SG.neu; }
 let sgZeichenT = null;
-function sgBald(mitBildern, ganz){ mitBildern = mitBildern || !!SG.bildOffen; if(mitBildern) sgBildWarten(); const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz){ try{ return await sgNeu(mitBildern); }catch(e){ if(satz === SG.satz && konto === sgKonto()) kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); return false; } }
+// Der alte Bildstand bleibt bis zur erfolgreichen Neuzeichnung derselbe.
+// Eine weitere Eingabe darf den ausstehenden Wechsel der Galerie nicht verlieren.
+let sgGalerieVorWechsel = null;
+function sgBald(mitBildern, ganz){
+  const wechsel = !!SG.d && sgGalerieVorWechsel === SG.d;
+  ganz = ganz || wechsel;
+  mitBildern = mitBildern || wechsel || !!SG.bildOffen; if(mitBildern) sgBildWarten(); const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz){ try{ return await sgNeu(mitBildern); }catch(e){ if(satz === SG.satz && konto === sgKonto()) kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); return false; } }
     /* Beim Tippen bleibt das Formular stehen: nur Bild, Prüfliste und Zustand werden frisch */
     const m = SG.motiv, D = sgDaten(); let A = SG.A;
     try{ if(mitBildern) A = await sgAssets(D); }catch(e){ if(aktuell()){ sgBildStatus('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); } return; }
