@@ -231,7 +231,7 @@ function bdForm(b,B){
   M.querySelectorAll('[data-bdkand]').forEach(k=>k.onclick=()=>{ M.querySelector('select[name="sponsor"]').value=k.dataset.bdkand; k.closest('.bd-vor').textContent='Ausgewählt. Mit Speichern wird sie verknüpft.'; });
   M.querySelectorAll('[data-bdseg]').forEach(g=>g.querySelectorAll('button').forEach(k=>k.onclick=()=>{ wert[g.dataset.bdseg]=k.dataset.v; g.querySelectorAll('button').forEach(y=>y.classList.toggle('on',y===k)); }));
   M.querySelector('#bdF').onsubmit=async e=>{ e.preventDefault(); const fd=new FormData(e.target), t=k=>String(fd.get(k)||'').trim()||null;
-    const r={firma:t('firma'),nr:+fd.get('nr')||0,lage:t('lage'),masse:t('masse')||BD_STANDARD,material:t('material'),zustand:wert.zustand,partner_aktiv:wert.partner_aktiv,
+    const r={firma:t('firma'),nr:+fd.get('nr')||0,lage:t('lage'),masse:t('masse')||'',material:t('material'),zustand:wert.zustand,partner_aktiv:wert.partner_aktiv,
       sponsor:t('sponsor'),partner_nein:(!x.sponsor&&vor.id&&t('sponsor')!==vor.id)?vor.id:(x.partner_nein||null),notiz:t('notiz'),foto_link:t('foto_link'),geaendert_am:new Date().toISOString(),geaendert_von:SVU.name||null};
     if(!r.firma)return kToast('⚠️ Bitte die Firma eintragen');
     if(r.foto_link&&!/^https:\/\//.test(r.foto_link))return kToast('⚠️ Der Foto-Link muss mit https:// beginnen');
@@ -269,15 +269,14 @@ function bdOhnePartner(){ return BD.L.filter(b=>!b.sponsor).map(b=>({b,id:bdTref
 function bdZuordnen(B){
   const L=bdOhnePartner(); if(!L.length)return kToast('Alles schon verknüpft');
   const fn=id=>(SPO.S.find(s=>s.id===id)||{}).firma||'';
-  const M=svModal(`<div class="mhead"><div><h2 style="margin:0">Firmen zuordnen</h2><div class="msub">Diese Banden passen zu einer Firma im Partner-Bereich. Haken raus, wenn etwas nicht stimmt.</div></div></div>
-    <div class="bd-zl">${L.map((x,i)=>`<label class="bd-zr"><input type="checkbox" checked data-bdzi="${i}"><span><b>${svEsc(x.b.firma)}</b><small>wird verknüpft mit ${svEsc(fn(x.id))}</small></span></label>`).join('')}</div>
-    <p class="note small">Ohne Haken wird diese Firma für die Bande nicht mehr vorgeschlagen.</p>
+  const M=svModal(`<div class="mhead"><div><h2 style="margin:0">Firmen zuordnen</h2><div class="msub">Prüfe die vorgeschlagene Firma zu jeder Bande. Wähle nur die Zuordnungen, die du bestätigen kannst.</div></div></div>
+    <div class="bd-zl">${L.map((x,i)=>`<label class="bd-zr"><input type="checkbox" data-bdzi="${i}"><span><b>${svEsc(x.b.firma)}</b><small>Vorschlag: ${svEsc(fn(x.id))}</small></span></label>`).join('')}</div>
+    <p class="note small">Ohne Haken bleibt die Bande unverändert. Die Firma wird weiter vorgeschlagen.</p>
     <div class="btnrow sbact"><button class="btn" type="button" id="bdZok">Verknüpfen</button><button class="btn ghost" type="button" onclick="closeOverlay()">Abbrechen</button></div>`);
-  M.querySelector('#bdZok').onclick=async e=>{ const btn=e.currentTarget; if(btn.disabled)return; btn.disabled=true; btn.textContent='Speichere …';
-    const C=[...M.querySelectorAll('[data-bdzi]')], wahl=C.filter(c=>c.checked).map(c=>L[+c.dataset.bdzi]), nein=C.filter(c=>!c.checked).map(c=>L[+c.dataset.bdzi]); let ok=0, fehler='';
+  M.querySelector('#bdZok').onclick=async e=>{ const btn=e.currentTarget; if(btn.disabled)return;
+    const C=[...M.querySelectorAll('[data-bdzi]')], wahl=C.filter(c=>c.checked).map(c=>L[+c.dataset.bdzi]); if(!wahl.length)return kToast('Bitte wähle mindestens eine Zuordnung.');
+    btn.disabled=true; btn.textContent='Speichere …'; let ok=0, fehler='';
     for(const x of wahl){ const {data,error}=await SVB.sb.from('banden').update({sponsor:x.id,geaendert_am:new Date().toISOString(),geaendert_von:SVU.name||null}).eq('id',x.b.id).is('sponsor',null).select('id'); if(error)fehler=svFehlerText(error); else ok+=(data||[]).length; }
-    // Haken rausgenommen: diese Firma für die Bande nicht mehr vorschlagen
-    for(const x of nein){ const {error}=await SVB.sb.from('banden').update({partner_nein:x.id}).eq('id',x.b.id).is('sponsor',null); if(error)fehler=svFehlerText(error); }
     closeOverlay(); const z=(ok===1?'1 Bande':ok+' Banden')+' verknüpft'; kToast(fehler?'⚠️ '+z+', Rest nicht gespeichert: '+fehler:'✓ '+z); spoBanden(B); };
 }
 
@@ -579,6 +578,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.138',v:'0.99.138',datum:'2026-11-23',titel:'Bandenbestand gezielt zuordnen',kurz:'Du wählst, welche Firmenverknüpfungen du bestätigst.',punkte:[{ic:'i',t:'Offene Vorschläge bleiben offen',d:'Bei der Sammelzuordnung ist keine Firma vorausgewählt. Nur angehakte Vorschläge werden verknüpft. Ohne Haken bleibt der Eintrag unverändert und wird später weiter vorgeschlagen.',r:'admin'},{ic:'i',t:'Unbekannte Maße bleiben leer',d:'Beim Speichern einer Bande wird ein leeres Maß nicht mehr durch das Standardmaß ersetzt.',r:'admin'}]},
   {id:'0.99.137',v:'0.99.137',datum:'2026-11-23',titel:'Spieler im Studio eindeutig zuordnen',kurz:'Fotos und Rückennummern gehören zum ausgewählten Spieler.',punkte:[{ic:'i',t:'Spieler aus dem Kader wählen',d:'Die Vorbelegung nutzt vorhandene Kennungen. Gleiche oder ähnliche Namen reichen für ein Foto nicht aus. Im Editor kannst du einen Spieler ausdrücklich zuordnen. Eigene Nummern und bewusst leere Felder bleiben erhalten.',r:'team'},{ic:'i',t:'Bildstand vor dem Teilen prüfen',d:'Wechselt ein Porträt zu einem neutralen Kreis oder wird nachgeladen, braucht das Motiv eine neue Freigabe. Ergebnisvorlage, Texte und Bildausschnitte bleiben erhalten.',r:'team'}]},
   {id:'0.99.136',v:'0.99.136',datum:'2026-11-23',titel:'Geburtstage aus der Spielerpflege',kurz:'Das gepflegte Geburtsdatum gilt auch im Kalender und auf Heute.',punkte:[{ic:'i',t:'Dasselbe Datum an allen Stellen',d:'Ein in der Spielerpflege ergänztes oder korrigiertes Geburtsdatum wird auch für den Kalender verwendet. Nach dem Speichern lädt er die Termine neu. Das Alter zählt ab dem Geburtstag richtig.',r:'team'}]},
   {id:'0.99.135',v:'0.99.135',datum:'2026-11-23',titel:'Firmenlogos auf beiden Anzugärmeln',kurz:'Bereits vorbereitete Marken bleiben auch beim erneuten Einfärben sichtbar.',punkte:[{ic:'i',t:'Der Aufdruck bleibt erhalten',d:'Eng zugeschnittene Firmenlogos verschwinden auf der Trainingsanzug-Vorschau nicht mehr. Das gilt für den linken und rechten Ärmel sowie für vorbereitete schwarze und weiße Fassungen.',r:'team'},{ic:'i',t:'Leere Bilddateien werden erkannt',d:'Leere Logofassungen werden nicht mehr als fertige Bilder ausgegeben. Gespeicherte Originale und Platzbelegungen bleiben erhalten.',r:'team'}]},
