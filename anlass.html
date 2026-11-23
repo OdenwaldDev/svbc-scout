@@ -764,6 +764,81 @@ html.zeiger .spot{opacity:1}
 .e-in .lg-t{font-size:8cqw}
 @media(prefers-reduced-motion:reduce){.anlass .anstoss button,.anlass .anstoss .ring{animation:none}}
 @media(min-width:860px){.anlass .a-zwei .bon-z{grid-area:auto}.anlass .zt{flex:1 1 180px}.anlass .zt b{font-size:22px}}
+
+/* Redaktionelle Partnerpräsentation */
+body.ed-aktiv{--ed-dunkel:#101b2b;--ed-hell:#f4efe4;--ed-akzent:#e99952;display:flex;flex-direction:column;height:100vh;height:100dvh;color:var(--ed-hell);background:var(--ed-dunkel)}
+.ed-deck{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;container-type:inline-size}
+.ed-slide{isolation:isolate;position:relative;min-height:100%;display:grid;grid-template-columns:minmax(0,1fr);align-content:stretch;overflow:hidden;background:var(--ed-hell);color:var(--ed-dunkel)}
+.ed-slide.ed-mitbild{grid-template-columns:minmax(0,1.13fr) minmax(0,1fr)}
+.ed-inhalt{grid-column:1;grid-row:1;z-index:1;align-self:center;padding:clamp(28px,5.2cqw,92px);min-width:0}
+.ed-rubrik{display:flex;align-items:center;gap:.8em;font:700 clamp(11px,1.08cqw,17px)/1.2 var(--t);letter-spacing:.15em;text-transform:uppercase}
+.ed-rubrik::before{content:'';width:2.7em;height:3px;background:#df762a}
+.ed-inhalt h2{max-width:21ch;margin:.28em 0 .36em;font:800 clamp(42px,5.9cqw,108px)/.97 var(--d);letter-spacing:-.026em;text-wrap:balance;overflow-wrap:break-word}
+.ed-lead{max-width:59ch;font-size:clamp(17px,1.65cqw,29px);line-height:1.34;text-wrap:pretty}
+.ed-abbildung{grid-column:2;grid-row:1;position:relative;align-self:stretch;min-height:100%;overflow:hidden;background:#283341}
+.ed-motiv{position:absolute;inset:0}
+.ed-bild{width:100%;height:100%;object-fit:cover}
+.ed-abbildung figcaption{position:absolute;bottom:0;right:0;padding:4px 10px;background:#111b;color:white;font-size:clamp(11px,.8cqw,13px)}
+.ed-folio{position:absolute;top:1.9cqw;right:2.5cqw;font:600 clamp(12px,1cqw,17px)/1 var(--t);letter-spacing:.11em;opacity:.8;z-index:2}
+.ed-mitbild .ed-folio{color:white;text-shadow:0 1px 4px #000}
+.ed-titel,.ed-pilot{color:var(--ed-hell);background:var(--ed-dunkel)}
+.ed-titel.ed-mitbild{display:flex;flex-direction:column;justify-content:flex-end}
+.ed-titel.ed-mitbild .ed-abbildung{position:absolute;inset:0}
+.ed-titel.ed-mitbild .ed-abbildung::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,15,26,.94),rgba(6,15,26,.48) 54%,transparent),linear-gradient(0deg,#08142280,transparent 65%)}
+.ed-titel .ed-abbildung figcaption{z-index:1}
+.ed-titel .ed-inhalt{align-self:flex-start;max-width:75%;padding-bottom:6cqw}
+.ed-titel h2{font-size:clamp(52px,8.3cqw,154px);max-width:16ch}
+.ed-titel .ed-lead{max-width:45ch}
+.ed-slide.ed-zahlen{background:#f4ede0}
+.ed-zeilen{margin-top:clamp(14px,2.1cqw,36px);display:grid;gap:0}
+.ed-zeilen li{display:flex;align-items:baseline;gap:1em;padding:.6em 0;border-top:1px solid currentColor;border-color:color-mix(in srgb,currentColor 26%,transparent);font-size:clamp(15px,1.45cqw,26px);line-height:1.28}
+.ed-zeilen b{font:800 1.45em/1 var(--d);color:#a64915;flex:none}
+.ed-zeilen strong{display:block;font-weight:700}
+.ed-zeilen p{margin-top:.13em}
+.ed-zahlen:not(.ed-mitbild) .ed-zeilen{display:flex;gap:3.2cqw}
+.ed-zahlen:not(.ed-mitbild) .ed-zeilen li{flex:1;display:block}
+.ed-zahlen .ed-zeilen b{display:block;font:800 clamp(42px,5.3cqw,100px)/1 var(--d);letter-spacing:-.035em;margin-bottom:.2em}
+.ed-pilot .ed-zeilen b,.ed-titel .ed-zeilen b{color:var(--ed-akzent)}
+.ed-notiz{margin-top:1.35em;font-size:clamp(12px,1.03cqw,18px);line-height:1.3;opacity:.86}
+.ed-notiz a{color:inherit;text-underline-offset:3px}
+.ed-slide.ed-bande.ed-mitbild{grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr)}
+.ed-bande .ed-abbildung{display:grid;align-items:center;background:#131f2c}
+.ed-bande .ed-motiv{position:relative;aspect-ratio:1376/768;width:100%}
+.ed-motiv .ed-bande{position:absolute;left:4.5%;top:38.6%;width:91.3%;height:25.9%;display:grid;place-items:center;background:linear-gradient(180deg,#eeefec,#faf9f5 53%,#eae9e3);border-block:1px solid #a6a6a1}
+.ed-motiv .ed-bande img{position:absolute;inset:9% 14%;width:72%;height:82%;object-fit:contain;mix-blend-mode:multiply}
+.ed-nav{display:flex;align-items:center;gap:1rem;flex:none;min-height:58px;padding:6px max(20px,3.2vw) max(6px,env(safe-area-inset-bottom));background:#101b2b;border-top:1px solid #ffffff30}
+.ed-nav>img{width:53px;height:34px;object-fit:contain}
+.ed-partner{font:600 15px/1.1 var(--t);overflow-wrap:anywhere}
+.ed-controls{margin-left:auto;display:flex;gap:14px;align-items:center}
+.ed-controls button{width:44px;height:44px;border:1px solid #98a0aa;border-radius:3px;font-size:23px;line-height:1}
+.ed-controls button:disabled{opacity:.3;cursor:default}
+.ed-stand{min-width:42px;text-align:center;font:600 14px/1 var(--t);font-variant-numeric:tabular-nums}
+@media screen and (max-width:760px){
+  .ed-slide,.ed-slide.ed-mitbild,.ed-slide.ed-bande.ed-mitbild{display:flex;flex-direction:column;justify-content:center}
+  .ed-slide.ed-mitbild{justify-content:flex-start}
+  .ed-slide>.ed-abbildung{min-height:0;flex:none;width:100%;height:clamp(180px,35vh,350px)}
+  .ed-slide.ed-bande>.ed-abbildung{height:auto}
+  .ed-titel.ed-mitbild>.ed-abbildung{height:100%}
+  .ed-slide>.ed-inhalt{align-self:stretch;max-width:100%;padding:32px 24px}
+  .ed-titel.ed-mitbild{justify-content:flex-end}
+  .ed-titel .ed-inhalt{padding-top:30vh}
+  .ed-titel.ed-mitbild .ed-abbildung::after{background:linear-gradient(0deg,#081422 1%,#081422d9 40%,#08142255 85%)}
+  .ed-zahlen:not(.ed-mitbild) .ed-zeilen{display:grid;gap:0}
+  .ed-zahlen:not(.ed-mitbild) .ed-zeilen li{display:flex;align-items:center}
+  .ed-zahlen .ed-zeilen b{min-width:2.5em;font-size:35px}
+  .ed-folio{top:12px;right:14px}
+  .ed-nav{gap:.65rem;padding-inline:14px}
+  .ed-controls{gap:8px}
+}
+@media print{
+  @page{size:320mm 180mm;margin:0}
+  html:has(.ed-aktiv),body.ed-aktiv{display:block;height:auto;overflow:visible;background:white;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .ed-deck{display:block;overflow:visible;width:320mm}
+  .ed-deck .ed-slide,.ed-deck .ed-slide[hidden]{display:grid!important;width:320mm;height:180mm;min-height:0;break-after:page;break-inside:avoid}
+  .ed-deck .ed-slide.ed-titel.ed-mitbild{display:flex!important}
+  .ed-slide:last-child{break-after:auto}
+  .ed-nav{display:none}
+}
 </style></head><body><div id="film" data-s="start" data-licht="1" class="anlass">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture></div>
@@ -1056,11 +1131,73 @@ function klick(e){ const t=e.target.closest('button,a'); if(!t)return;
   if(t.id==='fragB'){ const f=$('#fragF'); f.hidden=!f.hidden; if(!f.hidden)$('#fragT').focus(); return; }
   if(t.id==='nochB'){ $('#jaNach').hidden=true; $('#jaVor').hidden=false; route.classList.add('da'); return; } }
 
+function redaktion(daten){
+  if(!Array.isArray(daten?.folien))return false;
+  const typen=new Set(['titel','foto','zahlen','bande','paket','pilot']);
+  const folien=daten.folien.filter(f=>f&&typen.has(f.typ)&&String(f.titel||'').trim()).slice(0,9);
+  if(!folien.length)return false;
+  function bildpfad(wert){
+    if(typeof wert!=='string')return '';
+    if(/^partner\/(?:[\w-]+\/)*[\w.-]+\.(?:webp|png|jpg|jpeg|svg|avif)$/i.test(wert))return wert;
+    try{
+      const u=new URL(wert);
+      if(u.origin==='https://cdn.prod.website-files.com'&&!u.username&&!u.password&&u.pathname.startsWith('/5dffb81bdcc8ad6f886d793f/'))return u.href;
+    }catch{}
+    return '';
+  }
+  function quelle(q){
+    if(!q?.titel)return '';
+    try{
+      const u=new URL(q.url);
+      if(u.protocol==='https:'&&!u.username&&!u.password)return '<a target="_blank" rel="noopener noreferrer" href="'+esc(u.href)+'">'+esc(q.titel)+'</a>';
+    }catch{}
+    return '';
+  }
+  const logo=bildpfad(daten.logo);
+  function seite(f,i){
+    const bild=bildpfad(f.bild)||(f.typ==='bande'?'partner/r-bande.webp':'');
+    const bande=f.typ==='bande'&&logo;
+    const foto=bild?'<figure class="ed-abbildung"><div class="ed-motiv"><img class="ed-bild" src="'+esc(bild)+'" alt="'+esc(f.alt||'')+'">'+(bande?'<div class="ed-bande"><img src="'+esc(logo)+'" alt="'+esc(A.firma)+'"></div>':'')+'</div>'+(f.credit?'<figcaption>'+esc(f.credit)+'</figcaption>':'')+'</figure>':'';
+    const rows=Array.isArray(f.zeilen)?f.zeilen.filter(z=>z&&(z.wert||z.label||z.text)):[];
+    const zeilen=rows.length?'<ul class="ed-zeilen">'+rows.map(z=>'<li>'+(z.wert?'<b>'+esc(z.wert)+'</b>':'')+'<div>'+(z.label?'<strong>'+esc(z.label)+'</strong>':'')+(z.text?'<p>'+esc(z.text)+'</p>':'')+'</div></li>').join('')+'</ul>':'';
+    const hinweis=[f.notiz?esc(f.notiz):'',quelle(f.quelle)].filter(Boolean).join(' · ');
+    return '<section class="ed-slide ed-'+f.typ+(bild?' ed-mitbild':'')+'" aria-labelledby="ed-h-'+i+'"'+(i?' hidden':'')+'>'+foto+'<div class="ed-inhalt"><div class="ed-rubrik">'+esc(f.rubrik||A.firma)+'</div><h2 id="ed-h-'+i+'">'+esc(f.titel)+'</h2>'+(f.text?'<p class="ed-lead">'+esc(f.text)+'</p>':'')+zeilen+(hinweis?'<p class="ed-notiz">'+hinweis+'</p>':'')+'</div><span class="ed-folio" aria-hidden="true">'+String(i+1).padStart(2,'0')+'</span></section>';
+  }
+  document.body.classList.add('ed-aktiv');
+  const deck=document.createElement('main');
+  deck.className='ed-deck';
+  deck.setAttribute('aria-label',A.titel||'Partnerpräsentation');
+  deck.innerHTML=folien.map(seite).join('');
+  const nav=document.createElement('nav');
+  nav.className='ed-nav';
+  nav.setAttribute('aria-label','Präsentation durchblättern');
+  nav.innerHTML='<img src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach"><span class="ed-partner">'+esc(A.firma)+'</span><div class="ed-controls"><button type="button" aria-label="Vorherige Folie">←</button><span class="ed-stand" aria-live="polite" aria-atomic="true"></span><button type="button" aria-label="Nächste Folie">→</button></div>';
+  film.replaceWith(deck,nav);
+  const slides=$$('.ed-slide',deck), [vor,zur]= $$('button',nav);
+  let aktuell=0;
+  function zeige(index){
+    aktuell=Math.max(0,Math.min(slides.length-1,index));
+    slides.forEach((s,i)=>{s.hidden=i!==aktuell;});
+    deck.scrollTop=0;
+    vor.disabled=aktuell===0; zur.disabled=aktuell===slides.length-1;
+    $('.ed-stand',nav).textContent=(aktuell+1)+' / '+slides.length;
+  }
+  vor.onclick=()=>zeige(aktuell-1); zur.onclick=()=>zeige(aktuell+1);
+  document.addEventListener('keydown',e=>{
+    if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
+    const z={ArrowLeft:aktuell-1,ArrowRight:aktuell+1,Home:0,End:slides.length-1};
+    if(Object.prototype.hasOwnProperty.call(z,e.key)){e.preventDefault();zeige(z[e.key]);}
+  });
+  zeige(0);
+  return true;
+}
+
 async function los(){
   if(!/^([a-z0-9]+-)*[a-hjkmnp-z2-9]{8}$/.test(kurz)){ leer(); return; }
   try{ A=await rpc('partner_anlass',{p_kurz:kurz}); }catch(e){ A=null; }
   if(!A||!A.ok){ leer(); return; }
   D=A.daten||{}; document.title=A.titel+' · '+A.firma+' · SV/BSC Mörlenbach'; $('#fuer').textContent=A.firma;
+  if(redaktion(D.redaktion))return;
   await logos();
   SZ=[sStart(),sWorum(),sAuftritt(),sDrin(),sIdee(),sBeitrag(),sExtras(),sJa()].filter(Boolean);
   haupt.innerHTML=SZ.map(z=>`<section class="szene" data-s="${z.s}">${z.html}</section>`).join('');
