@@ -1,12 +1,12 @@
     teaser:f.teaser || '', trainer:f.trainer || '', zeigeTore:f.zeigeTore !== false, fotoH:f.fotoH || '', fotoE:f.fotoE || '', wappen:f.wappen || '', quelle:Q,
     toreHand:Array.isArray(N.tore), elfHand:Array.isArray(N.start),
     ergebnisNeu:gespielt && S.tore_h != null && S.tore_g != null && (toreH !== S.tore_h || toreG !== S.tore_g),
-    toreNeu:Array.isArray(N.tore) && !!N.toreQ && N.toreQ !== sgHash(JSON.stringify(Q.tore)) && Q.tore.length > 0,
-    elfNeu:Array.isArray(N.start) && !!N.elfQ && N.elfQ !== sgHash(JSON.stringify([Q.start, Q.bank])) && Q.start.length > 0 };
-  D.tore = (Array.isArray(N.tore) ? N.tore : Q.tore).map(t => { const p = t.wir ? person(t.name) : {}, v = t.wir && t.vorlage && t.vorlage !== '-' ? person(t.vorlage) : {};
-    return { m:+t.m || 0, x:+t.x || 0, wir:!!t.wir, art:['elf','et'].includes(t.art) ? t.art : '', name:t.name || '', vorlage:t.vorlage || '', nr:p.nr, bild:p.bild || '', vnr:v.nr, vbild:v.bild || '' }; })
+    toreNeu:Array.isArray(N.tore) && sgQuelleNeu(N.toreQ,Q.tore,N.toreQV,alt.tore) && Q.tore.length > 0,
+    elfNeu:Array.isArray(N.start) && sgQuelleNeu(N.elfQ,[Q.start,Q.bank],N.elfQV,[alt.start,alt.bank]) && Q.start.length > 0 };
+  D.tore = (Array.isArray(N.tore) ? N.tore : Q.tore).map(t => { const p = t.wir ? person(t) : {}, v = t.wir && t.vorlage && t.vorlage !== '-' ? person({fupa:t.vfupa}) : {};
+    return { key:t.key || '', fupa:t.fupa || '', vfupa:t.vfupa || '', m:+t.m || 0, x:+t.x || 0, wir:!!t.wir, art:['elf','et'].includes(t.art) ? t.art : '', name:t.name || '', vorlage:t.vorlage || '', nr:p.nr, bild:p.bild || '', vnr:v.nr, vbild:v.bild || '' }; })
     .sort((a, b) => a.m - b.m || a.x - b.x);
-  const mit = (p, bank) => { const k = person(p.name); return { name:p.name || '', nr:p.nr != null && p.nr !== '' ? +p.nr : k.nr, bild:k.bild, tw:p.tw != null ? !!p.tw : k.tw, c:!!p.c, ein:bank ? p.ein || '' : '' }; };
+  const mit = (p, bank) => { const k = person(p); return { key:p.key || '', fupa:p.fupa || '', name:p.name || '', nr:nummer(p), nrHand:Object.prototype.hasOwnProperty.call(p,'nr')&&p.nrHand!==false, bild:k.bild, tw:p.tw != null ? !!p.tw : k.tw, c:!!p.c, ein:bank ? p.ein || '' : '' }; };
   D.start = (Array.isArray(N.start) ? N.start : Q.start).map(p => mit(p, false)).sort(nachNr);
   D.bank = (Array.isArray(N.bank) ? N.bank : Array.isArray(N.start) ? [] : Q.bank).map(p => mit(p, true)).sort(nachNr);
   D.vorschlaege = gespielt ? sgVorschlaege(D) : [];
@@ -61,8 +61,9 @@ function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[
     if(n > 6) R.notizen.push(n > 8 ? `Bei ${n} Toren entstehen ${Math.ceil(n / 8)} Karten.` : 'Bei mehr als sechs Toren rücken die Zeilen enger.'); }
   if(m === 'A'){ if(!D.start.length){ R.wartet = 'Die Aufstellung fehlt noch'; return R; }
     if(D.start.length !== 11) F(`Die Startelf hat ${D.start.length} statt 11 Spieler`);
-    const namen = [...D.start, ...D.bank].map(p => pkNorm(p.name)); if(new Set(namen).size !== namen.length) F('Ein Spieler steht doppelt');
-    if(D.start.some(p => !p.name)) F('Bei einem Spieler fehlt der Name'); if(D.bank.length > 12) F('Auf der Bank stehen mehr als 12 Spieler');
+    const person=sgPerson(D.sub),ids=[...D.start,...D.bank].map(p=>{const id=person(p).fupa;return id?'k:'+id:p.key?'fde:'+p.key:'n:'+pkNorm(p.name);});
+    if(new Set(ids).size!==ids.length)F('Ein Spieler steht doppelt');
+    if([...D.start,...D.bank].some(p => !p.name)) F('Bei einem Spieler fehlt der Name'); if(D.bank.length > 12) F('Auf der Bank stehen mehr als 12 Spieler');
     if(D.elfNeu) H('Der Spielbericht meldet jetzt eine andere Aufstellung');
     const ohneBild = [...D.start, ...D.bank].filter(p => !p.bild || !A.portrait.get(p.bild)).length, ohneNr = [...D.start, ...D.bank].filter(p => p.nr == null).length;
     if(ohneBild) R.notizen.push(`${ohneBild} ohne Porträt: Dort steht ein neutraler Kreis. Fotos pflegst du im Live-Ticker unter Kader.`);
@@ -154,13 +155,24 @@ function sgTexteHoehen(h){ h.querySelectorAll('[data-sgtext]').forEach(e => { if
 function sgTexteAktualisieren(h){ const T = sgTexte(SG.motiv); h.querySelectorAll('[data-sgtext]').forEach(e => { if(e !== document.activeElement && e.value !== T[e.dataset.sgtext]) e.value = T[e.dataset.sgtext]; }); const v = h.querySelector('[data-sgkontext-vorschau]'); if(v) v.innerHTML = sgKontextVorschau(SG.d); sgTexteHoehen(h); }
 async function sgTextKopieren(m, key, feld){ if(SG.satz) SG.d = sgDaten(); const text = sgTexte(m)[key] || ''; if(!text.trim()){ kToast('Der Text ist leer. Bitte zuerst ergänzen.'); return; }
   try{ await navigator.clipboard.writeText(text); kToast('Text kopiert'); }catch(e){ if(feld){ feld.value = text; feld.focus(); feld.select(); } kToast('Text ist markiert. Bitte über das Kopieren-Menü kopieren.'); } }
+/* Geladene Porträts gehören zur Freigabe. Ein neutraler Kreis ist ein anderer Bildstand. */
+const sgPortraitMerk=new WeakMap();
+function sgPortraitStand(b,A){
+  const im=b&&A?.portrait?.get(b); if(!im)return '';
+  if(typeof im!=='object')return 'geladen'; if(sgPortraitMerk.has(im))return sgPortraitMerk.get(im);
+  let stand;
+  try{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.drawImage(im,0,0,64,64);
+    stand=sgHash(Array.from(x.getImageData(0,0,64,64).data).join(','));}
+  catch(e){stand='geladen:'+String(im.naturalWidth||im.width||0)+'x'+String(im.naturalHeight||im.height||0)+':'+String(im.currentSrc||im.src||'');}
+  sgPortraitMerk.set(im,stand);return stand;
+}
 /* Prüfsumme des Stands, den eine Freigabe meint: alles, was im Motiv zu sehen ist */
 function sgStandHash(m, D){ const k = [SG_VERSION[m], D.wettbewerb, D.saison, D.nr, D.datum, D.heim, D.gast, D.wappen];
   k.push('Texte 1.0', D.ort, sgTexte(m, D));
   if(m === 'H') k.push('Quer 2.0', D.zeit, D.teaser, D.fotoH, sgQuerNorm(D.querY, .5, 0, 1), sgQuerNorm(D.querZoom, 1, 1, 2));
   if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE, D.zeigeTore !== false, D.zeigeTore === false ? null : sgErgebnisTore(D));
-  if(m === 'S') k.push(D.toreH, D.toreG, D.tore.map(t => [t.m, t.x, t.wir, t.name, t.vorlage, t.art]));
-  if(m === 'A') k.push(D.start.map(p => [p.name, p.nr, p.tw, p.c]), D.bank.map(p => [p.name, p.nr, p.ein]), D.trainer);
+  if(m === 'S') k.push('Personen 3',D.toreH,D.toreG,D.tore.map(t=>[t.m,t.x,t.wir,t.name,t.vorlage,t.art,t.nr,t.vnr,t.bild,sgPortraitStand(t.bild,SG.A),t.vbild,sgPortraitStand(t.vbild,SG.A)]));
+  if(m === 'A') k.push('Personen 3',D.start.map(p=>[p.name,p.nr,p.tw,p.c,p.bild,sgPortraitStand(p.bild,SG.A)]),D.bank.map(p=>[p.name,p.nr,p.ein,p.tw,p.bild,sgPortraitStand(p.bild,SG.A)]),D.trainer);
   return sgHash(JSON.stringify(k)); }
 function sgStand(m){ const P = SG.pruef[m], fr = (SG.neu.frei || {})[m];
   if(P.wartet) return { art:'wartet', text:P.wartet };
@@ -330,14 +342,25 @@ function sgUebersicht(h){ const D = SG.d, M = ['H', 'A', 'E', 'S'];
   sgBinden(h); }
 function sgFeld(k, label, wert, o){ o = o || {}; return `<label class="sg-f"><span>${sgE(label)}</span><input type="${o.typ || 'text'}" data-sgf="${k}" value="${sgE(wert == null ? '' : wert)}" ${o.max ? `maxlength="${o.max}"` : ''} ${o.ph ? `placeholder="${sgE(o.ph)}"` : ''} ${o.attr || ''}></label>`; }
 function sgFotoHtml(feld, wahl){ return sgFotoGalerieHtml(feld, wahl, SG.A); }
-function sgListenHtml(){ const K = sgKaderListe(SG.d.sub).map(p => `${String(p.vorname || '').trim()} ${String(p.nachname || '').trim()}`.trim()).filter(Boolean);
-  return `<datalist id="sgKader">${[...new Set(K)].sort().map(n => `<option value="${sgE(n)}">`).join('')}</datalist>`; }
+function sgKaderName(p){ return `${String(p.vorname || '').trim()} ${String(p.nachname || '').trim()}`.trim(); }
+function sgSpielerHtml(p, attr, titel){ const id = sgPerson(SG.d.sub)(p).fupa;
+  const L = sgKaderListe(SG.d.sub).filter(k => sgKaderId(SG.d.sub, k.id));
+  return `<label class="sg-zuordnung">${sgE(titel)}<select ${attr} aria-label="${sgE(titel)}"><option value="">Nicht zugeordnet, ohne Foto</option>${L.map(k => {
+    const name = sgKaderName(k), doppelt = L.filter(x => sgKaderName(x) === name).length > 1;
+    return `<option value="${sgE(k.id)}"${String(k.id) === id ? ' selected' : ''}>${sgE(name)}${k.nr != null && k.nr !== '' ? ' · Nr. ' + sgE(k.nr) : ''}${doppelt ? ' · Kennung ' + sgE(k.id) : ''}</option>`;
+  }).join('')}</select></label>`; }
+function sgSpielerSetzen(p, id, vorlage){ const vorher=sgPerson(SG.d.sub)(p).fupa,k=sgKaderId(SG.d.sub,id);
+  if(vorlage){ p.vfupa = k ? String(k.id) : ''; if(k) p.vorlage = sgKaderName(k); }
+  else { p.key = ''; p.fupa = k ? String(k.id) : ''; if(k){ p.name = sgKaderName(k); if('nr' in p&&p.nrHand===false)p.nr=k.nr===''||k.nr==null?null:+k.nr;if('tw'in p&&vorher!==String(k.id))p.tw=k.pos==='TW'; } }
+}
+function sgNummerSetzen(p,wert){p.nr=wert===''?null:Math.max(0,Math.round(+wert));p.nrHand=true;}
+function sgListenHtml(){ return '<p class="sg-hin">' + (sgKaderListe(SG.d.sub).some(p=>sgKaderId(SG.d.sub,p.id)) ? 'Foto und Nummer werden nur bei eindeutiger Zuordnung ergänzt. Fehlt sie, wähle den Spieler im Kader. Eine Namensänderung löst die Zuordnung. Fehlende Fotos pflegst du im Live-Ticker unter Kader.' : 'Der Kader ist leer, konnte nicht geladen werden oder enthält keine eindeutigen Kennungen. Öffne im Live-Ticker den Bereich Kader und prüfe die Spieler dieser Mannschaft. Lade danach den Spieltag erneut. Namen und Nummern kannst du bis dahin von Hand eintragen.') + '</p>'; }
 function sgToreEditorHtml(D){ return `${D.toreNeu ? `<div class="sg-quelle"><b>Der Spielbericht meldet jetzt andere Tore.</b><span>Deine Fassung bleibt, bis du entscheidest.</span><button type="button" class="btn sm ghost" data-sgq="tore-quelle">Spielbericht übernehmen</button><button type="button" class="btn sm ghost" data-sgq="tore-meins">Meine behalten</button></div>` : ''}
     <p class="sg-l">Tore</p><div class="sg-tore">${D.tore.map((t, i) => `<div class="sg-tor" data-i="${i}" data-wir="${t.wir ? 1 : 0}">
       <input type="number" data-sgt="m" value="${t.m || ''}" min="1" max="130" inputmode="numeric" aria-label="Minute"><input type="number" data-sgt="x" value="${t.x || ''}" min="0" max="20" inputmode="numeric" placeholder="+" aria-label="Nachspielzeit">
       <select data-sgt="wir" aria-label="Für wen"><option value="1"${t.wir ? ' selected' : ''}>Wir</option><option value="0"${t.wir ? '' : ' selected'}>Gegner</option></select>
-      <input type="text" data-sgt="name" value="${sgE(t.name)}" list="${t.wir ? 'sgKader' : ''}" placeholder="Torschütze" maxlength="40" aria-label="Torschütze">
-      ${t.wir ? `<input type="text" data-sgt="vorlage" value="${sgE(t.vorlage === '-' ? '' : t.vorlage)}" list="sgKader" placeholder="Vorlage" maxlength="40" aria-label="Vorlage"><label class="sg-ohne"><input type="checkbox" data-sgt="ohne"${t.vorlage === '-' ? ' checked' : ''}> ohne Vorlage</label>` : ''}
+      <input type="text" data-sgt="name" value="${sgE(t.name)}" placeholder="Torschütze" maxlength="40" aria-label="Torschütze">${t.wir?sgSpielerHtml(t,'data-sgt="fupa"','Spieler im Kader'):""}
+      ${t.wir ? `<input type="text" data-sgt="vorlage" value="${sgE(t.vorlage === '-' ? '' : t.vorlage)}" placeholder="Vorlage" maxlength="40" aria-label="Vorlage">${sgSpielerHtml({fupa:t.vfupa},'data-sgt="vfupa"','Vorlagengeber im Kader')}<label class="sg-ohne"><input type="checkbox" data-sgt="ohne"${t.vorlage === '-' ? ' checked' : ''}> ohne Vorlage</label>` : ''}
       <button type="button" class="sg-weg" data-sgt="weg" aria-label="Tor entfernen">${SVI('x')}</button></div>`).join('')}</div>
     <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgq="tor-neu">Tor hinzufügen</button>${D.toreHand ? '<button type="button" class="btn sm ghost" data-sgq="tore-quelle">Zurück zum Spielbericht</button>' : ''}</div>
     <p class="sg-hin">Vorlagen stehen nicht im Spielbericht. Trag sie ein oder hake „ohne Vorlage“ an, sonst bleibt ein Strich und die Karte fragt nach.</p>
@@ -356,7 +379,7 @@ function sgFormular(m){ const D = SG.d, f = SG.neu.f || {};
   if(m === 'S') return sgToreEditorHtml(D) + `
     <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>` + kopf + sgListenHtml();
   const zeile = (p, i, art) => `<div class="sg-sp" data-art="${art}" data-i="${i}"><input type="number" data-sgp="nr" value="${p.nr == null ? '' : p.nr}" min="0" max="99" inputmode="numeric" placeholder="Nr." aria-label="Rückennummer">
-      <input type="text" data-sgp="name" value="${sgE(p.name)}" list="sgKader" placeholder="Name" maxlength="40" aria-label="Name">
+      <input type="text" data-sgp="name" value="${sgE(p.name)}" placeholder="Name" maxlength="40" aria-label="Name">${sgSpielerHtml(p,'data-sgp="fupa"','Spieler im Kader')}
       ${art === 'start' ? `<label class="sg-ohne"><input type="checkbox" data-sgp="c"${p.c ? ' checked' : ''}> C</label>` : `<input type="text" data-sgp="ein" value="${sgE(p.ein)}" placeholder="kam" maxlength="6" inputmode="numeric" aria-label="Eingewechselt in Minute">`}
       <label class="sg-ohne"><input type="checkbox" data-sgp="tw"${p.tw ? ' checked' : ''}> TW</label><button type="button" class="sg-weg" data-sgp="weg" aria-label="Entfernen">${SVI('x')}</button></div>`;
   return `${D.elfNeu ? `<div class="sg-quelle"><b>Der Spielbericht meldet jetzt eine andere Aufstellung.</b><span>Deine Fassung bleibt, bis du entscheidest.</span><button type="button" class="btn sm ghost" data-sgq="elf-quelle">Spielbericht übernehmen</button><button type="button" class="btn sm ghost" data-sgq="elf-meins">Meine behalten</button></div>` : ''}
@@ -442,8 +465,8 @@ function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.
 /* Die Leinwand der Einzelansicht: der Beitrag aus der Übersicht oder dasselbe Motiv als Story, frisch gezeichnet */
 function sgSchau(m){ const fmt = sgFormat(m); if(fmt === 'beitrag') return SG.cv[m]; const key = fmt === 'quer' ? 'cvQuer' : 'cvStory', cv = SG[key] || (SG[key] = document.createElement('canvas')); sgMalen(cv, m, SG.d, SG.A, m === 'S' ? (SG.seite || 0) : 0, fmt); return cv; }
 function sgSetzen(k, v){ SG.neu.f = SG.neu.f || {}; if(k === 'ort') SG.neu.f[k] = String(v || ''); else if(v === '' || v == null) delete SG.neu.f[k]; else SG.neu.f[k] = v; }
-function sgToreHand(){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore = SG.d.tore.map(t => ({ m:t.m, x:t.x, wir:t.wir, art:t.art, name:t.name, vorlage:t.vorlage })); SG.neu.toreQ = sgHash(JSON.stringify(SG.d.quelle.tore)); } return SG.neu.tore; }
-function sgElfHand(){ if(!Array.isArray(SG.neu.start)){ const z = p => ({ name:p.name, nr:p.nr, tw:p.tw, c:p.c, ein:p.ein }); SG.neu.start = SG.d.start.map(z); SG.neu.bank = SG.d.bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); }
+function sgToreHand(){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore = SG.d.tore.map(t => ({key:t.key,fupa:t.fupa,vfupa:t.vfupa,m:t.m,x:t.x,wir:t.wir,art:t.art,name:t.name,vorlage:t.vorlage})); SG.neu.toreQ = sgHash(JSON.stringify(SG.d.quelle.tore)); SG.neu.toreQV=3; } return SG.neu.tore; }
+function sgElfHand(){ if(!Array.isArray(SG.neu.start)){ const z = p => ({key:p.key,fupa:p.fupa,name:p.name,nr:p.nr,nrHand:p.nrHand,tw:p.tw,c:p.c,ein:p.ein}); SG.neu.start = SG.d.start.map(z); SG.neu.bank = SG.d.bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); SG.neu.elfQV=3; }
   if(!Array.isArray(SG.neu.bank)) SG.neu.bank = []; return SG.neu; }
 let sgZeichenT = null;
 function sgBald(mitBildern, ganz){ mitBildern = mitBildern || !!SG.bildOffen; if(mitBildern) sgBildWarten(); const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz){ try{ return await sgNeu(mitBildern); }catch(e){ if(satz === SG.satz && konto === sgKonto()) kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); return false; } }

@@ -944,27 +944,38 @@ function sgMalen(cv, motiv, D, A, seite, fmt){ const quer = fmt === 'quer' && mo
 
 /* ---------- Daten: Quelle, Kader, von Hand Geändertes ---------- */
 function sgKaderListe(sub){ try{ return ((TKR.kader || {})[sub === 'D2' ? 'D2' : 'A'] || []).filter(p => p.aktiv !== false); }catch(e){ return []; } }
-function sgPerson(sub){ const m = new Map(); sgKaderListe(sub).forEach(p => m.set(pkNorm(String(p.vorname || '') + String(p.nachname || '')), p));
-  return name => { const k = m.get(pkNorm(name)); return k ? { nr:k.nr === '' || k.nr == null ? null : +k.nr, bild:k.bild || '', tw:k.pos === 'TW' } : { nr:null, bild:'', tw:false }; }; }
+function sgKaderId(sub, id){ if(!/^[A-Za-z0-9_-]{1,100}$/.test(String(id||'')))return null; const L = sgKaderListe(sub).filter(p => String(p.id) === String(id)); return L.length === 1 ? L[0] : null; }
+function sgPerson(sub){ return p => {
+  const id = p && (p.fupa || (SG.satz?.personen || {})[p.key]), k = id && sgKaderId(sub, id);
+  return k ? { fupa:String(k.id), nr:k.nr === '' || k.nr == null ? null : +k.nr, bild:k.bild || '', tw:k.pos === 'TW' }
+           : { fupa:'', nr:null, bild:'', tw:false }; }; }
 function sgQuelle(S){ const nm = k => sgName((S.namen || {})[k] || ''), wirS = S.wir_heim ? 'h' : 'g', V = S.verlauf || [];
-  const tore = V.filter(e => e.t === 'tor').map(e => ({ m:+e.m || 0, x:+e.x || 0, wir:e.s === wirS, art:['elf','et'].includes(e.art) ? e.art : '', name:nm(e.p), vorlage:'' }));
-  const ein = new Map(); V.filter(e => e.t === 'wechsel' && e.s === wirS).forEach(e => { const n = nm(e.p); if(n) ein.set(n, e.m + (e.x ? '+' + e.x : '')); });
-  const A = S.aufstellung || {}, start = (A.start || []).map(k => Object.assign({ name:nm(k), c:k === A.c }, A.tw ? { tw:k === A.tw } : {})).filter(p => p.name);
-  const bank = (A.bank || []).map(k => ({ name:nm(k), ein:ein.get(nm(k)) || '' })).filter(p => p.name);
+  const tore = V.filter(e => e.t === 'tor').map(e => ({ key:e.p || '', m:+e.m || 0, x:+e.x || 0, wir:e.s === wirS, art:['elf','et'].includes(e.art) ? e.art : '', name:nm(e.p), vorlage:'' }));
+  const ein = new Map(); V.filter(e => e.t === 'wechsel' && e.s === wirS).forEach(e => { if(e.p) ein.set(e.p, e.m + (e.x ? '+' + e.x : '')); });
+  const A = S.aufstellung || {}, start = (A.start || []).map(k => Object.assign({ key:k, name:nm(k), c:k === A.c }, A.tw ? { tw:k === A.tw } : {}));
+  const bank = (A.bank || []).map(k => ({ key:k, name:nm(k), ein:ein.get(k) || '' }));
   return { tore, start, bank }; }
+/* Nur historische Prüfsummen vergleichen, niemals über Namen Personen zuordnen. */
+function sgQuelleAlt(S,Q){ const ein=new Map();
+  (S.verlauf||[]).filter(e=>e.t==='wechsel'&&e.s===(S.wir_heim?'h':'g')).forEach(e=>{const n=sgName((S.namen||{})[e.p]||'');if(n)ein.set(n,e.m+(e.x?'+'+e.x:''));});
+  const ohne=({key,...p})=>p;
+  return {tore:Q.tore.map(ohne),start:Q.start.map(ohne).filter(p=>p.name),bank:Q.bank.map(p=>({name:p.name,ein:ein.get(p.name)||''})).filter(p=>p.name)};
+}
+function sgQuelleNeu(alt,quelle,version,vorher){return !!alt&&alt!==sgHash(JSON.stringify(quelle))&&(version===3||alt!==sgHash(JSON.stringify(vorher)));}
 function sgVorschlaege(D){ const punkte = ['A','D2'].includes(D.sub) && !/pokal|freundschaft|testspiel/i.test(D.wettbewerb || ''), g = D.gegner.toUpperCase(), a = D.wirHeim ? D.toreH : D.toreG, b = D.wirHeim ? D.toreG : D.toreH, heim = D.wirHeim, L = [];
   if(a > b){ L.push([heim ? 'Heim' : 'Auswärts', 'Sieg.']); L.push([heim ? 'Heimsieg gegen' : 'Auswärtssieg bei', g + '.']); if(punkte) L.push(['Drei Punkte', heim ? 'zuhause.' : 'mitgenommen.']); if(a - b >= 3) L.push([`${a}:${b}.`, 'Klare Sache.']); else L.push([`${a}:${b} gegen`, g + '.']); }
   else if(a === b){ L.push(['Unentschieden.', '']); L.push([`${a}:${b} gegen`, g + '.']); if(punkte){ L.push(['Punkteteilung', heim ? 'zuhause.' : 'auswärts.']); L.push(a ? [`${a + b} Tore,`, 'ein Punkt.'] : ['Keine Tore,', 'ein Punkt.']); } }
   else { L.push(['Niederlage.', '']); L.push(['Niederlage gegen', g + '.']); L.push([`${a}:${b} gegen`, g + '.']); }
   return L; }
-function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S), person = sgPerson(S.sub);
+function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S), person = sgPerson(S.sub), alt = sgQuelleAlt(S,Q);
   const ohne = n => String(n || '').replace(/\s*\((FB|H|FB, ?H)[^)]*\)\s*$/i, '').trim();
   const wir = f.wir || ohne(S.wir_heim ? S.heim : S.gast), gegner = f.gegner || ohne(S.wir_heim ? S.gast : S.heim);
   const zahl = (v, q) => v === '' || v == null || isNaN(+v) ? q : +v;
   /* Von Hand geführte Listen stehen in derselben Reihenfolge wie die Anzeige, damit Zeile i im Formular Eintrag i ist */
-  const nachNr = (a, b) => (a.nr == null || a.nr === '' ? 999 : +a.nr) - (b.nr == null || b.nr === '' ? 999 : +b.nr);
-  if(Array.isArray(N.tore)) N.tore.sort((a, b) => (+a.m || 0) - (+b.m || 0) || (+a.x || 0) - (+b.x || 0));
-  if(Array.isArray(N.start)){ if(!Array.isArray(N.bank)) N.bank = []; [N.start, N.bank].forEach(L => { L.forEach(p => { if(p.nr == null || p.nr === ''){ const k = person(p.name); p.nr = k.nr; } }); L.sort(nachNr); }); }
+  const nummer=p=>Object.prototype.hasOwnProperty.call(p,'nr')&&p.nrHand!==false?(p.nr==null||p.nr===''?null:+p.nr):person(p).nr;
+  const nachNr=(a,b)=>(nummer(a)??999)-(nummer(b)??999);
+  if(Array.isArray(N.tore))N.tore.sort((a,b)=>(+a.m||0)-(+b.m||0)||(+a.x||0)-(+b.x||0));
+  if(Array.isArray(N.start)){if(!Array.isArray(N.bank))N.bank=[];[N.start,N.bank].forEach(L=>L.sort(nachNr));}
   const toreH = zahl(f.toreH, S.tore_h), toreG = zahl(f.toreG, S.tore_g), gespielt = toreH != null && toreG != null;
   const D = { sub:S.sub, wettbewerb:f.wettbewerb || SG_LIGA[S.sub] || 'Spiel', saison:sgSaison(S.saison), nr:f.nr === 0 ? null : zahl(f.nr, S.nr), datum:S.datum, zeit:f.zeit || S.zeit || '',
     ort:f.ort != null ? String(f.ort) : String(S.ort || ''),
