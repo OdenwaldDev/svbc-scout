@@ -1,3 +1,122 @@
+    return c;
+  }
+  const zeichnen=(o={})=>motiv(o,null);
+  async function trikotDetail(o={}){
+    const trikot=TRIKOT[o.art||'heim'];
+    if(!trikot)throw Error('Bitte ein Heim- oder Auswärtstrikot wählen.');
+    return motiv(o,trikot);
+  }
+  async function bilder(firma,logo,kit='kit/'){const key=JSON.stringify([firma,logo||null,kit]);if(zuletzt?.key===key)return zuletzt.p;const job={key,p:null};zuletzt=job;job.p=(async()=>{const b={gesamt_foto:true};for(const seite of Object.keys(SEITEN)){const c=await zeichnen({firma,logo,seite,kit,breite:1200});b[seite]=c.toDataURL('image/webp',.94);b[seite==='aermel_l'?'gesamt_l':'gesamt_r']=b[seite];c.width=c.height=1;}return b;})().catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});return job.p;}
+  const api={zeichnen,trikotDetail,trikotFeld,bilder,feld,punkt};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TRAININGSANZUG=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+/* =====================================================================
+   Beta 0.80 · Trikot-Creator im Partner-Bereich (Reiter „Trikots“)
+   Ein möglicher Partner sieht sofort, wie sein Logo LIVE auf unseren Trikots aussieht.
+   - Mannschaft (alle Teams und das Musterteam) und Satz (Heim, Auswärts, Anzug) wählen
+   - 3D-Bühne (trikot3d.js, three.js wird erst hier geladen) mit Vorn, Seite, Hinten; Foto-Ansicht mit den echten Produktfotos
+   - Logo hochladen oder aus den vorhandenen Partnerlogos wählen, per Drag & Drop auf einen freien Platz ziehen
+     (am Handy: Logo antippen, dann den Platz antippen), Größe und Variante (Weiß, Original, Schwarz)
+   - Logo-Analyse: Originalfarben als Farbpunkte, Weiß-Variante auf Vereinsblau
+   - Platz als „reserviert für <Firma>“ vormerken oder fest vergeben. Belegte Plätze sind gesperrt, nur ein Admin gibt sie frei.
+   - Bild speichern oder teilen: „So sieht dein Logo bei uns aus“
+   Daten: trikot_laden, trikot_platz_setzen, trikot_platz_anpassen, trikot_platz_freigeben, trikot_logo_speichern (114_trikot_creator.sql)
+   ===================================================================== */
+const TC = { d:null, laedt:null, team:'h1', art:'heim', logo:null, eigen:null, vor:{}, v:null, platz:null, sicht:'vorn', modus:'3d', err:null };
+const TC_ARTEN = [['heim', 'Heim'], ['auswaerts', 'Auswärts'], ['anzug', 'Anzug']];
+const TC_VAR = [['weiss', 'Weiß'], ['original', 'Original'], ['schwarz', 'Schwarz']];
+const TC_MUSTER = 'muster';
+
+/* ---------- Reiter einhängen (nach „Präsentationen“) ---------- */
+{ const i = SPO_REITER.findIndex(r => r[0] === 'decks'); if(!SPO_REITER.some(r => r[0] === 'trikots')) SPO_REITER.splice(i < 0 ? SPO_REITER.length : i + 1, 0, ['trikots', 'Trikots']); }
+{ const _b = spoBody; spoBody = function(){ if(SPO.view === 'trikots'){ const B = document.getElementById('spoB'); if(B) tcRender(B); return; } if(TC.v && SPO.view !== 'trikots') tcAufraeumen(); return _b.apply(this, arguments); }; }
+{ const _w = spoWechsel; spoWechsel = function(v){ if(v !== 'trikots') tcAufraeumen(); return _w.apply(this, arguments); }; }
+{ const _gt = goTab; goTab = function(t){ if(t !== 'sponsoring') tcAufraeumen(); return _gt.apply(this, arguments); }; }
+function tcAufraeumen(){ try{ TC.v && TC.v.zerstoeren(); }catch(e){} TC.v = null; }
+
+const tcE = s => svEsc(s);
+async function tcRpc(fn, args){ const { data, error } = await SVB.sb.rpc(fn, args || {}); if(error) throw new Error(typeof svFehlerText === 'function' ? svFehlerText(error) : error.message); return data; }
+async function tcLaden(neu){ if(TC.laedt && !neu) return TC.laedt;
+  TC.laedt = tcRpc('trikot_laden').then(d => { TC.d = d; TC.err = null; return d; }).catch(e => { TC.err = e.message; TC.laedt = null; throw e; }); return TC.laedt; }
+function tcSkript(src){ return new Promise((ok, nein) => { if(window.TRIKOT3D) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => nein(new Error('Der Trikot-Creator lässt sich gerade nicht laden.')); document.head.appendChild(s); }); }
+const tcBuild = () => { try{ return typeof APP_BUILD !== 'undefined' ? APP_BUILD : ''; }catch(e){ return ''; } };
+
+/* ---------- Daten ---------- */
+function tcTeams(){ const L = ((TC.d && TC.d.mannschaften) || []).slice(); return L.concat([{ id:TC_MUSTER, name:'Musterteam (alles frei)', art:'muster' }]); }
+function tcSatz(){ return ((TC.d && TC.d.saetze) || []).find(s => s.mannschaft === TC.team && s.art === TC.art) || null; }
+function tcPlaetze(){ const s = tcSatz(); return s ? (TC.d.plaetze || []).filter(p => p.satz === s.id) : []; }
+function tcPlatz(k){ return tcPlaetze().find(p => p.platz === k) || null; }
+function tcLogo(id){ return ((TC.d && TC.d.logos) || []).find(l => l.id === id) || null; }
+function tcVorKey(k){ const s = tcSatz(); return s ? s.id + '|' + k : k; }
+function tcName(k){ const i = TRIKOT3D_INFO(k); return i ? i.n : k; }
+function TRIKOT3D_INFO(k){ return window.TRIKOT3D ? TRIKOT3D.platzInfo(TC.art, k) : null; }
+function tcRegelVariante(firma, k){ return /^basakci/i.test(firma || '') && TC.art === 'auswaerts' && k === 'brust' ? 'original' : TC.art === 'anzug' && /^aermel/.test(k) ? 'schwarz' : 'weiss'; }
+function tcBelegung(){ const B = {};
+  tcPlaetze().forEach(p => { const l = p.logo ? tcLogo(p.logo) : null;
+    if(p.status !== 'frei') B[p.platz] = { status:p.status, firma:p.firma, bild:l && l.bild, variante:p.variante, groesse:+p.groesse || 1 };
+    else { const v = TC.vor[tcVorKey(p.platz)]; B[p.platz] = v ? { status:'belegt', vorschau:true, firma:v.logo.firma, bild:v.logo.bild, variante:v.variante, groesse:v.groesse } : { status:'frei' }; } });
+  return B; }
+
+/* ---------- Oberfläche ---------- */
+async function tcRender(B){
+  if(B.querySelector('.pz-tc') && TC.v){ tcStand(); return; }
+  tcAufraeumen();
+  B.innerHTML = `<div class="pz pz-tc"><div class="pz-tc-kopf"><span class="pz-hand">Live auf unseren Trikots</span><h2>Trikot-Creator</h2>
+    <p>Zieh ein Logo auf einen freien Platz und dreh das Trikot. So sieht ein Partner sofort, wie sein Logo bei uns aussieht.</p></div>
+    <div class="pz-tc-raster"><div class="pz-tc-links">
+      <div class="pz-tc-wahl"><label class="pz-tc-team"><span>Mannschaft</span><select id="tcTeam" aria-label="Mannschaft"></select></label>
+        <div class="pz-tc-seg" id="tcArt" role="group" aria-label="Satz">${TC_ARTEN.map(([k, t]) => `<button type="button" data-tcart="${k}">${t}</button>`).join('')}</div></div>
+      <div class="pz-tc-seg" id="tcAermel" role="group" aria-label="Ärmel aus Sicht des Trägers"><button type="button" data-tcaermel="aermel_r">Rechter Ärmel</button><button type="button" data-tcaermel="aermel_l">Linker Ärmel</button><button type="button" data-tcaermel="gesamt">Ganzes Trikot</button></div><p class="pz-tc-tipp">Links und rechts aus Sicht des Trikotträgers.</p>
+      <div class="pz-tc-buehne" id="tcBuehne"><div class="pz-tc-laden" id="tcLaden"><i></i>Trikots werden aufgebaut …</div></div>
+      <div class="pz-tc-leiste"><div class="pz-tc-seg klein" id="tcSicht" role="group" aria-label="Ansicht">${[['vorn', 'Vorn'], ['seite', 'Seite'], ['hinten', 'Hinten']].map(([k, t]) => `<button type="button" data-tcsicht="${k}">${t}</button>`).join('')}</div>
+        <div class="pz-tc-seg klein" id="tcModus" role="group" aria-label="Darstellung"><button type="button" data-tcmodus="3d">3D</button><button type="button" data-tcmodus="foto">Foto</button></div></div>
+      <p class="pz-tc-info" id="tcInfo" aria-live="polite"></p></div>
+    <div class="pz-tc-rechts">
+      <section class="pz-tc-block" aria-labelledby="tcLh"><div class="pz-tc-bk"><h3 id="tcLh">Logo</h3>
+        <label class="pz-tc-hoch"><input type="file" id="tcDatei" accept="image/png,image/jpeg,image/webp,image/svg+xml">${SVI('plus')}<span>Logo hochladen</span></label></div>
+        <div class="pz-tc-logos" id="tcLogos" role="list" aria-label="Vorhandene Partnerlogos"></div><div id="tcAnalyse"></div></section>
+      <section class="pz-tc-block" aria-labelledby="tcPh"><div class="pz-tc-bk"><h3 id="tcPh">Plätze</h3><span class="pz-tc-zahl" id="tcZahl"></span></div><div id="tcListe" class="pz-tc-liste"></div></section><section class="pz-tc-block" id="tcAnzugStand" aria-label="Trainingsanzüge, Belegung"></section>
+      <section class="pz-tc-block pz-tc-teilen"><button type="button" class="pz-tc-b or" id="tcTeilen">${SVI('share')}<span>Bild teilen</span></button>
+        <button type="button" class="pz-tc-b" id="tcSpeichern">${SVI('download')}<span>Bild speichern</span></button>
+        <p>Ein Bild mit der Überschrift „So sieht dein Logo bei uns aus“, für WhatsApp oder Mail.</p></section>
+    </div></div></div>`;
+  const P = B.querySelector('.pz-tc');
+  P.querySelector('#tcArt').onclick = e => { const b = e.target.closest('[data-tcart]'); if(b){ TC.art = b.dataset.tcart; TC.platz = null; tcStand(true); } };
+  P.querySelector('#tcSicht').onclick = e => { const b = e.target.closest('[data-tcsicht]'); if(b && TC.v){ TC.v.fokus('oben'); TC.v.drehen(b.dataset.tcsicht); TC.sicht = b.dataset.tcsicht; tcKnoepfe(); } };
+  P.querySelector('#tcAermel').onclick = e => { const b=e.target.closest('[data-tcaermel]'); if(b&&TC.v){ TC.v.detail(b.dataset.tcaermel); tcKnoepfe(); } };
+  P.querySelector('#tcModus').onclick = async e => { const b = e.target.closest('[data-tcmodus]'); if(!b || !TC.v) return; const ok = await TC.v.modus(b.dataset.tcmodus); if(ok) TC.modus = b.dataset.tcmodus; else kToast(TC.art === 'anzug' ? 'Die Fotoansicht lässt sich gerade nicht öffnen.' : 'Die 3D-Ansicht geht auf diesem Gerät nicht.'); tcKnoepfe(); };
+  P.querySelector('#tcDatei').onchange = tcHochladen;
+  P.querySelector('#tcTeilen').onclick = e => tcBild(true, e.currentTarget);
+  P.querySelector('#tcSpeichern').onclick = e => tcBild(false, e.currentTarget);
+  if(!(navigator.canShare && navigator.share)) P.querySelector('#tcTeilen').hidden = true;
+  try{ await tcLaden(); }catch(e){ const L = P.querySelector('#tcLaden'); if(L) L.textContent = 'Konnte nicht laden: ' + e.message; return; }
+  if(!tcTeams().some(t => t.id === TC.team)) TC.team = (tcTeams()[0] || {}).id;
+  const sel = P.querySelector('#tcTeam'); sel.innerHTML = tcTeams().map(t => `<option value="${tcE(t.id)}">${tcE(t.name)}</option>`).join('');
+  sel.value = TC.team; sel.onchange = () => { TC.team = sel.value; TC.platz = null; tcStand(true); };
+  try{ await tcSkript('trikot3d.js?v=' + encodeURIComponent(tcBuild())); }catch(e){ const L = P.querySelector('#tcLaden'); if(L) L.textContent = e.message; return; }
+  if(!P.isConnected || SPO.view !== 'trikots') return;
+  const host = P.querySelector('#tcBuehne');
+  TC.v = TRIKOT3D.buehne(host, { three:'vendor/three.min.js?v=' + encodeURIComponent(tcBuild()), kit:'kit/', schrift:'BarlowC', name:tcName,
+    onPlatz:tcPlatzTipp, onDreh:s => { TC.sicht = s; tcKnoepfe(); } });
+  await TC.v.bereit; const L = P.querySelector('#tcLaden'); if(L) L.remove();
+  // 0.81: ohne Hose und Stutzen gibt es kein „Ganzes Set“ mehr, die Bühne zeigt immer das ganze Oberteil
+  TC.modus = TC.v.modusJetzt; tcStand(true); tcZiehenBinden(P);
+}
+function tcZoomText(){ const zb = document.getElementById('tcZoom'); if(!zb || !TC.v) return; const ganz = TC.v.fokusJetzt === 'gesamt'; zb.textContent = ganz ? 'Trikot nah' : 'Ganzes Set'; zb.setAttribute('aria-pressed', String(ganz)); zb.hidden = !TC.v.webgl || TC.modus === 'foto'; }
+function tcKnoepfe(){ const P = document.querySelector('.pz-tc'); if(!P) return; if(TC.v) TC.modus=TC.v.modusJetzt; tcZoomText();
+  P.classList.toggle('anzug-foto',TC.art==='anzug'&&TC.modus==='foto');
+  P.querySelectorAll('[data-tcaermel]').forEach(b=>{const an=b.dataset.tcaermel === (TC.v&&/^aermel_/.test(TC.v.fokusJetzt)?TC.v.fokusJetzt:'gesamt');b.setAttribute('aria-pressed',String(an));b.classList.toggle('on',an);b.disabled=TC.art==='anzug'&&TC.modus==='foto'&&b.dataset.tcaermel==='gesamt';});
+  P.querySelectorAll('[data-tcart]').forEach(b => { const an = b.dataset.tcart === TC.art; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); });
+  P.querySelectorAll('[data-tcsicht]').forEach(b => { const an = b.dataset.tcsicht === TC.sicht; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); b.disabled = TC.modus === 'foto' && (TC.art==='anzug'||b.dataset.tcsicht === 'seite'); });
+  P.querySelectorAll('[data-tcmodus]').forEach(b => { const an = b.dataset.tcmodus === TC.modus; b.classList.toggle('on', an); b.setAttribute('aria-pressed', an); b.disabled = (b.dataset.tcmodus === '3d' && TC.v && !TC.v.webgl);if(b.dataset.tcmodus==='foto')b.textContent=TC.art==='anzug'?'Ärmelfoto':'Foto'; });
+}
+function tcAnzugStand(){const h=document.getElementById('tcAnzugStand');if(!h||!TC.d?.anzug_aermel)return;const plaetze=TC.d.anzug_aermel.plaetze||[];h.innerHTML='<h3>Trainingsanzüge</h3><p>Linker und rechter Ärmel werden getrennt vergeben. Logos immer schwarz.</p><ul class="pz-anzug-stand">'+plaetze.map(t=>'<li><button type="button" data-tcanzug="'+tcE(t.team)+'" data-seite="'+tcE(t.seite)+'"><span>'+tcE(t.name)+' · '+(t.seite==='aermel_l'?'links':'rechts')+'</span><strong>'+tcE(t.status==='frei'?'Offen':t.status==='angefragt'?'Angefragt':t.status==='spaeter'?'Erst ab '+t.ab_jahr:'Vergeben')+'</strong>'+(t.firma?'<small>'+tcE(t.firma)+'</small>':'')+'</button></li>').join('')+'</ul>';h.querySelectorAll('[data-tcanzug]').forEach(b=>b.onclick=()=>{TC.team=b.dataset.tcanzug;TC.art='anzug';TC.platz=b.dataset.seite;tcStand(true);TC.v?.detail(TC.platz,true);tcKnoepfe();});}
+function tcStand(neuBauen){tcAnzugStand();
+  const P = document.querySelector('.pz-tc'); if(!P || !TC.d) return; const s = tcSatz();
+  P.querySelector('#tcTeam').value=TC.team;
+  tcKnoepfe();
+  const info = P.querySelector('#tcInfo'), team = tcTeams().find(t => t.id === TC.team) || {};
+  const pl = tcPlaetze(), frei = pl.filter(p => p.status === 'frei').length;
   info.innerHTML = !s ? 'Für diese Mannschaft gibt es diesen Satz nicht.'
     : TC.team === TC_MUSTER ? 'Musterteam: Hier ist alles frei. Zum Ausprobieren, wenn bei den Mannschaften alles vergeben ist.'
     : TC.art==='anzug' ? `<b>${tcE(team.name)}</b> · Trainingsanzug · ${pl.filter(p=>/^aermel_/.test(p.platz)&&p.status==='frei').length} von ${pl.filter(p=>/^aermel_/.test(p.platz)).length} Ärmeln frei`
@@ -5,7 +124,7 @@
     : `<b>${tcE(team.name)}</b> · ${tcE(s.modell || (TC.art === 'anzug' ? 'Trainingsanzug' : 'Trikotsatz'))} · ${frei} von ${pl.length} Plätzen frei`;
   P.querySelector('#tcZahl').textContent = pl.length ? `${frei} frei` : '';
   if(TC.v && s) TC.v.setzen({ art:TC.art, grund:s.grundfarbe, akzent:s.akzentfarbe, nummer:'10', belegung:tcBelegung() });
-  if(neuBauen && TC.v){ TC.v.fokus('oben', true); tcZoomText(); }
+  if(neuBauen && TC.v){ TC.v.fokus('oben', true); tcKnoepfe(); }
   tcLogosZeigen(); tcListe();
 }
 

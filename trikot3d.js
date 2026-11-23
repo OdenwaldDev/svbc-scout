@@ -347,7 +347,7 @@ window.TRIKOT3D = (function(){
         const q = px.getImageData(0, 0, 40, 40).data; let r = 0, g = 0, b = 0, n = 0; for(let i = 0; i < q.length; i += 4){ if(q[i + 3] < 250) continue; r += q[i]; g += q[i + 1]; b += q[i + 2]; n++; }
         Z.fm[satz] = { atlas, maske, t:x.getImageData(0, 0, c.width, c.height).data, farbe:n ? mischen(hex(r / n, g / n, b / n), '#000000', .2) : null }; }catch(e){} }));
       if(!Z.lebt)return;Z.gl = true; bedienung(cv);
-      resizeBeobachter=new ResizeObserver(groesse);resizeBeobachter.observe(wurzel);groesse();
+      groesse();
     }
     function groesse(){ const r = wurzel.getBoundingClientRect(); if(!r.width || !r.height) return;
       if(renderer){ renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.setSize(r.width, r.height, false); kamera.aspect = r.width / r.height; kamera.updateProjectionMatrix(); }
@@ -754,10 +754,36 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
       if(Z.foto3d){ const r = z > PI / 2 ? PI : 0; z = r + kl(z - r, -GRENZE * 1.2, GRENZE * 1.2); }   // z. B. Ärmel (.95): Schrägansicht statt flacher Seite
       Z.ziel = z; if(sofort || ruhig()){ Z.winkel = z; Z.vw = 0; } zeigen3d();
     }
-    function fokus(f, sofort){ if(f === Z.fokusZiel) return; Z.fokus = Z.fk >= 1 ? Z.fokusZiel : Z.fokus; Z.fokusZiel = f; Z.fk = sofort || ruhig() ? 1 : 0; if(Z.fk >= 1) Z.fokus = f; if(Z.modus === 'foto') foto(); else zeigen3d(); }
-    function detail(k, sofort){ if(k !== 'aermel_l' && k !== 'aermel_r'){ delete wurzel.dataset.detail; const cv = wurzel.querySelector('.t3-gl'); if(cv)cv.setAttribute('aria-label','Trikot in 3D. Ziehen oder Pfeiltasten zum Drehen.'); fokus('oben',sofort); drehen('vorn',sofort); return; }
-      drehen(k === 'aermel_l' ? .32 : -.32,sofort); fokus(k,sofort);
-      wurzel.dataset.detail = k; const cv = wurzel.querySelector('.t3-gl'); if(cv) cv.setAttribute('aria-label',(k === 'aermel_l' ? 'Linker' : 'Rechter') + ' Ärmel in Nahaufnahme, aus Sicht des Trägers.'); }
+    const istAermel = k => k === 'aermel_l' || k === 'aermel_r';
+    let detailAus3d = false;
+    function fokus(f, sofort){
+      if(!istAermel(f)){
+        delete wurzel.dataset.detail;
+        if(detailAus3d){ detailAus3d = false; Z.modus = '3d'; modusZeigen(); }
+      }
+      if(f === Z.fokusZiel) return;
+      Z.fokus = Z.fk >= 1 ? Z.fokusZiel : Z.fokus; Z.fokusZiel = f;
+      Z.fk = sofort || ruhig() ? 1 : 0; if(Z.fk >= 1) Z.fokus = f;
+      if(Z.modus === 'foto') foto(); else zeigen3d();
+    }
+    function detail(k, sofort){
+      const gl = wurzel.querySelector('.t3-gl');
+      if(!istAermel(k)){
+        if(gl)gl.setAttribute('aria-label','Trikot in 3D. Ziehen oder Pfeiltasten zum Drehen.');
+        fokus('oben',sofort); drehen('vorn',sofort); return;
+      }
+      const winkel = k === 'aermel_l' ? .32 : -.32;
+      if(window.TRAININGSANZUG?.trikotDetail){
+        if(Z.modus === '3d'){ detailAus3d = true; Z.modus = 'foto'; modusZeigen(); }
+        Z.winkel = Z.ziel = winkel; Z.vw = 0; Z.sicht = 'seite';
+        if(Z.fokusZiel === k) foto(); else fokus(k,true);
+        opt.onDreh?.('seite');
+      }else{
+        drehen(winkel,sofort); fokus(k,sofort);
+      }
+      wurzel.dataset.detail = k;
+      if(gl)gl.setAttribute('aria-label',(k === 'aermel_l' ? 'Linker' : 'Rechter') + ' Ärmel in Nahaufnahme, aus Sicht des Trägers.');
+    }
     function markeHolen(k){ if(marken[k]) return marken[k];
       const b = document.createElement('button'); b.type = 'button'; b.className = 't3-p'; b.dataset.platz = k; b.innerHTML = '<i aria-hidden="true"></i><span></span>';
       b.onclick = e => { e.stopPropagation(); opt.onPlatz && opt.onPlatz(k); }; mk.appendChild(b); marken[k] = b; return b; }
@@ -775,7 +801,8 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
     }
     function markeStil(m, k, p, b, sicht, x, y){
       const frei = !b.status || b.status === 'frei', name = (opt.name && opt.name(k)) || p.n;
-      m.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;   // ganze Pixel: sonst misst der Browser die 44-px-Tippfläche als 43,99 m.classList.toggle('weg', !sicht); m.tabIndex = sicht ? 0 : -1;
+      m.style.transform = `translate(${Math.round(x)}px,${Math.round(y)}px)`;   // ganze Pixel: sonst misst der Browser die 44-px-Tippfläche als 43,99 px.
+      m.classList.toggle('weg', !sicht); m.tabIndex = sicht ? 0 : -1;
       m.classList.toggle('belegt', !frei && !b.vorschau); m.classList.toggle('vorschau', !!b.vorschau); m.classList.toggle('an', Z.an === k); m.classList.toggle('nein', Z.nein === k);
       const t = frei ? `${name}: frei` : b.vorschau ? `${name}: Vorschau ${b.firma || ''}` : `${name}: ${b.status === 'reserviert' ? 'reserviert' : 'belegt'}${b.firma ? ', ' + b.firma : ''}`;
       if(m.getAttribute('aria-label') !== t){ m.setAttribute('aria-label', t); m.querySelector('span').textContent = frei ? name : (b.firma || name); }
@@ -792,14 +819,65 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
       for(let i=0;i<P.length;i+=4){if(!P[i+3])continue;if(!Q[i+3]){P[i+3]=0;continue;}const licht=kl(Math.pow((Q[i]*.3+Q[i+1]*.59+Q[i+2]*.11)/ref,.9),.55,1.14);for(let j=0;j<3;j++)P[i+j]*=licht;}
       a.putImageData(pd,0,0);x.drawImage(c,l,o);
     }
+    function fotoAermel(){
+      if(Z.modus !== 'foto' || !window.TRAININGSANZUG) return null;
+      if(istAermel(Z.fokusZiel) && window.TRAININGSANZUG.trikotDetail) return Z.fokusZiel;
+      if(Z.art === 'anzug') return Z.fokusZiel === 'aermel_l' ? 'aermel_l' : 'aermel_r';
+      return null;
+    }
+    async function aermelaufnahme(seite,breite){
+      const d = Z.daten, mode = Z.modus, fokusBeimStart = Z.fokusZiel, art = Z.art;
+      const b = d?.belegung?.[seite];
+      const druck = b && b.status !== 'frei' && (b.bild || b.firma);
+      const optionen = {art,seite,kit:opt.kit,breite,leer:!druck,logo:druck?b.bild:null,
+        firma:druck?b.firma:'',variante:b?.variante || 'weiss',groesse:b?.groesse || 1};
+      const lib = window.TRAININGSANZUG;
+      const c = await (art === 'anzug' ? lib.zeichnen(optionen) : lib.trikotDetail(optionen));
+      if(!Z.lebt || Z.daten !== d || Z.modus !== mode || Z.fokusZiel !== fokusBeimStart){
+        c.width=c.height=1;
+        throw Error(Z.lebt ? 'Die Ärmelansicht wurde gewechselt.' : 'Die Vorschau wurde geschlossen.');
+      }
+      return c;
+    }
+    function einpassen(x,c,l,o,w,h){
+      const skala = Math.min(w / c.width, h / c.height), bw = c.width*skala, bh = c.height*skala;
+      x.drawImage(c,l+(w-bw)/2,o+(h-bh)/2,bw,bh);
+    }
     async function foto(streng=false){
       if(!Z.lebt||Z.modus !== 'foto' || !Z.daten) return; const nr = ++fotoNr;
       const d = Z.daten, satz = Z.art === 'auswaerts' ? 'auswaerts' : 'heim', seite = Z.sicht === 'hinten' ? 'hinten' : 'vorn', F = FOTO[satz][seite];
-      if(Z.art==='anzug'){
-        try{if(!window.TRAININGSANZUG)throw Error('Die Anzugvorschau wird noch geladen.');const k=Z.fokusZiel==='aermel_l'?'aermel_l':'aermel_r',b=d.belegung?.[k],c=await TRAININGSANZUG.zeichnen({firma:b?.firma||'Euer Name',logo:b?.status!=='frei'?b?.bild:null,seite:k,kit:opt.kit,breite:1200});
-          if(!Z.lebt||nr!==fotoNr||Z.modus!=='foto'){c.width=c.height=1;return;}const r0=wurzel.getBoundingClientRect(),dp=Math.min(2,window.devicePixelRatio||1);cvF.width=Math.max(1,Math.round(r0.width*dp));cvF.height=Math.max(1,Math.round(r0.height*dp));const x0=cvF.getContext('2d'),scale=Math.min(cvF.width/c.width,cvF.height/c.height);x0.clearRect(0,0,cvF.width,cvF.height);x0.drawImage(c,(cvF.width-c.width*scale)/2,(cvF.height-c.height*scale)/2,c.width*scale,c.height*scale);c.width=c.height=1;Z.fotoLage=null;Object.values(marken).forEach(m=>m.classList.add('weg'));cvF.setAttribute('aria-label',(k==='aermel_l'?'Linker':'Rechter')+' Trainingsanzugärmel mit schwarzem Logo, Gestaltungsvorschau.');return;
-        }catch(e){if(streng)throw e;return;}
+      const arm = fotoAermel();
+      if(arm){
+        Z.fotoLage=null;
+        Object.values(marken).forEach(m=>{m.classList.add('weg');m.dataset.sicht='';m.tabIndex=-1;});
+        const rect=wurzel.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
+        cvF.width=Math.max(1,Math.round(rect.width*dpr));
+        cvF.height=Math.max(1,Math.round(rect.height*dpr));
+        cvF.setAttribute('aria-hidden','false');cvF.setAttribute('role','img');
+        cvF.setAttribute('aria-label',(arm==='aermel_l'?'Linker':'Rechter')+' Ärmel in Nahaufnahme.');
+        try{
+          const c=await aermelaufnahme(arm,Math.max(720,cvF.width));
+          if(nr===fotoNr){
+            einpassen(cvF.getContext('2d'),c,0,0,cvF.width,cvF.height);
+            if(opt.marken){
+              const lib=window.TRAININGSANZUG;
+              const feld=Z.art==='anzug'?lib.feld(arm,c.width,c.height):lib.trikotFeld(Z.art,arm,c.width,c.height);
+              const frei=!d.belegung?.[arm]?.status||d.belegung[arm].status==='frei';
+              const mitte=frei?feld.reduce(([a,b],[px,py])=>[a+px/4,b+py/4],[0,0]):feld[1];
+              const skala=Math.min(cvF.width/c.width,cvF.height/c.height);
+              Z.fotoLage={arm,x:((cvF.width-c.width*skala)/2+mitte[0]*skala)/dpr,
+                y:((cvF.height-c.height*skala)/2+mitte[1]*skala)/dpr};
+              fotoMarken();
+            }
+          }
+          c.width=c.height=1;
+        }catch(e){
+          if(streng)throw e;
+          if(nr===fotoNr&&Z.lebt&&Z.modus==='foto')cvF.setAttribute('aria-label','Ärmelfoto konnte nicht geladen werden.');
+        }
+        return;
       }
+      cvF.setAttribute('aria-hidden','true');
       let img; try{ img = await bild(opt.kit + F.bild); }catch(e){ if(streng)throw e; return; }
       const fest = {}; await Promise.all([['wappen', 'wappen.png'], ['gemeinde', 'wappen-glocken-weiss.png'], ['jungs', 'jungs.png']].map(async ([k, f]) => { try{ fest[k] = await bild(opt.kit + f); }catch(e){} }));
       try{ await document.fonts.load(`700 100px ${opt.schrift}`); }catch(e){}
@@ -839,7 +917,11 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
       markenSetzen();
     }
     function fotoMarken(){
-      const art = 'trikot', d = Z.daten || {}, L = Z.fotoLage; if(!L) return;
+      const art = Z.art === 'anzug' ? 'anzug' : 'trikot', d = Z.daten || {}, L = Z.fotoLage; if(!L) return;
+      if(L.arm){
+        markeStil(markeHolen(L.arm),L.arm,PLAETZE[art][L.arm],d.belegung?.[L.arm]||{},true,L.x,L.y);
+        return;
+      }
       Object.entries(PLAETZE[art]).forEach(([k, p]) => { const q = L.F[k], m = markeHolen(k), b = (d.belegung || {})[k] || {};
         if(!q){ markeStil(m, k, p, b, false, 0, 0); return; } const fr = (!b.status || b.status === 'frei') && !b.vorschau; markeStil(m, k, p, b, true, L.ox + (q[0] + (fr ? 0 : q[2] / 2)) * L.s, L.oy + (q[1] - (fr ? 0 : q[3] / 2)) * L.s); });
     }
@@ -855,7 +937,7 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
     }
     function oberkanten(){ Z.oberkante = {}; ['aermel_l', 'aermel_r'].forEach(n => { const t = teile[n]; if(!t) return; let best = -9, bu = 0; for(let i = 0; i < 64; i++){ const u = i / 64, y = t.form.PUV(u, .6)[1]; if(y > best){ best = y; bu = u; } } Z.oberkante[n] = bu; }); }
     function modusZeigen(){ const gl = wurzel.querySelector('.t3-gl'); if(gl) gl.hidden = Z.modus !== '3d'; cvF.hidden = Z.modus !== 'foto'; }
-    async function modus(m){ if(m === '3d' && !Z.gl) return false; Z.modus = m; modusZeigen();
+    async function modus(m){ if(m === '3d' && !Z.gl) return false; detailAus3d = false; Z.modus = m; modusZeigen();
       if(m === 'foto'){ Z.sicht = Z.winkel > PI / 2 ? 'hinten' : 'vorn'; foto(); } else { malen(); zeigen3d(); } return true; }
     function platzBei(cx, cy, radius){ const r = wurzel.getBoundingClientRect(); let best = null, bd = radius || 60;
       Object.entries(marken).forEach(([k, m]) => { if(m.dataset.sicht !== '1') return; const d = Math.hypot(+m.dataset.x + r.left - cx, +m.dataset.y + r.top - cy); if(d < bd){ bd = d; best = k; } }); return best; }
@@ -868,13 +950,18 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
       const c = leinwand(o.breite, o.hoehe), x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, o.hoehe); g.addColorStop(0, '#f6f7f9'); g.addColorStop(1, '#e4e7ee'); x.fillStyle = o.ohneRahmen ? o.grund : g; x.fillRect(0, 0, o.breite, o.hoehe);
       const altR = opt.rahmen, altAn = Z.an; opt.rahmen = false; Z.an = null;
       const fl = o.ohneRahmen ? {x:0,y:0,w:o.breite,h:o.hoehe} : { x:60, y:190, w:o.breite - 120, h:o.hoehe - 300 };
-      try{if(Z.modus === '3d' && Z.gl){ await malenJetzt();if(!Z.lebt)throw new Error('Die Vorschau wurde geschlossen.');const alt = renderer.getSize(new T.Vector2()), pr = renderer.getPixelRatio();
+      const arm = fotoAermel();
+      try{if(arm){
+        const nah=await aermelaufnahme(arm,fl.w);
+        einpassen(x,nah,fl.x,fl.y,fl.w,fl.h);
+        nah.width=nah.height=1;
+      }else if(Z.modus === '3d' && Z.gl){ await malenJetzt();if(!Z.lebt)throw new Error('Die Vorschau wurde geschlossen.');const alt = renderer.getSize(new T.Vector2()), pr = renderer.getPixelRatio();
         try{
         renderer.setPixelRatio(1); renderer.setSize(fl.w, fl.h, false); kamera.aspect = fl.w / fl.h; kamera.updateProjectionMatrix(); gruppe.rotation.y = -Z.winkel; kameraSetzen(); renderer.render(szene, kamera);
         x.drawImage(renderer.domElement, fl.x, fl.y, fl.w, fl.h);
         }finally{if(Z.lebt){renderer.setPixelRatio(pr); renderer.setSize(alt.x, alt.y, false); kamera.aspect = alt.x / alt.y; kamera.updateProjectionMatrix();}} }
       else { await foto(true);if(!Z.lebt)throw new Error('Die Vorschau wurde geschlossen.');x.drawImage(cvF, fl.x, fl.y, fl.w, fl.h); }
-      }finally{opt.rahmen = altR; Z.an = altAn;if(Z.lebt){if(Z.modus === 'foto') foto();else malen();}}
+      }finally{opt.rahmen = altR; Z.an = altAn;if(Z.lebt&&!arm){if(Z.modus === 'foto') foto();else malen();}}
       if(o.ohneRahmen)return c;
       try{ await document.fonts.load(`800 60px ${opt.schrift}`); }catch(e){}
       if(!Z.lebt)throw new Error('Die Vorschau wurde geschlossen.');
@@ -890,7 +977,11 @@ void main(){float m=texture2D(maske,vUv).r;float a=clamp((m-.5)/max(fwidth(m),.0
     function pixelTest(){ if(!Z.gl) return 0; renderer.render(szene, kamera); const gl = renderer.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, p = new Uint8Array(4 * 64); let n = 0;
       for(let i = 0; i < 64; i++){ gl.readPixels(Math.floor(w * (.3 + .4 * (i % 8) / 7)), Math.floor(h * (.25 + .6 * Math.floor(i / 8) / 7)), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p.subarray(i * 4, i * 4 + 4)); if(p[i * 4 + 3] > 0) n++; } return n / 64; }
 
-    const bereit = (Z.modus === '3d' ? start3d().catch(e => { Z.fehler = e; Z.modus = 'foto'; modusZeigen(); }) : Promise.resolve()).then(() => { modusZeigen(); });
+    const bereit = (Z.modus === '3d' ? start3d().catch(e => { Z.fehler = e; Z.modus = 'foto'; modusZeigen(); }) : Promise.resolve()).then(() => {
+      if(!Z.lebt)return;
+      modusZeigen();
+      if(typeof ResizeObserver!=='undefined'){resizeBeobachter=new ResizeObserver(groesse);resizeBeobachter.observe(wurzel);}
+    });
     return { bereit, setzen, drehen, fokus, detail, modus, platzBei, hervorheben, png, zerstoeren, pixelTest, netz:() => teile.foto ? teile.foto.info : null,
       get modusJetzt(){ return Z.modus; }, get fotoModell(){ return Z.foto3d || null; }, get fokusJetzt(){ return Z.fokusZiel; }, get sicht(){ return Z.sicht; }, get webgl(){ return Z.gl; }, get winkel(){ return Z.winkel; }, wurzel };
   }

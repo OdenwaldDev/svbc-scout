@@ -732,7 +732,7 @@ html.zeiger .spot{opacity:1}
    Kein Zuschnitt, kein Blend-Mode, kein Farbfilter auf dem Ärmelbild. */
 .sz-trikot .trikot-name.trikot-nah {
   position: absolute;
-  inset: 22% 7% 9%;
+  inset: 0;
   width: auto;
   height: auto;
   min-width: 0;
@@ -1074,7 +1074,6 @@ html.zeiger .spot{opacity:1}
 /* Auf schmalen Geräten behält die Nahansicht die größtmögliche Fläche. */
 @media (max-width: 599px) {
   .sz.sz-trikot::before { border-width: 8px; }
-  .sz-trikot .trikot-name.trikot-nah { inset: 20% 5% 7%; }
   .sz-trikot .trikot-gesamt { inset: 20% 5% 7%; }
   .sz-trikot .trikot-name.trikot-nah .trikot-seite { padding: 6px 8px; font-size: 11px; }
   .wimpel .tuch { padding: 18px 20px 70px; }
@@ -1399,11 +1398,11 @@ html.zeiger .spot{opacity:1}
         <div class="kleidung-wahl" id="kleidungWahl" role="group" aria-label="Kleidungsstück" hidden><button type="button" data-kleidung="trikot" aria-pressed="true">Trikot</button><button type="button" data-kleidung="anzug" aria-pressed="false">Trainingsanzug</button></div>
         <div class="rahmen" id="rahmen">
           <div class="sz sz-bande an" data-sz="bande"><div class="banden-entwurf"><img src="partner/r-bande.webp" alt="Bande am Spielfeldrand mit eurem Namen"><div class="bande-name"><span class="passt" data-name-gross>EUER NAME</span></div></div></div>
-          <div class="sz sz-trikot" data-sz="trikot" data-ansicht="ganz"><div class="anzug-buehne" data-anzug-vorschau><img hidden alt="Euer schwarzes Logo auf dem Trainingsanzug"><span class="trikot-platzhalter">Anzugvorschau wird geladen.</span><small class="trikot-seite">Trainingsanzug · Gestaltungsvorschau</small></div><div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div><div class="trikot-name trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem rechten Ärmel"><span class="trikot-platzhalter" data-name-gross>EUER NAME</span><small class="trikot-seite">Rechter Ärmel · Gestaltungsvorschau</small></div></div>
+          <div class="sz sz-trikot" data-sz="trikot" data-ansicht="detail"><div class="anzug-buehne" data-anzug-vorschau><img hidden alt="Euer schwarzes Logo auf dem Trainingsanzug"><span class="trikot-platzhalter">Anzugvorschau wird geladen.</span><small class="trikot-seite">Trainingsanzug · Gestaltungsvorschau</small></div><div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div><div class="trikot-name trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem rechten Ärmel"><span class="trikot-platzhalter" data-name-gross>EUER NAME</span><small class="trikot-seite">Rechter Ärmel · Gestaltungsvorschau</small></div></div>
           <div class="sz sz-durch" data-sz="tag" data-spieltag></div>
           <div class="sz sz-wand" data-sz="wand"><h4>Unsere Partnerwand <small>SAISON 2027/28</small></h4><div class="kacheln"><i></i><i></i><i></i><i></i><i></i><div class="ich"><span class="passt" data-name-gross>EUER NAME</span></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
-        <div class="trikot-ansichten" id="trikotAnsichten" role="group" aria-label="Trikotansicht" hidden><button type="button" data-trikot-ansicht="ganz" aria-pressed="true">Ganzes Trikot</button><button type="button" data-trikot-ansicht="detail" aria-pressed="false">Ärmel näher</button><button type="button" data-trikot-seite="aermel_r" aria-pressed="true">Rechter Ärmel</button><button type="button" data-trikot-seite="aermel_l" aria-pressed="false">Linker Ärmel</button></div>
+        <div class="trikot-ansichten" id="trikotAnsichten" role="group" aria-label="Trikotansicht" hidden><button type="button" data-trikot-ansicht="ganz" aria-pressed="false">Ganzes Trikot</button><button type="button" data-trikot-ansicht="detail" aria-pressed="true">Ärmel näher</button><button type="button" data-trikot-seite="aermel_r" aria-pressed="true">Rechter Ärmel</button><button type="button" data-trikot-seite="aermel_l" aria-pressed="false">Linker Ärmel</button></div>
       </div>
       <div class="bue-w"><div id="kurzMotive" hidden><p class="unter">Club Partner mit eigener Bande und einem Ärmel auf dem Trainingsanzug der Jugend.</p><div class="tabs"><button class="zeile" type="button" data-kurzmotiv="bande" aria-pressed="true">Eure Bande</button><button class="zeile" type="button" data-kurzmotiv="trikot" aria-pressed="false">Euer Trainingsanzug</button></div></div>
         <p class="unter auf" style="--v:3">Tippt euch durch. Wo seht ihr euch am liebsten?</p>
@@ -1542,9 +1541,11 @@ window.REISE_TRIKOT=(()=>{
   const module=new Map();let zuletzt=null;
   const vorhanden=name=>name==='LOGO'?typeof LOGO!=='undefined':!!window[name];
   async function bibliothek(art){
-    for(const [name,datei] of [['LOGO','logolib.js'],art==='anzug'?['TRAININGSANZUG','trainingsanzug.js']:['TRIKOT3D','trikot3d.js']]){
+    const benoetigt=[['LOGO','logolib.js'],['TRAININGSANZUG','trainingsanzug.js']];
+    if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
+    for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.143';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.144';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -1559,8 +1560,12 @@ window.REISE_TRIKOT=(()=>{
     try{
       v=TRIKOT3D.buehne(host,{three:'vendor/three.min.js',kit:'kit/',schrift:'BarlowC',marken:false,rahmen:false});
       await v.bereit; const bilder={};
+      // Die zwei Seiten zeigen alternative Platzierungen desselben Zeichens.
+      const belegung=seite=>({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{
+        [seite]:{status:'belegt',vorschau:true,firma,bild:logo||null,variante:'weiss',groesse:1}
+      }});
       for(const seite of ['aermel_r','aermel_l']){
-        v.setzen({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{[seite]:{status:'belegt',vorschau:true,firma,bild:logo||null,variante:'weiss',groesse:1}}});
+        await v.setzen(belegung(seite));
         v.detail(seite,true);
         const cv=await v.png({breite:960,hoehe:600,ohneRahmen:true,grund:'#10182e'});
         bilder[seite]=cv.toDataURL('image/png');
@@ -1568,11 +1573,8 @@ window.REISE_TRIKOT=(()=>{
       if(mitGesamt){
         // Auch der Foto-Rückfall erhält dasselbe Hochformat wie die exportierte Leinwand.
         host.style.width='720px';host.style.height='900px';
-        const platz=()=>({status:'belegt',vorschau:true,firma,bild:logo||null,variante:'weiss',groesse:1});
-        await v.setzen({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{aermel_r:platz(),aermel_l:platz()}});
-        v.detail(null,true);v.fokus('gesamt',true);
-        // Öffentliche Bühnen-API, gleiche leichte Neigung wie die jeweiligen Ärmel-Details.
-        for(const [name,winkel] of [['gesamt_r',-.32],['gesamt_l',.32]]){
+        for(const [name,seite,winkel] of [['gesamt_r','aermel_r',-.32],['gesamt_l','aermel_l',.32]]){
+          v.detail(null,true);await v.setzen(belegung(seite));v.fokus('gesamt',true);
           v.drehen(winkel,true);
           const cv=await v.png({breite:720,hoehe:900,ohneRahmen:true,grund:'transparent'});
           bilder[name]=cv.toDataURL('image/png');
@@ -1937,7 +1939,7 @@ window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===lo
    die Typo.“ Der Rahmen in partner.html schickt die fertigen Fassungen (Marine für die Bande, Weiß fürs Trikot, Original für die
    Partnerwand). name steht nur dabei, wenn das Logo den Namen nicht selbst trägt. Ohne Rahmen oder ohne Logo bleibt der Name als Schrift. */
 var MARKE=null, BANDE_PROJEKT=null;
-let AERMEL_SEITE='aermel_r', TRIKOT_ANSICHT='ganz', TRIKOT_BILDER=null, TRIKOT_ANFRAGE=null, TRIKOT_FEHLER=false;
+let AERMEL_SEITE='aermel_r', TRIKOT_ANSICHT='detail', TRIKOT_BILDER=null, TRIKOT_ANFRAGE=null, TRIKOT_FEHLER=false;
 let KLEIDUNG='trikot',ANZUG_STAND=null,ANZUG_BILDER=null,ANZUG_ANFRAGE=null,ANZUG_FEHLER=false;
 function trikotHtml(){ return '<div class="bild trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem Ärmel"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Ärmel · Gestaltungsvorschau</small></div>'; }
 function anzugHtml(angebot=false){return '<div class="bild anzug-nah" data-anzug-vorschau data-anzug-angebot="'+(angebot?'1':'0')+'"><img hidden alt="Euer schwarzes Logo auf dem Trainingsanzug"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Trainingsanzug · Gestaltungsvorschau</small></div>';}
