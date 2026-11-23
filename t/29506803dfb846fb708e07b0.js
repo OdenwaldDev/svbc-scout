@@ -1016,100 +1016,18 @@ function kalChips(){
 function kalSichtbar(){ const f=kalFilter(); return KAL.items.filter(i=>kalCats(i).some(c=>f.has(c))); }
 
 /* ---------- Laden ---------- */
+function kalGebAktualisieren(){
+  if(!KAL.loaded&&!KAL.busy)return;
+  if(KAL.busy){ KAL.gebNeu=true; return; }
+  kalLoad(KAL.von,KAL.bis,true);
+}
+function kalFehlerHtml(){ return KAL.err?`<div class="card" role="status"><p>${KAL.loaded?'Termine konnten nicht aktualisiert werden. Du siehst noch den bisherigen Stand.':'Termine konnten nicht geladen werden.'}</p><button type="button" class="btn ghost" data-kal-neu>Erneut laden</button></div>`:''; }
+function kalFehlerBinden(el){ const b=el.querySelector('[data-kal-neu]'); if(b)b.onclick=()=>{ b.disabled=true; kalLoad(KAL.von,KAL.bis,true); }; }
 async function kalLoad(von,bis,force){
   const h=kalHeute(); von=von||kalAdd(h,-45); bis=bis||kalAdd(h,330);
   if(!force&&KAL.loaded&&KAL.von<=von&&KAL.bis>=bis&&Date.now()-KAL.t<120000)return;
-  if(KAL.busy)return; KAL.busy=true;
-  if(KAL.loaded&&!force){ von=von<KAL.von?von:KAL.von; bis=bis>KAL.bis?bis:KAL.bis; }
-  try{
-    const {data,error}=await SVB.sb.rpc('kalender',{p_von:von,p_bis:bis}); if(error)throw error;
-    KAL.items=data.items||[]; KAL.von=von; KAL.bis=bis; KAL.flags={bearbeiten:data.bearbeiten,helfer:data.helfer,geb:data.geb,teams:data.teams||[],treff:!!data.treff}; KAL.loaded=true; KAL.t=Date.now();
-    if(!KAL.wap){ KAL.wap=true; try{ const w=await SVB.sb.rpc('wappen_liste'); if(w.data)Object.entries(w.data).forEach(([k,v])=>{ if(!SVC.crest.has(k))SVC.crest.set(k,v); }); }catch(e){} }
-  }catch(e){ console.warn('Termine',e); KAL.err=String(e.message||e); }
-  KAL.busy=false;
-  try{ if(svCurTab()==='kalender')kalRender(); if(svCurTab()==='home')kalHome(); }catch(e){}
-}
-
-/* ---------- Darstellung ---------- */
-function kalSpielZeile(i,gross){
-  const wir=kalWir(i.m), heim=i.heim!==false, a=heim?wir:i.gegner, b=heim?i.gegner:wir;
-  const erg=i.erg?(heim?i.erg:i.erg.split(':').reverse().join(':')):'';
-  const [w,g]=i.erg?i.erg.split(':').map(Number):[null,null], res=i.erg?(w>g?'s':w===g?'u':'n'):'';
-  if(!gross){   // Liste: zwei Zeilen untereinander, Uhrzeit oder Ergebnis rechts. Passt auch bei langen Namen aufs Handy
-    const [ea,eb]=erg?erg.split(':'):['',''];
-    return `<div class="kal-sp2"><span class="kal-t">${scCrest(a)}<b>${svEsc(a)}</b>${erg?`<em class="kal-e1 ${res}">${svEsc(ea)}</em>`:''}</span><span class="kal-t">${scCrest(b)}<b>${svEsc(b)}</b>${erg?`<em class="kal-e1 ${res}">${svEsc(eb)}</em>`:''}</span></div>`;
-  }
-  return `<div class="kal-sp${gross?' xl':''}"><span class="kal-t">${scCrest(a,gross?'xl':'')}<b>${svEsc(a)}</b></span>
-    ${erg?`<em class="kal-erg ${res}">${svEsc(erg)}</em>`:`<em class="kal-vs">${i.z?svEsc(i.z):'vs'}</em>`}
-    <span class="kal-t r">${scCrest(b,gross?'xl':'')}<b>${svEsc(b)}</b></span></div>`;
-}
-function kalItemHtml(i){
-  const c=kalFarbe(i), tag=i.k==='spiel'?kalTeamName(i.m):i.k==='event'?(KAL_EART[i.a]||KAL_EART.sonstiges)[1]:'Geburtstag';
-  let body='';
-  if(i.k==='spiel'){
-    body=kalSpielZeile(i)+`<div class="kal-meta">${[i.z?i.z+' Uhr':'',i.liga,i.heim===true?'Heimspiel':i.heim===false?'Auswärts':''].filter(Boolean).map(svEsc).join(' · ')}</div>`;
-  }else if(i.k==='event'){
-    const e=KAL_EART[i.a]||KAL_EART.sonstiges;
-    body=`<div class="kal-ev"><span class="kal-emo">${e[0]}</span><b>${svEsc(i.t)}</b></div>
-      <div class="kal-meta">${kalSichtText(i.sicht)?`<span class="kal-lock">🔒 ${svEsc(kalSichtText(i.sicht))}</span>`:''}${[i.bis&&i.bis!==i.d?'bis '+kalWt(i.bis)+'., '+kalDM(i.bis):'',i.z?i.z+' Uhr':'',i.ort].filter(Boolean).map(svEsc).join(' · ')}${KAL.flags.helfer&&i.hz?` · ${SVI('users')} ${i.hz}`:''}</div>`;
-  }else body=`<div class="kal-ev"><span class="kal-emo">🎂</span><b>${svEsc(i.t)}</b><span class="kal-alter">wird ${svEsc(i.alter)}</span></div>`;
-  return `<button type="button" class="kal-it${i.d<kalHeute()?' vorbei':''}" data-kid="${svEsc(i.id)}" style="--c:${c}"><i class="kal-bar"></i><div class="kal-b">${body}</div><span class="kal-tag">${svEsc(tag)}</span></button>`;
-}
-function kalListe(L){
-  const h=kalHeute(); let out='', mon='', tag='', heute=false;
-  L.forEach(i=>{
-    const m=i.d.slice(0,7);
-    if(m!==mon){ mon=m; out+=`<h3 class="kal-mon">${KAL_MON[+m.slice(5)-1]} ${m.slice(0,4)}</h3>`; }
-    if(!heute&&i.d>=h){ heute=true; out+=`<div class="kal-jetzt" id="kalJetzt"><span>${i.d===h?'Heute':'Als Nächstes'}</span></div>`; }
-    if(i.d!==tag){ tag=i.d; const r=kalRel(i.d); out+=`<div class="kal-tagk${i.d===h?' heute':''}"><b>${kalDM(i.d).slice(0,2)}</b><span>${kalWt(i.d)}</span>${r?`<em>${r}</em>`:''}</div>`; }
-    out+=kalItemHtml(i);
-  });
-  if(!heute)out+=`<div class="kal-jetzt" id="kalJetzt"><span>Heute</span></div><p class="note kal-leer">Danach steht in deiner Auswahl noch nichts an.</p>`;
-  return out;
-}
-function kalMonat(L){
-  const m=KAL.monat||kalHeute().slice(0,7), [y,mo]=m.split('-').map(Number), erster=new Date(y,mo-1,1), start=(erster.getDay()+6)%7, tage=new Date(y,mo,0).getDate();
-  const nach={}; L.forEach(i=>{ let d=i.d; const bis=i.bis&&i.bis>i.d?i.bis:i.d; while(d<=bis){ (nach[d]=nach[d]||[]).push(i); d=kalAdd(d,1); } });
-  const h=kalHeute(), sel=KAL.tag&&KAL.tag.startsWith(m)?KAL.tag:(h.startsWith(m)?h:null);
-  let g=''; for(let k=0;k<start;k++)g+='<span class="kal-d leer"></span>';
-  for(let d=1;d<=tage;d++){ const s=`${m}-${String(d).padStart(2,'0')}`, I=nach[s]||[];
-    g+=`<button type="button" class="kal-d${s===h?' heute':''}${s===sel?' sel':''}${I.length?' voll':''}" data-kd="${s}"><b>${d}</b><span>${I.slice(0,4).map(i=>`<i style="--c:${kalFarbe(i)}"></i>`).join('')}</span></button>`; }
-  const T=sel?(nach[sel]||[]):[];
-  return `<div class="card kal-mcard"><div class="kal-mh"><button type="button" class="iconbtn" data-km="-1" aria-label="Vormonat">‹</button><b>${KAL_MON[mo-1]} ${y}</b><button type="button" class="iconbtn" data-km="1" aria-label="Nächster Monat">›</button></div>
-    <div class="kal-grid">${['Mo','Di','Mi','Do','Fr','Sa','So'].map(w=>`<span class="kal-wt">${w}</span>`).join('')}${g}</div></div>
-    ${sel?`<h3 class="kal-mon">${kalLang(sel)}</h3>${T.length?T.map(kalItemHtml).join(''):'<p class="note">An diesem Tag steht nichts an.</p>'}`:''}`;
-}
-function kalRender(){
-  const P=kalPanel(); if(!P)return;
-  if(!KAL.loaded){ P.innerHTML='<div class="card"><div class="empty">Lade Termine …</div></div>'; kalLoad(); return; }
-  const f=kalFilter(), L=kalSichtbar(), chips=kalChips(), adm=svRole()==='admin';
-  P.innerHTML=`<div class="trtop kal-top"><div class="trtabs"><button class="${KAL.view==='liste'?'on':''}" data-kv="liste">Liste</button><button class="${KAL.view==='monat'?'on':''}" data-kv="monat">Monat</button></div>
-      <div class="tract"><button class="btn ghost" id="kalAbo" type="button">${SVI('cal')} In meinen Kalender</button>${kalDarfAnlegen()?`<button class="btn" id="kalNeu" type="button">${SVI('plus')} Termin</button>`:''}${adm?`<button class="btn ghost" id="kalGeb" type="button" title="Geburtstage einfügen">🎂</button>`:''}</div></div>
-    ${KAL.err&&!KAL.items.length?`<div class="card"><div class="empty">Termine konnten nicht geladen werden.</div></div>`:''}
-    <div id="kalBody">${KAL.view==='monat'?kalMonat(L):`${KAL.von>'2013-07-01'?`<button type="button" class="btn ghost sm kal-frueher" id="kalFrueher">${SVI('clock')} Frühere Termine laden</button>`:''}${L.length?kalListe(L):'<div class="card"><div class="empty">Unten auswählen, was du sehen willst.</div></div>'}`}</div>
-    <div class="kal-fbar" role="group" aria-label="Was angezeigt wird"><div class="kal-fin"><button type="button" class="kal-chip alle${chips.every(c=>f.has(c.k))?' on':''}" data-kfa style="--c:#94a3b8"><i></i>Alle</button>${chips.map(c=>`<button type="button" class="kal-chip${f.has(c.k)?' on':''}" data-kf="${svEsc(c.k)}" style="--c:${c.c}" aria-pressed="${f.has(c.k)}"><i></i>${svEsc(c.t)}</button>`).join('')}</div></div>`;
-  P.querySelectorAll('[data-kv]').forEach(b=>b.onclick=()=>{ KAL.view=b.dataset.kv; kalRender(); });
-  P.querySelectorAll('[data-kf]').forEach(b=>b.onclick=()=>{ const k=b.dataset.kf; f.has(k)?f.delete(k):f.add(k); kalFilterSave(); const y=window.scrollY; kalRender(); window.scrollTo(0,y); });
-  const fa=P.querySelector('[data-kfa]'); if(fa)fa.onclick=()=>{ const alle=chips.every(c=>f.has(c.k)); if(alle){ KAL.f=null; try{ localStorage.removeItem(kalKey()); }catch(e){} kalFilter(); } else chips.forEach(c=>f.add(c.k)); if(!alle)kalFilterSave(); const y=window.scrollY; kalRender(); window.scrollTo(0,y); };
-  P.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>kalDetail(b.dataset.kid));
-  P.querySelectorAll('[data-kd]').forEach(b=>b.onclick=()=>{ KAL.tag=b.dataset.kd; kalRender(); });
-  P.querySelectorAll('[data-km]').forEach(b=>b.onclick=async()=>{ const [y,m]=(KAL.monat||kalHeute().slice(0,7)).split('-').map(Number), d=new Date(y,m-1+(+b.dataset.km),1);
-    KAL.monat=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); KAL.tag=null; const v=KAL.monat+'-01', e=kalAdd(KAL.monat+'-28',5);
-    if(v<KAL.von||e>KAL.bis)await kalLoad(v<KAL.von?v:null,e>KAL.bis?e:null); kalRender(); });
-  const fr=P.querySelector('#kalFrueher'); if(fr)fr.onclick=async()=>{ fr.disabled=true; const v=kalAdd(KAL.von,-365); await kalLoad(v<'2013-07-01'?'2013-07-01':v,null); };
-  P.querySelector('#kalAbo').onclick=()=>kalAboModal();
-  const nb=P.querySelector('#kalNeu'); if(nb)nb.onclick=()=>kalEventForm(null);
-  const gb=P.querySelector('#kalGeb'); if(gb)gb.onclick=()=>kalGebImport();
-  if(KAL.view==='liste'&&!KAL.gescrollt){ KAL.gescrollt=true; const j=P.querySelector('#kalJetzt'); if(j&&j.getBoundingClientRect().top>window.innerHeight*.6)setTimeout(()=>j.scrollIntoView({block:'start'}),50); }
-}
-
-/* ---------- Details, Teilen, einzelner Kalendereintrag ---------- */
-function kalItem(id){ return KAL.items.find(i=>String(i.id)===String(id)); }
-function kalShareText(i){
-  const r=kalRel(i.d), wann=(r&&!/^in /.test(r)?r:kalWt(i.d)+'., '+kalDM(i.d))+(i.z?' um '+i.z+' Uhr':'');
-  if(i.k==='spiel'){
-    const heim=i.heim!==false;
-    return `⚽ ${wann}: ${kalWir(i.m)} ${heim?'empfängt':'spielt bei'} ${i.gegner}${i.liga?' ('+i.liga+')':''}.\n${heim?'📍 '+(i.ort||KAL_HEIM):'📍 Auswärts, fahrt mit!'}\nKommt vorbei und unterstützt uns! 💙🧡`;
-  }
-  if(i.k==='event'){ const e=KAL_EART[i.a]||KAL_EART.sonstiges; return `${e[0]} ${i.t}\n🗓️ ${wann}${i.bis&&i.bis!==i.d?' bis '+kalWt(i.bis)+'., '+kalDM(i.bis):''}${i.ort?'\n📍 '+i.ort:''}${i.info?'\n'+i.info:''}\nSV/BSC Mörlenbach freut sich auf euch! 💙🧡`; }
-  return `🎂 Alles Gute, ${i.t}!`;
+  // Eine Monatsnavigation während der Geburtstagsaktualisierung darf ihren
+  // angeforderten Zeitraum nicht verlieren. Nach dem laufenden Abruf erneut
+  // prüfen; ein inzwischen geladener Bereich benötigt keine weitere Anfrage.
+  if(KAL.busy){ if(KAL.ladeEnde){ await KAL.ladeEnde; return kalLoad(von,bis,force); } return; }
+  KAL.busy=true; let freigeben; KAL.ladeEnde=new Promise(ok=>{ freigeben=ok; });

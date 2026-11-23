@@ -765,7 +765,7 @@ async function mnSave(btn){
         if(k==='fuss'){ if('fu' in d)add(pid,{fu:d.fu||undefined}); if('wf' in d)add(pid,{wf:d.wf||undefined}); }
         if(k==='pos'){ const u={}; if('ps' in d&&d.ps&&d.ps!==o.ps){ u.ps=d.ps; u.ph=o.ps||undefined; } const ps=d.ps||o.ps, a2=String(('ps2' in d)?d.ps2:o.ps2).split(',').filter(x=>x&&x!==ps);
           if('ps2' in d||u.ps)u.ps2=mnKeys(a2).join(',')||'-'; if(Object.keys(u).length)add(pid,u); }
-        if(k==='geb'){ if(d.gb&&!/^\d{4}-\d{2}-\d{2}$/.test(d.gb)){ fehler.push(p.name+': Geburtsdatum ungültig'); continue; } add(pid,{gb:d.gb||undefined}); }
+        if(k==='geb'){ if(d.gb&&svAge(d.gb)===null){ fehler.push(p.name+': Geburtsdatum ungültig'); continue; } add(pid,{gb:d.gb||undefined}); }
         if(k==='skills'){ const u={}; ['rol','sk','ch','tg'].forEach(f=>{ if(f in d)u[f]=d[f]||undefined; }); ['sts','sws'].forEach(f=>{ if(f in d)u[f]=String(d[f]||'').trim().slice(0,160)||undefined; }); add(pid,u); }
         if(k==='groesse'){ const n=d.gr===''?null:Math.round(+d.gr); if(n!=null&&!(n>=140&&n<=215)){ fehler.push(p.name+': Größe 140 bis 215 cm'); continue; } add(pid,{gr:n||undefined}); }
         if(k==='gewicht'){ const n=d.gw===''?null:Math.round(+d.gw); if(n!=null&&!(n>=40&&n<=160)){ fehler.push(p.name+': Gewicht 40 bis 160 kg'); continue; } add(pid,{gw:n||undefined}); }

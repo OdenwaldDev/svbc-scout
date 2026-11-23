@@ -570,7 +570,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.135', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.136', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -767,17 +767,21 @@ function syncDiff(d){
 }
 function syncMissing(d){ return syncDiff(d).length>0||(canEdit()&&_lineupT>syncTime(d.lt)); }
 async function syncPush(){
+  let gebGespeichert=false;
   try{
     const d=await syncFetch();
     if(syncAdoptRemote(d))crmAfterRemote();
     const rows=syncDiff(d), lin=canEdit()&&_lineupT>syncTime(d.lt);
     _lastSync=syncSer();
-    for(let i=0;i<rows.length;i+=500){ const {error}=await SVB.sb.rpc('crm_put',{rows:rows.slice(i,i+500)}); if(error)throw error; }
+    for(let i=0;i<rows.length;i+=500){ const block=rows.slice(i,i+500), {error}=await SVB.sb.rpc('crm_put',{rows:block}); if(error)throw error;
+      if(block.some(r=>r.f==='gb'))gebGespeichert=true; }
     if(lin){ const {error}=await SVB.sb.rpc('lineup_put',{p_formation:LINEUP.formation,p_slots:LINEUP.slots,p_shadow:SHADOW,p_lt:_lineupT}); if(error)throw error; }
     clearTimeout(_verifyT); _verifyT=setTimeout(syncVerify,(rows.length||lin)?700:0);
   }catch(e){
     _pushTries++; syncState('err');
     clearTimeout(_syncT); _syncT=setTimeout(syncPush,Math.min(120000,15000*_pushTries));
+  }finally{
+    if(gebGespeichert&&typeof kalGebAktualisieren==='function')kalGebAktualisieren();
   }
 }
 function svPull(){ if(!_remoteDone)return; syncFetch().then(d=>{ if(syncAdoptRemote(d))crmAfterRemote(); }).catch(()=>{}); }

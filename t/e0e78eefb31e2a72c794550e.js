@@ -432,7 +432,12 @@ function svPushRefreshAll(except){ ['svPushHome','svPushKand'].forEach(id=>{ con
 
 /* ---------- Positionen & Spielerdaten: fürs ganze Team statt nur auf diesem Gerät ---------- */
 const SV_PD_KEYS=['ps','ps2','ph','gb','al','fu','gr','sc'], SV_SC_KEYS=['tempo','technik','zweikampf','spielint','mentalitaet'];
-function svAge(geb){ const d=new Date(geb); if(isNaN(d))return null; return Math.floor((Date.now()-d)/31557600000); }
+function svAge(geb){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof geb==='string'?geb:''); if(!m)return null;
+  const y=+m[1],mo=+m[2],tag=+m[3],schalt=y%4===0&&(y%100!==0||y%400===0),tage=[31,schalt?29:28,31,30,31,30,31,31,30,31,30,31];
+  if(!y||mo<1||mo>12||tag<1||tag>tage[mo-1])return null;
+  const heute=new Date(); return heute.getFullYear()-y-(heute.getMonth()+1<mo||(heute.getMonth()+1===mo&&heute.getDate()<tag)?1:0);
+}
 function svApplyPlayerData(){
   players.forEach(p=>{
     const C=CRM[p.id], has=C&&SV_PD_KEYS.some(k=>C[k]!=null);
@@ -442,7 +447,8 @@ function svApplyPlayerData(){
     p.pos=(X.ps&&POS_W[X.ps])?X.ps:O.pos;
     p.pos2=X.ps2!=null?String(X.ps2).split(',').filter(x=>POS_W[x]&&x!==p.pos):O.pos2;
     p.posAlt=(X.ph&&POS_W[X.ph]&&X.ph!==p.pos)?X.ph:null;
-    if(typeof X.gb==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(X.gb)){ p.geb=X.gb; p.alter=svAge(X.gb); p.alterCa=false; }
+    const gebAlter=svAge(X.gb);
+    if(gebAlter!==null){ p.geb=X.gb; p.alter=gebAlter; p.alterCa=false; }
     else if(+X.al>=14&&+X.al<=50){ p.geb=O.geb; p.alter=+X.al; p.alterCa=false; }
     else { p.geb=O.geb; p.alter=O.alter; p.alterCa=O.alterCa; }
     p.fuss=['Rechts','Links','Beidfüßig'].includes(X.fu)?X.fu:O.fuss;

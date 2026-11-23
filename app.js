@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.135', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.136', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -2296,17 +2296,21 @@ function syncDiff(d){
 }
 function syncMissing(d){ return syncDiff(d).length>0||(canEdit()&&_lineupT>syncTime(d.lt)); }
 async function syncPush(){
+  let gebGespeichert=false;
   try{
     const d=await syncFetch();
     if(syncAdoptRemote(d))crmAfterRemote();
     const rows=syncDiff(d), lin=canEdit()&&_lineupT>syncTime(d.lt);
     _lastSync=syncSer();
-    for(let i=0;i<rows.length;i+=500){ const {error}=await SVB.sb.rpc('crm_put',{rows:rows.slice(i,i+500)}); if(error)throw error; }
+    for(let i=0;i<rows.length;i+=500){ const block=rows.slice(i,i+500), {error}=await SVB.sb.rpc('crm_put',{rows:block}); if(error)throw error;
+      if(block.some(r=>r.f==='gb'))gebGespeichert=true; }
     if(lin){ const {error}=await SVB.sb.rpc('lineup_put',{p_formation:LINEUP.formation,p_slots:LINEUP.slots,p_shadow:SHADOW,p_lt:_lineupT}); if(error)throw error; }
     clearTimeout(_verifyT); _verifyT=setTimeout(syncVerify,(rows.length||lin)?700:0);
   }catch(e){
     _pushTries++; syncState('err');
     clearTimeout(_syncT); _syncT=setTimeout(syncPush,Math.min(120000,15000*_pushTries));
+  }finally{
+    if(gebGespeichert&&typeof kalGebAktualisieren==='function')kalGebAktualisieren();
   }
 }
 function svPull(){ if(!_remoteDone)return; syncFetch().then(d=>{ if(syncAdoptRemote(d))crmAfterRemote(); }).catch(()=>{}); }
@@ -2891,7 +2895,12 @@ function svPushRefreshAll(except){ ['svPushHome','svPushKand'].forEach(id=>{ con
 
 /* ---------- Positionen & Spielerdaten: fürs ganze Team statt nur auf diesem Gerät ---------- */
 const SV_PD_KEYS=['ps','ps2','ph','gb','al','fu','gr','sc'], SV_SC_KEYS=['tempo','technik','zweikampf','spielint','mentalitaet'];
-function svAge(geb){ const d=new Date(geb); if(isNaN(d))return null; return Math.floor((Date.now()-d)/31557600000); }
+function svAge(geb){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof geb==='string'?geb:''); if(!m)return null;
+  const y=+m[1],mo=+m[2],tag=+m[3],schalt=y%4===0&&(y%100!==0||y%400===0),tage=[31,schalt?29:28,31,30,31,30,31,31,30,31,30,31];
+  if(!y||mo<1||mo>12||tag<1||tag>tage[mo-1])return null;
+  const heute=new Date(); return heute.getFullYear()-y-(heute.getMonth()+1<mo||(heute.getMonth()+1===mo&&heute.getDate()<tag)?1:0);
+}
 function svApplyPlayerData(){
   players.forEach(p=>{
     const C=CRM[p.id], has=C&&SV_PD_KEYS.some(k=>C[k]!=null);
@@ -2901,7 +2910,8 @@ function svApplyPlayerData(){
     p.pos=(X.ps&&POS_W[X.ps])?X.ps:O.pos;
     p.pos2=X.ps2!=null?String(X.ps2).split(',').filter(x=>POS_W[x]&&x!==p.pos):O.pos2;
     p.posAlt=(X.ph&&POS_W[X.ph]&&X.ph!==p.pos)?X.ph:null;
-    if(typeof X.gb==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(X.gb)){ p.geb=X.gb; p.alter=svAge(X.gb); p.alterCa=false; }
+    const gebAlter=svAge(X.gb);
+    if(gebAlter!==null){ p.geb=X.gb; p.alter=gebAlter; p.alterCa=false; }
     else if(+X.al>=14&&+X.al<=50){ p.geb=O.geb; p.alter=+X.al; p.alterCa=false; }
     else { p.geb=O.geb; p.alter=O.alter; p.alterCa=O.alterCa; }
     p.fuss=['Rechts','Links','Beidfüßig'].includes(X.fu)?X.fu:O.fuss;
@@ -12949,7 +12959,7 @@ async function mnSave(btn){
         if(k==='fuss'){ if('fu' in d)add(pid,{fu:d.fu||undefined}); if('wf' in d)add(pid,{wf:d.wf||undefined}); }
         if(k==='pos'){ const u={}; if('ps' in d&&d.ps&&d.ps!==o.ps){ u.ps=d.ps; u.ph=o.ps||undefined; } const ps=d.ps||o.ps, a2=String(('ps2' in d)?d.ps2:o.ps2).split(',').filter(x=>x&&x!==ps);
           if('ps2' in d||u.ps)u.ps2=mnKeys(a2).join(',')||'-'; if(Object.keys(u).length)add(pid,u); }
-        if(k==='geb'){ if(d.gb&&!/^\d{4}-\d{2}-\d{2}$/.test(d.gb)){ fehler.push(p.name+': Geburtsdatum ungültig'); continue; } add(pid,{gb:d.gb||undefined}); }
+        if(k==='geb'){ if(d.gb&&svAge(d.gb)===null){ fehler.push(p.name+': Geburtsdatum ungültig'); continue; } add(pid,{gb:d.gb||undefined}); }
         if(k==='skills'){ const u={}; ['rol','sk','ch','tg'].forEach(f=>{ if(f in d)u[f]=d[f]||undefined; }); ['sts','sws'].forEach(f=>{ if(f in d)u[f]=String(d[f]||'').trim().slice(0,160)||undefined; }); add(pid,u); }
         if(k==='groesse'){ const n=d.gr===''?null:Math.round(+d.gr); if(n!=null&&!(n>=140&&n<=215)){ fehler.push(p.name+': Größe 140 bis 215 cm'); continue; } add(pid,{gr:n||undefined}); }
         if(k==='gewicht'){ const n=d.gw===''?null:Math.round(+d.gw); if(n!=null&&!(n>=40&&n<=160)){ fehler.push(p.name+': Gewicht 40 bis 160 kg'); continue; } add(pid,{gw:n||undefined}); }
@@ -16464,17 +16474,29 @@ function kalChips(){
 function kalSichtbar(){ const f=kalFilter(); return KAL.items.filter(i=>kalCats(i).some(c=>f.has(c))); }
 
 /* ---------- Laden ---------- */
+function kalGebAktualisieren(){
+  if(!KAL.loaded&&!KAL.busy)return;
+  if(KAL.busy){ KAL.gebNeu=true; return; }
+  kalLoad(KAL.von,KAL.bis,true);
+}
+function kalFehlerHtml(){ return KAL.err?`<div class="card" role="status"><p>${KAL.loaded?'Termine konnten nicht aktualisiert werden. Du siehst noch den bisherigen Stand.':'Termine konnten nicht geladen werden.'}</p><button type="button" class="btn ghost" data-kal-neu>Erneut laden</button></div>`:''; }
+function kalFehlerBinden(el){ const b=el.querySelector('[data-kal-neu]'); if(b)b.onclick=()=>{ b.disabled=true; kalLoad(KAL.von,KAL.bis,true); }; }
 async function kalLoad(von,bis,force){
   const h=kalHeute(); von=von||kalAdd(h,-45); bis=bis||kalAdd(h,330);
   if(!force&&KAL.loaded&&KAL.von<=von&&KAL.bis>=bis&&Date.now()-KAL.t<120000)return;
-  if(KAL.busy)return; KAL.busy=true;
+  // Eine Monatsnavigation während der Geburtstagsaktualisierung darf ihren
+  // angeforderten Zeitraum nicht verlieren. Nach dem laufenden Abruf erneut
+  // prüfen; ein inzwischen geladener Bereich benötigt keine weitere Anfrage.
+  if(KAL.busy){ if(KAL.ladeEnde){ await KAL.ladeEnde; return kalLoad(von,bis,force); } return; }
+  KAL.busy=true; let freigeben; KAL.ladeEnde=new Promise(ok=>{ freigeben=ok; });
   if(KAL.loaded&&!force){ von=von<KAL.von?von:KAL.von; bis=bis>KAL.bis?bis:KAL.bis; }
   try{
     const {data,error}=await SVB.sb.rpc('kalender',{p_von:von,p_bis:bis}); if(error)throw error;
-    KAL.items=data.items||[]; KAL.von=von; KAL.bis=bis; KAL.flags={bearbeiten:data.bearbeiten,helfer:data.helfer,geb:data.geb,teams:data.teams||[],treff:!!data.treff}; KAL.loaded=true; KAL.t=Date.now();
+    KAL.items=data.items||[]; KAL.von=von; KAL.bis=bis; KAL.flags={bearbeiten:data.bearbeiten,helfer:data.helfer,geb:data.geb,teams:data.teams||[],treff:!!data.treff}; KAL.loaded=true; KAL.t=Date.now(); KAL.err=null;
     if(!KAL.wap){ KAL.wap=true; try{ const w=await SVB.sb.rpc('wappen_liste'); if(w.data)Object.entries(w.data).forEach(([k,v])=>{ if(!SVC.crest.has(k))SVC.crest.set(k,v); }); }catch(e){} }
   }catch(e){ console.warn('Termine',e); KAL.err=String(e.message||e); }
-  KAL.busy=false;
+  KAL.busy=false; freigeben();
+  if(KAL.gebNeu){ KAL.gebNeu=false; kalLoad(KAL.von,KAL.bis,true); return; }
   try{ if(svCurTab()==='kalender')kalRender(); if(svCurTab()==='home')kalHome(); }catch(e){}
 }
 
@@ -16522,18 +16544,18 @@ function kalMonat(L){
   let g=''; for(let k=0;k<start;k++)g+='<span class="kal-d leer"></span>';
   for(let d=1;d<=tage;d++){ const s=`${m}-${String(d).padStart(2,'0')}`, I=nach[s]||[];
     g+=`<button type="button" class="kal-d${s===h?' heute':''}${s===sel?' sel':''}${I.length?' voll':''}" data-kd="${s}"><b>${d}</b><span>${I.slice(0,4).map(i=>`<i style="--c:${kalFarbe(i)}"></i>`).join('')}</span></button>`; }
-  const T=sel?(nach[sel]||[]):[];
+  const T=sel?(nach[sel]||[]):[], geladen=sel&&KAL.von<=sel&&KAL.bis>=sel;
   return `<div class="card kal-mcard"><div class="kal-mh"><button type="button" class="iconbtn" data-km="-1" aria-label="Vormonat">‹</button><b>${KAL_MON[mo-1]} ${y}</b><button type="button" class="iconbtn" data-km="1" aria-label="Nächster Monat">›</button></div>
     <div class="kal-grid">${['Mo','Di','Mi','Do','Fr','Sa','So'].map(w=>`<span class="kal-wt">${w}</span>`).join('')}${g}</div></div>
-    ${sel?`<h3 class="kal-mon">${kalLang(sel)}</h3>${T.length?T.map(kalItemHtml).join(''):'<p class="note">An diesem Tag steht nichts an.</p>'}`:''}`;
+    ${sel?`<h3 class="kal-mon">${kalLang(sel)}</h3>${!geladen?'<p class="note">Termine für diesen Tag sind noch nicht geladen.</p>':T.length?T.map(kalItemHtml).join(''):'<p class="note">An diesem Tag steht nichts an.</p>'}`:''}`;
 }
 function kalRender(){
   const P=kalPanel(); if(!P)return;
-  if(!KAL.loaded){ P.innerHTML='<div class="card"><div class="empty">Lade Termine …</div></div>'; kalLoad(); return; }
+  if(!KAL.loaded){ if(KAL.err){ P.innerHTML=kalFehlerHtml(); kalFehlerBinden(P); } else { P.innerHTML='<div class="card"><div class="empty">Lade Termine …</div></div>'; kalLoad(); } return; }
   const f=kalFilter(), L=kalSichtbar(), chips=kalChips(), adm=svRole()==='admin';
   P.innerHTML=`<div class="trtop kal-top"><div class="trtabs"><button class="${KAL.view==='liste'?'on':''}" data-kv="liste">Liste</button><button class="${KAL.view==='monat'?'on':''}" data-kv="monat">Monat</button></div>
       <div class="tract"><button class="btn ghost" id="kalAbo" type="button">${SVI('cal')} In meinen Kalender</button>${kalDarfAnlegen()?`<button class="btn" id="kalNeu" type="button">${SVI('plus')} Termin</button>`:''}${adm?`<button class="btn ghost" id="kalGeb" type="button" title="Geburtstage einfügen">🎂</button>`:''}</div></div>
-    ${KAL.err&&!KAL.items.length?`<div class="card"><div class="empty">Termine konnten nicht geladen werden.</div></div>`:''}
+    ${kalFehlerHtml()}
     <div id="kalBody">${KAL.view==='monat'?kalMonat(L):`${KAL.von>'2013-07-01'?`<button type="button" class="btn ghost sm kal-frueher" id="kalFrueher">${SVI('clock')} Frühere Termine laden</button>`:''}${L.length?kalListe(L):'<div class="card"><div class="empty">Unten auswählen, was du sehen willst.</div></div>'}`}</div>
     <div class="kal-fbar" role="group" aria-label="Was angezeigt wird"><div class="kal-fin"><button type="button" class="kal-chip alle${chips.every(c=>f.has(c.k))?' on':''}" data-kfa style="--c:#94a3b8"><i></i>Alle</button>${chips.map(c=>`<button type="button" class="kal-chip${f.has(c.k)?' on':''}" data-kf="${svEsc(c.k)}" style="--c:${c.c}" aria-pressed="${f.has(c.k)}"><i></i>${svEsc(c.t)}</button>`).join('')}</div></div>`;
   P.querySelectorAll('[data-kv]').forEach(b=>b.onclick=()=>{ KAL.view=b.dataset.kv; kalRender(); });
@@ -16548,6 +16570,7 @@ function kalRender(){
   P.querySelector('#kalAbo').onclick=()=>kalAboModal();
   const nb=P.querySelector('#kalNeu'); if(nb)nb.onclick=()=>kalEventForm(null);
   const gb=P.querySelector('#kalGeb'); if(gb)gb.onclick=()=>kalGebImport();
+  kalFehlerBinden(P);
   if(KAL.view==='liste'&&!KAL.gescrollt){ KAL.gescrollt=true; const j=P.querySelector('#kalJetzt'); if(j&&j.getBoundingClientRect().top>window.innerHeight*.6)setTimeout(()=>j.scrollIntoView({block:'start'}),50); }
 }
 
@@ -16702,13 +16725,14 @@ function kalGebImport(){
 function kalHome(){
   const home=document.getElementById('panel-home'); if(!home||!svTabAllowed('kalender'))return;
   let box=document.getElementById('kalHome');
-  if(!KAL.loaded){ kalLoad(); return; }
+  if(!KAL.loaded&&!KAL.err){ kalLoad(); return; }
   const h=kalHeute(), L=kalSichtbar().filter(i=>(i.bis||i.d)>=h).slice(0,4);
   if(!box){ box=document.createElement('div'); box.id='kalHome'; box.className='card kal-home'; const m=document.getElementById('svrMeine')||document.getElementById('svCockpit'); if(m)m.after(box); else home.prepend(box); }
   box.innerHTML=`<div class="kal-hh"><h3 class="trh">${SVI('cal')} Nächste Termine</h3><button type="button" class="btn ghost sm" id="kalAlle">Alle Termine ${SVI('chev')}</button></div>
-    ${L.length?L.map(i=>`<div class="kal-hrow">${kalRel(i.d)?`<em class="kal-rel">${svEsc(kalRel(i.d))}</em>`:`<em class="kal-rel">${svEsc(kalWt(i.d)+'., '+kalDM(i.d))}</em>`}${kalItemHtml(i)}</div>`).join(''):'<p class="note">In deiner Auswahl steht gerade nichts an.</p>'}`;
+    ${kalFehlerHtml()}${L.length?L.map(i=>`<div class="kal-hrow">${kalRel(i.d)?`<em class="kal-rel">${svEsc(kalRel(i.d))}</em>`:`<em class="kal-rel">${svEsc(kalWt(i.d)+'., '+kalDM(i.d))}</em>`}${kalItemHtml(i)}</div>`).join(''):KAL.err?'':'<p class="note">In deiner Auswahl steht gerade nichts an.</p>'}`;
   box.querySelector('#kalAlle').onclick=()=>goTab('kalender');
   box.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>kalDetail(b.dataset.kid));
+  kalFehlerBinden(box);
 }
 { const _rh=renderHome; renderHome=function(){ const r=_rh.apply(this,arguments); try{ kalHome(); }catch(e){ console.warn('Termine',e); } return r; }; }
 { const _l=svrApply; svrApply=function(){ const r=_l.apply(this,arguments); try{ if(svCurTab()==='home')kalHome(); }catch(e){} return r; }; }
@@ -18698,6 +18722,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.136',v:'0.99.136',datum:'2026-11-23',titel:'Geburtstage aus der Spielerpflege',kurz:'Das gepflegte Geburtsdatum gilt auch im Kalender und auf Heute.',punkte:[{ic:'i',t:'Dasselbe Datum an allen Stellen',d:'Ein in der Spielerpflege ergänztes oder korrigiertes Geburtsdatum wird auch für den Kalender verwendet. Nach dem Speichern lädt er die Termine neu. Das Alter zählt ab dem Geburtstag richtig.',r:'team'}]},
   {id:'0.99.135',v:'0.99.135',datum:'2026-11-23',titel:'Firmenlogos auf beiden Anzugärmeln',kurz:'Bereits vorbereitete Marken bleiben auch beim erneuten Einfärben sichtbar.',punkte:[{ic:'i',t:'Der Aufdruck bleibt erhalten',d:'Eng zugeschnittene Firmenlogos verschwinden auf der Trainingsanzug-Vorschau nicht mehr. Das gilt für den linken und rechten Ärmel sowie für vorbereitete schwarze und weiße Fassungen.',r:'team'},{ic:'i',t:'Leere Bilddateien werden erkannt',d:'Leere Logofassungen werden nicht mehr als fertige Bilder ausgegeben. Gespeicherte Originale und Platzbelegungen bleiben erhalten.',r:'team'}]},
   {id:'0.99.134',v:'0.99.134',datum:'2026-11-22',titel:'Torschützen und Flutlichtmotive zurück',kurz:'Die Ergebnisgrafik zeigt unsere Tore. Die Hintergrundgalerie ist wieder direkt beim Spiel.',punkte:[{ic:'i',t:'Ergebnis mit Wappen und Schützen',d:'Beide Wappen und die Vereinsnamen stehen größer am Spielstand. Darunter erscheinen unsere Torschützen mit Minuten. Mehrfachtore werden zusammengefasst. Fehlende Angaben kannst du ergänzen oder die Liste bewusst ausblenden.',r:'team'},{ic:'i',t:'Die Bildwahl ist wieder da',d:'Wähle aus 17 Vereinsmotiven, darunter Flutlicht und Netz bei Nacht, oder nutze ein eigenes Foto. Der Export verwendet die Originaldatei. Künstliche Leuchtränder und Weichzeichner entfallen.',r:'team'}]},
   {id:'0.99.133',v:'0.99.133',datum:'2026-11-22',titel:'Spieldaten direkt abrufen',kurz:'Ergebnis, Torschützen und Aufstellung für das ausgewählte Spiel nachladen.',punkte:[{ic:'i',t:'Ein Knopf direkt am Spiel',d:'Mit „Ergebnis abrufen“ oder „Aufstellung abrufen“ fragst du FUSSBALL.DE direkt ab. Bestätigte Angaben erscheinen in den bestehenden Motiven. Ein Endstand kann schon vorliegen, während der Torverlauf noch fehlt.',r:'team'},{ic:'i',t:'Deine Änderungen bleiben erhalten',d:'Eigene Texte, Tore und Aufstellungen werden durch den Abruf nicht ersetzt. Eine abweichende Quelle wird angezeigt. Fehlende Namen und noch nicht freigegebene Daten bleiben erkennbar.',r:'team'}]},
