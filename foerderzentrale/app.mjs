@@ -1,8 +1,8 @@
 import { blankCase, caseDecisionText, categories, euro, evaluate, instruments, isOriginal, makeLetter, offerRequestStatuses, requiredChecks,
-  results, routeStatuses, sourceRegister, sourceUrl, states } from "./domain.mjs?v=beta-0.99.141";
-import { embeddedApi, outlookOutcome } from "./sportzentrale.mjs?v=beta-0.99.141";
-import { loadMeeting, mountMeeting } from "./meeting.mjs?v=beta-0.99.141";
-import { mountOpportunities, departments, departmentOf } from "./opportunities.mjs?v=beta-0.99.141";
+  results, routeStatuses, sourceRegister, sourceUrl, states } from "./domain.mjs?v=beta-0.99.142";
+import { embeddedApi, outlookOutcome } from "./sportzentrale.mjs?v=beta-0.99.142";
+import { loadMeeting, mountMeeting } from "./meeting.mjs?v=beta-0.99.142";
+import { mountOpportunities, departments, departmentOf } from "./opportunities.mjs?v=beta-0.99.142";
 
 const root = document.querySelector("#app"), notice = document.querySelector("#notice");
 const steps = ["Projekt", "Angebot und Quellen", "Förderprüfung", "Entscheidung", "Anschreiben"];

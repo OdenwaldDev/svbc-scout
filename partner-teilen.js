@@ -27,9 +27,9 @@
     const felder={};for(const k of FIELDS)if(own(f,k)&&typeof f[k]==='string')felder[k]=str(f[k],k==='adresse'?400:120);
     return {stand,wahl,felder};
   }
-  function shareURL(origin,code,token,qr){
+  function shareURL(origin,code,token,qr,kurz=false){
     if(!/^[a-f0-9]{32}$/.test(code||''))throw Error('Der persönliche Präsentationslink fehlt.');
-    const u=new URL('partner.html',origin+'/');u.search='?reise=1';const h=new URLSearchParams({d:code});if(tokenOK(token))h.set('teilen',token);if(qr)h.set('qr','1');u.hash=h.toString();return u.href;
+    const u=new URL('partner.html',origin+'/');u.search='?reise=1';if(kurz&&tokenOK(token))u.searchParams.set('kurz','1');const h=new URLSearchParams({d:code});if(tokenOK(token))h.set('teilen',token);if(qr)h.set('qr','1');u.hash=h.toString();return u.href;
   }
   const RULES={cleanSnapshot,shareURL,tokenOK,SCENES,ACTIONS};
   if(typeof module!=='undefined'&&module.exports){module.exports=RULES;return;}
@@ -51,7 +51,8 @@
     if(!cfg)return;internal=freshInternal();
     if(internal)localWrite('pd-vorschau:'+cfg.code,String(Date.now()));
     const snap=loaded?.snapshot||null;
-    post({reise:'teilen-kontext',termin:!!cfg.intern(),merken:true,stand:snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
+    const kurz=!!snap&&new URLSearchParams(location.search).get('kurz')==='1'&&snap.stand?.paket==='club'&&snap.wahl?.positionen?.some(p=>['aermel_anzug_r','aermel_anzug_l'].includes(p.key));
+    post({reise:'teilen-kontext',kurz,termin:!!cfg.intern(),merken:true,stand:snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
   }
   function rahmenBereit(f){if(f&&f===frame())frameReady=f;if(cfg)context();}
   function focusables(d){return [...d.querySelectorAll('button,a[href],input,select,textarea,[tabindex]')].filter(x=>!x.disabled&&x.tabIndex>=0&&x.getClientRects().length);}
@@ -156,7 +157,9 @@
         shareToken=result.token;ownShare=true;loaded=result;generation++;beginning=null;visitor=null;sessionStarted=false;await beginSession();lastSaved=shareToken+JSON.stringify(publicFields());
       }else if(shareToken){if(!visitor)await beginSession();if(!visitor)throw Error('Die Eingaben lassen sich gerade nicht sichern. Bitte versuche es erneut.');await saveNow(true);}
       if(cfg!==requestCfg)throw Error('Die Firma wurde inzwischen gewechselt. Öffne Teilen für die aktuelle Präsentation erneut.');
-      return {url:shareURL(location.origin,code,shareToken,false),qr:shareURL(location.origin,code,shareToken,true),gespeichert:!!shareToken,token:shareToken,code};
+      const st=latestStand||loaded?.snapshot?.stand;
+      const kurz=st?.kleidung==='anzug'&&st.paket==='club'&&st.extras?.length===1&&['aermel_anzug_l','aermel_anzug_r'].includes(st.extras[0]);
+      return {url:shareURL(location.origin,code,shareToken,false,kurz),qr:shareURL(location.origin,code,shareToken,true,kurz),gespeichert:!!shareToken,token:shareToken,code};
     })();
     try{return await row.promise;}finally{if(sharePreparing===row)sharePreparing=null;}
   }

@@ -670,6 +670,10 @@ html.zeiger .spot{opacity:1}
 .kleidung-wahl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.kleidung-wahl button{min-height:44px;padding:10px 12px;border:1px solid #8393ad;border-radius:6px;background:#12213c;color:#fff;font:700 15px/1.2 var(--t)}.kleidung-wahl button[aria-pressed="true"]{border-color:#e8741f;box-shadow:inset 0 -3px #e8741f}.kleidung-wahl button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .anzug-buehne{position:absolute;inset:0;display:none;background:#d3d3d1}.anzug-buehne img{width:100%;height:100%;object-fit:cover}.anzug-buehne .trikot-seite{position:absolute;bottom:0;color:#fff}.sz-trikot[data-kleidung="anzug"] .anzug-buehne{display:block}.sz-trikot[data-kleidung="anzug"] .trikot-gesamt,.sz-trikot[data-kleidung="anzug"] .trikot-name{display:none!important}.sz-trikot[data-kleidung="anzug"]::before,.sz-trikot[data-kleidung="anzug"]::after{display:none}
 .zt .bild.anzug-nah{aspect-ratio:3/2;background:#d3d3d1}.zt .bild.anzug-nah img{object-fit:cover}.zt .bild.anzug-nah .trikot-seite{position:absolute;font-size:11px;padding:5px 8px}.zt.anzug-angebot{cursor:default}.zt.anzug-angebot label{font:600 13px/1.4 var(--t);margin:5px 0}.zt.anzug-angebot select{display:block;width:100%;min-height:44px;margin-top:5px;border:1px solid #8791a6;border-radius:5px;padding:8px;background:#fff;color:#1d2760;font:500 16px var(--t)}.zt.anzug-angebot .anzug-dazu{min-height:44px;width:100%;margin-top:8px;padding:10px;background:#1d2760;color:#fff;border:0;border-radius:5px;font:700 15px var(--t)}.zt.anzug-angebot .anzug-dazu:disabled{opacity:.5}.zt.anzug-angebot .anzug-status{font:500 12px/1.4 var(--t)}
+
+.kurz-kopf{display:none}.kurzpaket .kurz-kopf{display:block}
+.kurzpaket .bue-k h2:not(.kurz-kopf),.kurzpaket .bue-w>:not(#kurzMotive),.kurzpaket #kleidungWahl{display:none!important}
+#kurzMotive button{min-height:44px}#kurzMotive [aria-pressed=true]{color:var(--papier,#fff);border-color:currentColor}
 /* Partnerreise: räumliche Materialien. Nach reise_stil.css einbinden.
    Keine neuen Inhalte oder Bilder der Firma, keine zusätzlichen Schriftarten.
    Optional: .sz-trikot { --schrank-rueckwand: url("partner/r-schrank.webp") }
@@ -1369,7 +1373,7 @@ html.zeiger .spot{opacity:1}
   <section class="szene" data-s="buehne" data-hg="nacht" data-dicht="1">
     <div class="in bue-g">
       <div class="bue-k">
-        <p class="eyebrow auf">So sähe das aus</p>
+        <p class="eyebrow auf">So sähe das aus</p><h2 class="kurz-kopf" id="kurzTitel"></h2>
         <h2 class="auf" style="--v:1">Euer Name. <em>Am Platz.</em></h2>
       </div>
       <div class="bue-r auf" style="--v:2">
@@ -1382,7 +1386,7 @@ html.zeiger .spot{opacity:1}
         </div>
         <div class="trikot-ansichten" id="trikotAnsichten" role="group" aria-label="Trikotansicht" hidden><button type="button" data-trikot-ansicht="ganz" aria-pressed="true">Ganzes Trikot</button><button type="button" data-trikot-ansicht="detail" aria-pressed="false">Ärmel näher</button><button type="button" data-trikot-seite="aermel_r" aria-pressed="true">Rechter Ärmel</button><button type="button" data-trikot-seite="aermel_l" aria-pressed="false">Linker Ärmel</button></div>
       </div>
-      <div class="bue-w">
+      <div class="bue-w"><div id="kurzMotive" hidden><p class="unter">Club Partner mit eigener Bande und einem Ärmel auf dem Trainingsanzug der Jugend.</p><div class="tabs"><button class="zeile" type="button" data-kurzmotiv="bande" aria-pressed="true">Eure Bande</button><button class="zeile" type="button" data-kurzmotiv="trikot" aria-pressed="false">Euer Trainingsanzug</button></div></div>
         <p class="unter auf" style="--v:3">Tippt euch durch. Wo seht ihr euch am liebsten?</p>
         <div class="tabs auf" style="--v:4" data-frage="platz">
           <button class="zeile" type="button" data-w="bande" aria-pressed="false">An der Bande</button>
@@ -1521,7 +1525,7 @@ window.REISE_TRIKOT=(()=>{
   async function bibliothek(art){
     for(const [name,datei] of [['LOGO','logolib.js'],art==='anzug'?['TRAININGSANZUG','trainingsanzug.js']:['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.141';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.142';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -1819,11 +1823,16 @@ let FIRMA=null, KONTEXT_BEREIT=!GERAHMT;
 let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
 const teilenB=$('#reiseTeilen');if(teilenB){teilenB.hidden=!GERAHMT;teilenB.onclick=()=>{if(!GERAHMT)return;REISEFILM.sichtbar(false);window.parent.postMessage({reise:'teilen-stand',stand:standJetzt()},location.origin);window.parent.postMessage({reise:'teilen-oeffnen'},location.origin);};}
 const studioB=$('#studioB');if(studioB)studioB.onclick=()=>{if(!GERAHMT||!TERMIN)return;REISEFILM.sichtbar(false);window.parent.postMessage({reise:'studio-oeffnen'},location.origin);};
-let teilenStandGeladen=false, NEUES_TEILEN=false;
+let kurzpaket=false, teilenStandGeladen=false, NEUES_TEILEN=false;
 window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||!e.data)return;
   if(e.data.reise==='teilen-zu'){REISEFILM.sichtbar(true);teilenB?.focus({preventScroll:true});return;}
   if(e.data.reise!=='teilen-kontext')return;NEUES_TEILEN=true;klNeu.length=0;Object.keys(szSek).forEach(k=>delete szSek[k]);TERMIN=!!e.data.termin;MERKT=!!e.data.merken;html.classList.toggle('termin',TERMIN);if(studioB)studioB.hidden=!TERMIN;konditionenHinweis();
-  if(!teilenStandGeladen&&e.data.stand&&typeof e.data.stand==='object'){teilenStandGeladen=true;GEMERKT=Object.assign({},e.data.stand,{_am:e.data.am||null});wiederZeig();}
+  if(!teilenStandGeladen&&e.data.stand&&typeof e.data.stand==='object'){teilenStandGeladen=true;GEMERKT=Object.assign({},e.data.stand,{_am:e.data.am||null});if(e.data.kurz===true && S.i===0 && GEMERKT.kleidung==='anzug'){
+      kurzpaket=true;standSetz(GEMERKT);html.classList.add('kurzpaket');
+      $('#kurzMotive').hidden=false;
+      $('#kurzTitel').textContent=S.name;
+      geh(ORD.indexOf('buehne'));
+    }else wiederZeig();}
 });
 
 function punkte(){
@@ -2047,11 +2056,18 @@ function darfWeiter(){ const id=ORD[S.i];
   return id==='worum'?wK>=0:id==='verb'?!!S.verb:id==='antrieb'?(S.antrieb.length>0||S.skeptisch):id==='buehne'?!!S.platz:id==='groesse'?(S.groesse!=null||S.auto):id!=='start'&&id!=='ja'&&id!=='platz'; }
 function routeZeig(){ const id=ORD[S.i]; $('#route').classList.toggle('da',S.i>0);
   $('#weg').style.setProperty('--p',Math.max(0,S.i/(ORD.length-1)));
-  const w=$('#weiterB'); w.disabled=!darfWeiter(); w.textContent=id==='bon'?'Passt so':id==='worum'&&wK===$$('#worum .fz').length-1?'Weiter zu euch':'Weiter'; }
+  const w=$('#weiterB'); $('#zurB').hidden=kurzpaket&&id==='buehne';
+  w.disabled=!darfWeiter(); w.textContent=kurzpaket&&id==='buehne'?'Zum Paketpreis':id==='bon'?'Passt so':id==='worum'&&wK===$$('#worum .fz').length-1?'Weiter zu euch':'Weiter'; }
 const vorB=()=>{ if(laeuft||Date.now()<sperrBis||!darfWeiter())return;
-  if(ORD[S.i]==='worum'&&wK<$$('#worum .fz').length-1){ worumZeig(wK+1); return; } geh(S.i+1); },
-  zurueckB=()=>{ if(laeuft)return; if(ORD[S.i]==='worum'&&wK>0){ worumZeig(wK-1); return; }
+  if(ORD[S.i]==='worum'&&wK<$$('#worum .fz').length-1){ worumZeig(wK+1); return; } geh(kurzpaket&&ORD[S.i]==='buehne'?ORD.indexOf(ANZUG_KEYS.some(k=>S.extras.has(k))?'bon':'extras'):S.i+1); },
+  zurueckB=()=>{ if(laeuft)return; if(kurzpaket&&ORD[S.i]==='buehne')return;
+    if(kurzpaket&&ORD[S.i]==='bon'&&ANZUG_KEYS.some(k=>S.extras.has(k))){geh(4);return;}
+    if(ORD[S.i]==='worum'&&wK>0){ worumZeig(wK-1); return; }
     if(ORD[S.i]==='platz'&&szene('platz').dataset.teil==='2'){ szene('platz').dataset.teil='1'; return; } geh(S.i-1); };
+$$('[data-kurzmotiv]').forEach(b=>b.onclick=()=>{
+  const motiv=b.dataset.kurzmotiv;KLEIDUNG='anzug';zeigSz(motiv);
+  $$('[data-kurzmotiv]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+});
 $('#weiterB').onclick=vorB; $('#zurB').onclick=zurueckB;
 addEventListener('keydown',e=>{ if(e.defaultPrevented||e.altKey||e.ctrlKey||e.metaKey||e.target.closest?.('input,textarea,select,[contenteditable="true"]'))return;
   if(e.key==='ArrowRight'){ e.preventDefault(); if(!e.repeat)vorB(); } if(e.key==='ArrowLeft'&&S.i>0){ e.preventDefault(); if(!e.repeat)zurueckB(); } if(e.key==='r'||e.key==='R')regieUm(); });
@@ -2357,7 +2373,8 @@ function vonVorn(){ S=neu(); wK=-1; $('#und').hidden=true; $('#kleinstB').setAtt
 
 /* ---------- Beim Betreten / nach dem Schnitt ---------- */
 const REIN={
-  buehne:()=>{ $$('#rahmen .sz').forEach(s=>s.classList.remove('kommt','fahrt')); zeigSz(S.platz||'bande'); },
+  buehne:()=>{ $$('#rahmen .sz').forEach(s=>s.classList.remove('kommt','fahrt')); const motiv=kurzpaket?'bande':(S.platz||'bande');zeigSz(motiv);
+    if(kurzpaket)$$('[data-kurzmotiv]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kurzmotiv===motiv))); },
   worum:()=>worumZeig(S.rueck?$$('#worum .fz').length-1:0),
   groesse:()=>grBild(),
   platz:()=>{ szene('platz').dataset.teil=S.rueck?'2':'1'; gehoertZeig(); tkZeig(false); },
@@ -2407,7 +2424,7 @@ function zoomSetz(){ const W=innerWidth, H=innerHeight; html.style.setProperty('
 addEventListener('resize',()=>{ zoomSetz(); kGroesse(); passe(); lochSetz(); }); zoomSetz(); kGroesse();
 setzName(''); regieZeig(); routeZeig();
 if(/[?&]regie=1/.test(location.search))regieUm(true);
-function bereit(){ html.classList.add('bereit'); hgSetz('nacht'); setTimeout(()=>szene('start').classList.add('los'),300); }
+function bereit(){ html.classList.add('bereit'); if(S.i===0)hgSetz('nacht'); setTimeout(()=>szene('start').classList.add('los'),300); }
 if(ruhig)bereit(); else { const la=$$('#intro .lampe'); la.forEach((l,k)=>setTimeout(()=>l.classList.add('an'),260+k*230)); setTimeout(bereit,260+4*230+420); }
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(passe);
 /* ---------- In der Partnerseite der App (partner.html lädt diese Seite als Rahmen davor) ----------

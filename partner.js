@@ -104,7 +104,8 @@
 
   function teilenSnapshot(st){
     let positionen=posFuerServer().filter(p=>!['spende','sonstiges'].includes(p.key)).map(p=>({key:p.key,menge:p.menge,mannschaft:p.mannschaft||null})),saisons=S.saisons,ab=beginn(),au=!!S.auto;
-    if(!positionen.length&&st?.ja==='dabei'){
+    const vorbereitet=st?.paket==='club'&&st.kleidung==='anzug'&&st.extras?.length===1&&['aermel_anzug_l','aermel_anzug_r'].includes(st.extras[0])&&!!st.anzug_team&&!st.ja;
+    if(!positionen.length&&(st?.ja==='dabei'||vorbereitet)){
       const keys=[st.paket,...(Array.isArray(st.extras)?st.extras:[])].filter(k=>k&&k!=='keins');positionen=[...new Set(keys)].filter(k=>{const l=lk(k);if(!l||['spende','sonstiges'].includes(l.art))return false;if(['aermel_anzug_l','aermel_anzug_r'].includes(k))return M.some(m=>m.id===st.anzug_team)&&+(l.frei_je_naechste?.[st.anzug_team]??l.frei_je?.[st.anzug_team])>0;return !l.je_mannschaft&&frei(l,null)!==0;}).map(key=>({key,menge:1,...(['aermel_anzug_l','aermel_anzug_r'].includes(key)?{mannschaft:st.anzug_team}:{})}));
       saisons=[1,2,3,4,5].includes(+st.laufzeit)?+st.laufzeit:1;ab=String(D.naechste_saison).slice(0,10);au=st.verl!==false;
     }

@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.141', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.142', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18721,6 +18721,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.142',v:'0.99.142',datum:'2026-11-23',titel:'Kurzansicht für Partnerangebote',kurz:'Ein vorbereiteter Paketlink kann direkt eure Bande und den Trainingsanzug zeigen.',punkte:[{ic:'i',t:'Paket ansehen',d:'Zwischen Bande und Ärmel wechseln und den Preis für die ausgewählten Leistungen ansehen.',r:'team'}]},
   {id:'0.99.141',v:'0.99.141',datum:'2026-11-23',titel:'Einladungen zum Vereinszugang',kurz:'Die App prüft deinen persönlichen Link, bevor du ein Passwort festlegst.',punkte:[{ic:'i',t:'Abgelaufener Link',d:'Ist der Link verbraucht, kannst du einen neuen Code für deine E-Mail-Adresse anfordern.'}]},
   {id:'0.99.140',v:'0.99.140',datum:'2026-11-23',titel:'Spielfotos fürs Ergebnis',kurz:'Das Studio schlägt Bilder passend zum Spielausgang vor.',punkte:[{ic:'i',t:'Motive zum Spiel',d:'Nach einem Sieg stehen Jubelbilder weiter vorn, nach einer Niederlage etwa der Mannschaftskreis. Deine eigene Auswahl bleibt gespeichert.',r:'team'},{ic:'i',t:'Farben für Feed und Story',d:'Siege bekommen wärmere Lichter. Bei einer Niederlage bleibt das Foto ruhiger. Die Vorschau zeigt den Farblook des Downloads.',r:'team'}]},
   {id:'0.99.139',v:'0.99.139',datum:'2026-11-23',titel:'Spieltag nach Lukas’ Vorlage',kurz:'Großes Foto, klarer Endstand und deine Eingaben automatisch gesichert.',punkte:[{ic:'i',t:'Die Ergebnisvorlage ist zurück',d:'Standard ist wieder Lukas’ Vorlage mit Foto oben und großem Endstand darunter. Wenn du die Schützenliste einschaltest, erscheinen die belegten Tore beider Mannschaften samt Minuten.',r:'team'},{ic:'i',t:'Bilder auswählen und ausrichten',d:'Die Galerie lässt sich ziehen und über Regler oder Pfeile durchsehen. Vier neue Tagesmotive ergänzen den Fundus. Vorschläge richten sich nach Anstoß und Jahreszeit. Beitrag und Story haben eigene Bildausschnitte mit Position und Zoom.',r:'team'},{ic:'i',t:'Eingaben bleiben erhalten',d:'Änderungen werden sofort auf deinem Gerät gesichert und anschließend übertragen. Nach einer Unterbrechung stellt das Studio sie wieder her. Bei abweichenden Fassungen entscheidest du, womit es weitergeht.',r:'team'},{ic:'i',t:'Spielorte und Hinspiel',d:'Fehlende Orte werden aus der amtlichen Ansetzung ergänzt. Eigene Angaben bleiben erhalten. Vollständig belegte Torfolgen ergänzen den Rückblick, etwa bei einem aufgeholten Rückstand oder spätem Ausgleich.',r:'team'}]},
@@ -40620,9 +40621,9 @@ function huArtikel(r){const pages=HV.d.seiten.filter(s=>['jugend','soma','rueckb
     const felder={};for(const k of FIELDS)if(own(f,k)&&typeof f[k]==='string')felder[k]=str(f[k],k==='adresse'?400:120);
     return {stand,wahl,felder};
   }
-  function shareURL(origin,code,token,qr){
+  function shareURL(origin,code,token,qr,kurz=false){
     if(!/^[a-f0-9]{32}$/.test(code||''))throw Error('Der persönliche Präsentationslink fehlt.');
-    const u=new URL('partner.html',origin+'/');u.search='?reise=1';const h=new URLSearchParams({d:code});if(tokenOK(token))h.set('teilen',token);if(qr)h.set('qr','1');u.hash=h.toString();return u.href;
+    const u=new URL('partner.html',origin+'/');u.search='?reise=1';if(kurz&&tokenOK(token))u.searchParams.set('kurz','1');const h=new URLSearchParams({d:code});if(tokenOK(token))h.set('teilen',token);if(qr)h.set('qr','1');u.hash=h.toString();return u.href;
   }
   const RULES={cleanSnapshot,shareURL,tokenOK,SCENES,ACTIONS};
   if(typeof module!=='undefined'&&module.exports){module.exports=RULES;return;}
@@ -40644,7 +40645,8 @@ function huArtikel(r){const pages=HV.d.seiten.filter(s=>['jugend','soma','rueckb
     if(!cfg)return;internal=freshInternal();
     if(internal)localWrite('pd-vorschau:'+cfg.code,String(Date.now()));
     const snap=loaded?.snapshot||null;
-    post({reise:'teilen-kontext',termin:!!cfg.intern(),merken:true,stand:snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
+    const kurz=!!snap&&new URLSearchParams(location.search).get('kurz')==='1'&&snap.stand?.paket==='club'&&snap.wahl?.positionen?.some(p=>['aermel_anzug_r','aermel_anzug_l'].includes(p.key));
+    post({reise:'teilen-kontext',kurz,termin:!!cfg.intern(),merken:true,stand:snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
   }
   function rahmenBereit(f){if(f&&f===frame())frameReady=f;if(cfg)context();}
   function focusables(d){return [...d.querySelectorAll('button,a[href],input,select,textarea,[tabindex]')].filter(x=>!x.disabled&&x.tabIndex>=0&&x.getClientRects().length);}
@@ -40749,7 +40751,9 @@ function huArtikel(r){const pages=HV.d.seiten.filter(s=>['jugend','soma','rueckb
         shareToken=result.token;ownShare=true;loaded=result;generation++;beginning=null;visitor=null;sessionStarted=false;await beginSession();lastSaved=shareToken+JSON.stringify(publicFields());
       }else if(shareToken){if(!visitor)await beginSession();if(!visitor)throw Error('Die Eingaben lassen sich gerade nicht sichern. Bitte versuche es erneut.');await saveNow(true);}
       if(cfg!==requestCfg)throw Error('Die Firma wurde inzwischen gewechselt. Öffne Teilen für die aktuelle Präsentation erneut.');
-      return {url:shareURL(location.origin,code,shareToken,false),qr:shareURL(location.origin,code,shareToken,true),gespeichert:!!shareToken,token:shareToken,code};
+      const st=latestStand||loaded?.snapshot?.stand;
+      const kurz=st?.kleidung==='anzug'&&st.paket==='club'&&st.extras?.length===1&&['aermel_anzug_l','aermel_anzug_r'].includes(st.extras[0]);
+      return {url:shareURL(location.origin,code,shareToken,false,kurz),qr:shareURL(location.origin,code,shareToken,true,kurz),gespeichert:!!shareToken,token:shareToken,code};
     })();
     try{return await row.promise;}finally{if(sharePreparing===row)sharePreparing=null;}
   }
