@@ -1,4 +1,4 @@
-    teaser:f.teaser || '', trainer:f.trainer || '', zeigeTore:f.zeigeTore !== false, fotoH:f.fotoH || '', fotoE:f.fotoE || '', wappen:f.wappen || '', quelle:Q,
+    teaser:f.teaser || '', trainer:f.trainer || '', zeigeTore:f.zeigeTore === true, fotoH:f.fotoH || '', fotoE:f.fotoE || '', wappen:f.wappen || '', quelle:Q,
     toreHand:Array.isArray(N.tore), elfHand:Array.isArray(N.start),
     ergebnisNeu:gespielt && S.tore_h != null && S.tore_g != null && (toreH !== S.tore_h || toreG !== S.tore_g),
     toreNeu:Array.isArray(N.tore) && sgQuelleNeu(N.toreQ,Q.tore,N.toreQV,alt.tore) && Q.tore.length > 0,
@@ -31,6 +31,7 @@ async function sgAssets(D){ const S = SG.satz, A = { portrait:new Map(), echtH:f
 /* ---------- Prüfen (Spezifikation 7.3 und 9.1): was fehlt, sagt die Karte in einem Satz ---------- */
 function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[], notizen:[] }, U = ueber || {};
   const F = t => R.fehler.push(t), H = t => R.hinweise.push(t);
+  if(sgSpeicherKonflikt())F('Bitte zuerst eine gespeicherte Fassung auswählen.');
   if(SG.bildOffen) F('Das gewählte Bild ist noch nicht bereit. Bitte warte auf die neue Vorschau.');
   if(!A.wGeg) F('Das Wappen von ' + D.gegner + ' fehlt');
   if(m === 'H'){ if(!D.datum) F('Das Datum fehlt'); if(!D.zeit) F('Die Anstoßzeit fehlt');
@@ -41,11 +42,11 @@ function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[
   if(m === 'E'){ if(!D.gespielt){ R.wartet = 'Der Endstand fehlt noch'; return R; }
     if(!D.h1) F('Die Headline fehlt'); if(U.h1 || U.h2) F('Die Headline ist zu lang'); if(U.wir || U.gegner) F('Ein Vereinsname ist zu lang, bitte Kurznamen eintragen');
     if(!D.kopfGewaehlt) H('Headline wählen'); if(!A.fotoE) F(A.fotoWahlE?.art === 'bibliothek' ? 'Dein gewähltes Foto ist nicht erreichbar. Wähle ein anderes Foto oder ein Vereinsmotiv.' : 'Das Hintergrundbild fehlt. Bitte ein anderes Motiv wählen.');
-    if(D.zeigeTore !== false){ const T = sgErgebnisTore(D);
-      if(T.anzahl !== T.erwartet) F('Die Torschützen sind noch nicht vollständig. Ergebnis abrufen, Tore ergänzen oder die Liste bewusst ausblenden.');
-      if(T.fehlendeNamen) F('Bei einem eigenen Tor fehlt der Name. Bitte unter Torschützen ergänzen.');
-      if(T.fehlendeMinuten) F('Bei einem eigenen Tor fehlt die Minute. Bitte unter Torschützen ergänzen.');
-      if(T.gruppen.length > 8 || U.ergebnisTore) F('Mehr als acht verschiedene Torschützen: Bitte den Spielverlauf nutzen oder die Liste auf dem Ergebnisbild ausblenden.');
+    if(D.zeigeTore === true){ const beide = sgErgebnisBeide(D),L=[beide.heim,beide.gast];
+      if(L.some(T=>T.anzahl!==T.erwartet)) F('Die Torschützen sind noch nicht vollständig. Ergebnis abrufen, Tore ergänzen oder die Liste bewusst ausblenden.');
+      if(L.some(T=>T.fehlendeNamen)) F('Bei einem Tor fehlt der Name. Bitte unter Torschützen ergänzen.');
+      if(L.some(T=>T.fehlendeMinuten)) F('Bei einem Tor fehlt die Minute. Bitte unter Torschützen ergänzen.');
+      if(L.some(T=>T.gruppen.length>8) || U.ergebnisTore) F('Mehr als acht verschiedene Torschützen einer Mannschaft: Bitte den Spielverlauf nutzen oder die Liste auf dem Ergebnisbild ausblenden.');
       if(Object.keys(U).some(k => /^ergebnis(Tor|Minute)/.test(k) && U[k])) F('Ein Torschützenname oder seine Minuten sind zu lang. Bitte kürzen oder die Liste auf dem Ergebnisbild ausblenden.');
     } }
   if(m === 'S'){ if(!D.gespielt){ R.wartet = 'Der Endstand fehlt noch'; return R; }
@@ -82,6 +83,15 @@ function sgKontextPassend(k, S){
   if(b.spiele < k.form.length || b.siege < k.form.filter(s => s.wir > s.gegner_tore).length || b.remis < k.form.filter(s => s.wir === s.gegner_tore).length || b.niederlagen < k.form.filter(s => s.wir < s.gegner_tore).length) return null;
   return k;
 }
+function sgHinspielBesonderheit(h){const E=h?.ereignisse;if(!Array.isArray(E)||!E.length||E.length>80||E.some(e=>typeof e.wir!=='boolean'||!sgTorMinuteGueltig(e))||E.filter(e=>e.wir).length!==h.wir||E.filter(e=>!e.wir).length!==h.gegner_tore)return'';
+  const L=E.slice().sort((a,b)=>a.m-b.m||(a.x||0)-(b.x||0));let a=0,b=0,tief=null,hoch=null;const staende=[];
+  for(const e of L){if(e.wir)a++;else b++;staende.push({a,b,e});if(!tief||b-a>tief.b-tief.a)tief={a,b};if(!hoch||a-b>hoch.a-hoch.b)hoch={a,b};}
+  if(tief&&tief.b-tief.a>=2&&h.wir>=h.gegner_tore)return`Dabei haben wir einen ${tief.a}:${tief.b}-Rückstand noch ${h.wir>h.gegner_tore?'in einen Sieg gedreht':'ausgeglichen'}.`;
+  if(hoch&&hoch.a-hoch.b>=2&&h.wir<=h.gegner_tore)return`Eine ${hoch.a}:${hoch.b}-Führung hat damals ${h.wir===h.gegner_tore?'nicht zum Sieg gereicht':'nicht gereicht'}.`;
+  const z=staende.at(-1);if(z.e.m>=85&&h.wir===h.gegner_tore)return`Der Ausgleich fiel erst in der ${z.e.m}${z.e.x?'+'+z.e.x:''}. Minute.`;
+  if(z.e.m>=85&&Math.abs(h.wir-h.gegner_tore)===1){const v=staende.at(-2)||{a:0,b:0};if(v.a===v.b)return`Das Siegtor fiel in der ${z.e.m}${z.e.x?'+'+z.e.x:''}. Minute.`;}
+  return'';
+}
 function sgGeschichte(D){ const teile = [], k = D.rueckblick !== false && D.kontext;
   let kurz = '';
   if(k){ const F = k.abdeckung.form_vollstaendig ? k.form : [], anzahl = ['null','ein','zwei','drei','vier','fünf']; let siege = 0, ungeschlagen = 0;
@@ -97,6 +107,7 @@ function sgGeschichte(D){ const teile = [], k = D.rueckblick !== false && D.kont
       if(h.wir < h.gegner_tore) teile.push(`${bezug} gegen ${D.gegner} ging ${h.gegner_tore - h.wir === 1 ? 'knapp ' : ''}mit ${ergebnis} verloren.`);
       else if(h.wir > h.gegner_tore) teile.push(`${bezug} gegen ${D.gegner} haben unsere Jungs mit ${ergebnis} gewonnen.`);
       else teile.push(`${bezug} gegen ${D.gegner} endete ${ergebnis}.`);
+      const besonders=sgHinspielBesonderheit(h);if(besonders){teile.push(besonders);kurz=(h.art==='hinspiel'?'Im Hinspiel: ':'Beim letzten Duell: ')+besonders.replace(/^Dabei haben wir/,'Wir haben');}
       if(!kurz) kurz = h.art === 'hinspiel' ? h.gegner_tore - h.wir >= 4 ? 'Zeit für das Rückspiel.' : `Hinspiel: ${ergebnis}${h.wir < h.gegner_tore ? ' verloren' : h.wir > h.gegner_tore ? ' gewonnen' : ''}.` : 'Die Mannschaften treffen wieder aufeinander.';
     }
   }
@@ -112,7 +123,7 @@ function sgKontextHtml(D){ const k = D.kontext;
   const quelle = k ? `<details class="sg-grundlage"><summary>Grundlage ansehen</summary><p class="sg-hin">${sgE(D.wir)}. Ligaergebnisse von FUSSBALL.DE vor diesem Spiel.</p><ul>${k.form.map(s => `<li>${sgE(tag(s))}: ${sgE(s.gegner)}, ${ergebnis(s)}</li>`).join('')}${k.duell ? `<li>${k.duell.art === 'hinspiel' ? 'Hinspiel' : 'Letztes Ligaduell'} am ${sgE(tag(k.duell))}: ${ergebnis(k.duell)}</li>` : ''}</ul><p class="sg-hin">${k.abdeckung.saison_vollstaendig ? `${k.bilanz.spiele} erfasste Ligaspiele in dieser Saison.` : 'Saisonergebnisse sind noch unvollständig. Eine Saisonbilanz wird deshalb nicht formuliert.'}${k.abdeckung.form_vollstaendig ? '' : ' In den jüngsten Ligaterminen fehlen Ergebnisse. Eine Serie wird deshalb nicht behauptet.'}</p></details>` : '';
   return `<div class="sg-rueckblick"><p class="sg-l">Die Geschichte zum Spiel</p><div data-sgkontext-vorschau aria-live="polite">${sgKontextVorschau(D)}</div>${quelle}
     <label class="sg-ohne"><input type="checkbox" data-sgrueckblick${D.rueckblick !== false ? ' checked' : ''}> Form und frühere Duelle einbeziehen</label>
-    <label class="sg-f"><span>Dein Blick aufs Spiel (optional)</span><textarea data-sggeschichte rows="3" maxlength="600" placeholder="Was war im Hinspiel besonders? Was macht dieses Spiel aus?">${sgE(D.geschichte || '')}</textarea></label>
+    <label class="sg-f"><span>Dein Blick aufs Spiel (optional)</span><textarea data-sggeschichte rows="3" maxlength="600" placeholder="Der belegte Rückblick steht oben. Hier kannst du deine Einschätzung ergänzen.">${sgE(D.geschichte || '')}</textarea></label>
     <p class="sg-hin">Hier ist Platz für deine Einschätzung, etwa einen unglücklichen Spielverlauf. In der Story steht ein kurzer Auszug. Eigene Änderungen in den fertigen Texten bleiben erhalten.</p></div>`;
 }
 /* Die früheren Einladungen kehren zurück. Fakten kommen aus demselben
@@ -125,20 +136,20 @@ function sgTexteBauen(D, m, ton = 'normal'){
   const ergebnis = m !== 'H' && D.gespielt && D.toreH != null && D.toreG != null ? 'Endstand: ' + D.toreH + ':' + D.toreG : '';
   const ort = String(D.ort || '').trim(), teile = [kopf, paarung, ergebnis, termin, ort ? 'Spielort: ' + ort : ''].filter(Boolean);
   if(m === 'H' && paarung && dt){
-    const auftakt = (D.wirHeim ? 'Heimspiel' : 'Auswärtsspiel') + (dt.tag ? ' am ' + dt.tag : '') + '!';
-    const ruf = D.wirHeim ? 'Kommt an den Platz und unterstützt unsere Jungs! Bringt Freunde und Familie mit und sagt es gerne weiter.'
-      : 'Begleitet unsere Jungs und unterstützt sie auch auswärts! Gemeinsam zeigen wir, dass der ganze Verein hinter der Mannschaft steht.';
-    const lang = 'Es wäre richtig klasse, wenn möglichst viele von euch dabei sind. Die Mannschaft soll spüren, dass der ganze Verein hinter ihr steht. Jeder von euch am Spielfeldrand macht einen Unterschied.\n\n' + ruf + '\n\nWir freuen uns auf einen schönen Fußballtag mit euch und drücken unseren Jungs die Daumen! 💙🧡';
-    const mitte = ton === 'kurz' ? ruf : ton === 'energie' ? 'Unsere Mannschaft braucht euch am Spielfeldrand! ⚽\n\n' + ruf + '\n\nLasst uns gemeinsam alles geben! 💙🧡' : lang;
-    const fakten = [D.wettbewerb && D.wettbewerb !== 'Spiel' ? D.wettbewerb : '', paarung, termin, ort ? '📍 ' + ort : ''].filter(Boolean).join('\n');
-    const kurz = ton === 'kurz', schlussStory = ton === 'energie' ? '💙🧡 Kommt mit an den Platz und unterstützt unsere Jungs!' : kurz ? '💙🧡 Wir sehen uns am Platz!' : '💙🧡 Gemeinsam hinter unserer Mannschaft!';
+    const auswahl=parseInt(sgHash([D.spiel,D.datum,D.gegner].join('|')).slice(0,6),36)||0;
+    const auftakt = (D.wirHeim ? ['Am '+dt.tag+' spielen wir zuhause.','Am '+dt.tag+' ist '+D.gegner+' bei uns zu Gast.','Heimspiel am '+dt.tag+'.'] : ['Am '+dt.tag+' spielen wir auswärts gegen '+D.gegner+'.','Auswärtsspiel am '+dt.tag+'.','Nächste Aufgabe: '+D.gegner+'.'])[auswahl%3];
+    const ruf = (D.wirHeim?['Kommt vorbei und macht euch am Spielfeldrand bemerkbar. Unsere Mannschaft freut sich über jeden, der dabei ist.','Wer am '+dt.tag+' noch nichts vorhat: Kommt an den Platz und unterstützt die Jungs.','Kommt zum Spiel und unterstützt unsere Mannschaft. Wir sehen uns am Platz!']:['Wer mitfährt, sorgt auch auswärts für Unterstützung. Die Jungs freuen sich auf euch.','Unterstützt unsere Mannschaft auch auf fremdem Platz. Wer ist dabei?','Auch auswärts tut Rückhalt vom Spielfeldrand gut. Kommt mit und feuert die Jungs an.'])[auswahl%3];
+    const mitte=ton==='energie'?(D.wirHeim?'Lasst euch am Spielfeldrand hören!':'Auch auswärts wollen wir euch hören!')+'\n\n'+ruf:ruf;
+    const fakten = [D.wettbewerb && D.wettbewerb !== 'Spiel' ? D.wettbewerb : '', paarung, termin, ort ? 'Spielort: ' + ort : ''].filter(Boolean).join('\n');
+    const kurz = ton === 'kurz', schlussStory = kurz?(D.wirHeim?'Kommt an den Platz!':'Kommt mit!'):ton==='energie'?'Lasst euch am Spielfeldrand hören!':(D.wirHeim?'Kommt an den Platz und unterstützt uns!':'Unterstützt die Jungs auch auswärts!');
+    const waRuf=kurz?(D.wirHeim?'Kommt an den Platz!':'Kommt mit und unterstützt uns auch auswärts!'):ton==='energie'?mitte:D.wirHeim?'Kommt an den Platz und feuert die Jungs an. Wir freuen uns auf euch!':'Kommt mit und unterstützt unsere Mannschaft auch auswärts. Wer ist dabei?';
     const G = sgGeschichte(D), postGeschichte = (kurz ? [G.kurz] : G.alle).filter(Boolean).join('\n\n'), waGeschichte = (kurz ? [G.kurz] : G.alle).filter(Boolean).join('\n\n');
-    return { post:['💙🧡 ' + auftakt, fakten, postGeschichte, mitte, 'Bis zum Spiel am Platz! ⚽'].filter(Boolean).join('\n\n'),
-      whatsapp:[kurz ? titel : '💙🧡 ' + auftakt, fakten, waGeschichte, ruf, ton === 'energie' ? 'Lasst uns gemeinsam alles geben! 💙🧡' : ''].filter(Boolean).join('\n\n'),
-      story:[(D.wirHeim ? 'HEIMSPIEL' : 'AUSWÄRTSSPIEL') + ' ⚽', paarung, termin, ort ? '📍 ' + ort : '', G.kurz, schlussStory].filter(Boolean).join('\n') };
+    return { post:[kurz?titel:auftakt, fakten, postGeschichte, mitte].filter(Boolean).join('\n\n'),
+      whatsapp:[titel+(kurz?'':' am '+dt.tag), fakten, waGeschichte, waRuf].filter(Boolean).join('\n\n'),
+      story:[D.wirHeim ? 'HEIMSPIEL' : 'AUSWÄRTSSPIEL', paarung, termin, ort, G.kurz, schlussStory].filter(Boolean).join('\n') };
   }
-  const T = m === 'E' ? sgErgebnisTore(D) : null;
-  const schuetzen = T && T.vollstaendig && T.gruppen.length ? 'Unsere Tore: ' + T.gruppen.map(g => g.name + (g.eigentor ? ' (Eigentor)' : '') + ' (' + g.zeiten.join(', ') + ')').join('; ') : '';
+  const T = m === 'E' ? sgErgebnisBeide(D) : null;
+  const schuetzen = T?[['heim',D.heim],['gast',D.gast]].flatMap(([k,name])=>T[k].vollstaendig&&T[k].gruppen.length?['Tore '+name+': '+T[k].gruppen.map(g=>g.name+(g.eigentor?' (Eigentor)':'')+' ('+g.zeiten.join(', ')+')').join('; ')]:[]).join('\n'):'';
   if(schuetzen) teile.splice(3, 0, schuetzen);
   return { post:teile.join('\n\n'), whatsapp:teile.join('\n'), story:[titel, paarung, ergebnis, schuetzen, termin, ort].filter(Boolean).join('\n') };
 }
@@ -169,8 +180,9 @@ function sgPortraitStand(b,A){
 /* Prüfsumme des Stands, den eine Freigabe meint: alles, was im Motiv zu sehen ist */
 function sgStandHash(m, D){ const k = [SG_VERSION[m], D.wettbewerb, D.saison, D.nr, D.datum, D.heim, D.gast, D.wappen];
   k.push('Texte 1.0', D.ort, sgTexte(m, D));
+  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 2',w.art==='auto'?sgFotoAuto(D,feld).id:w,D.bildausschnitt?.[m]||{});}
   if(m === 'H') k.push('Quer 2.0', D.zeit, D.teaser, D.fotoH, sgQuerNorm(D.querY, .5, 0, 1), sgQuerNorm(D.querZoom, 1, 1, 2));
-  if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE, D.zeigeTore !== false, D.zeigeTore === false ? null : sgErgebnisTore(D));
+  if(m === 'E') k.push(D.toreH, D.toreG, D.h1, D.h2, D.fotoE, D.zeigeTore === true, D.zeigeTore === true ? sgErgebnisBeide(D) : null);
   if(m === 'S') k.push('Personen 3',D.toreH,D.toreG,D.tore.map(t=>[t.m,t.x,t.wir,t.name,t.vorlage,t.art,t.nr,t.vnr,t.bild,sgPortraitStand(t.bild,SG.A),t.vbild,sgPortraitStand(t.vbild,SG.A)]));
   if(m === 'A') k.push('Personen 3',D.start.map(p=>[p.name,p.nr,p.tw,p.c,p.bild,sgPortraitStand(p.bild,SG.A)]),D.bank.map(p=>[p.name,p.nr,p.ein,p.tw,p.bild,sgPortraitStand(p.bild,SG.A)]),D.trainer);
   return sgHash(JSON.stringify(k)); }
@@ -229,24 +241,32 @@ async function sgSatzLaden(){ const nr = ++sgSatzLauf, s = SG.spiele[SG.idx], vo
   if(nr !== sgSatzLauf || konto !== sgKonto()) return false;
   if(satz.status === 'rejected') throw satz.reason; const r = satz.value, k = kontext.status === 'fulfilled' ? kontext.value : null;
   if(!r || !r.ok || r.spiel !== s.id) throw new Error('Zu diesem Spiel gibt es keine Daten.'); SG.kontext = sgKontextPassend(k, r);
-  SG.satz = r; const plan = SG_MERKPLAENE.get(s.id) || vorgemerkt, lokal = plan && plan.konto === konto ? plan : null;
-  SG.neu = lokal ? JSON.parse(lokal.stand) : r.neu && typeof r.neu === 'object' ? r.neu : {}; if(!SG.neu.f) SG.neu.f = {}; return true; }
+  SG.satz = r; const plan = SG_MERKPLAENE.get(s.id) || vorgemerkt, lokal = plan && plan.konto === konto ? plan : null,rettung=lokal?null:sgLokalWiederherstellen(r,konto);
+  SG.neu = lokal ? JSON.parse(lokal.stand) : rettung.neu;SG.lokalFassungen=rettung?.konflikt||[];if(!SG.neu.f)SG.neu.f={};sgSpeicherStart();if(rettung?.wieder)sgMerken();return true; }
 const SG_MERKPLAENE = new Map();
 function sgMerken(){ const id = SG.satz && SG.satz.spiel; if(!id) return;
   let stand, neu; try{ stand = JSON.stringify(SG.neu); neu = JSON.parse(stand); }catch(e){ console.warn('Spieltag speichern', e); kToast('Speichern hat nicht geklappt'); return; }
-  let plan = SG_MERKPLAENE.get(id); if(!plan || plan.konto !== sgKonto()){ plan = { id, konto:sgKonto(), timer:null, laeuft:false }; SG_MERKPLAENE.set(id, plan); }
+  let plan = SG_MERKPLAENE.get(id); if(!plan || plan.konto !== sgKonto()){ plan = { id, konto:sgKonto(), basis:SG.satz.entwurf_stand||null,timer:null, laeuft:false }; SG_MERKPLAENE.set(id, plan); }
   clearTimeout(plan.timer); plan.neu = neu; plan.stand = stand;
+  plan.lokal=sgLokalSichern(plan.konto,id,neu,plan.basis);
+  if(plan.konflikt||(SG.lokalFassungen||[]).length){plan.konflikt=plan.konflikt||{lokal:true};plan.fehler=new Error('Bitte zuerst eine Fassung auswählen.');sgSpeicherStatus('Deine Eingaben sind lokal gesichert. Bitte zuerst den gespeicherten Stand auswählen.','konflikt');return;}
   plan.timer = setTimeout(() => { plan.timer = null; return sgMerkSenden(plan); }, 700); }
-function sgMerkSenden(plan){ if(plan.laeuft || !plan.neu) return;
+function sgMerkSenden(plan){ if(plan.laeuft || !plan.neu || plan.konflikt) return;
   if(plan.konto !== sgKonto()){ clearTimeout(plan.timer); plan.timer = null; plan.neu = null; plan.fehler = new Error('Das Konto wurde gewechselt. Bitte den Spieltag neu öffnen.'); if(SG_MERKPLAENE.get(plan.id) === plan) SG_MERKPLAENE.delete(plan.id); return Promise.resolve(); }
-  const neu = plan.neu, stand = plan.stand; plan.neu = null; plan.laeuft = true;
-  plan.lauf = (async () => { try{ const r = await svtRpc('spieltag_merken', { p_spiel:plan.id, p_neu:neu });
+  const neu = plan.neu, stand = plan.stand; plan.neu = null; plan.laeuft = true;sgLokalUnterwegs(plan.konto,plan.id,neu);
+  plan.lauf = (async () => { try{ const payload=plan.basis?{...neu,_sg_basis:plan.basis}:neu,r = await svtRpc('spieltag_merken', { p_spiel:plan.id, p_neu:payload });
+    if(r?.konflikt){plan.neu=plan.neu||neu;
+      plan.konflikt=r;plan.fehler=new Error('Ein anderer Stand wurde gespeichert. Bitte zuerst entscheiden.');
+      sgSpeicherStatus('Deine Eingaben sind lokal gesichert. Auf dem Server gibt es einen anderen Stand.','konflikt',plan.id,plan.konto);
+      if(SG.satz?.spiel===plan.id&&sgKonto()===plan.konto){const h=document.getElementById('sgWrap');if(h){if(SG.motiv)sgDetail(h);else sgUebersicht(h);}}return;}
     if(!r || !r.neu) throw new Error('Der Spieltag wurde nicht gespeichert. Bitte erneut versuchen.'); plan.fehler = null;
+    plan.basis=r.entwurf_stand||plan.basis;plan.versuche=0;if(SG.satz?.spiel===plan.id&&sgKonto()===plan.konto)SG.satz.entwurf_stand=plan.basis;sgLokalBestaetigt(plan.konto,plan.id,neu,plan.basis);
     if(r && r.neu && plan.konto === sgKonto() && SG.satz && SG.satz.spiel === plan.id && JSON.stringify(SG.neu) === stand) SG.neu.frei = r.neu.frei || {}; }
-  catch(e){ plan.fehler = e; console.warn('Spieltag speichern', e); kToast('Speichern hat nicht geklappt'); }
-  finally{ plan.laeuft = false; if(plan.timer === null){ if(plan.neu) return sgMerkSenden(plan); if(SG_MERKPLAENE.get(plan.id) === plan) SG_MERKPLAENE.delete(plan.id); } } })(); return plan.lauf; }
+  catch(e){ plan.fehler=e;plan.neu=plan.neu||neu;plan.versuche=(plan.versuche||0)+1;console.warn('Spieltag speichern',e);sgSpeicherStatus(plan.lokal?'Server noch nicht erreicht. Deine Eingaben bleiben auf diesem Gerät gesichert.':'Speichern noch nicht möglich. Bitte die Seite geöffnet lassen und erneut versuchen.','fehler',plan.id,plan.konto);
+    if(plan.versuche<=5){clearTimeout(plan.retry);plan.retry=setTimeout(()=>{if(plan.konto===sgKonto())sgMerkSenden(plan);},Math.min(60000,3000*2**(plan.versuche-1)));} }
+  finally{ plan.laeuft=false;if(!plan.konflikt&&!plan.fehler&&plan.timer===null){if(plan.neu)return sgMerkSenden(plan);if(SG_MERKPLAENE.get(plan.id)===plan)SG_MERKPLAENE.delete(plan.id);} } })(); return plan.lauf; }
 async function sgMerkSofort(id){ sgMerken(); const plan = SG_MERKPLAENE.get(id); if(!plan) throw new Error('Speichern hat nicht geklappt. Bitte erneut versuchen.');
-  do{ clearTimeout(plan.timer); plan.timer = null; await (plan.laeuft ? plan.lauf : sgMerkSenden(plan)); }while(plan.neu || plan.laeuft);
+  do{if(plan.konflikt)throw plan.fehler;clearTimeout(plan.timer);clearTimeout(plan.retry);plan.timer=null;await(plan.laeuft?plan.lauf:sgMerkSenden(plan));if(plan.konflikt||plan.fehler)throw plan.fehler;}while(plan.neu||plan.laeuft);
   if(plan.fehler) throw plan.fehler; }
 
 /* Ein gezielter Abruf für das gewählte Spiel. Eigene Eingaben bleiben im
@@ -335,13 +355,13 @@ function sgKopfHtml(){ const D = SG.d, dt = sgDatumTeile(D.datum) || { lang:'', 
 function sgUebersicht(h){ const D = SG.d, M = ['H', 'A', 'E', 'S'];
   const frE = (SG.neu.frei || {}).E, zeigeDa = D.gespielt && !(frE && frE.stand === sgStandHash('E', D));
   const n = D.tore.length, da = zeigeDa ? `<div class="sg-da" id="sgDa"><strong>Ergebnis ist da: ${D.toreH}:${D.toreG}</strong><span>${n ? (n === 1 ? 'Ein Tor' : n + ' Tore') + ' aus dem Spielbericht übernommen.' : D.toreH === 0 && D.toreG === 0 ? 'Bei diesem Spiel sind keine Tore gefallen.' : 'Der Spielbericht mit den Toren fehlt noch.'} Schau kurz drüber, dann kann es raus.</span><button type="button" class="btn sm" data-sgm="E">Ergebnis ansehen</button></div>` : '';
-  h.innerHTML = sgKopfHtml() + sgAbrufHtml('') + da + `<div class="sg-grid">${M.map(m => { const st = sgStand(m);
+  h.innerHTML = sgKopfHtml() + sgSpeicherHtml() + sgAbrufHtml('') + da + `<div class="sg-grid">${M.map(m => { const st = sgStand(m);
       return `<button type="button" class="sg-karte" data-sgm="${m}" data-art="${st.art}"><span class="sg-mini${st.art === 'wartet' ? ' leer' : ''}" data-sgcv="${m}">${st.art === 'wartet' ? `<i>${sgE(sgTitel(m))}</i>` : ''}</span><b>${sgE(sgTitel(m))}</b><span class="sg-st" data-art="${st.art}">${sgE(st.text)}</span></button>`; }).join('')}</div>
     <p class="sg-fuss">Die vier Motive lesen dieselben Angaben. Was du in einem änderst, stimmt in allen. Gezeichnet wird nach der Designbibel (Vorlagen ${Object.values(SG_VERSION).join(', ')}).</p>`;
   M.forEach(m => { const z = h.querySelector(`[data-sgcv="${m}"]`); if(z && !z.classList.contains('leer')) z.appendChild(SG.cv[m]); });
   sgBinden(h); }
 function sgFeld(k, label, wert, o){ o = o || {}; return `<label class="sg-f"><span>${sgE(label)}</span><input type="${o.typ || 'text'}" data-sgf="${k}" value="${sgE(wert == null ? '' : wert)}" ${o.max ? `maxlength="${o.max}"` : ''} ${o.ph ? `placeholder="${sgE(o.ph)}"` : ''} ${o.attr || ''}></label>`; }
-function sgFotoHtml(feld, wahl){ return sgFotoGalerieHtml(feld, wahl, SG.A); }
+function sgFotoHtml(feld, wahl){ return sgFotoGalerieHtml(feld, wahl, SG.A, SG.d); }
 function sgKaderName(p){ return `${String(p.vorname || '').trim()} ${String(p.nachname || '').trim()}`.trim(); }
 function sgSpielerHtml(p, attr, titel){ const id = sgPerson(SG.d.sub)(p).fupa;
   const L = sgKaderListe(SG.d.sub).filter(k => sgKaderId(SG.d.sub, k.id));
@@ -373,9 +393,9 @@ function sgFormular(m){ const D = SG.d, f = SG.neu.f || {};
     <p class="sg-hin">Die Vorschläge sagen nur, was der Endstand belegt. Wertungen wie „Favorit“ oder „verdient“ schreibst du selbst, wenn sie stimmen.</p>
     ${sgFeld('h1', 'Zeile 1', D.h1, { max:26 })}${sgFeld('h2', 'Zeile 2', D.h2, { max:22 })}
     <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>
-    <label class="sg-ergebnis-tore"><input type="checkbox" data-sgergebnistore${D.zeigeTore ? ' checked' : ''}><span>Torschützen auf dem Ergebnisbild</span></label>
-    <p class="sg-hin">Unsere Schützen mit belegten Minuten. Mehrfachtore stehen gemeinsam unter einem Namen. Fehlen noch Angaben, kannst du sie hier ergänzen.</p>
-    <details class="sg-mehr" data-sgtore-editor${D.zeigeTore && !sgErgebnisTore(D).vollstaendig ? ' open' : ''}><summary>Torschützen bearbeiten</summary>${sgToreEditorHtml(D)}</details>` + sgFotoHtml('fotoE', D.fotoE, SG.A.echtE) + kopf + sgListenHtml();
+    <label class="sg-ergebnis-tore"><input type="checkbox" data-sgergebnistore${D.zeigeTore ? ' checked' : ''}><span>Torschützen beider Mannschaften auf dem Ergebnisbild</span></label>
+    <p class="sg-hin">Die Schützen beider Mannschaften mit belegten Minuten. Mehrfachtore stehen gemeinsam unter einem Namen. Fehlen noch Angaben, kannst du sie hier ergänzen.</p>
+    <details class="sg-mehr" data-sgtore-editor${D.zeigeTore && !sgErgebnisBeide(D).vollstaendig ? ' open' : ''}><summary>Torschützen bearbeiten</summary>${sgToreEditorHtml(D)}</details>` + sgFotoHtml('fotoE', D.fotoE, SG.A.echtE) + kopf + sgListenHtml();
   if(m === 'S') return sgToreEditorHtml(D) + `
     <div class="sg-zwei">${sgFeld('toreH', 'Tore ' + D.heim, D.toreH, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}${sgFeld('toreG', 'Tore ' + D.gast, D.toreG, { typ:'number', attr:'min="0" max="40" inputmode="numeric"' })}</div>` + kopf + sgListenHtml();
   const zeile = (p, i, art) => `<div class="sg-sp" data-art="${art}" data-i="${i}"><input type="number" data-sgp="nr" value="${p.nr == null ? '' : p.nr}" min="0" max="99" inputmode="numeric" placeholder="Nr." aria-label="Rückennummer">
@@ -398,7 +418,7 @@ function sgQuerReglerHtml(){ const c = sgQuerGeometrie(), beweglich = c && c.res
 }
 function sgQuerReglerAktualisieren(h){ if(SG.motiv !== 'H' || sgFormat('H') !== 'quer') return;
   const c = sgQuerGeometrie(), beweglich = !!(c && c.reserve > 1), y = h.querySelector('#sgQuerY'), z = h.querySelector('#sgQuerZoom');
-  if(y){ y.value = Math.round(SG.d.querY * 100); y.disabled = !beweglich; } if(z){ z.value = SG.d.querZoom; z.disabled = !c; }
+  const gesperrt=sgSpeicherKonflikt();if(y){ y.value = Math.round(SG.d.querY * 100); y.disabled = gesperrt||!beweglich; } if(z){ z.value = SG.d.querZoom; z.disabled = gesperrt||!c; }const reset=h.querySelector('#sgQuerReset');if(reset)reset.disabled=gesperrt;
   const yw = h.querySelector('#sgQuerYWert'), zw = h.querySelector('#sgQuerZoomWert'), hilfe = h.querySelector('#sgQuerHilfe'), bild = h.querySelector('#sgBild');
   if(yw) yw.textContent = Math.round(SG.d.querY * 100) + '%'; if(zw) zw.textContent = SG.d.querZoom.toFixed(2) + '×';
   if(hilfe) hilfe.textContent = beweglich ? 'Ziehe das Foto im Banner nach oben oder unten. Ein Tipp auf Text öffnet weiterhin das passende Feld.' : 'Zum Verschieben braucht das Foto mehr Höhe. Zoome etwas hinein, dann kannst du es höher oder tiefer schieben.';
@@ -408,6 +428,7 @@ function sgQuerReglerAktualisieren(h){ if(SG.motiv !== 'H' || sgFormat('H') !== 
   const st = SG.pruef && SG.pruef.H ? sgStand('H') : null, status = h.querySelector('.sg-dkopf .sg-st'); if(st && status){ status.dataset.art = st.art; status.textContent = st.text; }
 }
 function sgQuerAendern(k, v, h){ if(SG.motiv !== 'H' || sgFormat('H') !== 'quer') return;
+  if(sgSpeicherKonflikt())return;
   const wert = k === 'querZoom' ? sgQuerNorm(v, 1, 1, 2) : sgQuerNorm(v, .5, 0, 1);
   sgSetzen(k, Math.round(wert * 10000) / 10000); SG.d = sgDaten(); sgSchau('H'); sgQuerReglerAktualisieren(h); sgFotoQualitaetAktualisieren(h); sgMerken();
 }
@@ -441,20 +462,26 @@ function sgQuerBinden(h){ if(SG.motiv !== 'H' || sgFormat('H') !== 'quer') retur
   };
   bild.onpointerup = ende; bild.onpointercancel = ende; bild.onlostpointercapture = ende;
 }
+function sgFormFokus(aktiv,h){if(!aktiv||!h.contains(aktiv))return'';const d=aktiv.dataset||{};
+  for(const k of ['sgtext','sgf','sgcut'])if(d[k])return`[data-${k}="${d[k]}"]`;
+  for(const k of ['sggeschichte','sgergebnistore'])if(d[k]!=null)return`[data-${k}]`;
+  const row=aktiv.closest?.('.sg-tor,.sg-sp');if(!row)return'';const tor=!!d.sgt,art=tor?'tore':row.dataset.art,L=SG.neu[art],i=row.sgDatensatz&&Array.isArray(L)?L.indexOf(row.sgDatensatz):+row.dataset.i;if(i<0)return'';
+  return tor?`.sg-tor[data-i="${i}"] [data-sgt="${d.sgt}"]`:`.sg-sp[data-art="${art}"][data-i="${i}"] [data-sgp="${d.sgp}"]`;
+}
 function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.pruef[m];
   const P = SG.bildOffen ? sgPruefen(m, D, SG.A, {}) : fmt === 'quer' && !vor.wartet ? sgPruefen(m, D, SG.A, sgMalen(SG.cvQuer || (SG.cvQuer = document.createElement('canvas')), m, D, SG.A, 0, 'quer')) : vor;
   const st = P.fehler.length ? { art:'du', text:'Braucht dich: ' + P.fehler[0] } : sgStand(m), fr = (SG.neu.frei || {})[m], frei = fr && fr.stand === sgStandHash(m, D);
-  const aktiv = document.activeElement, fokus = aktiv && h.contains(aktiv) && (aktiv.dataset.sgtext ? `[data-sgtext="${aktiv.dataset.sgtext}"]` : aktiv.dataset.sggeschichte != null ? '[data-sggeschichte]' : aktiv.dataset.sgergebnistore != null ? '[data-sgergebnistore]' : aktiv.dataset.sgf ? `[data-sgf="${aktiv.dataset.sgf}"]` : ''), auswahl = fokus ? [aktiv.selectionStart, aktiv.selectionEnd] : null;
+  const aktiv = document.activeElement, fokus = sgFormFokus(aktiv,h), auswahl = fokus ? [aktiv.selectionStart, aktiv.selectionEnd] : null;
   const fotoZustand = sgFotoZustand(h), toreEditorOffen = h.querySelector('[data-sgtore-editor]')?.open;
   const querFokus = aktiv && h.contains(aktiv) && ['sgQuerY','sgQuerZoom'].includes(aktiv.id) ? aktiv.id : '';
   const offen = !!P.wartet || P.fehler.length > 0, seiten = m === 'S' ? sgSeitenS(D) : 1;
   const liste = [...P.fehler.map(t => `<li class="f">${sgE(t)}</li>`), ...P.hinweise.map(t => `<li class="h">${sgE(t)}</li>`), ...(!offen && !P.hinweise.length ? ['<li class="ok">Angaben vollständig, nichts läuft über</li>'] : []), ...P.notizen.map(t => `<li class="n">${sgE(t)}</li>`)].join('');
   const am = fr && fr.am ? new Date(fr.am).toLocaleString('de-DE', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
-  h.innerHTML = `<div class="sg-dkopf"><button type="button" class="btn sm ghost" id="sgZurueck"><span class="sg-zur">${SVI('chev')}</span> Spieltag</button><h3>${sgE(sgTitel(m))}</h3><span class="sg-st" data-art="${st.art}">${sgE(st.text)}</span></div>
+  h.innerHTML = `${sgSpeicherHtml()}<div class="sg-dkopf"><button type="button" class="btn sm ghost" id="sgZurueck"><span class="sg-zur">${SVI('chev')}</span> Spieltag</button><h3>${sgE(sgTitel(m))}</h3><span class="sg-st" data-art="${st.art}">${sgE(st.text)}</span></div>
     <div class="sg-zwei-sp"><div class="sg-buehne">${P.wartet ? '' : `<div class="sg-zeile sg-fmt"><button type="button" class="btn sm ${fmt === 'beitrag' ? '' : 'ghost'}" data-sgfmt="beitrag">Beitrag 4:5</button><button type="button" class="btn sm ${fmt === 'story' ? '' : 'ghost'}" data-sgfmt="story">Story 9:16</button>${m === 'H' ? `<button type="button" class="btn sm ${fmt === 'quer' ? '' : 'ghost'}" data-sgfmt="quer">WhatsApp-Banner 16:9</button>` : ''}</div>`}
         ${m !== 'H' ? sgAbrufHtml(m) : ''}<div class="sg-bild${P.wartet ? ' leer' : ''}" id="sgBild" data-fmt="${!P.wartet ? fmt : 'beitrag'}">${P.wartet ? `<i>${sgE(P.wartet)}</i>` : ''}</div>
         <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgtexte-zeigen>Texte für Gruppen und Storys</button></div>
-        ${m === 'H' && fmt === 'quer' && !P.wartet ? sgQuerReglerHtml() : ''}
+        ${!P.wartet ? m==='H'&&fmt==='quer'?sgQuerReglerHtml():sgAusschnittHtml(m,fmt) : ''}
         ${seiten > 1 ? `<div class="sg-zeile sg-seiten">${Array.from({ length:seiten }, (_, i) => `<button type="button" class="btn sm ${i === (SG.seite || 0) ? '' : 'ghost'}" data-sgseite="${i}">Karte ${i + 1}</button>`).join('')}</div>` : ''}
         <p class="sg-hin" data-sgbildstatus role="status" aria-live="polite" hidden></p><p class="sg-hin sg-fotoqualitaet" data-sgfotoqualitaet hidden></p><ul class="sg-pruef" id="sgPruef">${liste}</ul>
         <div class="sg-akt">${frei ? `<p class="sg-frei">Freigegeben von ${sgE(fr.name || 'jemandem')}${am ? ', ' + sgE(am) + ' Uhr' : ''}.</p><button type="button" class="btn" data-sgx="teilen" ${offen ? 'disabled' : ''}>${SVI('share')} ${seiten > 1 ? 'Diese Karte teilen' : 'Teilen'}</button><button type="button" class="btn ghost" data-sgx="png" ${offen ? 'disabled' : ''}>${seiten > 1 ? 'Diese Karte als PNG' : 'PNG laden'}</button>${seiten > 1 ? `<button type="button" class="btn ghost" data-sgx="zip" ${offen ? 'disabled' : ''}>Alle ${seiten} Karten als ZIP</button>` : ''}<button type="button" class="btn ghost sm" data-sgx="zurueck">Freigabe zurücknehmen</button>`
@@ -465,8 +492,8 @@ function sgDetail(h){ const m = SG.motiv, D = SG.d, fmt = sgFormat(m), vor = SG.
 /* Die Leinwand der Einzelansicht: der Beitrag aus der Übersicht oder dasselbe Motiv als Story, frisch gezeichnet */
 function sgSchau(m){ const fmt = sgFormat(m); if(fmt === 'beitrag') return SG.cv[m]; const key = fmt === 'quer' ? 'cvQuer' : 'cvStory', cv = SG[key] || (SG[key] = document.createElement('canvas')); sgMalen(cv, m, SG.d, SG.A, m === 'S' ? (SG.seite || 0) : 0, fmt); return cv; }
 function sgSetzen(k, v){ SG.neu.f = SG.neu.f || {}; if(k === 'ort') SG.neu.f[k] = String(v || ''); else if(v === '' || v == null) delete SG.neu.f[k]; else SG.neu.f[k] = v; }
-function sgToreHand(){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore = SG.d.tore.map(t => ({key:t.key,fupa:t.fupa,vfupa:t.vfupa,m:t.m,x:t.x,wir:t.wir,art:t.art,name:t.name,vorlage:t.vorlage})); SG.neu.toreQ = sgHash(JSON.stringify(SG.d.quelle.tore)); SG.neu.toreQV=3; } return SG.neu.tore; }
-function sgElfHand(){ if(!Array.isArray(SG.neu.start)){ const z = p => ({key:p.key,fupa:p.fupa,name:p.name,nr:p.nr,nrHand:p.nrHand,tw:p.tw,c:p.c,ein:p.ein}); SG.neu.start = SG.d.start.map(z); SG.neu.bank = SG.d.bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); SG.neu.elfQV=3; }
+function sgToreHand(vor=SG.d.tore){ if(!Array.isArray(SG.neu.tore)){ SG.neu.tore = vor.map(t => ({key:t.key,fupa:t.fupa,vfupa:t.vfupa,m:t.m,x:t.x,wir:t.wir,art:t.art,name:t.name,vorlage:t.vorlage})); SG.neu.toreQ = sgHash(JSON.stringify(SG.d.quelle.tore)); SG.neu.toreQV=3; } return SG.neu.tore; }
+function sgElfHand(start=SG.d.start,bank=SG.d.bank){ if(!Array.isArray(SG.neu.start)){ const z = p => ({key:p.key,fupa:p.fupa,name:p.name,nr:p.nr,nrHand:p.nrHand,tw:p.tw,c:p.c,ein:p.ein}); SG.neu.start = start.map(z); SG.neu.bank = bank.map(z); SG.neu.elfQ = sgHash(JSON.stringify([SG.d.quelle.start, SG.d.quelle.bank])); SG.neu.elfQV=3; }
   if(!Array.isArray(SG.neu.bank)) SG.neu.bank = []; return SG.neu; }
 let sgZeichenT = null;
 function sgBald(mitBildern, ganz){ mitBildern = mitBildern || !!SG.bildOffen; if(mitBildern) sgBildWarten(); const satz = SG.satz, konto = sgKonto(), lauf = ++sgBildLauf, aktuell = () => lauf === sgBildLauf && satz === SG.satz && konto === sgKonto(); sgMerken(); clearTimeout(sgZeichenT); sgZeichenT = setTimeout(async () => { if(!aktuell()) return; if(ganz){ try{ return await sgNeu(mitBildern); }catch(e){ if(satz === SG.satz && konto === sgKonto()) kToast('Das Bild konnte nicht geladen werden. Wähle das Motiv bitte erneut.'); return false; } }

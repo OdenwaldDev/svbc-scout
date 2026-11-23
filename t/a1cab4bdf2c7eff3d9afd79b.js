@@ -330,17 +330,19 @@ const PK_EBENEN = [['foto','Hintergrund und Atmosphäre'],['verlauf','Dunkler Ve
 /* Hintergrund-Galerie (0.73): Nahaufnahmen statt Stadion, damit niemand sagt „ist ja gar nicht unser Platz“.
    Je Bild die Lichtstimmungen, zu denen es passt. „Automatisch“ nimmt je Spiel ein anderes passendes Bild, fest pro Spiel. */
 const PK_FOTOS = [
-  ['linie-abend','Linie am Abend',['night','winter','autumn']], ['night','Flutlicht',['night']], ['ball-flutlicht','Ball unter Flutlicht',['night']],
-  ['netz-nacht','Netz bei Nacht',['night']], ['regen-nacht','Regen bei Nacht',['night','autumn']], ['kunstrasen-flutlicht','Kunstrasen',['night','winter']],
-  ['mittelkreis-nebel','Mittelkreis im Nebel',['night','autumn']], ['autumn','Herbstlaub',['autumn']], ['elfmeter-herbst','Elfmeterpunkt',['autumn']],
-  ['pfosten-nebel','Pfosten im Nebel',['autumn']], ['eckfahne-abend','Eckfahne',['autumn','summer']], ['schuhe-abend','Schuhe',['summer','autumn']],
-  ['summer','Ball im Gras',['summer']], ['ball-gegenlicht','Gegenlicht',['summer']], ['winter','Raureif',['winter']],
-  ['tau-linie','Tau an der Linie',['winter','autumn']], ['ball-frost','Ball im Frost',['winter']]
-].map(([id, titel, st]) => ({ id, titel, st }));
+  ['fruehling-tag','Frühling am Platz',['spring']], ['sommer-tag','Sommertag',['summer']],
+  ['herbst-tag','Herbstnachmittag',['autumn']], ['winter-tag','Klarer Wintertag',['winter']],
+  ['linie-abend','Linie am Abend',['night']], ['night','Flutlicht',['night']], ['ball-flutlicht','Ball unter Flutlicht',['night']],
+  ['netz-nacht','Netz bei Nacht',['night']], ['regen-nacht','Regen bei Nacht',['night'],false], ['kunstrasen-flutlicht','Kunstrasen unter Flutlicht',['night']],
+  ['mittelkreis-nebel','Mittelkreis im Nebel',['autumn'],false], ['autumn','Herbstlaub',['autumn']], ['elfmeter-herbst','Elfmeterpunkt',['autumn']],
+  ['pfosten-nebel','Pfosten im Nebel',['autumn'],false], ['eckfahne-abend','Eckfahne am Abend',['night']], ['schuhe-abend','Schuhe am Abend',['night']],
+  ['summer','Ball im Gras',['spring','summer']], ['ball-gegenlicht','Gegenlicht',['spring','summer']], ['winter','Raureif',['winter'],false],
+  ['tau-linie','Tau an der Linie',['spring','autumn'],false], ['ball-frost','Ball im Frost',['winter'],false]
+].map(([id, titel, st, auto = true]) => ({ id, titel, st, auto }));
 function pkFotoAuswahl(S, stimmung){
   const st = stimmung === 'night' ? 'night' : stimmung;
   if(S.foto && PK_FOTOS.some(f => f.id === S.foto)) return S.foto;
-  const L = PK_FOTOS.filter(f => f.st.includes(st)); if(!L.length) return st;
+  const L = PK_FOTOS.filter(f => f.auto && f.st.includes(st)); if(!L.length) return 'summer';
   let h = 0; for(const c of String(S.datum || '') + '|' + String(S.gegner || '')) h = (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0;
   return L[h % L.length].id; }
 /* Schriften liegen in der App (fonts/anton.woff2, fonts/barlowc-*.woff2), kein fremder Server */
@@ -361,7 +363,7 @@ const pkNorm = s => (typeof TRC !== 'undefined' && TRC.N ? TRC.N(String(s || '')
 /* ---------- Licht: Jahreszeit und angenäherter Sonnenuntergang für Mörlenbach ---------- */
 function pkLicht(datum, zeit, modus = 'auto'){
   const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datum || ''), u = /^(\d{1,2}):(\d{2})$/.exec(zeit || '');
-  if(!d || !u) return { stimmung:'summer', zeitraum:'tag', automatisch:modus === 'auto', text:'Datum und Anstoßzeit ergänzen' };
+  if(!d || !u || +u[1]>23 || +u[2]>59 || +d[1]<1900 || +d[1]>2199 || new Date(Date.UTC(+d[1],+d[2]-1,+d[3])).toISOString().slice(0,10)!==datum) return { stimmung:'summer', zeitraum:'tag', automatisch:modus === 'auto', text:'Datum und Anstoßzeit ergänzen' };
   const jahr = +d[1], monat = +d[2], tag = +d[3], utc = Date.UTC(jahr, monat - 1, tag, 12);
   const n = Math.floor((utc - Date.UTC(jahr, 0, 0, 12)) / 86400000), rad = Math.PI / 180, g = 2 * Math.PI / 365 * (n - 1);
   const eq = 229.18 * (.000075 + .001868 * Math.cos(g) - .032077 * Math.sin(g) - .014615 * Math.cos(2 * g) - .040849 * Math.sin(2 * g));
@@ -371,7 +373,7 @@ function pkLicht(datum, zeit, modus = 'auto'){
   const w = Math.acos((Math.cos(90.833 * rad) / (Math.cos(49.6 * rad) * Math.cos(dek))) - Math.tan(49.6 * rad) * Math.tan(dek)) / rad;
   const auf = mittag - 4 * w, unter = mittag + 4 * w, min = +u[1] * 60 + +u[2];
   const nacht = min < auf || min >= unter;
-  const saison = (monat >= 9 && monat <= 11) ? 'autumn' : (monat === 12 || monat <= 2) ? 'winter' : 'summer';
+  const saison = (monat >= 9 && monat <= 11) ? 'autumn' : (monat === 12 || monat <= 2) ? 'winter' : monat <= 5 ? 'spring' : 'summer';
   const gewaehlt = modus === 'auto' ? (nacht ? 'night' : saison) : modus;
   const hhmm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(Math.round(m % 60)).padStart(2, '0');
   return { stimmung:gewaehlt, zeitraum:gewaehlt === 'night' ? 'nacht' : 'tag', automatisch:modus === 'auto',
@@ -379,7 +381,7 @@ function pkLicht(datum, zeit, modus = 'auto'){
     text: modus === 'auto' ? `${gewaehlt === 'night' ? 'Abend und Flutlicht' : 'Tageslicht'} am Spieltermin, Sonnenuntergang gegen ${hhmm(unter)} Uhr`
                            : 'Lichtstimmung von Hand gewählt' };
 }
-const PK_SAISON = { night:'Flutlichtabend', autumn:'Herbstnachmittag', summer:'Fußball bei Tageslicht', winter:'Winterspieltag' };
+const PK_SAISON = { night:'Flutlichtabend', spring:'Frühlingsspieltag', autumn:'Herbstnachmittag', summer:'Fußball bei Tageslicht', winter:'Winterspieltag' };
 
 /* ---------- Bibliothek und Bilder ---------- */
 async function pkBib(){ if(PK.bib) return PK.bib;

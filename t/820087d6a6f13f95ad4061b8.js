@@ -201,7 +201,7 @@ function pkOberflaeche(P){
       <label class="pk-f"><span>Spielort</span><input id="pkOrt" maxlength="120" placeholder="Sportplatz Mörlenbach"></label>
       <p class="pk-hint" id="pkOrtHint"></p>
       <label class="pk-f"><span>Lichtstimmung</span><select id="pkModus">
-        ${opt('auto', 'Automatisch nach Termin', true)}${opt('summer', 'Sommer, Tageslicht')}${opt('autumn', 'Herbst')}${opt('winter', 'Winter')}${opt('night', 'Flutlicht')}</select></label>
+        ${opt('auto', 'Automatisch nach Termin', true)}${opt('spring', 'Frühling, Tageslicht')}${opt('summer', 'Sommer, Tageslicht')}${opt('autumn', 'Herbst')}${opt('winter', 'Winter')}${opt('night', 'Flutlicht')}</select></label>
     </div>
     <div data-pkp="look">
       <div class="pk-f"><span>Hintergrund</span></div>

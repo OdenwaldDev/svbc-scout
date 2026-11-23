@@ -507,15 +507,116 @@ if(typeof dpRender === 'function'){ const _dp126 = dpRender; dpRender = function
   return r; }; }
 
 (function(){ try{ const s=document.createElement('style'); s.id='svm126css'; s.textContent="/* Beta 0.99.91 · Datenprüfung: Ansicht „Vereinswechsel“ (svm126.js) */\n.dpw-z{display:grid;gap:3px;padding:10px 0;border-top:1px solid var(--linie);}\n.dpw-z .lnk{justify-self:start;font-weight:700;font-size:15.5px;background:none;border:0;padding:0;color:var(--blau);cursor:pointer;text-align:left;min-height:28px;}\n.dpw-z span{font-size:14px;line-height:1.4;}\n.dpw-z em{font-style:normal;font-size:13px;font-weight:600;color:var(--gruen,#2c6b3a);}\n.dpw-z.warn em{color:#a11b12;}\n.dpw-d{border:1px solid var(--linie);border-radius:12px;padding:0 12px;margin-top:6px;}\n.dpw-d summary{min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer;}\n.dpw-tw{overflow-x:auto;margin:0 -4px 10px;}\n.dpw-d table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:420px;}\n.dpw-d th{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);padding:6px;border-bottom:1.5px solid var(--linie);}\n.dpw-d td{padding:6px;border-bottom:1px solid var(--linie);vertical-align:top;}\n.dpw-d td .lnk{background:none;border:0;padding:0;color:var(--blau);cursor:pointer;font:inherit;font-weight:600;text-align:left;}\n.g1-dq .s1-gruppe .dpw-zu{margin-left:10px;vertical-align:middle;}\n"; document.head.appendChild(s); }catch(e){} })();
+/* Derselbe Bildausschnitt in der Vorschau und in der gespeicherten Datei.
+   Die Positionen gehören zum Spiel, Motiv und Format, nicht zum Gerät. */
+function sgAusschnitt(D,m,fmt){const c=D?.bildausschnitt?.[m]?.[fmt]||{};return{x:sgQuerNorm(c.x,.5,0,1),y:sgQuerNorm(c.y,m==='E'&&D.zeigeTore===true?.35:.3,0,1),zoom:sgQuerNorm(c.zoom,1,1,3)};}
+function sgFotoGeometrie(iw,ih,w,h,c){if(!(iw>0&&ih>0&&w>0&&h>0))return null;const s=Math.max(w/iw,h/ih)*c.zoom,dw=iw*s,dh=ih*s;return{...c,scale:s,dw,dh,reserveX:Math.max(0,dw-w),reserveY:Math.max(0,dh-h),w,h};}
+function sgFotoMalen(ctx,img,x,y,w,h,D,m,standard){if(!img)return;const fmt=SG.oy?'story':'beitrag',c=sgAusschnitt(D,m,fmt);
+  if(!D?.bildausschnitt?.[m]?.[fmt])return sgCover(ctx,img,x,y,w,h,standard);
+  const g=sgFotoGeometrie(img.naturalWidth||img.width,img.naturalHeight||img.height,w,h,c);if(!g)return;
+  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.drawImage(img,x-g.reserveX*c.x,y-g.reserveY*c.y,g.dw,g.dh);ctx.restore();}
+function sgAusschnittGeometrie(D=SG.d,A=SG.A,m=SG.motiv,fmt=sgFormat(m)){
+  if(!['H','E'].includes(m)||fmt==='quer')return null;const im=A?.[m==='H'?'fotoH':'fotoE'];if(!im)return null;
+  const oy=fmt==='story'?285:0,h=m==='H'?(D.wirHeim?1000:940)+oy:D.zeigeTore===true?1350+oy*2:646;
+  return sgFotoGeometrie(im.naturalWidth||im.width,im.naturalHeight||im.height,1080,h,sgAusschnitt(D,m,fmt));
+}
+function sgAusschnittHtml(m,fmt){if(!['H','E'].includes(m)||fmt==='quer')return'';const c=sgAusschnittGeometrie(SG.d,SG.A,m,fmt);if(!c)return'';
+  return `<section class="sg-ausschnitt" aria-label="Foto ausrichten"><div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgcut-aktiv aria-pressed="${!!SG.ausschnittAktiv}">${SG.ausschnittAktiv?'Ausrichten beenden':'Foto ausrichten'}</button><button type="button" class="btn sm ghost" data-sgcut-reset>Ausschnitt zurücksetzen</button></div>
+    ${[['x','Links / rechts'],['y','Oben / unten'],['zoom','Zoom']].map(([k,t])=>`<label class="sg-f"><span>${t} <output data-sgcut-wert="${k}">${k==='zoom'?c[k].toFixed(2)+'×':Math.round(c[k]*100)+'%'}</output></span><input type="range" data-sgcut="${k}" aria-label="${t}" min="${k==='zoom'?1:0}" max="${k==='zoom'?3:100}" step="${k==='zoom'?.05:1}" value="${k==='zoom'?c[k]:Math.round(c[k]*100)}"${k!=='zoom'&&c[k==='x'?'reserveX':'reserveY']<=1?' disabled':''}></label>`).join('')}
+    <p class="sg-hin" data-sgcut-hilfe>Mit der Maus direkt im Foto ziehen. Auf dem Handy zuerst „Foto ausrichten“ einschalten. Bei Bedarf hineinzoomen, um mehr Spielraum zu erhalten.</p></section>`;
+}
+function sgAusschnittAktualisieren(h){if(!['H','E'].includes(SG.motiv)||sgFormat(SG.motiv)==='quer')return;const c=sgAusschnittGeometrie();if(!c)return;
+  const gesperrt=sgSpeicherKonflikt();h.querySelectorAll('[data-sgcut]').forEach(e=>{const k=e.dataset.sgcut;e.value=k==='zoom'?c[k]:Math.round(c[k]*100);e.disabled=gesperrt||k!=='zoom'&&c[k==='x'?'reserveX':'reserveY']<=1;});
+  h.querySelectorAll('[data-sgcut-aktiv],[data-sgcut-reset]').forEach(e=>e.disabled=gesperrt);
+  h.querySelectorAll('[data-sgcut-wert]').forEach(e=>{const k=e.dataset.sgcutWert;e.textContent=k==='zoom'?c[k].toFixed(2)+'×':Math.round(c[k]*100)+'%';});
+  const b=h.querySelector('[data-sgcut-aktiv]'),bild=h.querySelector('#sgBild');if(b){b.setAttribute('aria-pressed',String(!!SG.ausschnittAktiv));b.textContent=SG.ausschnittAktiv?'Ausrichten beenden':'Foto ausrichten';}if(bild?.dataset)bild.dataset.ausrichten=SG.ausschnittAktiv?'1':'0';
+}
+function sgAusschnittSetzen(k,v,h){const m=SG.motiv,fmt=sgFormat(m);if(!['H','E'].includes(m)||fmt==='quer'||sgSpeicherKonflikt())return;const f=SG.neu.f||(SG.neu.f={}),C=f.bildausschnitt||(f.bildausschnitt={}),M=C[m]||(C[m]={});
+  M[fmt]={...sgAusschnitt(SG.d,m,fmt),[k]:Math.round(sgQuerNorm(v,k==='zoom'?1:.5,k==='zoom'?1:0,k==='zoom'?3:1)*10000)/10000};
+  SG.d=sgDaten();sgMalen(SG.cv[m],m,SG.d,SG.A,0);if(fmt!=='beitrag')sgSchau(m);sgMerken();sgAusschnittAktualisieren(h);sgFotoQualitaetAktualisieren(h);
+  const fr=(SG.neu.frei||{})[m],frei=fr&&fr.stand===sgStandHash(m,SG.d);h.querySelectorAll('[data-sgx="teilen"],[data-sgx="png"],[data-sgx="zip"]').forEach(e=>e.disabled=!frei);
+}
+function sgAusschnittBinden(h){const m=SG.motiv,fmt=sgFormat(m),spiel=SG.satz?.spiel,konto=sgKonto();if(!['H','E'].includes(m)||fmt==='quer')return;
+  const aktuell=()=>SG.motiv===m&&sgFormat(m)===fmt&&SG.satz?.spiel===spiel&&sgKonto()===konto&&h.isConnected!==false;
+  h.querySelectorAll('[data-sgcut]').forEach(e=>{e.oninput=()=>{if(aktuell())sgAusschnittSetzen(e.dataset.sgcut,+e.value/(e.dataset.sgcut==='zoom'?1:100),h);};e.onchange=()=>{if(aktuell())sgBald(false,false);};});
+  const b=h.querySelector('[data-sgcut-aktiv]');if(b)b.onclick=()=>{SG.ausschnittAktiv=!SG.ausschnittAktiv;sgAusschnittAktualisieren(h);};
+  const reset=h.querySelector('[data-sgcut-reset]');if(reset)reset.onclick=()=>{if(!aktuell())return;const C=SG.neu.f?.bildausschnitt?.[m];if(C)delete C[fmt];SG.d=sgDaten();sgMerken();sgBald(false,true);};
+  const bild=h.querySelector('#sgBild');if(!bild)return;sgAusschnittAktualisieren(h);let zug=null;
+  bild.onpointerdown=e=>{if(!aktuell()||e.pointerType==='touch'&&!SG.ausschnittAktiv||e.isPrimary===false||e.button!=null&&e.button!==0||zug)return;
+    const cv=bild.querySelector('canvas'),g=sgAusschnittGeometrie();if(!cv||!g||e.target&&e.target!==cv)return;const r=cv.getBoundingClientRect();if(!r.width||!r.height)return;
+    bild.sgQuerKlickSperre=false;zug={id:e.pointerId,x:e.clientX,y:e.clientY,g,skala:cv.width/r.width,bewegt:false};};
+  bild.onpointermove=e=>{if(!zug||zug.id!==e.pointerId||!aktuell())return;const dx=e.clientX-zug.x,dy=e.clientY-zug.y;if(!zug.bewegt&&Math.hypot(dx,dy)<5)return;
+    if(!zug.bewegt){zug.bewegt=true;try{bild.setPointerCapture(e.pointerId);}catch(_){}}e.preventDefault();bild.classList.add('sg-zieht');
+    if(zug.g.reserveX>1)sgAusschnittSetzen('x',zug.g.x-dx*zug.skala/zug.g.reserveX,h);if(zug.g.reserveY>1)sgAusschnittSetzen('y',zug.g.y-dy*zug.skala/zug.g.reserveY,h);};
+  const ende=e=>{if(!zug||zug.id!==e.pointerId)return;const z=zug;zug=null;bild.classList.remove('sg-zieht');if(z.bewegt)bild.sgQuerKlickSperre=true;try{if(bild.hasPointerCapture(e.pointerId))bild.releasePointerCapture(e.pointerId);}catch(_){}if(z.bewegt&&aktuell())sgBald(false,false);};
+  bild.onpointerup=ende;bild.onpointercancel=ende;bild.onlostpointercapture=ende;
+}
+
+/* Eingaben sofort auf diesem Gerät sichern. Nur ein bestätigter Serverstand
+   räumt denselben lokalen Entwurf auf. Konten und Spiele bleiben getrennt. */
+const SG_LOKAL_PRAEFIX='svbsc-spieltag-entwurf-v1:';
+const sgSpeicherEditor=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+let sgSpeicherFassung=0;
+const sgSpeicherZustaende=new Map();
+function sgMerkPlan(spiel,konto=sgKonto()){const p=SG_MERKPLAENE.get(spiel);return p?.konto===konto?p:null;}
+function sgSpeicherKonflikt(){return!!((SG.lokalFassungen||[]).length||sgMerkPlan(SG.satz?.spiel)?.konflikt);}
+function sgSpeicherInhalt(neu){const ohne={...(neu||{})};delete ohne.frei;delete ohne._sg_basis;if(!ohne.f)ohne.f={};
+  const ordnen=x=>Array.isArray(x)?x.map(ordnen):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,ordnen(x[k])])):x;return JSON.stringify(ordnen(ohne));}
+function sgLokalPraefix(konto,spiel){return SG_LOKAL_PRAEFIX+encodeURIComponent(String(konto||''))+':'+encodeURIComponent(String(spiel||''))+':';}
+function sgLokalLesen(konto,spiel,mitArchiv=false){if(!konto||!spiel)return[];const L=[];try{const p=sgLokalPraefix(konto,spiel);
+  for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(!key||!key.startsWith(p))continue;try{const s=localStorage.getItem(key);if(!s||s.length>262144)continue;const r=JSON.parse(s);
+    if(r.v===1&&r.konto===konto&&r.spiel===spiel&&r.neu&&typeof r.neu==='object'&&!Array.isArray(r.neu))L.push({...r,key});}catch(_){}}
+  }catch(_){}const archiv=L.filter(r=>r.archiviert),version=r=>r.fassung||String(r.am)+'|'+sgSpeicherInhalt(r.neu);
+  return L.filter(r=>!archiv.some(a=>a.ersetzt_key===r.key&&a.ersetzt_fassung===version(r))).filter(r=>mitArchiv||!r.archiviert).sort((a,b)=>b.am-a.am);}
+function sgSpeicherStatus(text,art='lokal',spiel=SG.satz?.spiel,konto=sgKonto()){if(!spiel||!konto)return;sgSpeicherZustaende.set(konto+'|'+spiel,{text,art});
+  if(SG.satz?.spiel===spiel&&sgKonto()===konto&&typeof document.querySelectorAll==='function')document.querySelectorAll('[data-sgspeicherstatus]').forEach(e=>{e.textContent=text;e.dataset.art=art;});}
+function sgLokalSichern(konto,spiel,neu,basis){if(!konto||!spiel)return false;try{const key=sgLokalPraefix(konto,spiel)+sgSpeicherEditor,alt=JSON.parse(localStorage.getItem(key)||'null');
+  const r={v:1,konto,spiel,neu,am:Date.now(),fassung:sgSpeicherEditor+'-'+(++sgSpeicherFassung),basis:basis||null,unterwegs:alt?.unterwegs||[],auswahl:alt?.auswahl?{...alt.auswahl,inhalt:sgSpeicherInhalt(neu)}:undefined},s=JSON.stringify(r);if(s.length>262144)throw Error('zu gross');localStorage.setItem(key,s);
+  sgSpeicherStatus('Auf diesem Gerät gesichert. Wird synchronisiert.','lokal',spiel,konto);return true;
+  }catch(_){sgSpeicherStatus('Lokale Sicherung nicht möglich. Bitte auf die Serverbestätigung warten.','fehler',spiel,konto);return false;}}
+function sgLokalUnterwegs(konto,spiel,neu){try{const key=sgLokalPraefix(konto,spiel)+sgSpeicherEditor,r=JSON.parse(localStorage.getItem(key)||'null');if(!r)return;
+  r.unterwegs=[...new Set([...(r.unterwegs||[]),sgSpeicherInhalt(neu)])].slice(-3);localStorage.setItem(key,JSON.stringify(r));}catch(_){}}
+// Fremde Editor-Schlüssel niemals verändern oder löschen. Ein Archivvermerk
+// gilt nur für genau die gelesene Fassung; weiteres Tippen bleibt aktiv.
+function sgLokalArchivieren(L){for(const r of L){try{const fassung=r.fassung||String(r.am)+'|'+sgSpeicherInhalt(r.neu),key=sgLokalPraefix(r.konto,r.spiel)+sgSpeicherEditor+'-archiv-'+sgHash(r.key+'|'+fassung);
+  const archiv={v:1,konto:r.konto,spiel:r.spiel,neu:r.neu,am:r.am,basis:r.basis,archiviert:Date.now(),ersetzt_key:r.key,ersetzt_fassung:fassung};localStorage.setItem(key,JSON.stringify(archiv));}catch(_){}}}
+function sgLokalAuswahl(konto,spiel,L){try{const key=sgLokalPraefix(konto,spiel)+sgSpeicherEditor,r=JSON.parse(localStorage.getItem(key)||'null');if(!r)return;r.auswahl={inhalt:sgSpeicherInhalt(r.neu),ersetzt:L.filter(x=>x.key!==key).map(x=>({key:x.key,neu:x.neu,konto:x.konto,spiel:x.spiel,am:x.am,basis:x.basis,fassung:x.fassung}))};localStorage.setItem(key,JSON.stringify(r));}catch(_){}}
+function sgLokalBestaetigt(konto,spiel,neu,basis){const inhalt=sgSpeicherInhalt(neu);try{
+  const key=sgLokalPraefix(konto,spiel)+sgSpeicherEditor,r=JSON.parse(localStorage.getItem(key)||'null');if(r?.auswahl?.inhalt===inhalt){sgLokalArchivieren(r.auswahl.ersetzt||[]);delete r.auswahl;localStorage.setItem(key,JSON.stringify(r));}
+  for(const r of sgLokalLesen(konto,spiel)){
+  if(sgSpeicherInhalt(r.neu)===inhalt){if(r.key===key)localStorage.removeItem(r.key);else sgLokalArchivieren([r]);}
+  else if(r.key.endsWith(':'+sgSpeicherEditor)){r.basis=basis||r.basis;r.unterwegs=(r.unterwegs||[]).filter(s=>s!==inhalt);delete r.key;localStorage.setItem(sgLokalPraefix(konto,spiel)+sgSpeicherEditor,JSON.stringify(r));}
+  }}catch(_){}const offen=sgLokalLesen(konto,spiel).some(r=>sgSpeicherInhalt(r.neu)!==inhalt);sgSpeicherStatus(offen?'Auf diesem Gerät gesichert. Weitere Eingaben werden synchronisiert.':'Gespeichert.','server',spiel,konto);}
+function sgLokalWiederherstellen(r,konto){const L=sgLokalLesen(konto,r.spiel);if(!L.length)return{neu:r.neu||{}};const server=sgSpeicherInhalt(r.neu),gleich=L.filter(x=>sgSpeicherInhalt(x.neu)===server);
+  sgLokalArchivieren(gleich);const offen=L.filter(x=>!gleich.includes(x)),einzig=[...new Map(offen.map(x=>[sgSpeicherInhalt(x.neu),x])).values()];
+  if(!einzig.length)return{neu:r.neu||{}};const l=einzig[0];
+  if(einzig.length===1&&l.basis===r.entwurf_stand){return{neu:{...l.neu,frei:r.neu?.frei||{}},wieder:true};}
+  return{neu:r.neu||{},konflikt:einzig};}
+function sgSpeicherHtml(){const id=SG.satz?.spiel,k=sgKonto(),z=sgSpeicherZustaende.get(k+'|'+id),L=SG.lokalFassungen||[],plan=sgMerkPlan(id),konflikt=L.length||plan?.konflikt;
+  const auswahl=L.length?`<label>Gesicherte Eingaben<select data-sglokalwahl>${L.map((r,i)=>`<option value="${i}">${sgE(new Date(r.am).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}))}</option>`).join('')}</select></label>`:'';
+  const archiv=sgLokalLesen(k,id,true).filter(r=>r.archiviert),zeit=r=>sgE(new Date(r.am).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}));
+  return `<section class="sg-speicher" aria-label="Automatisches Speichern"><p data-sgspeicherstatus data-art="${konflikt?'konflikt':z?.art||'server'}" role="status" aria-live="polite">${sgE(konflikt?'Es gibt nicht übertragene Eingaben und einen anderen gespeicherten Stand. Bitte wähle, womit du weiterarbeiten möchtest.':z?.text||'Änderungen werden automatisch gespeichert.')}</p>${konflikt?`${auswahl}<div class="sg-zeile"><button type="button" class="btn sm" data-sgspeicher="lokal">Meine Eingaben verwenden</button><button type="button" class="btn sm ghost" data-sgspeicher="server">Gespeicherten Stand verwenden</button></div>`:z?.art==='fehler'?'<button type="button" class="btn sm ghost" data-sgspeicher="retry">Erneut speichern</button>':''}${archiv.length?`<details><summary>Andere gesicherte Fassungen (${archiv.length})</summary><p>Diese Fassungen werden nicht automatisch übertragen. Du kannst eine davon wiederherstellen.</p><label>Fassung<select data-sgarchivwahl>${archiv.map((r,i)=>`<option value="${i}">${zeit(r)}</option>`).join('')}</select></label><button type="button" class="btn sm ghost" data-sgspeicher="archiv">Fassung wiederherstellen</button></details>`:''}</section>`;}
+function sgSpeicherBinden(h){h.querySelectorAll('[data-sgspeicher]').forEach(b=>b.onclick=async()=>{const spiel=SG.satz?.spiel,konto=sgKonto(),art=b.dataset.sgspeicher,vorher=sgSpeicherInhalt(SG.neu);if(!spiel||!konto)return;b.disabled=true;
+  try{if(art==='retry'){await sgMerkSofort(spiel);return;}const plan=sgMerkPlan(spiel),L=SG.lokalFassungen||[],wahl=+h.querySelector('[data-sglokalwahl]')?.value||0;
+    const alle=sgLokalLesen(konto,spiel),archiv=sgLokalLesen(konto,spiel,true).filter(r=>r.archiviert),aw=+h.querySelector('[data-sgarchivwahl]')?.value||0;
+    const lokal=art==='archiv'?archiv[aw]?.neu:L[wahl]?.neu||plan?.neu||(plan?.stand?JSON.parse(plan.stand):null);
+    if(plan?.laeuft)await plan.lauf;const r=await svtRpc('spieltag_satz',{p_spiel:spiel});if(SG.satz?.spiel!==spiel||sgKonto()!==konto)return;if(!r?.ok)throw Error('Der gespeicherte Stand konnte nicht geladen werden.');
+    if(sgSpeicherInhalt(SG.neu)!==vorher)throw Error('Inzwischen weiterbearbeitet');
+    // Den aktuellen Editor vor einer bewussten Fassungswahl ebenfalls erhalten.
+    const eigener=alle.find(x=>x.key.endsWith(':'+sgSpeicherEditor));if(eigener){const sicher={...eigener},key=eigener.key+'-ablage-'+Date.now();delete sicher.key;localStorage.setItem(key,JSON.stringify(sicher));alle.push({...sicher,key});}
+    if(plan){clearTimeout(plan.timer);clearTimeout(plan.retry);SG_MERKPLAENE.delete(spiel);}SG.satz=r;SG.lokalFassungen=[];
+    if((art==='lokal'||art==='archiv')&&lokal){SG.neu={...lokal,frei:r.neu?.frei||{}};sgMerken();sgLokalAuswahl(konto,spiel,alle);try{await sgMerkSofort(spiel);}catch(_){/* Die gewählte Fassung bleibt bis zur Bestätigung lokal gesichert. */}}else{sgLokalArchivieren(alle);SG.neu=r.neu||{};sgSpeicherStatus('Gespeicherten Stand geladen.','server');}
+    if(!SG.neu.f)SG.neu.f={};await sgNeu(true);
+  }catch(_){sgSpeicherStatus('Das Speichern hat nicht geklappt. Deine lokalen Eingaben bleiben erhalten.','fehler');}finally{b.disabled=false;}});
+  if(sgSpeicherKonflikt())h.querySelectorAll('#sgForm input,#sgForm textarea,#sgForm select,#sgForm button,[data-sgx],[data-sgcut],[data-sgcut-reset],[data-sgcut-aktiv],#sgQuerY,#sgQuerZoom,#sgQuerReset').forEach(e=>e.disabled=true);}
+let sgSpeicherLaeuft=false;
+function sgSpeicherStart(){if(sgSpeicherLaeuft||typeof window.addEventListener!=='function')return;sgSpeicherLaeuft=true;
+  const flush=()=>{for(const p of SG_MERKPLAENE.values()){if(p.konto!==sgKonto()||p.konflikt)continue;clearTimeout(p.timer);clearTimeout(p.retry);p.timer=null;if(!p.laeuft&&p.neu)sgMerkSenden(p);}};
+  window.addEventListener('pagehide',flush);window.addEventListener('online',flush);
+  if(typeof document.addEventListener==='function')document.addEventListener('visibilitychange',flush);}
+
 /* Vorhandene Vereinsmotive: kleine Galeriebilder, feste Originalquellen für die Ausgabe. */
-const SG_FOTO_FUNDUS = Object.freeze([
-  ['linie-abend','Linie am Abend'], ['night','Flutlicht'], ['ball-flutlicht','Ball unter Flutlicht'],
-  ['netz-nacht','Netz bei Nacht'], ['regen-nacht','Regen bei Nacht'], ['kunstrasen-flutlicht','Kunstrasen'],
-  ['mittelkreis-nebel','Mittelkreis im Nebel'], ['autumn','Herbstlaub'], ['elfmeter-herbst','Elfmeterpunkt'],
-  ['pfosten-nebel','Pfosten im Nebel'], ['eckfahne-abend','Eckfahne'], ['schuhe-abend','Schuhe'],
-  ['summer','Ball im Gras'], ['ball-gegenlicht','Gegenlicht'], ['winter','Raureif'],
-  ['tau-linie','Tau an der Linie'], ['ball-frost','Ball im Frost']
-].map(([id,titel]) => Object.freeze({id,titel})));
+const SG_FOTO_FUNDUS = Object.freeze(PK_FOTOS.map(f => Object.freeze({...f,st:Object.freeze([...f.st])})));
 const sgFotoFundus = id => SG_FOTO_FUNDUS.find(f => f.id === id) || null;
 const sgFotoFeld = feld => feld === 'fotoH' || feld === 'fotoE';
 const sgFotoEsc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -529,19 +630,24 @@ function sgFotoWahl(wahl){
 }
 function sgFotoTermin(D, feld){
   const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(D.datum || ''));
-  const t = /^(\d{1,2}):([0-5]\d)(?::[0-5]\d)?$/.exec(String(D.zeit || '15:00'));
-  if(!d || !t || +t[1] > 23) return {datum:'',zeit:'15:00'};
+  const t = /^(\d{1,2}):([0-5]\d)(?::[0-5]\d)?$/.exec(String(D.zeit || ''));
+  if(!d || !t || +t[1] > 23) return {datum:'',zeit:''};
   const z = new Date(0); z.setUTCFullYear(+d[1], +d[2] - 1, +d[3]); z.setUTCHours(+t[1], +t[2], 0, 0);
-  if(z.getUTCFullYear() !== +d[1] || z.getUTCMonth() !== +d[2] - 1 || z.getUTCDate() !== +d[3]) return {datum:'',zeit:'15:00'};
+  if(z.getUTCFullYear() !== +d[1] || z.getUTCMonth() !== +d[2] - 1 || z.getUTCDate() !== +d[3]) return {datum:'',zeit:''};
   if(feld === 'fotoE') z.setUTCMinutes(z.getUTCMinutes() + 105);
   return {datum:z.toISOString().slice(0,10),zeit:z.toISOString().slice(11,16)};
 }
 function sgFotoAuto(D, feld){
-  const termin = sgFotoTermin(D || {}, feld), licht = typeof pkLicht === 'function' ? pkLicht(termin.datum, termin.zeit, 'auto') : {stimmung:'summer'};
-  const stimmung = ['night','summer','autumn','winter'].includes(licht && licht.stimmung) ? licht.stimmung : 'summer';
+  const termin = sgFotoTermin(D || {}, feld); if(!termin.datum) return sgFotoFundus('summer');
+  const licht = typeof pkLicht === 'function' ? pkLicht(termin.datum, termin.zeit, 'auto') : {stimmung:'summer'};
+  const stimmung = ['night','spring','summer','autumn','winter'].includes(licht && licht.stimmung) ? licht.stimmung : 'summer';
   const auswahl = typeof pkFotoAuswahl === 'function' ? pkFotoAuswahl({datum:termin.datum,gegner:D && D.gegner || ''}, stimmung) : stimmung;
-  return sgFotoFundus(auswahl) || sgFotoFundus(stimmung);
+  return sgFotoFundus(auswahl) || SG_FOTO_FUNDUS.find(f=>f.auto&&f.st.includes(stimmung)) || sgFotoFundus('summer');
 }
+function sgFotoEmpfehlung(D,feld){const t=sgFotoTermin(D||{},feld);if(!t.datum)return{ids:[],text:'Datum und Anstoßzeit ergänzen, dann passen die Vorschläge zum Spiel.'};
+  const l=pkLicht(t.datum,t.zeit,'auto'),ids=SG_FOTO_FUNDUS.filter(f=>f.auto&&f.st.includes(l.stimmung)).map(f=>f.id);
+  const jahreszeit={spring:'Frühling',summer:'Sommer',autumn:'Herbst',winter:'Winter'};
+  return{ids,text:(feld==='fotoE'?'Nach dem Spiel':'Zum Anstoß')+' um '+t.zeit+' Uhr: '+(l.nacht?'Abend mit Flutlicht.':(jahreszeit[l.stimmung]||'Spieltag')+' bei Tageslicht.')};}
 async function sgFotoQuelle(wahl, D, feld){
   const w = sgFotoWahl(wahl);
   if(w.art === 'bibliothek'){
@@ -558,21 +664,46 @@ function sgFotoBibliothek(A){
   const L = A && (Array.isArray(A.bibliothek) ? A.bibliothek : Array.isArray(A.eigene) ? A.eigene : []) || [], seen = new Set();
   return L.filter(m => m && sgFotoPfad(m.pfad) && !seen.has(m.pfad) && seen.add(m.pfad)).slice(0,60);
 }
-function sgFotoGalerieHtml(feld, wahl, A){
+function sgFotoGalerieHtml(feld, wahl, A, D){
   if(!sgFotoFeld(feld)) return '';
-  const w = sgFotoWahl(wahl), L = sgFotoBibliothek(A), esc = sgFotoEsc;
-  const knopf = f => `<button type="button" class="sg-fotomotiv" data-sgfundus="${f.id}" aria-pressed="${w.art === 'fundus' && w.id === f.id}" aria-label="Hintergrundmotiv: ${esc(f.titel)}"><img src="plakat/foto/klein/${f.id}.webp" alt="" loading="lazy" width="180" height="320"><span>${esc(f.titel)}</span></button>`;
+  const w = sgFotoWahl(wahl), L = sgFotoBibliothek(A), esc = sgFotoEsc,emp=sgFotoEmpfehlung(D||{},feld);
+  const motive=[...SG_FOTO_FUNDUS].sort((a,b)=>Number(emp.ids.includes(b.id))-Number(emp.ids.includes(a.id)));
+  const knopf = f => `<button type="button" class="sg-fotomotiv" data-sgfundus="${f.id}" aria-pressed="${w.art === 'fundus' && w.id === f.id}" aria-label="Hintergrundmotiv: ${esc(f.titel)}${emp.ids.includes(f.id)?', passend zum Termin':''}"><img src="plakat/foto/klein/${f.id}.webp" alt="" loading="lazy" draggable="false" width="180" height="320"><span>${esc(f.titel)}</span>${emp.ids.includes(f.id)?'<small>Passt zum Termin</small>':''}</button>`;
   const eigene = L.map(m => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(m.pfad) : '', an = w.art === 'bibliothek' && w.pfad === m.pfad, name = String(m.name || 'Eigenes Foto').slice(0,120);
     return `<button type="button" class="sg-fotobibmotiv${an ? ' on' : ''}" data-sgbib="${esc(m.pfad)}" aria-pressed="${an}" aria-label="Eigenes Foto: ${esc(name)}">${u ? `<img src="${esc(u)}" alt="" loading="lazy">` : '<span class="sg-fotoplatz" aria-hidden="true">Foto</span>'}<span>${esc(name)}</span></button>`;
   }).join('');
   return `<div class="sg-foto sg-fotowahl" data-sgfoto="${feld}"><p class="sg-l">${feld === 'fotoE' ? 'Ergebnis-Hintergrund' : 'Ankündigungs-Hintergrund'}</p>
-    <p class="sg-fotohin">Vereinsmotive auswählen oder ein eigenes Foto verwenden.</p>
-    <div class="sg-fotoreihe" role="group" aria-label="Vereinsmotive"><button type="button" class="sg-fotoauto" data-sgfotoauto aria-pressed="${w.art === 'auto'}"><b>Auto</b><span>${feld === 'fotoE' ? 'Lichtstimmung nach dem Spiel' : 'Lichtstimmung zum Anstoß'}</span></button>${SG_FOTO_FUNDUS.map(knopf).join('')}</div>
+    <p class="sg-fotohin">${esc(emp.text)} Passende Motive stehen zuerst. Du kannst jedes Motiv selbst wählen.</p>
+    <div class="sg-fotoreihe" role="group" tabindex="0" aria-label="Fußballmotive, seitlich blättern"><button type="button" class="sg-fotoauto" data-sgfotoauto aria-pressed="${w.art === 'auto'}"><b>Auto</b><span>${feld === 'fotoE' ? 'Lichtstimmung nach dem Spiel' : 'Lichtstimmung zum Anstoß'}</span></button>${motive.map(knopf).join('')}</div>
+    <div class="sg-fotoscroll"><button type="button" data-sgfoto-vor="-1" aria-label="Vorherige Motive">Zurück</button><label><span>Galerie durchsehen</span><input type="range" data-sgfoto-scroll min="0" max="0" step="1" value="0" aria-label="Position in der Motivgalerie"></label><button type="button" data-sgfoto-vor="1" aria-label="Weitere Motive">Weiter</button></div>
     <details class="sg-fotobibliothek"${w.art === 'bibliothek' ? ' open' : ''}><summary>Eigene Bibliothek (${L.length})</summary>${L.length ? `<div class="sg-bib">${eigene}</div>` : '<p class="sg-fotohin">Noch keine eigenen Hintergrundfotos in der Bibliothek.</p>'}</details>
     <label class="sg-up sg-fotoupload" role="button" tabindex="0" data-sgfotohoch aria-label="Eigenes Foto hochladen"><span data-sbt>Eigenes Foto hochladen</span><input type="file" accept="image/*" data-sgup="${feld}" hidden></label></div>`;
 }
+const sgFotoScrollMerk=new WeakMap();
+function sgFotoScrollAktuell(p){const r=p.querySelector('.sg-fotoreihe'),s=p.querySelector('[data-sgfoto-scroll]');if(!r||!s)return;
+  const max=Math.max(0,r.scrollWidth-r.clientWidth),links=Math.max(0,Math.min(max,r.scrollLeft));s.max=String(max);s.value=String(links);s.disabled=max<1;
+  s.setAttribute('aria-valuetext',max<1?'Alle Motive sichtbar':Math.round(links/max*100)+' Prozent der Galerie');
+  p.querySelectorAll('[data-sgfoto-vor]').forEach(b=>b.disabled=+b.dataset.sgfotoVor<0?links<=1:links>=max-1);
+}
+function sgFotoScrollBinden(p){const r=p.querySelector('.sg-fotoreihe'),s=p.querySelector('[data-sgfoto-scroll]');if(!r||!s)return()=>{};
+  const setzen=x=>{r.scrollLeft=Math.max(0,Math.min(r.scrollWidth-r.clientWidth,x));sgFotoScrollAktuell(p);};let zug=null,sperre=false;
+  r.onscroll=()=>sgFotoScrollAktuell(p);s.oninput=()=>setzen(+s.value);
+  p.querySelectorAll('[data-sgfoto-vor]').forEach(b=>b.onclick=()=>setzen(r.scrollLeft+Number(b.dataset.sgfotoVor)*Math.max(100,r.clientWidth*.8)));
+  r.ondragstart=e=>e.preventDefault();
+  r.onpointerdown=e=>{sperre=false;if(e.pointerType==='touch'||e.isPrimary===false||e.button!=null&&e.button!==0)return;zug={id:e.pointerId,x:e.clientX,links:r.scrollLeft,bewegt:false};};
+  r.onpointermove=e=>{if(!zug||zug.id!==e.pointerId)return;const delta=e.clientX-zug.x;if(!zug.bewegt&&Math.abs(delta)<5)return;
+    if(!zug.bewegt){zug.bewegt=true;try{r.setPointerCapture(e.pointerId);}catch(_){}}sperre=true;e.preventDefault();setzen(zug.links-delta);r.classList.add('sg-foto-zieht');};
+  const ende=e=>{if(!zug||zug.id!==e.pointerId)return;zug=null;r.classList.remove('sg-foto-zieht');try{if(r.hasPointerCapture(e.pointerId))r.releasePointerCapture(e.pointerId);}catch(_){}};
+  r.onpointerup=ende;r.onpointercancel=ende;r.onlostpointercapture=ende;
+  const klick=e=>{if(sperre){e.preventDefault();e.stopPropagation();sperre=false;}};r.addEventListener('click',klick,true);
+  r.onkeydown=e=>{sperre=false;if(e.target!==r)return;const x=e.key==='Home'?0:e.key==='End'?r.scrollWidth:e.key==='ArrowLeft'?r.scrollLeft-100:e.key==='ArrowRight'?r.scrollLeft+100:null;if(x!=null){e.preventDefault();setzen(x);}};
+  sgFotoScrollAktuell(p);let o=null;
+  if(typeof ResizeObserver==='function'){o=new ResizeObserver(()=>sgFotoScrollAktuell(p));o.observe(r);}
+  return()=>{if(o)o.disconnect();r.removeEventListener('click',klick,true);};
+}
 function sgFotoBinden(h){
   if(!h || typeof h.querySelectorAll !== 'function') return;
+  (sgFotoScrollMerk.get(h)||[]).forEach(f=>f());sgFotoScrollMerk.set(h,[...h.querySelectorAll('[data-sgfoto]')].map(sgFotoScrollBinden));
   h.querySelectorAll('[data-sgfotohoch]').forEach(l => { l.onkeydown = ev => {
     if(ev.key !== 'Enter' && ev.key !== ' ') return; const inp = l.querySelector('[data-sgup]');
     if(inp && !inp.disabled){ ev.preventDefault(); inp.click(); }
@@ -591,6 +722,7 @@ function sgFotoQualitaet(D, A, feld, fmt){
   const im = A && A[feld], iw = im && (im.naturalWidth || im.width), ih = im && (im.naturalHeight || im.height);
   if(!(Number.isFinite(iw) && Number.isFinite(ih) && iw > 0 && ih > 0)) return '';
   const quer = fmt === 'quer' && feld === 'fotoH'; const hoehe = feld === 'fotoE' ? fmt === 'story' ? 1920 : 1350 : (D && D.wirHeim === false ? 940 : 1000) + (fmt === 'story' ? 285 : 0); let scale = Math.max(1080 / iw, hoehe / ih);
+  if(!quer&&typeof sgAusschnittGeometrie==='function'){const g=sgAusschnittGeometrie(D,A,feld==='fotoH'?'H':'E',fmt);if(g)scale=g.scale;}
   if(quer){
     const zoom = D && Number.isFinite(Number(D.querZoom)) ? Math.max(1, Math.min(2, Number(D.querZoom))) : 1;
     const crop = typeof sgQuerCrop === 'function' ? sgQuerCrop(iw, ih, D && D.querY, zoom) : {sw:1920 / (Math.max(1920 / iw, 1080 / ih) * zoom)};
@@ -618,28 +750,48 @@ function sgFotoZustand(h){
 }
 function sgFotoWiederherstellen(h, z){
   if(!z) return;
-  for(const r of z.reihen){ const e = h.querySelector('[data-sgfoto="' + r.feld + '"] .sg-fotoreihe'); if(e) e.scrollLeft = r.links; }
+  for(const r of z.reihen){ const e = h.querySelector('[data-sgfoto="' + r.feld + '"] .sg-fotoreihe'); if(e){e.scrollLeft = r.links;const p=e.closest?.('[data-sgfoto]');if(p&&p.querySelector)sgFotoScrollAktuell(p);} }
   for(const feld of z.offen){ const e = h.querySelector('[data-sgfoto="' + feld + '"] .sg-fotobibliothek'); if(e) e.open = true; }
   if(z.fokus){ const e = h.querySelector(z.fokus); if(e) e.focus({preventScroll:true}); }
 }
 
 /* Ergebnis: Originalfoto, Wappen und belegte Tore. Keine erzeugten Bildtexte. */
 const sgTorMinuteGueltig = t => Number.isInteger(t.m) && t.m >= 1 && t.m <= 130 && Number.isInteger(t.x || 0) && (t.x || 0) >= 0 && (t.x || 0) <= 20;
-function sgErgebnisTore(D){
-  const tore = (D.tore || []).filter(t => t.wir), gruppen = [], map = new Map();
+function sgErgebnisTore(D, wir = true){
+  const tore = (D.tore || []).filter(t => t.wir === wir), gruppen = [], map = new Map();
   let fehlendeNamen = 0, fehlendeMinuten = 0;
-  const erwartet = D.wirHeim ? D.toreH : D.toreG;
+  const erwartet = D.wirHeim === wir ? D.toreH : D.toreG;
   const sortiert = tore.slice().sort((a,b) => (+a.m || 0) - (+b.m || 0) || (+a.x || 0) - (+b.x || 0));
   for(const t of sortiert){
     const name = String(t.name || '').trim(), minute = sgTorMinuteGueltig(t);
     if(!name) fehlendeNamen++; if(!minute) fehlendeMinuten++;
     if(!name) continue;
     const eigentor = t.art === 'et', key = name.toLocaleLowerCase('de') + ':' + eigentor;
-    let g = map.get(key); if(!g){ g = { name, eigentor, zeiten:[] }; map.set(key, g); gruppen.push(g); }
+    let g = map.get(key); if(!g){ g = { name, eigentor, wir, zeiten:[] }; map.set(key, g); gruppen.push(g); }
     if(minute) g.zeiten.push(sgMin(t) + (t.art === 'elf' ? ' (Elfmeter)' : ''));
   }
   return { gruppen, erwartet, anzahl:tore.length, fehlendeNamen, fehlendeMinuten,
     vollstaendig:Number.isInteger(erwartet) && erwartet >= 0 && erwartet === tore.length && !fehlendeNamen && !fehlendeMinuten };
+}
+function sgErgebnisBeide(D){const heim=sgErgebnisTore(D,D.wirHeim),gast=sgErgebnisTore(D,!D.wirHeim);return{heim,gast,gruppen:[...heim.gruppen,...gast.gruppen],vollstaendig:heim.vollstaendig&&gast.vollstaendig};}
+
+/* Lukas' Ergebnisvorlage: Originalfoto, Headline und großer Endstand.
+   Die Schützenliste ist eine ausdrücklich gewählte Zusatzfassung. */
+function sgErgebnisOriginalMalen(ctx,D,A){
+  ctx.fillStyle=CI.navy;ctx.fillRect(0,0,SG_W,SG_H);
+  sgFotoMalen(ctx,A.fotoE,0,197,SG_W,646,D,'E',.3);
+  const g=ctx.createLinearGradient(0,430,0,843);g.addColorStop(0,'rgba(4,17,39,0)');g.addColorStop(.7,'rgba(4,17,39,.74)');g.addColorStop(1,'rgba(4,17,39,.94)');ctx.fillStyle=g;ctx.fillRect(0,430,SG_W,413);
+  sgKopf(ctx,D,true);sgWappen(ctx,A);
+  if(D.h2){sgT(ctx,D.h1.toUpperCase(),SG_X,664,{fam:'Anton',w:400,cap:69,c:CI.weiss,max:936,min:.7,k:'h1'});sgT(ctx,D.h2.toUpperCase(),SG_X,787,{fam:'Anton',w:400,cap:108,c:CI.orange,max:936,min:.6,k:'h2'});}
+  else sgT(ctx,D.h1.toUpperCase(),SG_X,787,{fam:'Anton',w:400,cap:108,c:CI.orange,max:936,min:.6,k:'h1'});
+  sgLinie(ctx,SG_X,842,SG_R,'rgba(170,181,200,.32)',2);sgLinie(ctx,SG_X,841,158,CI.orange,4);
+  const cap=272,mitte=540,a=String(D.toreH),b=String(D.toreG);ctx.font=`400 ${cap/sgCapR(ctx,'Anton',400)}px Anton`;
+  const wa=ctx.measureText(a).width,wb=ctx.measureText(b).width,f=Math.min(1,300/Math.max(wa,wb));
+  sgT(ctx,a,mitte-44,1216-(1-f)*cap*.5,{fam:'Anton',w:400,cap:cap*f,c:CI.weiss,a:'r',k:'toreH'});sgT(ctx,b,mitte+44,1216-(1-f)*cap*.5,{fam:'Anton',w:400,cap:cap*f,c:CI.weiss,k:'toreG'});
+  ctx.fillStyle=CI.orange;ctx.fillRect(mitte-23,1006,46,46);ctx.fillRect(mitte-23,1112,46,46);
+  const aussen=Math.max(wa,wb)*f+44+28,platz=mitte-aussen-SG_X;
+  const label=(name,links,k)=>{const Z=sgZweiZeilen(name),y0=Z.length===1?1092:1047;Z.forEach((z,i)=>sgT(ctx,z,links?SG_X:SG_R,y0+i*58,{fam:'SGC',w:800,cap:30,c:CI.weiss,a:links?'l':'r',max:Math.max(150,platz),min:.62,k}));};
+  label(D.heim,true,D.wirHeim?'wir':'gegner');label(D.gast,false,D.wirHeim?'gegner':'wir');
 }
 
 /* Umbruch an Wortgrenzen statt abgeschnittener Namen. Passt selbst ein Wort
@@ -659,10 +811,11 @@ function sgErgebnisName(ctx, name, cx, y, breite, key){
   zeilen.forEach((z,i) => sgT(ctx, z, cx, y + i * (s + 5), {fam:'SGC',w:800,s,c:CI.weiss,a:'c',max:breite,min:1,k:key}));
 }
 function sgErgebnisMalen(ctx, D, A){
+  if(D.zeigeTore !== true)return sgErgebnisOriginalMalen(ctx,D,A);
   const oy = SG.oy || 0;
   ctx.save(); ctx.filter = 'none'; ctx.shadowBlur = 0; ctx.imageSmoothingQuality = 'high';
   ctx.fillStyle = CI.navy; ctx.fillRect(0, -oy, SG_W, SG_H + oy * 2);
-  sgCover(ctx, A.fotoE, 0, -oy, SG_W, SG_H + oy * 2, .35);
+  sgFotoMalen(ctx, A.fotoE, 0, -oy, SG_W, SG_H + oy * 2, D, 'E', .35);
   /* Ein ruhiger Leseschutz, ohne Lichtstrahlen, Glanz oder Weichzeichnung. */
   ctx.fillStyle = 'rgba(4,17,39,.24)'; ctx.fillRect(0, -oy, SG_W, 640 + oy);
   sgKopf(ctx, D, true);
@@ -670,33 +823,34 @@ function sgErgebnisMalen(ctx, D, A){
   sgT(ctx, D.h2.toUpperCase(), SG_X, 499, {fam:'Anton',w:400,cap:100,c:CI.orange,max:936,min:.66,k:'h2'});
   ctx.fillStyle = 'rgba(4,17,39,.78)'; ctx.fillRect(0, 640, SG_W, SG_H - 640 + oy);
   ctx.fillStyle = CI.orange; ctx.fillRect(SG_X, 640, 72, 5);
-  sgT(ctx, 'ENDSTAND', SG_W / 2, 701, {fam:'SGB',w:700,s:23,c:CI.grau,a:'c',sp:4});
+  sgT(ctx, 'ENDSTAND', SG_W / 2, 617, {fam:'SGB',w:700,s:23,c:CI.weiss,a:'c',sp:4});
   const links = D.wirHeim ? A.wWir : A.wGeg, rechts = D.wirHeim ? A.wGeg : A.wWir;
   for(const [im,cx] of [[links,190],[rechts,890]]) if(im){
-    let h = 160; const w = sgWappenBreite(im,h); if(w > 210) h *= 210 / w;
-    sgWappenMalen(ctx, im, cx - sgWappenBreite(im,h) / 2, 811, h);
+    let h = 130; const w = sgWappenBreite(im,h); if(w > 210) h *= 210 / w;
+    sgWappenMalen(ctx, im, cx - sgWappenBreite(im,h) / 2, 782, h);
   }
   const basis = 201, schrift = basis / sgCapR(ctx, 'Anton', 400);
   ctx.font = '400 ' + schrift + 'px Anton';
-  const faktor = Math.min(1, 178 / Math.max(ctx.measureText(String(D.toreH)).width, ctx.measureText(String(D.toreG)).width)), cap = basis * faktor, scoreY = 909 - (basis - cap) / 2;
+  const faktor = Math.min(1, 178 / Math.max(ctx.measureText(String(D.toreH)).width, ctx.measureText(String(D.toreG)).width)), cap = basis * faktor, scoreY = 867 - (basis - cap) / 2;
   sgT(ctx, D.toreH, 502, scoreY, {fam:'Anton',w:400,cap,c:CI.weiss,a:'r',max:178,min:1,k:'toreH'});
   sgT(ctx, D.toreG, 578, scoreY, {fam:'Anton',w:400,cap,c:CI.weiss,max:178,min:1,k:'toreG'});
-  ctx.fillStyle = CI.orange; ctx.fillRect(530, 767, 20, 20); ctx.fillRect(530, 844, 20, 20);
-  sgErgebnisName(ctx, D.heim, 249, 971, 354, D.wirHeim ? 'wir' : 'gegner');
-  sgErgebnisName(ctx, D.gast, 831, 971, 354, D.wirHeim ? 'gegner' : 'wir');
-  const T = sgErgebnisTore(D), L = T.gruppen;
-  if(D.zeigeTore !== false && T.erwartet > 0 && L.length){
-    sgLinie(ctx, SG_X, 1046, SG_R, CI.linie, 2);
-    sgT(ctx, 'UNSERE TORE', SG_X, 1082, {fam:'SGB',w:700,s:22,c:CI.blau,sp:2.2});
-    if(L.length > 8) SG.ueber.ergebnisTore = true;
-    const zwei = L.length > 4, spalten = zwei ? 2 : 1, zeilen = Math.ceil(Math.min(8,L.length) / spalten), schritt = Math.min(69, 230 / Math.max(1,zeilen));
-    L.slice(0,8).forEach((g,i) => {
-      const sp = zwei ? i >= zeilen ? 1 : 0 : 0, row = zwei ? i % zeilen : i;
-      const x = sp ? 570 : SG_X, y = 1127 + row * schritt, max = zwei ? 438 : 936, s = zwei ? 32 : 42;
+  ctx.fillStyle = CI.orange; ctx.fillRect(530, 725, 20, 20); ctx.fillRect(530, 802, 20, 20);
+  sgErgebnisName(ctx, D.heim, 249, 913, 354, D.wirHeim ? 'wir' : 'gegner');
+  sgErgebnisName(ctx, D.gast, 831, 913, 354, D.wirHeim ? 'gegner' : 'wir');
+  const T = sgErgebnisBeide(D);
+  if(T.gruppen.length){
+    sgLinie(ctx, SG_X, 977, SG_R, CI.linie, 2);
+    sgT(ctx,'TORE '+D.heim.toUpperCase(),SG_X,1007,{fam:'SGB',w:700,s:21,c:CI.blau,max:438,k:'ergebnisHeim'});
+    sgT(ctx,'TORE '+D.gast.toUpperCase(),570,1007,{fam:'SGB',w:700,s:21,c:CI.blau,max:438,k:'ergebnisGast'});
+    const zeilen=Math.max(T.heim.gruppen.length,T.gast.gruppen.length),schritt=Math.min(69,280/Math.max(1,zeilen-1)),eng=zeilen>5;
+    if(zeilen>8)SG.ueber.ergebnisTore=true;
+    T.gruppen.forEach((g,i) => {
+      const links=i<T.heim.gruppen.length,row=links?i:i-T.heim.gruppen.length;if(row>=8)return;
+      const x=links?SG_X:570,y=1042+row*schritt,max=438,s=eng?24:32;
       const name = g.name + (g.eigentor ? ' (Eigentor)' : ''), zeiten = g.zeiten.join(', ');
       /* Namen und Minuten haben feste Zeilen; selbst lange Namen bleiben Text. */
-      sgT(ctx, name, x, y, {fam:'SGB',w:600,s,c:CI.weiss,max,min:zwei ? .80 : .78,k:'ergebnisTor' + i});
-      sgT(ctx, zeiten, x, y + 27, {fam:'SGB',w:500,s:zwei ? 23 : 26,c:CI.grau,max,min:.8,k:'ergebnisMinute' + i});
+      sgT(ctx, name, x, y, {fam:'SGB',w:600,s,c:CI.weiss,max,min:.80,k:'ergebnisTor' + i});
+      sgT(ctx, zeiten, x, y + (eng?18:25), {fam:'SGB',w:500,s:eng?18:23,c:CI.grau,max,min:.8,k:'ergebnisMinute' + i});
     });
   }
   ctx.restore();
@@ -722,7 +876,7 @@ const SG_W = 1080, SG_H = 1350, SG_X = 72, SG_R = 1008;
 /* Story 9:16: dasselbe Motiv, 285 Pixel tiefer gesetzt, damit oben und unten frei bleibt, was Instagram mit Bedienung überdeckt; der Grund läuft weiter */
 const SG_STORY_H = 1920, SG_OY = 285;
 const SG_QUER_W = 1920, SG_QUER_H = 1080;
-const SG_VERSION = { H:'H 1.1', A:'A 1.0', E:'E 2.0', S:'S 1.0' };
+const SG_VERSION = { H:'H 1.2', A:'A 1.0', E:'E 3.0', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const SG_TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -815,7 +969,7 @@ function sgZweiZeilen(name){ const t = String(name || '').toUpperCase().trim(); 
 /* ---------- Motiv H: Heimspiel (Schwester: Auswärtsspiel) ---------- */
 function sgH(ctx, D, A){
   ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_W, SG_H);
-  const oy = SG.oy || 0; sgCover(ctx, A.fotoH, 0, -oy, SG_W, (D.wirHeim ? 1000 : 940) + oy, .3);
+  const oy = SG.oy || 0; sgFotoMalen(ctx, A.fotoH, 0, -oy, SG_W, (D.wirHeim ? 1000 : 940) + oy, D, 'H', .3);
   let g = ctx.createLinearGradient(0, -oy, 0, 260); g.addColorStop(0, 'rgba(4,17,39,.82)'); g.addColorStop(1, 'rgba(4,17,39,0)'); ctx.fillStyle = g; ctx.fillRect(0, -oy, SG_W, 260 + oy);
   const oben = D.wirHeim ? 560 : 470;
   g = ctx.createLinearGradient(0, oben, 0, oben + 440); g.addColorStop(0, 'rgba(4,17,39,0)'); g.addColorStop(.5, 'rgba(4,17,39,.72)'); g.addColorStop(1, 'rgba(4,17,39,1)'); ctx.fillStyle = g; ctx.fillRect(0, oben, SG_W, SG_H - oben);
@@ -977,8 +1131,8 @@ function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S
   if(Array.isArray(N.tore))N.tore.sort((a,b)=>(+a.m||0)-(+b.m||0)||(+a.x||0)-(+b.x||0));
   if(Array.isArray(N.start)){if(!Array.isArray(N.bank))N.bank=[];[N.start,N.bank].forEach(L=>L.sort(nachNr));}
   const toreH = zahl(f.toreH, S.tore_h), toreG = zahl(f.toreG, S.tore_g), gespielt = toreH != null && toreG != null;
-  const D = { sub:S.sub, wettbewerb:f.wettbewerb || SG_LIGA[S.sub] || 'Spiel', saison:sgSaison(S.saison), nr:f.nr === 0 ? null : zahl(f.nr, S.nr), datum:S.datum, zeit:f.zeit || S.zeit || '',
+  const D = { spiel:S.spiel,sub:S.sub, wettbewerb:f.wettbewerb || SG_LIGA[S.sub] || 'Spiel', saison:sgSaison(S.saison), nr:f.nr === 0 ? null : zahl(f.nr, S.nr), datum:S.datum, zeit:f.zeit || S.zeit || '',
     ort:f.ort != null ? String(f.ort) : String(S.ort || ''),
-    querY:sgQuerNorm(f.querY, .5, 0, 1), querZoom:sgQuerNorm(f.querZoom, 1, 1, 2),
+    querY:sgQuerNorm(f.querY, .5, 0, 1), querZoom:sgQuerNorm(f.querZoom, 1, 1, 2),bildausschnitt:f.bildausschnitt||{},
     kontext:sgKontextPassend(SG.kontext, S), rueckblick:f.rueckblick !== false, geschichte:typeof f.geschichte === 'string' ? f.geschichte.trim().slice(0,600) : '',
     wirHeim:!!S.wir_heim, wir, gegner, heim:S.wir_heim ? wir : gegner, gast:S.wir_heim ? gegner : wir, toreH, toreG, gespielt,
