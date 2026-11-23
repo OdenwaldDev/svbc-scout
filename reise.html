@@ -1274,6 +1274,25 @@ html.zeiger .spot{opacity:1}
 /* Hier steht in der Fußleiste nur der Zurück-Pfeil; die Aktionen liegen links daneben. */
 @media(max-height:360px) and (min-aspect-ratio:1/1){.szene[data-s="platz"][data-teil="1"]{--mf:calc(16px + env(safe-area-inset-bottom,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
 @media(prefers-reduced-motion:reduce){.sz.kommt,.sz-trikot.kommt,.sz-bande.fahrt{animation:none}.sz-bild,.fz{transition:none}}
+
+/* Im Kurzangebot füllt ein gespeichertes Einzelmotiv den Blick vom Spielfeldrand. */
+@supports selector(:has(*)) {
+.kurzpaket #rahmen .banden-entwurf:has(.bd-entwurf-gespeichert)>img {
+  transform: scale(1.55);
+  transform-origin: 50% 50%;
+}
+.kurzpaket #rahmen .bande-name.bd-entwurf-gespeichert {
+  left: -20.525%;
+  top: 32.33%;
+  width: 141.515%;
+  height: 40.145%;
+}
+}
+
+/* Nahansicht von der Seite, ausgerichtet auf den tatsächlich gezeigten Ärmel. */
+.kurzpaket #rahmen .anzug-buehne {overflow:hidden}
+.kurzpaket #rahmen .anzug-buehne img {transform:scale(1.4);transform-origin:6% 43%}
+.kurzpaket #rahmen .anzug-buehne[data-seite="aermel_l"] img {transform-origin:94% 43%}
 </style></head><body><div id="film" data-s="start" data-licht="1">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an" data-reise-medium data-reise-szenen="start" data-reise-video="partner/r-stadionclip.mp4"><img class="zoom" src="partner/stadion-original-nordost.jpg" alt=""></div>
@@ -1525,7 +1544,7 @@ window.REISE_TRIKOT=(()=>{
   async function bibliothek(art){
     for(const [name,datei] of [['LOGO','logolib.js'],art==='anzug'?['TRAININGSANZUG','trainingsanzug.js']:['TRIKOT3D','trikot3d.js']]){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.142';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.143';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -1960,7 +1979,7 @@ function anzugSetz(){
   const gebraucht=KLEIDUNG==='anzug'||ORD[S.i]==='extras'&&alle.some(e=>e.dataset.anzugAngebot==='1');if(!gebraucht)return;
   const logo=MARKE?.anzug||MARKE?.trikot||MARKE?.original||null,key=JSON.stringify([S.name,logo]);
   if(ANZUG_ANFRAGE!==key){ANZUG_ANFRAGE=key;ANZUG_BILDER=null;ANZUG_FEHLER=false;REISE_TRIKOT.bilder(S.name||'Euer Name',logo,false,'anzug').then(b=>{if(ANZUG_ANFRAGE===key){ANZUG_BILDER=b;anzugSetz();}}).catch(()=>{if(ANZUG_ANFRAGE===key){ANZUG_FEHLER=true;anzugSetz();}});}
-  alle.forEach(e=>{const im=$('img',e),p=$('.trikot-platzhalter',e),t=$('.trikot-seite',e),seite=e.dataset.anzugAngebot==='1'?(S.anzugSeite||AERMEL_SEITE):AERMEL_SEITE,u=ANZUG_BILDER?.[seite];im.hidden=!u;if(u&&im.getAttribute('src')!==u)im.src=u;if(!u)im.removeAttribute('src');im.alt=(logo?'Euer schwarzes Logo':'Euer Firmenname')+' auf dem '+(seite==='aermel_l'?'linken':'rechten')+' Anzugärmel';p.hidden=!!u;p.textContent=ANZUG_FEHLER?'Die Vorschau konnte nicht geladen werden. Öffnet die Ärmelansicht erneut.':'Anzugvorschau wird geladen.';t.textContent='Trainingsanzug · '+(seite==='aermel_l'?'linker':'rechter')+' Ärmel · Gestaltungsvorschau';});
+  alle.forEach(e=>{const im=$('img',e),p=$('.trikot-platzhalter',e),t=$('.trikot-seite',e),seite=e.dataset.anzugAngebot==='1'?(S.anzugSeite||AERMEL_SEITE):AERMEL_SEITE,u=ANZUG_BILDER?.[seite];e.dataset.seite=seite;im.hidden=!u;if(u&&im.getAttribute('src')!==u)im.src=u;if(!u)im.removeAttribute('src');im.alt=(logo?'Euer schwarzes Logo':'Euer Firmenname')+' auf dem '+(seite==='aermel_l'?'linken':'rechten')+' Anzugärmel';p.hidden=!!u;p.textContent=ANZUG_FEHLER?'Die Vorschau konnte nicht geladen werden. Öffnet die Ärmelansicht erneut.':'Anzugvorschau wird geladen.';t.textContent='Trainingsanzug · '+(seite==='aermel_l'?'linker':'rechter')+' Ärmel · Gestaltungsvorschau';});
 }
 $$('button[data-kleidung]').forEach(b=>b.onclick=()=>{KLEIDUNG=b.dataset.kleidung==='anzug'?'anzug':'trikot';if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
 $$('[data-trikot-ansicht]').forEach(b=>b.onclick=()=>{TRIKOT_ANSICHT=b.dataset.trikotAnsicht;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
