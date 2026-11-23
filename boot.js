@@ -117,7 +117,7 @@ const IDB={
 /* ---------- Ansichten ---------- */
 function viewLogin(note,kind){
   card.innerHTML=`<h2>Willkommen</h2>
-    <p class="sub">Melde dich an. Neu hier? Dein Zugang dauert eine Minute.</p>
+    <p class="sub">Melde dich mit deinem Vereinszugang an. Über „Zugang anfragen“ erreichst du die Vereinsleitung.</p>
     <div class="g-oauth" id="gOauth"></div>
     <form class="g-form" id="gLogin" autocomplete="on">
       <div class="g-msg" id="gMsg"></div>
@@ -128,7 +128,7 @@ function viewLogin(note,kind){
       ${pkGeht()?`<button class="g-btn alt g-pk" id="gPk" type="button">${I('key')}<span class="g-pkt"><b>Mit Passkey anmelden</b><small>${esc(pkGeraet())}, ohne Passwort</small></span></button>`:''}
       <button class="g-btn alt" id="gCodeBtn" type="button">${I('mail')} Code per E-Mail, ohne Passwort</button>
     </form>
-    <div class="g-neu"><b>Neu hier?</b><span>Spieler, Eltern, Helfer oder Trainer: E-Mail eintragen, Passwort festlegen, fertig.</span>
+    <div class="g-neu"><b>Neu hier?</b><span>Die Vereinsleitung prüft deine Anfrage und schaltet den Zugang frei.</span>
       <button class="g-btn" id="gNeu" type="button">Zugang anfragen ${I('chev')}</button></div>
     <div class="g-foot">${I('lock')}<span>Nur für Mitglieder des Vereins. Neue Zugänge schaltet die Leitung frei. Alle Daten sind verschlüsselt übertragen.</span></div>`;
   showCard(); eyeWire(card);
@@ -382,16 +382,17 @@ function viewForgot(email){
 function viewSetPassword(mode,prof){
   const inv=mode==='invite'||mode==='anfrage';
   card.innerHTML=`<h2>${mode==='anfrage'?'E-Mail bestätigt!':inv?'Willkommen im Team!':'Neues Passwort'}</h2>
-    <p class="sub">${mode==='anfrage'?'Leg jetzt dein Passwort fest. Zweimal eintippen, damit kein Tippfehler drin ist.':inv?'Leg jetzt dein persönliches Passwort fest, damit meldest du dich künftig an.':'Vergib ein neues Passwort für deinen Zugang.'}</p>
+    <p class="sub">${mode==='anfrage'?'Lege ein eigenes Passwort für die Vereinsapp fest.':inv?'Deine Einladung gilt für die Vereinsapp. Lege dafür ein eigenes Passwort fest.':'Wähle ein neues Passwort für deinen Zugang zur Vereinsapp.'}</p>
     ${prof?`<div class="g-welcome"><div class="uav">${esc(initials(prof.name||prof.email))}</div><div><b>${esc(prof.name||prof.email)}</b><span>${esc((prof.role==='viewer'&&(()=>{ try{ return localStorage.getItem('sv_frolle:'+prof.id); }catch(e){ return ''; } })())||ROLE_T[prof.role]||'')} · ${esc(prof.email)}</span></div></div>`:''}
     <form class="g-form" id="gSet">
       <div class="g-msg" id="gMsg"></div>
       <input type="email" autocomplete="username" value="${esc(prof&&prof.email||'')}" style="display:none">
-      <div class="g-field"><label for="gPw1">Passwort</label><div class="g-in"><input id="gPw1" type="password" autocomplete="new-password" minlength="10" required placeholder="mindestens 10 Zeichen"><button type="button" class="eye" aria-label="Passwort zeigen">${I('eye')}</button></div>
+      <div class="g-field"><label for="gPw1">Neues Passwort für die Vereinsapp</label><div class="g-in"><input id="gPw1" type="password" autocomplete="new-password" minlength="10" required placeholder="mindestens 10 Zeichen"><button type="button" class="eye" aria-label="Passwort zeigen">${I('eye')}</button></div>
         <div class="g-strength"><i id="gStr"></i></div><div class="g-hint" id="gStrT">Tipp: ein Satz aus mehreren Wörtern ist sicher und gut zu merken.</div></div>
-      <div class="g-field"><label for="gPw2">Wiederholen</label><div class="g-in"><input id="gPw2" type="password" autocomplete="new-password" required></div></div>
+      <div class="g-field"><label for="gPw2">Neues Passwort wiederholen</label><div class="g-in"><input id="gPw2" type="password" autocomplete="new-password" required></div></div>
       <button class="g-btn" id="gGo" type="submit">${inv?'Loslegen':'Passwort speichern'} ${I('chev')}</button>
-    </form>`;
+    </form>
+    <p class="g-klein g-zugang-links"><a href="datenschutz.html">Verantwortlicher Verein und Datenschutz</a><a href="hilfe.html">Hilfe zum Zugang</a></p>`;
   showCard(); eyeWire(card);
   const m=document.getElementById('gMsg'), p1=document.getElementById('gPw1'), p2=document.getElementById('gPw2');
   p1.focus({preventScroll:true});
@@ -568,10 +569,11 @@ sb.auth.onAuthStateChange((ev,s)=>{ if(s)keepS(s); if(ev==='SIGNED_OUT'&&window.
       if(h.get(tag)){
         const token_hash=h.get(tag); clean(); loading('Einladung wird geprüft …');
         const {data:vd,error}=await sb.auth.verifyOtp({token_hash,type});
-        if(error){   // Link schon benutzt (z. B. zweimal geöffnet)? Wenn hier schon angemeldet: einfach weitermachen
-          const {data:{session}}=await sb.auth.getSession();
-          if(session&&type!=='recovery'){ keepS(session); await enter({viaLink:true,mode:'invite'}); return; }
-          viewLogin(errText(error)+(type==='invite'?' Falls du dein Passwort noch nicht festgelegt hast: „Passwort vergessen“ antippen, dann kommt ein neuer Link per E-Mail.':''),'err'); return; }
+        if(error || !vd?.session){
+          viewLogin(error && isNet(error) ? errText(error) :
+            'Dieser Link konnte nicht bestätigt werden. Melde dich mit deinem Vereinszugang an oder fordere einen neuen Code per E-Mail an.', 'err');
+          return;
+        }
         keepS(vd&&vd.session);
         await enter({viaLink:true,mode:type==='recovery'?'recovery':'invite'}); return;
       }
