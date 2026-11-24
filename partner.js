@@ -577,7 +577,9 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     else bandeAufbauen(); }
   function platzwahlOeffnen(paket){ if(!D||typeof BANDENWAHL==='undefined')return;
     const pk=S.korb.find(e=>/^(club|premium|p1896)$/.test(e.key));
-    return BANDENWAHL.oeffnen({rpc,code,intern:T&&!demo(),build:C.build,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,originalLogo:D.deck.logo||null,logo:marke().logo||D.deck.logo||null,name:marke().name||null,entwurfTextur:window.PD_BANDENSTUDIO&&!demo()?fmt=>window.PD_BANDENSTUDIO.textur(fmt):null,
+    const mix=D.deck.passung?.bandenvergleich, ci=marke().logo, original=D.deck.logo;
+    const vergleich=typeof mix==='string'&&mix.startsWith('data:image/png;base64,')&&ci&&original?{ci,mix,original}:null;
+    return BANDENWAHL.oeffnen({rpc,code,vergleich,intern:T&&!demo(),build:C.build,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,originalLogo:D.deck.logo||null,logo:marke().logo||D.deck.logo||null,name:marke().name||null,entwurfTextur:window.PD_BANDENSTUDIO&&!demo()?fmt=>window.PD_BANDENSTUDIO.textur(fmt):null,
       onSaved:w=>{ const el=$('#bdWunsch'); if(el)el.textContent=w?'Platzwunsch '+w.kennung+' ist gemerkt. Noch nicht reserviert.':'Der Platzwunsch ist zurückgenommen.'; },
       onClose:()=>{ const f=$('#reiseRahmen'); f?.contentWindow?.postMessage({reise:'creator-zu'},location.origin); }}); }
   // Beim Öffnen aktuellen Bestand und Kapazitäten einlesen, auch bei einem alten Partnerlink.
@@ -1092,8 +1094,10 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     });
     const bandentyp=posten.some(p=>['club','premium','p1896'].includes(p.key)||p.key?.startsWith('bande_'));
     const umfang=entwurf&&wert.team&&wert.kleidung?.length?wert:null;
-    const mitAermel=umfang||posten.some(p=>CA_KEYS.includes(p.key)&&p.key!=='trikot_jugend');
+    const trikotvorschau=entwurf&&wert.trikotvorschau===true&&!umfang;
+    const mitAermel=trikotvorschau||umfang||posten.some(p=>CA_KEYS.includes(p.key)&&p.key!=='trikot_jugend');
     if(umfang)inhalte.push({titel:'Ärmelpartnerschaft',preis:'Nach Absprache',beschreibung:'Die Vorschau zeigt die aktuell freien Ärmel für unsere gemeinsame Auswahl. Mannschaft und Ausführung stimmen wir vor der Bestellung mit euch ab.'});
+    if(trikotvorschau)inhalte.push({titel:'Optional auf dem Trikotärmel',beschreibung:'So sieht euer Logo auf dem Heimtrikot aus. Wenn euch der Ärmel gefällt, schauen wir gemeinsam nach einer freien Mannschaft.'});
     const meta=entwurf?'Vorschlag für unser Gespräch':[wert.nr,wert.beginn?'Ab '+datum(wert.beginn):'',wert.saisons?(wert.saisons===1?'Eine Saison':wert.saisons+' Saisons'):'',wert.bis||wert.gueltig_bis?'Gültig bis '+datum(wert.bis||wert.gueltig_bis):''].filter(Boolean).join(' · ');
     window.PARTNER_ANGEBOT.oeffnen({
       entwurf,firma,positionen:inhalte,metadaten:meta,
@@ -1102,10 +1106,13 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       bande:bandentyp?()=>window.PD_BANDENSTUDIO.amSpielfeld(entwurf&&wert.quer===true):null,
       stadion:bandentyp?()=>platzwahlOeffnen(posten.find(p=>['p1896','premium','club'].includes(p.key))?.key||'club'):null,
       aermel:mitAermel?{
-        plaetze:async()=>(await partnerAermelLaden()).filter(p=>umfang?p.team===umfang.team&&p.seite===umfang.seite&&umfang.kleidung.includes(p.art):posten.some(e=>{
+        plaetze:async()=>{
+          const frei=await partnerAermelLaden();
+          if(trikotvorschau)return frei.filter(p=>p.art==='heim').slice(0,1);
+          return frei.filter(p=>umfang?p.team===umfang.team&&p.seite===umfang.seite&&umfang.kleidung.includes(p.art):posten.some(e=>{
           if(e.key==='aermel_anzug_l'||e.key==='aermel_anzug_r')return e.mannschaft===p.team&&p.art==='anzug'&&p.seite===(e.key.endsWith('_l')?'aermel_l':'aermel_r');
           return p.art==='heim'&&((e.key==='aermel_erste'&&p.team==='h1')||(e.key==='aermel_zweite'&&p.team==='h2')||(e.key==='aermel_jugend'&&p.team===e.mannschaft));
-        })),
+        }));},
         bild:p=>TRAININGSANZUG.angebot({art:p.art,seite:p.seite,logo:aermelLogo(),firma,breite:1440}),
         waehlen:()=>aermelVorschau(umfang?.seite,umfang?.kleidung?.[0],umfang?.team)
       }:null,
