@@ -1,3 +1,254 @@
+      page.pushOperators(P.pushGraphicsState(),P.rectangle(M*k,M*k,(d.width+2*B)*k,(d.height+2*B)*k),P.clip(),P.endPath());
+      const embedded=new Map();
+      for(const e of d.elements){
+        if(e.type==='rect')page.drawRectangle({x:O+e.x*k,y:H-O-(e.y+e.h)*k,width:e.w*k,height:e.h*k,color:color(e.fill)});
+        if(e.type==='text'&&e.text.trim())path(C.textPath(e,fonts[e.font]).d,0,0,1,e.fill);
+        if(e.type!=='image')continue;
+        const a=d.assets[e.asset],b=C.fitImage(e,a);
+        if(a.vector){page.pushOperators(P.pushGraphicsState(),P.rectangle(O+b.x*k,H-O-(b.y+b.h)*k,b.w*k,b.h*k),P.clip(),P.endPath());const s=b.w/a.vector.width;for(const v of a.vector.paths)path(v.d,b.x,b.y,s,v.fill,v.stroke,v.strokeWidth,v.opacity,v.rule);page.pushOperators(P.popGraphicsState());continue;}
+        if(!embedded.has(e.asset)){
+          if(!cms){const img=await image(a.src),cv=canvas(img.naturalWidth,img.naturalHeight);cv.getContext('2d').drawImage(img,0,0);embedded.set(e.asset,{image:await out.embedPng(cv.toDataURL('image/png'))});cv.width=cv.height=1;}
+          else{
+            const img=await image(a.src),cv=canvas(img.naturalWidth,img.naturalHeight),ctx=cv.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0);const rgba=ctx.getImageData(0,0,cv.width,cv.height).data,n=cv.width*cv.height,ink=new Uint8Array(n*4),alpha=new Uint8Array(n);let hasAlpha=false;
+            for(let start=0;start<n;start+=150000){const count=Math.min(150000,n-start),rgb=new Uint8Array(count*3);for(let j=0;j<count;j++){const r=(start+j)*4;rgb.set(rgba.subarray(r,r+3),j*3);alpha[start+j]=rgba[r+3];if(rgba[r+3]!==255)hasAlpha=true;}ink.set(cms.convert(rgb,count),start*4);await new Promise(ok=>setTimeout(ok,0));}
+            const mask=hasAlpha?out.context.register(out.context.flateStream(alpha,{Type:'XObject',Subtype:'Image',Width:cv.width,Height:cv.height,ColorSpace:'DeviceGray',BitsPerComponent:8})):undefined;
+            const ref=out.context.register(out.context.flateStream(ink,{Type:'XObject',Subtype:'Image',Width:cv.width,Height:cv.height,ColorSpace:'DeviceCMYK',BitsPerComponent:8,...(mask?{SMask:mask}:{})}));embedded.set(e.asset,{ref});cv.width=cv.height=1;
+          }
+        }
+        const im=embedded.get(e.asset);if(im.image)page.drawImage(im.image,{x:O+b.x*k,y:H-O-(b.y+b.h)*k,width:b.w*k,height:b.h*k});
+        else{const name=page.node.newXObject('BDImage',im.ref);page.pushOperators(P.pushGraphicsState(),P.concatTransformationMatrix(b.w*k,0,0,b.h*k,O+b.x*k,H-O-(b.y+b.h)*k),P.drawObject(name),P.popGraphicsState());}
+      }
+      page.pushOperators(P.popGraphicsState());
+      const black=d.mode==='cmyk'?P.cmyk(0,0,0,1):P.rgb(0,0,0),xs=[O,O+d.width*k],ys=[O,O+d.height*k];
+      for(const x of xs)for(const y of ys){const sx=x<W/2?-1:1,sy=y<H/2?-1:1;page.drawLine({start:{x:x+sx*(B+2)*k,y},end:{x:x+sx*(B+8)*k,y},thickness:.2*k,color:black});page.drawLine({start:{x,y:y+sy*(B+2)*k},end:{x,y:y+sy*(B+8)*k},thickness:.2*k,color:black});}
+      return {bytes:await out.save(),page:{width:realW/d.scale,height:realH/d.scale,userUnit:uu},mode:d.mode,profile:cms?.name||null};
+    }finally{cms?.close();}
+  }
+  root.BD_RENDER={fonts,loadFonts,image,canvas,validateAssets,readSVG,vectorSVG,vectorPreview,vectorElement,analyseAsset,render,svgDocument,colourEngine,pdf};
+})(window);
+
+/* Persönlicher, versionierter Bandenentwurf. Druckfreigabe und Vertrag bleiben getrennt. */
+(function(root){
+  'use strict';
+  const MAX_PREVIEW=500*1024;
+  const codeOK=s=>/^[a-f0-9]{32}$/.test(String(s||''));
+  const clone=v=>JSON.parse(JSON.stringify(v));
+  const previewOK=s=>typeof s==='string'&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(s)&&(s.length-22)*.75<=MAX_PREVIEW;
+  function editorURL(origin,nonce){if(!/^[a-f0-9]{32}$/.test(nonce))throw Error('Die Editor-Kennung fehlt.');return new URL('/bandenstudio.html#edit='+nonce,origin).href;}
+  function editorMessage(e,iframe,nonce,origin){return !!(iframe&&e.source===iframe.contentWindow&&e.origin===origin&&e.data&&e.data.nonce===nonce&&/^bd-editor-/.test(String(e.data.typ||'')));}
+  function customerPayload(doc,template,version,C){
+    if(template!==null&&!['klar','logo'].includes(template))throw Error('Bitte wähle eine der beiden Gestaltungen.');
+    const d=C.normalise(doc),first=d.elements.find(e=>e.type==='image'),p={expected_version:version,template};
+    p.logo=first?clone(d.assets[first.asset]):null;return p;
+  }
+  function textureLayout(doc,size){const W=size?size[1]:doc.width,H=size?size[2]:doc.height,s=Math.min(W/doc.width,H/doc.height);return {W,H,B:0,format:W/10+'x'+H/10,stil:'studio',layout:'gespeichert',ops:[{t:'rect',x:0,y:0,w:W,h:H,fill:doc.background},{t:'img',key:'logo',x:(W-doc.width*s)/2,y:(H-doc.height*s)/2,w:doc.width*s,h:doc.height*s}],info:{warn:[],lesbar:{}},farben:{grund:doc.background}};}
+  const rules={codeOK,previewOK,editorURL,editorMessage,customerPayload,textureLayout};
+  if(typeof module!=='undefined'&&module.exports){module.exports=rules;return;}
+  let cfg=null,project=null,documentNow=null,preview=null,loading=null,loadingError=null,modal=null,editor=null,nonce='',saving=false,previousFocus=null,bodyOverflow='',loadGeneration=0,reloadRequired=false,motiv='haupt',availableMotifs=[],motifFocus=null;
+  const $=s=>document.querySelector(s),C=()=>root.BD_CORE,R=()=>root.BD_RENDER;
+  const frame=()=>document.getElementById('reiseRahmen');
+  const canEdit=()=>!!(project&&(project.bearbeiten===true||project.kundenbearbeitung===true));
+  const team=()=>!!(project&&project.team===true&&project.bearbeiten===true);
+  const errorText=e=>/failed to fetch|networkerror|load failed|network request failed/i.test(e&&e.message||'')?'Die Verbindung ist unterbrochen. Deine Änderungen bleiben im Editor. Prüfe dein Netz und versuche es erneut.':e&&e.message||'Der Entwurf ist gerade nicht erreichbar. Bitte versuche es erneut.';
+  function notify(t){if(cfg&&cfg.toast)cfg.toast(t);}
+  function resume(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-editor-zu'},location.origin);if(cfg&&cfg.geschlossen)cfg.geschlossen();}
+  const motifs=()=>{const list=project&&project.motive||availableMotifs;return Array.isArray(list)?list.filter(m=>m&&['haupt','moerlens'].includes(m.key)&&typeof m.titel==='string').slice(0,2):[];};
+  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,einzel:documentNow?documentNow.width/documentNow.height<4.7:false,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),busy:!!loading||saving},location.origin);controls();}
+  function rpc(fn,args){
+    const routes={bandenstudio_projekt_laden:'bandenstudio_motiv_laden',bandenstudio_projekt_speichern:'bandenstudio_motiv_speichern',bandenstudio_kunde_speichern:'bandenstudio_motiv_kunde_speichern'};
+    return cfg.rpc(motiv!=='haupt'&&routes[fn]?routes[fn]:fn,motiv!=='haupt'&&routes[fn]?{...args,p_motiv:motiv}:args);
+  }
+  function controls(){
+    const b=$('#bdBearbeiten'),g=$('#bdKundeErlauben'),hint=$('#bdProjektHinweis'),count=$('#bdProjektBestand');
+    if(b){b.hidden=!canEdit();b.disabled=saving||!!loading;}
+    if(g){g.closest('label').hidden=!(project&&project.kundenfreigabe_darf===true);g.checked=!!(project&&project.kundenbearbeitung);}
+    if(hint)hint.textContent=loadingError?'Der gespeicherte Entwurf lässt sich gerade nicht laden. Lade die Seite erneut.':project?'Gespeicherter Entwurf · Version '+project.version+'. Die Druckfreigabe erfolgt separat.':'Euer Entwurf wird geladen …';
+    if(count){const s=project&&project.bestand;count.hidden=!(team()&&s);count.textContent=s?'Entwürfe im Bestand: '+s.projekte+' für '+s.aktive_partner+' aktive Präsentationen.':'';}
+    for(const id of ['bdLay','bdFmt']){const el=$('#'+id);if(el)el.hidden=!!cfg;}
+    const host=$('#bdMotiv')||$('[data-bandenstudio-motive]'),list=motifs();
+    if(host){host.hidden=list.length<2;const content=list.map(m=>'<button type="button" data-bd-motiv="'+m.key+'" aria-pressed="'+(m.key===motiv)+'"'+(saving||loading?' disabled':'')+'>'+C().esc(m.titel)+'</button>').join('');
+      if(host.innerHTML!==content){host.innerHTML=content;host.querySelectorAll?.('[data-bd-motiv]').forEach(b=>b.onclick=()=>{motifFocus=b.dataset.bdMotiv;changeMotif(b.dataset.bdMotiv);});}
+      if(motifFocus&&!loading&&!saving){host.querySelector?.('[data-bd-motiv="'+motifFocus+'"]')?.focus({preventScroll:true});motifFocus=null;}
+    }
+  }
+  async function makeDoc(p){
+    if(!C()||!R())throw Error('Das Bandenstudio wird noch geladen. Bitte lade die Seite neu.');
+    if(p.quelle!=='generator'&&(p.dokument||p.readDoc))return C().cleanContacts(p.dokument||p.readDoc);
+    const g=p.generator;if(!g||typeof g!=='object')throw Error('Für diesen Link liegt noch kein Bandenentwurf vor.');
+    let d=C().create(g.firma||''),asset=g.logo;
+    d.width=+g.width||2500;d.height=+g.height||800;d.bleed=Number.isFinite(+g.bleed)?+g.bleed:20;d.safe=Number.isFinite(+g.safe)?+g.safe:40;
+    if(!asset&&g.logo_aus_praesentation&&cfg&&(cfg.logo||g.logo_url)){
+      if(g.logo_url&&!['partner/bb-signet.svg','partner/moerlens-schriftzug.png'].includes(g.logo_url))throw Error('Die Logo-Vorlage ist nicht freigegeben.');
+      const src=g.logo_url||(typeof cfg.logo==='function'?cfg.logo():cfg.logo);
+      if(src&&(/\.svg(?:[?#]|$)/i.test(src)||/^data:image\/svg\+xml[;,]/i.test(src))){
+        const response=await fetch(src);if(!response.ok)throw Error('Das Vektorlogo lässt sich gerade nicht laden.');const vector=R().readSVG(await response.text()),data=await R().vectorPreview(vector);
+        asset={name:'Logo der Präsentation',src:data,width:vector.width,height:vector.height,kind:'vector',vector};
+      }else if(src&&typeof LOGO!=='undefined'){
+        const data=await LOGO.alsDataUrl(src,'original',1800),im=await R().image(data);asset={name:'Logo der Präsentation',src:data,width:im.naturalWidth||im.width,height:im.naturalHeight||im.height,kind:'raster'};
+      }
+    }
+    if(asset){asset=clone(asset);
+      if(!asset.vector&&typeof LOGO!=='undefined'&&typeof LOGO.alsDataUrl==='function'){
+        const original=asset.original||asset.src,src=await LOGO.alsDataUrl(asset.src,'farbe:'+(g.pattern==='bb'?C().CI.orange:C().CI.marine),1800),im=await R().image(src);
+        asset={...asset,original,src,width:im.naturalWidth||im.width,height:im.naturalHeight||im.height,light:false};
+      }
+      if(typeof R().analyseAsset==='function')asset=await R().analyseAsset(asset)||asset;d.assets.partner_logo=asset;
+    }
+    d=C().template(d,['klar','logo','kante'].includes(g.template)?g.template:'klar',{name:g.name||g.firma||'',nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',asset:asset?'partner_logo':undefined});
+    return C().normalise(d);
+  }
+  async function makePreview(d){
+    // Die Vorschau wird aus dem gültigen Dokument erzeugt, nie aus frei übermittelten Kundenpixeln.
+    for(const width of [1800,1400,1000,700]){
+      const s=Math.min(1,width/d.width),cv=R().canvas(Math.max(1,Math.round(d.width*s)),Math.max(1,Math.round(d.height*s)));
+      await R().render(cv.getContext('2d'),d,s);const data=cv.toDataURL('image/png');if(previewOK(data))return data;
+    }
+    throw Error('Die Vorschau ist zu groß. Bitte vereinfache das Logo und speichere erneut.');
+  }
+  async function adopt(p,generation){
+    if(!p||p.ok===false||!Number.isInteger(p.version))throw Error(p&&p.fehler||'Der Entwurf konnte nicht geladen werden.');
+    const d=await makeDoc(p),im=await makePreview(d);if(generation!==loadGeneration)return null;
+    project=p;availableMotifs=motifs();documentNow=d;preview=im;loadingError=null;reloadRequired=false;context();if(cfg&&cfg.geaendert)cfg.geaendert(p);return p;
+  }
+  async function load(){
+    if(!cfg||!codeOK(cfg.code))throw Error('Der persönliche Präsentationslink fehlt.');
+    if(loading)return loading;const generation=loadGeneration;
+    loading=(async()=>{try{return await adopt(await rpc('bandenstudio_projekt_laden',{p_code:cfg.code}),generation);}catch(e){if(generation===loadGeneration){loadingError=e;controls();}throw e;}finally{if(generation===loadGeneration){loading=null;context();}}})();return loading;
+  }
+  async function changeMotif(key){
+    if(key===motiv||saving||loading||modal||!motifs().some(m=>m.key===key))return false;
+    const old={motiv,project,documentNow,preview},owner=cfg;availableMotifs=motifs();const generation=++loadGeneration;motiv=key;project=null;loadingError=null;reloadRequired=false;
+    try{const work=load();context();await work;return cfg===owner&&generation===loadGeneration;}catch(e){if(cfg!==owner||generation!==loadGeneration)return false;motiv=old.motiv;project=old.project;documentNow=old.documentNow;preview=old.preview;loadingError=null;context();notify(errorText(e));return false;}
+  }
+  async function prepare(o){
+    if(!o||!codeOK(o.code)||typeof o.rpc!=='function')throw Error('Der persönliche Präsentationslink fehlt.');
+    if(saving)throw Error('Der aktuelle Entwurf wird noch gespeichert.');if(modal)close();
+    ++loadGeneration;cfg=o;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
+  }
+  async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project};}
+  async function amSpielfeld(){
+    const generation=loadGeneration;
+    if(loading)await loading;else if(!project)await load();
+    const doc=documentNow,stand=preview;
+    if(generation!==loadGeneration||!doc||!stand)throw Error('Eure Bandenansicht ist noch nicht verfügbar.');
+    const [foto,motiv]=await Promise.all([R().image('partner/r-bande.webp'),R().image(stand)]);
+    if(documentNow!==doc||preview!==stand)throw Error('Die Gestaltung wurde zwischenzeitlich geändert.');
+    // Befestigungspunkte der beiden Felder im vorhandenen Foto. Für eine Einzelbande
+    // sehen wir nur das linke Feld. Typografie und Zeichen behalten ihr Seitenverhältnis.
+    const einfach=doc.width/doc.height<4.7;
+    const px=foto.naturalWidth,py=foto.naturalHeight,links=.041,rechts=einfach?.496:.961;
+    const mitteY=.517,feldW=(rechts-links)*px,feldH=.269*py;
+    const mass=Math.min(feldW/doc.width,feldH/doc.height);
+    const w=mass*doc.width,h=mass*doc.height;
+    const bildbreite=Math.round(px*(einfach?.518:1));
+    const bildhoehe=Math.round(bildbreite/(einfach?1.55:2.04));
+    const y0=Math.round(mitteY*py-bildhoehe*.50);
+    const cv=R().canvas(bildbreite,bildhoehe),ctx=cv.getContext('2d');
+    ctx.drawImage(foto,0,-y0);
+    ctx.globalCompositeOperation='multiply';
+    ctx.imageSmoothingQuality='high';
+    ctx.drawImage(motiv,links*px+(feldW-w)/2,mitteY*py-h/2-y0,w,h);
+    ctx.globalCompositeOperation='source-over';
+    cv.setAttribute('role','img');
+    cv.setAttribute('aria-label','Euer Bandenentwurf am Spielfeldrand');
+    return cv;
+  }
+  function close(){
+    if(!modal||saving)return;const old=modal;modal=null;editor=null;nonce='';old.remove();document.body.style.overflow=bodyOverflow;
+    if(previousFocus&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;context();resume();
+  }
+  function status(t){const e=modal&&modal.querySelector('[data-bd-status]');if(e)e.textContent=t;}
+  function post(o){if(editor&&editor.contentWindow)editor.contentWindow.postMessage(Object.assign({nonce},o),location.origin);}
+  function sendDocument(){if(!modal||!documentNow)return;const g=project.generator||{};post({typ:'bd-editor-laden',doc:clone(documentNow),rolle:team()?'team':'kunde',vorgaben:{firma:g.firma||documentNow.title,name:g.name||g.firma||documentNow.title,nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:project.quelle==='generator'&&['klar','logo','kante'].includes(g.template)?g.template:null});status('');}
+  async function saveFromEditor(data){
+    if(!modal||saving||!canEdit())return;saving=true;status('Entwurf wird gespeichert …');const generation=loadGeneration,oldProject=project,oldDoc=documentNow,oldPreview=preview;
+    try{
+      let p,fn;
+      if(team()){
+        const d=C().cleanContacts(data.doc);await R().validateAssets(d);p={expected_version:project.version,dokument:d,vorschau:await makePreview(d)};fn='bandenstudio_projekt_speichern';
+      }else{p=customerPayload(data.doc,data.template===undefined?null:data.template,project.version,C());fn='bandenstudio_kunde_speichern';}
+      const result=await rpc(fn,{p_code:cfg.code,p});
+      if(!result||result.ok===false)throw Error(result&&result.konflikt?'Der Entwurf wurde inzwischen geändert. Deine Änderungen bleiben geöffnet. Schließe mit Abbrechen und öffne den Editor erneut, um den aktuellen Stand zu laden.':result&&(result.fehler||result.hinweis)||'Der Entwurf wurde nicht gespeichert. Deine Änderungen bleiben im Editor.');
+      // Der Server liefert den kanonischen Stand. Falls nur die Version geliefert wird, laden wir ihn erneut.
+      const canonical=result.generator||result.dokument||result.readDoc?result:await rpc('bandenstudio_projekt_laden',{p_code:cfg.code});
+      await adopt(canonical,generation);if(generation!==loadGeneration)return;
+      post({typ:'bd-editor-gespeichert',ok:true,version:project.version,doc:clone(documentNow)});saving=false;close();notify('Bandenentwurf gespeichert.');
+    }catch(e){
+      if(generation!==loadGeneration)return;project=oldProject;documentNow=oldDoc;preview=oldPreview;saving=false;reloadRequired=true;context();status(errorText(e));post({typ:'bd-editor-gespeichert',ok:false,fehler:errorText(e)});
+    }
+  }
+  async function open(o){
+    try{if(modal)return;if(o&&o.code&&(!cfg||o.code!==cfg.code))await prepare(o);else if(loading)await loading;else if(!project||reloadRequired)await load();
+      if(!canEdit()){notify('Die Bearbeitung ist für diesen Link nicht freigegeben.');resume();return;}if(modal)return;
+      const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);nonce=Array.from(bytes,n=>n.toString(16).padStart(2,'0')).join('');
+      previousFocus=document.activeElement;bodyOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
+      modal=document.createElement('div');modal.className='bd-partner-dialog';modal.innerHTML='<section role="dialog" aria-modal="true" aria-label="Bandenentwurf bearbeiten"><header><div><small>SV/BSC Bandenstudio</small><h2>Eure Bande</h2></div><button type="button" data-bd-close aria-label="Editor schließen">×</button></header><p role="status" aria-live="polite" data-bd-status>Editor wird geladen …</p><iframe title="Bandenentwurf bearbeiten" referrerpolicy="same-origin" sandbox="allow-scripts allow-same-origin allow-downloads"></iframe></section>';
+      document.body.appendChild(modal);editor=modal.querySelector('iframe');editor.src=editorURL(location.origin,nonce);modal.querySelector('[data-bd-close]').onclick=close;
+      modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();}if(e.key==='Tab'){const first=modal.querySelector('[data-bd-close]');if(document.activeElement===first){e.preventDefault();post({typ:'bd-editor-fokus',ziel:e.shiftKey?'letztes':'erstes'});}else if(document.activeElement===editor){e.preventDefault();first.focus();}}});
+      modal.querySelector('[data-bd-close]').focus();
+    }catch(e){notify(errorText(e));resume();}
+  }
+  async function grant(allowed){
+    if(!project||project.kundenfreigabe_darf!==true)return;const old=!!project.kundenbearbeitung,el=$('#bdKundeErlauben');if(el)el.disabled=true;
+    try{const p=await cfg.rpc('bandenstudio_kunde_erlauben',{p_code:cfg.code,p_erlaubt:allowed});if(!p||p.ok===false)throw Error(p&&p.fehler||'Die Freigabe wurde nicht gespeichert.');await load();notify(allowed?'Der Kunde darf Logo und Anordnung bearbeiten.':'Die Kundenbearbeitung ist ausgeschaltet.');return true;}
+    catch(e){project.kundenbearbeitung=old;controls();notify(errorText(e));return false;}finally{if(el)el.disabled=false;}
+  }
+  function bind(){const b=$('#bdBearbeiten'),g=$('#bdKundeErlauben');if(b)b.onclick=()=>open();if(g)g.onchange=()=>grant(g.checked);controls();}
+  root.addEventListener('message',e=>{
+    if(editorMessage(e,editor,nonce,location.origin)){
+      if(e.data.typ==='bd-editor-bereit')sendDocument();
+      else if(e.data.typ==='bd-editor-fokus'&&e.data.ziel==='schliessen'&&modal)modal.querySelector('[data-bd-close]').focus();
+      else if(e.data.typ==='bd-editor-speichern')saveFromEditor(e.data);
+      else if(e.data.typ==='bd-editor-abbrechen')close();return;
+    }
+    const f=frame();if(!cfg||!f||e.source!==f.contentWindow||e.origin!==location.origin||!e.data)return;
+    if(e.data.reise==='bereit')context();
+    if(e.data.reise==='bande-editor-oeffnen'){if(canEdit()&&!loading)open();else resume();}
+    if(e.data.reise==='bande-motiv-waehlen'&&typeof e.data.motiv==='string')changeMotif(e.data.motiv);
+  });
+  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,amSpielfeld,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,geladen:()=>!!project,regeln:rules};
+})(typeof window!=='undefined'?window:globalThis);
+
+/* Explicit one-use same-origin handoff; no private data in URL or browser history. */
+(function(){
+  'use strict';
+  window.BD_STUDIO_START=function(brief={}){
+    const nonce=Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
+    const child=window.open('bandenstudio.html#transfer='+nonce,'_blank');
+    if(!child){if(typeof kToast==='function')kToast('Bitte erlaube das Öffnen des Bandenstudios in einem neuen Tab.');return;}
+    const input={firma:String(brief.firma||'').slice(0,120),format:String(brief.format||'300x80'),logo:typeof brief.logo==='string'?brief.logo:''};
+    let used=false;const timeout=setTimeout(()=>removeEventListener('message',receive),180000);
+    async function receive(e){
+      if(used||e.origin!==location.origin||e.source!==child||e.data?.typ!=='bandenstudio-bereit'||e.data.nonce!==nonce)return;
+      used=true;clearTimeout(timeout);removeEventListener('message',receive);
+      const payload={firma:input.firma,format:input.format};
+      try{
+        let src=input.logo;
+        if(src&&!src.startsWith('data:')){
+          const u=new URL(src,location.href);if(u.origin!==location.origin||!/^\/(?:[^/?]+\/)?(?:partner|kit|banden)\//.test(u.pathname))throw Error('Bitte die Logo-Originaldatei im Studio laden.');
+          const r=await fetch(u,{credentials:'omit'});if(!r.ok)throw Error('Das Logo lässt sich nicht übernehmen.');const b=await r.blob();if(b.size>20*1024*1024)throw Error('Bitte das große Logo direkt im Studio laden.');src=await new Promise((ok,no)=>{const f=new FileReader();f.onload=()=>ok(f.result);f.onerror=no;f.readAsDataURL(b);});
+        }
+        if(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(src)&&src.length<=28*1024*1024)payload.logo=src;
+        else if(/^data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+$/.test(src)&&src.length<4*1024*1024)payload.logoSVG=new TextDecoder().decode(Uint8Array.from(atob(src.split(',')[1]),c=>c.charCodeAt(0)));
+      }catch(er){if(typeof kToast==='function')kToast(er.message||'Das Studio ist offen. Bitte das Logo dort laden.');}
+      if(!child.closed)child.postMessage({typ:'bandenstudio-start',nonce,brief:payload},location.origin);
+    }
+    addEventListener('message',receive);
+  };
+})();
+
+/* Firmenentwürfe bleiben am persönlichen Partnerprojekt, freie neue Entwürfe auf dem Gerät. */
+{
+  const vorher=bcGestalten;
+  bcGestalten=function(I){
+    const result=vorher.apply(this,arguments);if(!I||I.querySelector('[data-bandenstudio]'))return result;
+    const f=bcFirmen().find(x=>x.key===BC.firmaKey),key=BC.firmaKey,sponsor=BC.sponsor||null;
+    const chooser=I.querySelector('#bcFirma'),onchange=chooser&&chooser.onchange;
+    if(chooser)chooser.onchange=function(e){if(onchange)onchange.call(this,e);bcGestalten(I);};
+    if(I.classList)I.classList.toggle('bd-creator-hat-projekt',!!f);
+    const section=document.createElement('section');section.className='pz-tc-block bd-creator-projekt';section.innerHTML=f?'<h3>Gespeicherter Bandenentwurf</h3><div class="bd-motive" role="group" aria-label="Bandenmotiv" data-bandenstudio-motive hidden></div><div class="bd-creator-vorschau"><canvas role="img" aria-label="Gespeicherter Bandenentwurf"></canvas><button type="button" class="bd-bearbeiten" data-bandenstudio hidden>Bearbeiten</button></div><p class="pz-tc-tipp" role="status" data-bandenstudio-status>Entwurf wird geladen …</p><label class="bd-kundenfreigabe" hidden><input type="checkbox" data-bandenstudio-grant>Kunde darf Logo und Anordnung bearbeiten</label><button type="button" class="btn ghost" data-bandenstudio-retry hidden>Erneut laden</button>':'<h3>Freies Bandenstudio</h3><p class="pz-tc-tipp">Logo freistellen, Texte und Flächen gestalten. Dieser Entwurf bleibt auf deinem Gerät. Wähle oben eine Firma, um deren gespeicherten Entwurf zu öffnen.</p><button type="button" class="btn" data-bandenstudio>Lokalen Entwurf öffnen</button>';
+    (I.querySelector('.pz-tc-links')||I).appendChild(section);
+    const button=section.querySelector('[data-bandenstudio]');
     if(!f){button.onclick=()=>{const s=bcSpecVoll(),l=bcLogo();window.BD_STUDIO_START({firma:s.firma||s.name,web:s.web,format:s.format,logo:l?.bild||''});};return result;}
     const hint=section.querySelector('[data-bandenstudio-status]'),retry=section.querySelector('[data-bandenstudio-retry]'),grant=section.querySelector('[data-bandenstudio-grant]');let options=null,shown=null;
     const current=()=>I.isConnected&&section.isConnected&&BC.firmaKey===key&&(BC.sponsor||null)===sponsor;

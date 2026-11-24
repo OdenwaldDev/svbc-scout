@@ -129,7 +129,7 @@
   async function rasterFile(src,name){
     const i=await R.image(src),w=i.naturalWidth,h=i.naturalHeight;if(w*h>24000000||w>30000||h>30000)throw Error('Dieses Bild ist zu groß für die Bearbeitung. Nutze ein Logo mit höchstens 24 Millionen Pixeln oder eine SVG-Datei.');
     const c=R.canvas(w,h),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(i,0,0);pending={name,src,pixels:x.getImageData(0,0,w,h).data,width:w,height:h,region:null,result:null};c.width=c.height=1;
-    $('#tolerance').value=30;open($('#logoDialog'));cropPaint();cut();
+    $('#tolerance').value=30;$('#logoQuer').checked=false;open($('#logoDialog'));cropPaint();cut();
   }
   async function importLogo(file){
     if(!file||file.size>20*1024*1024)throw Error('Bitte ein Logo bis 20 MB auswählen.');
@@ -140,7 +140,38 @@
   }
   $('#logoFile').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;assetBusy=true;embeddedButtons();try{await importLogo(file);}catch(e){error(e);}finally{assetBusy=false;embeddedButtons();}};
   function cropPaint(){if(!pending)return;const p=pending,c=$('#cropCanvas'),s=Math.min(1,1400/Math.max(p.width,p.height));c.width=Math.max(1,Math.round(p.width*s));c.height=Math.max(1,Math.round(p.height*s));R.image(p.src).then(i=>{if(pending!==p)return;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);x.drawImage(i,0,0,c.width,c.height);if(p.region){x.strokeStyle='#215dba';x.lineWidth=Math.max(2,c.width/180);x.strokeRect(p.region.x*s,p.region.y*s,p.region.w*s,p.region.h*s);}}).catch(error);}
-  function cut(){if(!pending)return;try{const p=pending,r=C.cutout(p.pixels,p.width,p.height,+$('#tolerance').value,p.region),c=R.canvas(r.width,r.height);c.getContext('2d').putImageData(new ImageData(r.data,r.width,r.height),0,0);p.result={name:p.name,src:c.toDataURL('image/png'),original:p.src,width:r.width,height:r.height,kind:'raster'};c.width=c.height=1;$('#logoResult').src=p.result.src;$('#logoStatus').textContent=r.confidence==='transparent'?'Das Logo hat bereits einen transparenten Hintergrund. Leere Ränder sind entfernt.':r.confidence==='einfarbig'?'Einfarbiger Hintergrund erkannt und entfernt. Prüfe, ob alle Details erhalten sind.':'Der Hintergrund ist uneinheitlich. Markiere das Logo im Original oder verwende die Originaldatei.';$('#logoApply').disabled=false;}catch(e){$('#logoApply').disabled=true;$('#logoStatus').textContent=e.message;}}
+  function querfassungsBild(bild,{zeichen,schrift}){
+    // Nur verkleinern. Ein größeres Raster würde dem Druckcheck mehr Quelldetails vortäuschen.
+    const h=Math.min(schrift.h,Math.floor(zeichen.h/.84)),symbolH=h*.84;
+    const symbolW=zeichen.w*symbolH/zeichen.h,textW=schrift.w*h/schrift.h,abstand=h*.30;
+    const c=R.canvas(Math.ceil(symbolW+abstand+textW),h),x=c.getContext('2d');
+    x.imageSmoothingQuality='high';
+    x.drawImage(bild,zeichen.x,zeichen.y,zeichen.w,zeichen.h,0,(h-symbolH)/2,symbolW,symbolH);
+    x.drawImage(bild,schrift.x,schrift.y,schrift.w,schrift.h,symbolW+abstand,0,textW,h);
+    return c;
+  }
+  function cut(){
+    if(!pending)return;
+    const p=pending,wahl=$('#logoQuer'),label=$('#querFassung');
+    try{
+      const r=C.cutout(p.pixels,p.width,p.height,+$('#tolerance').value,p.region);
+      const quelle=R.canvas(r.width,r.height);
+      quelle.getContext('2d').putImageData(new ImageData(r.data,r.width,r.height),0,0);
+      const teile=!customer()&&templateFields().pattern==='normal'&&r.confidence!=='prüfen'&&C.logoBloecke(r);
+      label.hidden=!teile;
+      if(!teile)wahl.checked=false;
+      const vorlage=wahl.checked?querfassungsBild(quelle,teile):quelle;
+      p.result={name:p.name,src:vorlage.toDataURL('image/png'),original:p.src,width:vorlage.width,height:vorlage.height,kind:'raster'};
+      $('#logoResult').src=p.result.src;
+      $('#logoStatus').textContent=wahl.checked?'Die Querfassung verwendet beide Teile aus eurem Original. Prüfe die Abstände in der Vorschau.':r.confidence==='transparent'?'Das Logo hat bereits einen transparenten Hintergrund. Leere Ränder sind entfernt.':r.confidence==='einfarbig'?'Einfarbiger Hintergrund erkannt und entfernt. Prüfe, ob alle Details erhalten sind.':'Der Hintergrund ist uneinheitlich. Markiere das Logo im Original oder verwende die Originaldatei.';
+      $('#logoApply').disabled=false;
+      quelle.width=quelle.height=1;vorlage.width=vorlage.height=1;
+    }catch(e){
+      p.result=null;label.hidden=true;wahl.checked=false;
+      $('#logoResult').removeAttribute('src');$('#logoApply').disabled=true;$('#logoStatus').textContent=e.message;
+    }
+  }
+  $('#logoQuer').onchange=cut;
   let cropDrag=null;
   function cropPoint(e){const c=$('#cropCanvas'),r=c.getBoundingClientRect(),s=Math.min(r.width/c.width,r.height/c.height),ox=(r.width-c.width*s)/2,oy=(r.height-c.height*s)/2;return {x:C.num((e.clientX-r.left-ox)/s/c.width*pending.width,0,pending.width,0),y:C.num((e.clientY-r.top-oy)/s/c.height*pending.height,0,pending.height,0)};}
   $('#cropCanvas').onpointerdown=e=>{if(!pending)return;e.preventDefault();cropDrag=cropPoint(e);e.target.setPointerCapture(e.pointerId);};

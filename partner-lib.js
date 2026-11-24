@@ -2497,6 +2497,260 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   return doc;
 };
 
+// Kompakte, rein lesende Ansicht des persönlichen Angebots.
+(function(root){
+  'use strict';
+  const pakete = ['supporter','club','premium','p1896'];
+  const namen = {heim:'Heimtrikot',auswaerts:'Auswärtstrikot',anzug:'Trainingsanzug'};
+  function quelle(d, heute){
+    if(!d?.deck || d.deck.passung?.demo) return null;
+    const vertragsdatum = d.abschluss?.art === 'vertrag' ? d.abschluss.am : null;
+    const dokumente = [['angebot',d.angebot,'bis'],['konditionen',d.konditionen,'gueltig_bis']];
+    for(const [art,wert,frist] of dokumente){
+      if(!wert?.positionen?.length || (wert[frist] && String(wert[frist]).slice(0,10)<heute)) continue;
+      if(vertragsdatum && !(wert.erstellt_am && Date.parse(wert.erstellt_am)>Date.parse(vertragsdatum))) continue;
+      return {art,wert};
+    }
+    const entwurf=d.deck.passung?.angebotsentwurf;
+    return (!vertragsdatum || Date.parse(entwurf?.erstellt_am)>Date.parse(vertragsdatum)) && entwurf && pakete.includes(entwurf.paket) ? {art:'entwurf',wert:entwurf} : null;
+  }
+  function element(tag,klasse,text){
+    const e=document.createElement(tag);
+    if(klasse)e.className=klasse;
+    if(text!=null)e.textContent=text;
+    return e;
+  }
+  function knopf(text,klasse,aktion){
+    const b=element('button',klasse,text);b.type='button';b.onclick=aktion;return b;
+  }
+  function oeffnen(o){
+    if(document.getElementById('pdDirektangebot'))return;
+    const fokus=document.activeElement, dialog=element('dialog','da-dialog');
+    dialog.id='pdDirektangebot';dialog.setAttribute('aria-labelledby','daFirma');
+    dialog.addEventListener('close',()=>{dialog.remove();if(fokus?.isConnected)fokus.focus();},{once:true});
+    const kopf=element('header','da-kopf');
+    const wappen=element('img');wappen.src='partner/wappen.png';wappen.alt='SV/BSC Mörlenbach';
+    kopf.append(wappen,element('span','da-rubrik',o.entwurf?'Gesprächsentwurf':'Euer Angebot'),knopf('Schließen','da-close',()=>dialog.close()));
+    const titel=element('h1','',o.firma);titel.id='daFirma';
+    const body=element('div','da-inhalt');
+    body.append(titel);
+    if(o.metadaten)body.append(element('p','da-meta',o.metadaten));
+    const leistungen=element('section','da-leistungen');leistungen.setAttribute('aria-label','Angebotene Leistungen');
+    for(const pos of o.positionen){
+      const detail=element('details','da-leistung'),sum=element('summary');
+      const bez=element('span','da-leistungstitel',pos.titel);
+      if(pos.menge>1)bez.append(element('small','',pos.menge+' Stück'));
+      sum.append(bez);
+      if(pos.preis)sum.append(element('span','da-preis',pos.preis));
+      const info=element('span','da-info','i');info.setAttribute('aria-hidden','true');sum.append(info);
+      const inhalt=element('div','da-details');
+      const zeilen = String(pos.beschreibung || '').split(/(?:\n+|(?<=[.!?])\s+(?=[A-ZÄÖÜ]))/u).map(x=>x.trim()).filter(Boolean);
+      if(zeilen.length>1){
+        const ul=element('ul');zeilen.forEach(x=>ul.append(element('li','',x)));inhalt.append(ul);
+      }else inhalt.append(element('p','',zeilen[0]||'Weitere Einzelheiten besprechen wir mit euch.'));
+      detail.append(sum,inhalt);leistungen.append(detail);
+    }
+    body.append(leistungen);
+    if(o.summe)body.append(element('p','da-summe',o.summe));
+    if(o.hinweis)body.append(element('p','da-hinweis',o.hinweis));
+    // Jede Ansicht lädt unabhängig. Ein abgelöster oder geschlossener Entwurf erhält keine fremden Bilder.
+    function foto(el,malen,alt){
+      const melding=element('span','da-laden','Vorschau wird geladen …');el.append(melding);
+      const laden=async()=>{
+        try{
+          const cv=await malen();
+          if(!el.isConnected)return;
+          cv.setAttribute('role','img');cv.setAttribute('aria-label',alt);el.replaceChildren(cv);
+        }catch(_){
+          if(!el.isConnected)return;
+          el.replaceChildren(knopf('Vorschau erneut laden','da-link',laden));
+        }
+      };
+      laden();
+    }
+    const medien=element('section','da-medien');medien.setAttribute('aria-label','Euer Auftritt');
+    body.append(medien);
+    function bild(container,title,sub,malen){
+      const fig=element('figure','da-motiv'),fläche=element('div','da-foto'),cap=element('figcaption');
+      cap.append(element('strong','',title),element('span','',sub));fig.append(fläche,cap);container.append(fig);
+      foto(fläche,malen,title+', '+sub);
+    }
+    const fuss=element('footer','da-fuss');
+    if(o.weiter)fuss.append(knopf('Angebotsdetails öffnen','da-haupt',()=>{dialog.close();o.weiter();}));
+    if(o.teilen)fuss.append(knopf('Angebot teilen','da-link',o.teilen));
+    dialog.append(kopf,body,fuss);document.body.append(dialog);dialog.showModal();
+    if(o.bande){
+      bild(medien,'Eure Bande','Entwurf am Spielfeldrand',o.bande);
+      if(o.stadion)medien.append(knopf('Im 3D-Stadion ansehen','da-link',o.stadion));
+    }
+    if(o.aermel){
+      const block=element('div','da-aermel');medien.append(block);
+      const laden=async()=>{
+        block.replaceChildren(element('p','da-meta','Ärmelplätze werden geprüft …'));
+        try{
+          const plaetze=await o.aermel.plaetze();
+          if(!block.isConnected)return;
+          block.replaceChildren();
+          if(!plaetze.length){block.append(element('p','da-hinweis','Aktuell ist für diese Auswahl kein Ärmel frei.'));return;}
+          for(const p of plaetze){
+            const seite=p.seite==='aermel_l'?'Linker Ärmel':'Rechter Ärmel';
+            bild(block,namen[p.art],p.name+' · '+seite,()=>o.aermel.bild(p));
+          }
+        }catch(_){if(block.isConnected)block.replaceChildren(knopf('Ärmelplätze erneut prüfen','da-link',laden));}
+      };
+      laden();
+      if(o.aermel.waehlen)medien.append(knopf('Freie Ärmel ansehen','da-link',o.aermel.waehlen));
+    }
+  }
+  root.PARTNER_ANGEBOT={quelle,oeffnen,namen,pakete};
+  if(typeof module!=='undefined'&&module.exports)module.exports=root.PARTNER_ANGEBOT;
+})(typeof window==='undefined'?globalThis:window);
+
+// Vereinstermin: ein Deck bekommt einen besprechbaren Vorschlag, ohne etwas zu reservieren.
+(function(root){
+  'use strict';
+  root.PARTNER_ENTWURF={oeffnen(o){
+    if(document.querySelector('#pdEntwurfEditor'))return;
+    const dialog=document.createElement('dialog'),fokus=document.activeElement;
+    dialog.id='pdEntwurfEditor';dialog.className='da-dialog';dialog.setAttribute('aria-labelledby','daEditorTitel');
+    dialog.innerHTML='<div class="da-inhalt"><h2 id="daEditorTitel">Angebot vorbereiten</h2><form class="da-form"><label>Partnerstufe<select name="paket" required></select></label><label><input type="checkbox" name="aermel"> Ärmel zeigen</label><div data-wahl></div><fieldset hidden><legend>Kleidungsstücke an diesem Ärmel</legend></fieldset><p data-stand role="status"></p><div class="da-fuss"><button class="da-haupt" type="submit">Entwurf speichern</button><button class="da-link" type="button" data-zu>Schließen</button></div></form></div>';
+    const form=dialog.querySelector('form'),felder=form.elements,wahl=form.querySelector('[data-wahl]'),satz=form.querySelector('fieldset'),status=form.querySelector('[data-stand]'),send=form.querySelector('[type=submit]');
+    const alt=o.alt||{},kleidung=Array.isArray(alt.kleidung)?alt.kleidung:[];
+    let frei=[],platz=null,laden=false,schreibt=false,erster=true;
+    for(const p of o.pakete)felder.paket.add(new Option(p.titel,p.key));
+    felder.paket.value=o.pakete.some(p=>p.key===alt.paket)?alt.paket:o.pakete[0]?.key||'';
+    felder.aermel.checked=kleidung.length>0;
+    const pruefen=()=>{send.disabled=schreibt||!felder.paket.value||(felder.aermel.checked&&(laden||!platz||!satz.querySelector('input:checked')));};
+    function auswahl(p){
+      platz=p;satz.replaceChildren();satz.hidden=!p;
+      if(erster&&kleidung.length&&(!p||alt.team!==p.team||alt.seite!==p.seite||kleidung.some(a=>!frei.some(x=>x.team===alt.team&&x.seite===alt.seite&&x.art===a))))
+        status.textContent='Die frühere Auswahl ist teilweise vergeben. Bitte die freien Kleidungsstücke vor dem Speichern prüfen.';
+      if(p){
+        const legend=document.createElement('legend');legend.textContent='Kleidungsstücke an diesem Ärmel';satz.append(legend);
+        for(const a of new Set(frei.filter(x=>x.team===p.team&&x.seite===p.seite).map(x=>x.art))){
+          const l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.value=a;
+          i.checked=erster&&kleidung.length>0?alt.team===p.team&&alt.seite===p.seite&&kleidung.includes(a):a===p.art;
+          l.append(i,document.createTextNode(' '+root.PARTNER_ANGEBOT.namen[a]));satz.append(l);
+        }
+      }
+      erster=false;pruefen();
+    }
+    function zeigen(){
+      wahl.hidden=!felder.aermel.checked;satz.hidden=true;
+      if(felder.aermel.checked&&!laden)root.PARTNER_AERMEL.wahl(wahl,frei,{team:alt.team,seite:alt.seite,art:kleidung[0]},auswahl);
+      pruefen();
+    }
+    form.onchange=pruefen;felder.aermel.onchange=zeigen;form.querySelector('[data-zu]').onclick=()=>dialog.close();
+    form.onsubmit=async e=>{
+      e.preventDefault();if(send.disabled)return;
+      schreibt=true;pruefen();status.textContent='Wird gespeichert …';
+      try{
+        const entwurf={paket:felder.paket.value};
+        if(felder.aermel.checked)Object.assign(entwurf,{team:platz.team,seite:platz.seite,kleidung:Array.from(satz.querySelectorAll('input:checked'),i=>i.value)});
+        await o.speichern(entwurf);dialog.close();
+      }catch(err){status.textContent=err.message||'Speichern fehlgeschlagen.';}
+      finally{schreibt=false;pruefen();}
+    };
+    dialog.addEventListener('close',()=>{dialog.remove();if(fokus?.isConnected)fokus.focus();},{once:true});
+    document.body.append(dialog);dialog.showModal();laden=true;zeigen();
+    o.plaetze().then(rows=>{frei=rows;}).catch(()=>{status.textContent='Die Ärmelplätze sind gerade nicht erreichbar. Zum erneuten Laden die Vorbereitung wieder öffnen.';})
+      .finally(()=>{laden=false;if(dialog.isConnected)zeigen();});
+  }};
+})(window);
+
+// Ein konkreter Ärmel ist immer Mannschaft, Satz und Seite aus Trägersicht.
+(function(root){
+  'use strict';
+  const SEITEN={aermel_l:'Linker Ärmel',aermel_r:'Rechter Ärmel'};
+  const ARTEN={heim:'Heimtrikot',auswaerts:'Auswärtstrikot',anzug:'Trainingsanzug'};
+
+  function freie(daten,{leistungen,anzug,ohneJugend=false,naechste=true}={}){
+    if(!Array.isArray(daten?.saetze)||!Array.isArray(daten?.plaetze)||!Array.isArray(daten?.mannschaften)||!Array.isArray(leistungen))
+      throw Error('Der Stand der Ärmelplätze fehlt.');
+    const teams=new Map(daten.mannschaften.map(m=>[m.id,m]));
+    const satzPlaetze=new Map();
+    for(const p of daten.plaetze){
+      if(!Object.hasOwn(SEITEN,p.platz))continue;
+      if(!satzPlaetze.has(p.satz))satzPlaetze.set(p.satz,[]);
+      satzPlaetze.get(p.satz).push(p);
+    }
+    const kapazitaet=new Map(leistungen.map(l=>[l.key,l]));
+    const anzugTeams=new Set((anzug?.plaetze||[]).filter(p=>p.angeboten!==false).map(p=>p.team+':'+p.seite));
+    const frei=[];
+    for(const s of daten.saetze){
+      const m=teams.get(s.mannschaft);
+      if(!m||m.id==='mini'||m.id==='muster'||s.muster||!Object.hasOwn(ARTEN,s.art))continue;
+      const jugend=m.art==='jugend';
+      if(jugend?ohneJugend:!['h1','h2'].includes(m.id))continue;
+      for(const p of satzPlaetze.get(s.id)||[]){
+        if(p.status!=='frei')continue;
+        if(jugend){
+          const anzugKey=p.platz==='aermel_l'?'aermel_anzug_l':'aermel_anzug_r';
+          const l=kapazitaet.get(s.art==='anzug'?anzugKey:'aermel_jugend');
+          const anzahl=(naechste?l?.frei_je_naechste:l?.frei_je)?.[m.id];
+          if(!(anzahl>0)||s.art==='anzug'&&!anzugTeams.has(m.id+':'+p.platz))continue;
+        }else if(s.art!=='anzug'){
+          // Alte Erwachsenenpositionen können nur die ganze Mannschaft sperren.
+          // Bei der Zweiten gibt es Decks ohne diesen alten pauschalen Katalogeintrag.
+          const l=kapazitaet.get(m.id==='h1'?'aermel_erste':'aermel_zweite');
+          if(l&&(naechste?l.frei_naechste:l.frei)===0)continue;
+        }
+        frei.push({team:m.id,name:m.name,art:s.art,seite:p.platz,platz:s.id+':'+p.platz});
+      }
+    }
+    const teamSort=new Map(daten.mannschaften.map((m,i)=>[m.id,i]));
+    const arten=Object.keys(ARTEN),seiten=Object.keys(SEITEN);
+    return frei.sort((a,b)=>teamSort.get(a.team)-teamSort.get(b.team)||arten.indexOf(a.art)-arten.indexOf(b.art)||seiten.indexOf(a.seite)-seiten.indexOf(b.seite));
+  }
+
+  // Jeder nachfolgende Filter enthält nur noch tatsächlich passende Kombinationen.
+  function filtern(plaetze,wunsch={},folge=['team','art','seite']){
+    let treffer=plaetze;
+    const optionen={};
+    for(const feld of folge){
+      const moeglich=[...new Set(treffer.map(p=>p[feld]))];
+      optionen[feld]=moeglich;
+      const wert=moeglich.includes(wunsch[feld])?wunsch[feld]:moeglich[0];
+      treffer=treffer.filter(p=>p[feld]===wert);
+    }
+    return {platz:treffer[0]||null,optionen};
+  }
+  function wahl(container,plaetze,bevorzugt,onChange){
+    const doc=container.ownerDocument;
+    const teamNamen=new Map(plaetze.map(p=>[p.team,p.name]));
+    const sprachfeld={team:'Mannschaft',art:'Kleidungsstück',seite:'Ärmelseite'};
+    const titel=(feld,wert)=>feld==='team'?teamNamen.get(wert):feld==='art'?ARTEN[wert]:SEITEN[wert];
+    const rahmen=doc.createElement('div');rahmen.className='pa-wahl';
+    container.replaceChildren(rahmen);
+    if(!plaetze.length){
+      const p=doc.createElement('p');p.textContent='Aktuell ist hier kein Ärmel frei.';rahmen.append(p);onChange(null);return;
+    }
+    let folge=['team','art','seite'],wunsch=bevorzugt||{};
+    const modus=doc.createElement('button');modus.type='button';modus.className='pa-modus';
+    const felder=doc.createElement('div');felder.className='pa-felder';rahmen.append(felder,modus);
+    function zeigen(fokus){
+      const {platz,optionen}=filtern(plaetze,wunsch,folge);
+      wunsch=platz;
+      felder.replaceChildren();
+      for(const feld of folge){
+        const label=doc.createElement('label');label.append(sprachfeld[feld]);
+        const select=doc.createElement('select');select.dataset.paFeld=feld;
+        for(const wert of optionen[feld]){const o=doc.createElement('option');o.value=wert;o.textContent=titel(feld,wert);select.append(o);}
+        select.value=platz[feld];select.onchange=()=>{wunsch={...platz,[feld]:select.value};zeigen(feld);};
+        label.append(select);felder.append(label);
+        if(fokus===feld)select.focus({preventScroll:true});
+      }
+      modus.hidden=teamNamen.size<2||new Set(plaetze.map(p=>p.seite)).size<2;
+      modus.textContent=folge[0]==='team'?'Nach Ärmelseite suchen':'Nach Mannschaft suchen';
+      onChange(platz);
+    }
+    modus.onclick=()=>{folge=folge[0]==='team'?['seite','art','team']:['team','art','seite'];zeigen(folge[0]);};
+    zeigen();
+  }
+  const api={freie,filtern,wahl,ARTEN,SEITEN};
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PARTNER_AERMEL=api;
+})(typeof window==='undefined'?globalThis:window);
+
 /* =====================================================================
    Beta 0.80/0.81 · Logo-Werkstatt (gemeinsam für Trikot- und Bandencreator)
    Ein Partnerlogo (PNG, JPG, SVG, Data-URL) wird im Browser analysiert und aufbereitet:
@@ -2786,8 +3040,17 @@ const LOGO = (() => {
     if(!trikot)throw Error('Bitte ein Heim- oder Auswärtstrikot wählen.');
     return motiv(o,trikot);
   }
+  async function angebot(o={}){
+    const artikel={heim:'Heimtrikot',auswaerts:'Auswärtstrikot',anzug:'Trainingsanzug'};
+    if(!Object.hasOwn(artikel,o.art)||!Object.hasOwn(SEITEN,o.seite))throw Error('Bitte Kleidungsstück und Ärmel auswählen.');
+    if(!o.logo)throw Error('Für diese Ärmelvorschau fehlt die Druckfassung des Firmenlogos.');
+    const cv=await (o.art==='anzug'?zeichnen(o):trikotDetail({...o,variante:'weiss'}));
+    cv.setAttribute('role','img');
+    cv.setAttribute('aria-label',(o.firma||'Euer Logo')+' auf dem '+(o.seite==='aermel_l'?'linken':'rechten')+' Ärmel · '+artikel[o.art]);
+    return cv;
+  }
   async function bilder(firma,logo,kit='kit/'){const key=JSON.stringify([firma,logo||null,kit]);if(zuletzt?.key===key)return zuletzt.p;const job={key,p:null};zuletzt=job;job.p=(async()=>{const b={gesamt_foto:true};for(const seite of Object.keys(SEITEN)){const c=await zeichnen({firma,logo,seite,kit,breite:1200});b[seite]=c.toDataURL('image/webp',.94);b[seite==='aermel_l'?'gesamt_l':'gesamt_r']=b[seite];c.width=c.height=1;}return b;})().catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});return job.p;}
-  const api={zeichnen,trikotDetail,trikotFeld,bilder,feld,punkt};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TRAININGSANZUG=api;
+  const api={zeichnen,trikotDetail,trikotFeld,bilder,feld,punkt,angebot};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TRAININGSANZUG=api;
 })(typeof window!=='undefined'?window:globalThis);
 
 /* =====================================================================
@@ -3794,7 +4057,32 @@ const BANDENWAHL = (() => {
     const cw=x1-x0+1,ch=y1-y0+1,out=new Uint8ClampedArray(cw*ch*4);for(let y=0;y<ch;y++)out.set(p.subarray(((y+y0)*W+x0)*4,((y+y0)*W+x0+cw)*4),y*cw*4);
     return {data:out,width:cw,height:ch,removed,background:bg,confidence:already?'transparent':uniform&&removed?'einfarbig':'prüfen',crop:{x:left+x0,y:top+y0,w:cw,h:ch}};
   }
-  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,isContactText,cleanContacts,normalise,create,template,fitImage,textPath,preflight,history,cutout};
+  // Eine Querfassung kommt nur in Frage, wenn ein durchgehend transparenter
+  // Abstand das kompakte obere Zeichen deutlich vom breiteren Schriftblock trennt.
+  function logoBloecke({data,width,height}){
+    if(width<32||height<32||width>3*height)return null;
+    const streifen=[];
+    let block;
+    for(let y=0;y<height;y++){
+      let links=width,rechts=-1;
+      for(let x=0;x<width;x++)if(data[(y*width+x)*4+3]>0){
+        links=Math.min(links,x);rechts=x;
+      }
+      if(rechts<0){block=null;continue;}
+      if(!block){block={links,rechts,oben:y,unten:y};streifen.push(block);}
+      block.links=Math.min(block.links,links);block.rechts=Math.max(block.rechts,rechts);block.unten=y;
+    }
+    if(streifen.length<2)return null;
+    const oben=streifen[0],unten=streifen.slice(1);
+    const luecke=unten[0].oben-oben.unten-1;
+    if(luecke<Math.max(3,.055*height)||unten.some((s,i)=>i&&s.oben-unten[i-1].unten-1>=luecke*.85))return null;
+    const box=s=>({x:Math.min(...s.map(b=>b.links)),y:s[0].oben,
+      w:Math.max(...s.map(b=>b.rechts))-Math.min(...s.map(b=>b.links))+1,h:s[s.length-1].unten-s[0].oben+1});
+    const zeichen=box([oben]),schrift=box(unten);
+    if(zeichen.w/zeichen.h>2.25||zeichen.h<height*.24||schrift.w/schrift.h<2||schrift.w<width*.5)return null;
+    return {zeichen,schrift};
+  }
+  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,isContactText,cleanContacts,normalise,create,template,fitImage,textPath,preflight,history,cutout,logoBloecke};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.BD_CORE=api;
 })(typeof window!=='undefined'?window:globalThis);
 
@@ -3987,7 +4275,7 @@ const BANDENWAHL = (() => {
   function notify(t){if(cfg&&cfg.toast)cfg.toast(t);}
   function resume(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-editor-zu'},location.origin);if(cfg&&cfg.geschlossen)cfg.geschlossen();}
   const motifs=()=>{const list=project&&project.motive||availableMotifs;return Array.isArray(list)?list.filter(m=>m&&['haupt','moerlens'].includes(m.key)&&typeof m.titel==='string').slice(0,2):[];};
-  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),busy:!!loading||saving},location.origin);controls();}
+  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,einzel:documentNow?documentNow.width/documentNow.height<4.7:false,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),busy:!!loading||saving},location.origin);controls();}
   function rpc(fn,args){
     const routes={bandenstudio_projekt_laden:'bandenstudio_motiv_laden',bandenstudio_projekt_speichern:'bandenstudio_motiv_speichern',bandenstudio_kunde_speichern:'bandenstudio_motiv_kunde_speichern'};
     return cfg.rpc(motiv!=='haupt'&&routes[fn]?routes[fn]:fn,motiv!=='haupt'&&routes[fn]?{...args,p_motiv:motiv}:args);
@@ -4060,6 +4348,33 @@ const BANDENWAHL = (() => {
     ++loadGeneration;cfg=o;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
   }
   async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project};}
+  async function amSpielfeld(){
+    const generation=loadGeneration;
+    if(loading)await loading;else if(!project)await load();
+    const doc=documentNow,stand=preview;
+    if(generation!==loadGeneration||!doc||!stand)throw Error('Eure Bandenansicht ist noch nicht verfügbar.');
+    const [foto,motiv]=await Promise.all([R().image('partner/r-bande.webp'),R().image(stand)]);
+    if(documentNow!==doc||preview!==stand)throw Error('Die Gestaltung wurde zwischenzeitlich geändert.');
+    // Befestigungspunkte der beiden Felder im vorhandenen Foto. Für eine Einzelbande
+    // sehen wir nur das linke Feld. Typografie und Zeichen behalten ihr Seitenverhältnis.
+    const einfach=doc.width/doc.height<4.7;
+    const px=foto.naturalWidth,py=foto.naturalHeight,links=.041,rechts=einfach?.496:.961;
+    const mitteY=.517,feldW=(rechts-links)*px,feldH=.269*py;
+    const mass=Math.min(feldW/doc.width,feldH/doc.height);
+    const w=mass*doc.width,h=mass*doc.height;
+    const bildbreite=Math.round(px*(einfach?.518:1));
+    const bildhoehe=Math.round(bildbreite/(einfach?1.55:2.04));
+    const y0=Math.round(mitteY*py-bildhoehe*.50);
+    const cv=R().canvas(bildbreite,bildhoehe),ctx=cv.getContext('2d');
+    ctx.drawImage(foto,0,-y0);
+    ctx.globalCompositeOperation='multiply';
+    ctx.imageSmoothingQuality='high';
+    ctx.drawImage(motiv,links*px+(feldW-w)/2,mitteY*py-h/2-y0,w,h);
+    ctx.globalCompositeOperation='source-over';
+    cv.setAttribute('role','img');
+    cv.setAttribute('aria-label','Euer Bandenentwurf am Spielfeldrand');
+    return cv;
+  }
   function close(){
     if(!modal||saving)return;const old=modal;modal=null;editor=null;nonce='';old.remove();document.body.style.overflow=bodyOverflow;
     if(previousFocus&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});previousFocus=null;context();resume();
@@ -4113,7 +4428,7 @@ const BANDENWAHL = (() => {
     if(e.data.reise==='bande-editor-oeffnen'){if(canEdit()&&!loading)open();else resume();}
     if(e.data.reise==='bande-motiv-waehlen'&&typeof e.data.motiv==='string')changeMotif(e.data.motiv);
   });
-  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,geladen:()=>!!project,regeln:rules};
+  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,amSpielfeld,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,geladen:()=>!!project,regeln:rules};
 })(typeof window!=='undefined'?window:globalThis);
 
 /* Explicit one-use same-origin handoff; no private data in URL or browser history. */

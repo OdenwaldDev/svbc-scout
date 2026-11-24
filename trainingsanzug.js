@@ -138,6 +138,15 @@
     if(!trikot)throw Error('Bitte ein Heim- oder Auswärtstrikot wählen.');
     return motiv(o,trikot);
   }
+  async function angebot(o={}){
+    const artikel={heim:'Heimtrikot',auswaerts:'Auswärtstrikot',anzug:'Trainingsanzug'};
+    if(!Object.hasOwn(artikel,o.art)||!Object.hasOwn(SEITEN,o.seite))throw Error('Bitte Kleidungsstück und Ärmel auswählen.');
+    if(!o.logo)throw Error('Für diese Ärmelvorschau fehlt die Druckfassung des Firmenlogos.');
+    const cv=await (o.art==='anzug'?zeichnen(o):trikotDetail({...o,variante:'weiss'}));
+    cv.setAttribute('role','img');
+    cv.setAttribute('aria-label',(o.firma||'Euer Logo')+' auf dem '+(o.seite==='aermel_l'?'linken':'rechten')+' Ärmel · '+artikel[o.art]);
+    return cv;
+  }
   async function bilder(firma,logo,kit='kit/'){const key=JSON.stringify([firma,logo||null,kit]);if(zuletzt?.key===key)return zuletzt.p;const job={key,p:null};zuletzt=job;job.p=(async()=>{const b={gesamt_foto:true};for(const seite of Object.keys(SEITEN)){const c=await zeichnen({firma,logo,seite,kit,breite:1200});b[seite]=c.toDataURL('image/webp',.94);b[seite==='aermel_l'?'gesamt_l':'gesamt_r']=b[seite];c.width=c.height=1;}return b;})().catch(e=>{if(zuletzt===job)zuletzt=null;throw e;});return job.p;}
-  const api={zeichnen,trikotDetail,trikotFeld,bilder,feld,punkt};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TRAININGSANZUG=api;
+  const api={zeichnen,trikotDetail,trikotFeld,bilder,feld,punkt,angebot};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TRAININGSANZUG=api;
 })(typeof window!=='undefined'?window:globalThis);

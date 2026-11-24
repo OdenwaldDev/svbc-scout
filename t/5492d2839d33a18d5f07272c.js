@@ -89,10 +89,12 @@ function pdKarten(B,D){ const H=B.querySelector('.pd-l'); if(!H)return; const q=
         <small class="pd-schau">${d.aufrufe?`${SVI('eye')} ${d.aufrufe} Linkaufrufe, auch vor Ort, zuletzt ${svEsc(pdDatum(d.zuletzt))}`:'Noch keine Linkaufrufe'}${d.anfragen?` · ${d.anfragen} Anfrage${d.anfragen>1?'n':''}`:''}${d.antrag?' · <b class="pd-ok">Antrag unterschrieben</b>':''}${d.aktiv?'':' · abgeschaltet'}</small></div>
       <div class="pd-tags">${x?`<i class="spo-st s-${svEsc(x.status)}">${svEsc(SPO_STL[x.status]||x.status)}</i>`:'<i class="spo-st pd-ohne">Nicht unter Firmen</i>'}</div></div>
       <div class="pd-akt">${x?'':`<button type="button" class="btn ghost sm" data-pdakteneu="${svEsc(d.id)}">${SVI('plus')} Zu Firmen hinzufügen</button>`}
+        ${d.aktiv&&d.hat_angebot===true?`<a class="btn" href="${svEsc(svBasis()+'partner.html?angebot=1&intern=1#d='+d.code)}" target="_blank" rel="noopener">Zum Angebot</a>`:''}
         <a class="btn ghost" href="${svEsc(svBasis()+'partner.html?reise=1&intern=1#d='+d.code)}" target="_blank" rel="noopener" title="Mit deiner Anmeldung: Sonderpreis, Sonstiges, Unterschrift für den Verein">${SVI('eye')} Präsentation starten</a>
         <button type="button" class="btn ghost" data-pdnutzung="${svEsc(d.code)}">Spätere Nutzung</button>
         ${partner?`<button type="button" class="btn ghost" data-pdakte="${svEsc(x.id)}">${SVI('file')} Akte öffnen</button>`:x?`<button type="button" class="btn ghost" data-pdsend="${svEsc(d.id)}">${SVI('send')} Schicken</button>`:''}
         <details class="pd-mehr"><summary aria-label="Mehr zu ${svEsc(d.firma)}">…</summary><div>
+          ${d.aktiv&&typeof spoDarf==='function'&&spoDarf('sponsoring:vertrag')?`<a class="btn ghost sm" href="${svEsc(svBasis()+'partner.html?reise=0&entwurf=1&intern=1#d='+d.code)}" target="_blank" rel="noopener">Angebot vorbereiten</a>`:''}
           <button type="button" class="btn ghost sm" data-pdcp="${svEsc(d.code)}">${SVI('copy')} Link kopieren</button>
           <button type="button" class="btn ghost sm" data-pddeckpdf="${svEsc(d.id)}">${SVI('download')} Als PDF laden</button>
           ${x?'':`<a class="btn ghost sm pd-wa" href="${wa}" target="_blank" rel="noopener">${SVI('chat')} Per WhatsApp schicken</a>`}

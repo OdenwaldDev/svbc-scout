@@ -43,6 +43,7 @@ h1 em{font-style:inherit;color:#ff8a3c}
 .z small{display:block;color:#b9c6e8;font-size:13.5px}
 .z .t{flex:1;min-width:0}
 .z svg{flex:none;width:20px;height:20px;color:#ff8a3c}
+.treffer-mit-angebot{display:flex;align-items:stretch;gap:6px}.treffer-mit-angebot .z{min-width:0}.treffer-mit-angebot .kn{flex:0 0 auto;align-self:stretch;min-height:44px;padding:0 14px;font-size:16px;white-space:nowrap}
 .z.neu{border-style:dashed;border-color:rgba(255,138,60,.6)}
 .z.neu b{color:#ffb27a}
 .hin{margin:12px 2px 0;color:#b9c6e8;font-size:14.5px;min-height:1.45em}
@@ -116,7 +117,7 @@ h1 em{font-style:inherit;color:#ff8a3c}
 
 <div id="los" hidden role="status"><div><div class="logo"><i aria-hidden="true"></i><i class="b" aria-hidden="true"></i><img src="partner/r-svbsc.png" alt="" width="480" height="273"></div><p>Präsentation für</p><b id="losF"></b></div></div>
 
-<script src="vendor/supabase.js?v=beta-0.99.153"></script>
+<script src="vendor/supabase.js?v=beta-0.99.154"></script>
 <script>
 (function(){
 'use strict';
@@ -156,9 +157,11 @@ function treffer(t){ const w=norm(t).split(' ').filter(Boolean); if(!w.length)re
 function suche(){ const t=$('#q').value.trim(), L=$('#liste'), H=$('#hin'); H.className='hin';
   if(norm(t).length<2){ L.innerHTML=''; H.textContent=t?'Noch ein Buchstabe.':''; return; }
   const T=treffer(t), gleich=T.some(d=>gleicherName(d,t));
-  L.innerHTML=T.map((d,i)=>'<button type="button" class="z" data-i="'+i+'" style="animation-delay:'+(i*35)+'ms"><span class="t"><b>'+esc(d.firma)+'</b>'+(d.passung?.start_anlass?'<small>Persönliche Präsentation</small>':d.branche?'<small>'+esc(d.branche)+'</small>':'')+'</span>'+PFEIL+'</button>').join('')
+  L.innerHTML=T.map((d,i)=>{const starten='<button type="button" class="z" data-i="'+i+'" style="animation-delay:'+(i*35)+'ms"><span class="t"><b>'+esc(d.firma)+'</b>'+(d.passung?.start_anlass?'<small>Persönliche Präsentation</small>':d.branche?'<small>'+esc(d.branche)+'</small>':'')+'</span>'+PFEIL+'</button>';
+    return d.hat_angebot===true?'<div class="treffer-mit-angebot">'+starten+'<button class="kn" type="button" data-angebot="'+i+'" aria-label="Zum Angebot für '+esc(d.kurzname||d.firma)+'">Zum Angebot</button></div>':starten;}).join('')
     +(gleich?'':'<button type="button" class="z neu" id="neuB"><span class="t"><b>„'+esc(t)+'“ neu anlegen</b><small>Die Firma steht danach auch in der App.</small></span>'+PLUS+'</button>');
   L.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>los(T[+b.dataset.i]));
+  L.querySelectorAll('[data-angebot]').forEach(b=>b.onclick=()=>los(T[+b.dataset.angebot],true));
   const nb=$('#neuB'); if(nb)nb.onclick=()=>neuAuf(t);
   H.textContent=T.length?'':'Noch nicht dabei. Du kannst die Firma gleich anlegen.'; }
 
@@ -179,12 +182,12 @@ async function anlegen(e){ e.preventDefault(); if(laeuft)return; const H=$('#nHi
 }
 
 // Start der Präsentation: ein Eintrag im Verlauf der Firma (einmal je Tag), dann die Reise im Vollbild
-async function los(d){ if(laeuft)return; laeuft=true; $('#losF').textContent=d.firma; $('#los').hidden=false; const t0=Date.now(); let kid=null;
-  const ziel=d.passung?.start_anlass?'anlass.html?termin='+encodeURIComponent(d.id):'partner.html?reise=1#d='+encodeURIComponent(d.code);
+async function los(d,angebot=false){ if(laeuft)return; laeuft=true; $('#losF').textContent=d.firma; $('#los').hidden=false; const t0=Date.now(); let kid=null;
+  const ziel=angebot&&d.hat_angebot===true?'partner.html?angebot=1&intern=1#d='+encodeURIComponent(d.code):d.passung?.start_anlass?'anlass.html?termin='+encodeURIComponent(d.id):'partner.html?reise=1#d='+encodeURIComponent(d.code);
   if(d.sponsor){ try{ const h=heute(), {data:alt}=await sb.from('sponsor_kontakte').select('id,notiz').eq('sponsor',d.sponsor).eq('am',h).limit(30);
       const schon=(alt||[]).find(k=>/\(Partner-Start\)/.test(k.notiz||''));
       if(schon)kid=schon.id; else{ const {data:n,error}=await sb.from('sponsor_kontakte').insert({sponsor:d.sponsor,art:'sonst',am:h,notiz:'Präsentation im Termin gezeigt (Partner-Start).'}).select('id').single(); if(!error&&n)kid=n.id; } }catch(e){} }
-  try{ if(!d.passung?.start_anlass)sessionStorage.setItem('ps-kontakt',JSON.stringify({code:String(d.code).toLowerCase(),id:kid})); }catch(e){}
+  try{ if(angebot||!d.passung?.start_anlass)sessionStorage.setItem('ps-kontakt',JSON.stringify({code:String(d.code).toLowerCase(),id:kid})); }catch(e){}
   const rest=Math.max(0,(matchMedia('(prefers-reduced-motion:reduce)').matches?200:1100)-(Date.now()-t0));
   setTimeout(()=>{ location.href=ziel; },rest); }
 

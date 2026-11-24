@@ -27,9 +27,9 @@
     const felder={};for(const k of FIELDS)if(own(f,k)&&typeof f[k]==='string')felder[k]=str(f[k],k==='adresse'?400:120);
     return {stand,wahl,felder};
   }
-  function shareURL(origin,code,token,qr,kurz=false){
+  function shareURL(origin,code,token,qr,kurz=false,angebot=false){
     if(!/^[a-f0-9]{32}$/.test(code||''))throw Error('Der persönliche Präsentationslink fehlt.');
-    const u=new URL('partner.html',origin+'/');u.search='?reise=1';if(kurz&&tokenOK(token))u.searchParams.set('kurz','1');const h=new URLSearchParams({d:code});if(tokenOK(token))h.set('teilen',token);if(qr)h.set('qr','1');u.hash=h.toString();return u.href;
+    const u=new URL('partner.html',origin+'/');u.search=angebot?'?angebot=1':'?reise=1';if(!angebot&&kurz&&tokenOK(token))u.searchParams.set('kurz','1');const h=new URLSearchParams({d:code});if(tokenOK(token))h.set('teilen',token);if(qr)h.set('qr','1');u.hash=h.toString();return u.href;
   }
   const RULES={cleanSnapshot,shareURL,tokenOK,SCENES,ACTIONS};
   if(typeof module!=='undefined'&&module.exports){module.exports=RULES;return;}
@@ -63,8 +63,8 @@
   function dialog(title,body){
     const opener=modal?.opener?.isConnected?modal.opener:document.activeElement;closeModal(true);const d=document.createElement('div');d.className='pd-share-backdrop';
     d.innerHTML='<section class="pd-share-dialog" role="dialog" aria-modal="true" aria-labelledby="pdShareTitle"><header><div><p class="pd-share-kicker">SV/BSC Mörlenbach</p><h2 id="pdShareTitle" tabindex="-1">'+esc(title)+'</h2></div><button type="button" class="pd-share-x" aria-label="Schließen">×</button></header>'+body+'</section>';
-    const keys=e=>{if(e.key==='Escape'){e.preventDefault();closeModal();return;}if(e.key!=='Tab')return;const f=focusables(d),first=f[0],last=f[f.length-1];if(!first)return;if(e.shiftKey&&(document.activeElement===first||!f.includes(document.activeElement))){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||!d.contains(document.activeElement))){e.preventDefault();first.focus();}};
-    modal={node:d,keys,opener};document.body.appendChild(d);document.addEventListener('keydown',keys,true);d.querySelector('.pd-share-x').onclick=closeModal;d.querySelector('h2').focus({preventScroll:true});return d;
+    const keys=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeModal();return;}if(e.key!=='Tab')return;const f=focusables(d),first=f[0],last=f[f.length-1];if(!first)return;if(e.shiftKey&&(document.activeElement===first||!f.includes(document.activeElement))){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||!d.contains(document.activeElement))){e.preventDefault();first.focus();}};
+    modal={node:d,keys,opener};(opener?.closest?.('dialog[open]')||document.body).appendChild(d);document.addEventListener('keydown',keys,true);d.querySelector('.pd-share-x').onclick=closeModal;d.querySelector('h2').focus({preventScroll:true});return d;
   }
   function shareButton(){
     if(!cfg||$('#pdTeilen'))return;
@@ -163,9 +163,11 @@
     })();
     try{return await row.promise;}finally{if(sharePreparing===row)sharePreparing=null;}
   }
-  async function openShare(){
-    if(!cfg)return;const requestCfg=cfg,d=dialog('Präsentation teilen','<p class="pd-share-lead">Der persönliche Link wird vorbereitet.</p><p class="pd-share-feedback" role="status"></p>');
-    try{const links=await ensureShare();if(modal?.node!==d||cfg!==requestCfg)return;const firma=requestCfg.firma(),body=d.querySelector('.pd-share-dialog');
+  async function openShare(options={}){
+    if(!cfg)return;const direkt=options.angebot===true,requestCfg=cfg,d=dialog(direkt?'Angebot teilen':'Präsentation teilen','<p class="pd-share-lead">Der persönliche Link wird vorbereitet.</p><p class="pd-share-feedback" role="status"></p>');
+    try{const vorbereitet=await ensureShare();if(modal?.node!==d||cfg!==requestCfg)return;
+      const links=direkt?Object.assign({},vorbereitet,{url:shareURL(location.origin,vorbereitet.code,vorbereitet.token,false,false,true),qr:shareURL(location.origin,vorbereitet.code,vorbereitet.token,true,false,true)}):vorbereitet;
+      const firma=requestCfg.firma(),body=d.querySelector('.pd-share-dialog');
       const actions=`<div class="pd-share-ways"><button type="button" data-share="copy">Link kopieren</button><a data-share="whatsapp" target="_blank" rel="noopener noreferrer">WhatsApp</a><a data-share="email">E-Mail</a>${navigator.share?'<button type="button" data-share="system">Weitere Wege</button>':''}</div>`;
       body.insertAdjacentHTML('beforeend','<p class="pd-share-firma">'+esc(firma)+'</p><div class="pd-share-qr" aria-label="QR-Code nur für diese Präsentation"></div><p class="pd-share-explain">'+(links.gespeichert?'Der Link enthält die gesicherte Auswahl und Firmenangaben. Interne Notizen und Unterschriften sind nicht dabei.':'Der Link öffnet diese Präsentation. Für einen gemeinsamen gespeicherten Stand muss das Partner-Team den Link im Termin erstellen.')+'</p>'+actions+'<label class="pd-share-link-label">Persönlicher Link<input class="pd-share-link" readonly aria-label="Persönlicher Präsentationslink"></label><p class="pd-share-small">Wer diesen Link hat, kann die Präsentation und die mitgegebenen Angaben ansehen. Teile ihn mit den Zuständigen im Betrieb.</p>'+(ownShare?'<section class="pd-share-follow"><h3>Nach dem Termin</h3><p>Der erste QR-Aufruf und diese Vereinsvorschau zählen nicht. Aktiviere die spätere Auswertung erst, wenn du den Termin beendet hast.</p><label class="pd-share-check"><input type="checkbox" id="pdShareReminder"> Mich erinnern, wenn keine freigegebene spätere Nutzung erfasst wurde</label><label class="pd-share-days">Erinnerung nach <input type="number" min="1" max="30" value="3" id="pdShareDays"> Tagen</label><button type="button" class="pd-share-primary" data-share="end">Termin ist beendet, Nachverfolgung starten</button><button type="button" data-share="report">Aktivität ansehen</button><p class="pd-share-feedback" data-end-status role="status"></p></section>':internal?'<button type="button" data-share="report">Aktivität ansehen</button>':'')+'<p class="pd-share-feedback" data-feedback role="status"></p>');
       d.querySelector('.pd-share-lead').remove();const qr=d.querySelector('.pd-share-qr');qr.innerHTML=typeof PLIB!=='undefined'&&PLIB.qrSvg?PLIB.qrSvg(links.qr,480):'';const qrSvg=qr.querySelector('svg');if(qrSvg)qrSvg.setAttribute('aria-label','QR-Code für diese persönliche Präsentation');else qr.textContent='Der QR-Code ist gerade nicht verfügbar. Du kannst den Link kopieren.';
@@ -175,7 +177,7 @@
       const system=d.querySelector('[data-share="system"]');if(system)system.onclick=()=>navigator.share({title:'Partnerschaft SV/BSC Mörlenbach',text:firma,url:links.url}).catch(e=>{if(e?.name!=='AbortError')d.querySelector('[data-feedback]').textContent='Teilen klappt gerade nicht. Kopiere den Link.';});
       const end=d.querySelector('[data-share="end"]');if(end)end.onclick=async()=>{end.disabled=true;try{checked(await requestCfg.rpc('partner_teilen_terminende',{p_token:links.token,p:{beendet:true,erinnern:d.querySelector('#pdShareReminder').checked,erinnerung_tage:Math.max(1,Math.min(30,+d.querySelector('#pdShareDays').value||3))}}));d.querySelector('[data-end-status]').textContent='Aktiv. Nur später neu begonnene, freiwillig freigegebene Nutzung wird gewertet.';end.textContent='Nachverfolgung ist aktiv';}catch(e){end.disabled=false;d.querySelector('[data-end-status]').textContent=errorText(e);}};
       const report=d.querySelector('[data-share="report"]');if(report)report.onclick=()=>openReport(links.code,requestCfg.rpc);
-    }catch(e){if(modal?.node!==d)return;d.querySelector('.pd-share-lead').textContent=errorText(e);const retry=document.createElement('button');retry.type='button';retry.textContent='Noch einmal versuchen';retry.onclick=openShare;d.querySelector('.pd-share-dialog').appendChild(retry);}
+    }catch(e){if(modal?.node!==d)return;d.querySelector('.pd-share-lead').textContent=errorText(e);const retry=document.createElement('button');retry.type='button';retry.textContent='Noch einmal versuchen';retry.onclick=()=>openShare(options);d.querySelector('.pd-share-dialog').appendChild(retry);}
   }
   const SIGNAL={offen:'Noch kein belastbares Signal',orientiert:'Verein und Möglichkeiten angesehen',konkret:'Auswahl oder Preise betrachtet',vertieft:'Wiederholt mit dem Angebot beschäftigt',abgesagt:'Derzeit kein Interesse'};
   const SCENE_LABEL={start:'Start',worum:'Verein',verb:'Verbindung zum Verein',antrieb:'Ziele',buehne:'Auftritt',groesse:'Pakete',platz:'Platzwahl',extras:'Bausteine',bon:'Auswahl',ja:'Abschluss',pakete:'Pakete',bausteine:'Bausteine',baukasten:'Auswahl',abschluss:'Abschluss'};

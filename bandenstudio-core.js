@@ -178,6 +178,31 @@
     const cw=x1-x0+1,ch=y1-y0+1,out=new Uint8ClampedArray(cw*ch*4);for(let y=0;y<ch;y++)out.set(p.subarray(((y+y0)*W+x0)*4,((y+y0)*W+x0+cw)*4),y*cw*4);
     return {data:out,width:cw,height:ch,removed,background:bg,confidence:already?'transparent':uniform&&removed?'einfarbig':'prüfen',crop:{x:left+x0,y:top+y0,w:cw,h:ch}};
   }
-  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,isContactText,cleanContacts,normalise,create,template,fitImage,textPath,preflight,history,cutout};
+  // Eine Querfassung kommt nur in Frage, wenn ein durchgehend transparenter
+  // Abstand das kompakte obere Zeichen deutlich vom breiteren Schriftblock trennt.
+  function logoBloecke({data,width,height}){
+    if(width<32||height<32||width>3*height)return null;
+    const streifen=[];
+    let block;
+    for(let y=0;y<height;y++){
+      let links=width,rechts=-1;
+      for(let x=0;x<width;x++)if(data[(y*width+x)*4+3]>0){
+        links=Math.min(links,x);rechts=x;
+      }
+      if(rechts<0){block=null;continue;}
+      if(!block){block={links,rechts,oben:y,unten:y};streifen.push(block);}
+      block.links=Math.min(block.links,links);block.rechts=Math.max(block.rechts,rechts);block.unten=y;
+    }
+    if(streifen.length<2)return null;
+    const oben=streifen[0],unten=streifen.slice(1);
+    const luecke=unten[0].oben-oben.unten-1;
+    if(luecke<Math.max(3,.055*height)||unten.some((s,i)=>i&&s.oben-unten[i-1].unten-1>=luecke*.85))return null;
+    const box=s=>({x:Math.min(...s.map(b=>b.links)),y:s[0].oben,
+      w:Math.max(...s.map(b=>b.rechts))-Math.min(...s.map(b=>b.links))+1,h:s[s.length-1].unten-s[0].oben+1});
+    const zeichen=box([oben]),schrift=box(unten);
+    if(zeichen.w/zeichen.h>2.25||zeichen.h<height*.24||schrift.w/schrift.h<2||schrift.w<width*.5)return null;
+    return {zeichen,schrift};
+  }
+  const api={CI,FONTS,FORMATS,TEMPLATES,num,text,colour,clone,uid,esc,isRaster,hexRGB,isContactText,cleanContacts,normalise,create,template,fitImage,textPath,preflight,history,cutout,logoBloecke};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.BD_CORE=api;
 })(typeof window!=='undefined'?window:globalThis);

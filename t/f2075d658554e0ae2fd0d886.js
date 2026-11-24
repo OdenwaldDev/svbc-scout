@@ -578,6 +578,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.154',v:'0.99.154',datum:'2026-11-24',titel:'Direkt zum Partnerangebot',kurz:'Persönliche Angebote lassen sich direkt mit Paket, Bande und Ärmel öffnen.',punkte:[{ic:'i',t:'Ärmel auswählen',d:'Im Gespräch könnt ihr nach Mannschaft oder Ärmelseite suchen und die freien Plätze auf Trikot und Trainingsanzug ansehen.',r:'admin'}]},
   {id:'0.99.153',v:'0.99.153',datum:'2026-11-24',titel:'Ein Gang durch das Partnergespräch',kurz:'Im persönlichen Partnerflow könnt ihr am Spielfeldrand die Bande aus der Nähe ansehen.',punkte:[{ic:'i',t:'Beitrag durchwischen',d:'Beide Motive des geplanten Vereinsbeitrags lassen sich direkt im Gespräch ausprobieren.',r:'admin'}]},
   {id:'0.99.152',v:'0.99.152',datum:'2026-11-24',titel:'Vereinsheft für Partnergespräche',kurz:'Die neue Präsentationsansicht verbindet Bilder aus Verein und Studio.',punkte:[{ic:'i',t:'Gemeinsam blättern',d:'Die Kapitel lassen sich auf dem Handy und als vollständiges Heft im PDF ansehen.',r:'admin'}]},
   {id:'0.99.151',v:'0.99.151',datum:'2026-11-24',titel:'Partnerreise mit freier Kapitelwahl',kurz:'Im persönlichen Partnergespräch könnt ihr das Thema auswählen, das euch interessiert.',punkte:[{ic:'i',t:'Direkt ins Thema',d:'Die Auswahl führt zum passenden Kapitel. Zurück bringt euch wieder zur Auswahl.',r:'admin'}]},
