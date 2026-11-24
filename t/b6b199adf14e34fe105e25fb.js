@@ -719,9 +719,20 @@ function bcKnoepfe(){
 /* ---------- Zeichnen ---------- */
 function bcInhalt(spec, hasLogo){
   const pattern = BANDE.muster(spec), nameAn = !!hasLogo && pattern === 'normal' && spec.nameAn === true;
-  return { name:!hasLogo || nameAn ? BANDE.sauber(BANDE.ohneKontakt(spec.name || spec.firma)) : '', claim:hasLogo && pattern === 'moerlens' ? 'Restobar & Patisserie' : '', web:'', telefon:'', branche:spec.branche || '', kontakt:false, nameAn, pattern, logoFarbe:spec.logoFarbe, akzent:spec.akzent };
+  const old = spec.left === 'EVENT' && spec.right === 'KREATIV';
+  const sides = pattern === 'bb' ? { left:old ? 'EVENT' : 'KREATIV', right:old ? 'KREATIV' : 'EVENT' } : {};
+  return { ...sides, name:!hasLogo || nameAn ? BANDE.sauber(BANDE.ohneKontakt(spec.name || spec.firma)) : '', claim:hasLogo && pattern === 'moerlens' ? 'Restobar & Patisserie' : '', web:'', telefon:'', branche:spec.branche || '', kontakt:false, nameAn, pattern, logoFarbe:spec.logoFarbe, akzent:spec.akzent };
 }
-function bcSpecVoll(){ const l = bcLogo(); return Object.assign({}, BC.spec, bcInhalt(BC.spec, !!l), { logo:l ? l.bild : null, logoGewollt:!!l }); }
+function bcSpecVoll(){
+  const l = bcLogo(), saved = BC.d?.entwuerfe?.find(e => e.id === BC.entwurf);
+  const spec = { ...BC.spec };
+  if(saved && BANDE.muster(spec) === 'bb'){
+    // Ein gespeicherter Stand ohne Seitenangabe entstand mit EVENT links, unabhängig vom aktuellen Druckstatus.
+    const current = saved.inhalt?.left === 'KREATIV' && saved.inhalt?.right === 'EVENT';
+    spec.left = current ? 'KREATIV' : 'EVENT'; spec.right = current ? 'EVENT' : 'KREATIV';
+  }
+  return { ...spec, ...bcInhalt(spec, !!l), logo:l ? l.bild : null, logoGewollt:!!l };
+}
 function bcNeu(sofort){ clearTimeout(BC.vorT); BC.vorT = setTimeout(bcZeichnen, sofort ? 0 : 140); }
 async function bcZeichnen(){
   const tok = ++BC.tok, sp = bcSpecVoll();
@@ -839,12 +850,13 @@ function bcSpeichernDialog(){
     const fa = inp.value.trim(); if(!fa){ kToast('Bitte die Firma eintragen.'); inp.focus(); return; }
     try{ if(fa.trim().toLowerCase() !== (s.firma || '').trim().toLowerCase()) bcEigenerName(fa);
       const snapshot=bcSpecVoll(),vorEntwurf=BC.entwurf,entwurf=gesperrt?null:vorEntwurf,sponsor=BC.sponsor||null,firmaKey=BC.firmaKey,tok=BC.tok,platz=M.querySelector('#bcDlgPlatz').value||null;
+      if(gesperrt && BANDE.muster(snapshot)==='bb'){ snapshot.left='KREATIV'; snapshot.right='EVENT'; }
       const aktuell=()=>BC.spec.firma===snapshot.firma&&BC.firmaKey===firmaKey&&(BC.sponsor||null)===sponsor&&BC.entwurf===vorEntwurf&&BC.tok===tok;
       const logo=await bcLogoSichern(fa,bcLogo(),sponsor,aktuell);
       const res=await BANDE.vorbereiten(snapshot,{basis:'partner/',wappen:'plakat/wappen/svbsc-moerlenbach.webp'}),layout=BANDE.layout(snapshot,res),inhalt=bcInhalt(snapshot,!!logo);
       const r = await bcRpc('banden_entwurf_speichern', { p:{ id:entwurf, firma:fa, sponsor, logo, format:snapshot.format, stil:snapshot.stil, layout:snapshot.layout, inhalt, vorschau:bcVorschauUrl(layout,res), platz } });
       if(!aktuell()){kToast('Bandenentwurf für '+fa+' gespeichert.');return;}
-      BC.entwurf = r.id; BC.platz = r.platz || null; ++BC.tok; BC.lay=layout; BC.res=res; closeOverlay(); await bcLaden(true); bcListe(); bcLogosZeigen(); bcFormularFuellen(); bcBuehne(); bcInfo();
+      BC.entwurf = r.id; BC.platz = r.platz || null; ++BC.tok; BC.lay=layout; BC.res=res; closeOverlay(); await bcLaden(true); bcListe(); bcLogosZeigen(); bcFormularFuellen(); bcVorschlaege(); bcBuehne(); bcInfo();
       kToast(platz ? `Gespeichert. ${bcPlatzName(bcPlatz(platz))} ist für ${fa} reserviert.` : 'Gespeichert.');
     }catch(e){ kToast(e.message); } }, 'Speichert …');
 }

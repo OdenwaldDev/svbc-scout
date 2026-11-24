@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.160', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.161', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18755,6 +18755,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.161',v:'0.99.161',datum:'2026-11-24',titel:'Die Bande von BB Berns&Baltz',kurz:'Auf der BB-Bande steht links KREATIV und rechts EVENT. Das BB-Signet sitzt in der Mitte.',punkte:[{ic:'i',t:'Vorschau im Partnerlink',d:'Im persönlichen Link lässt sich die BB-Bande neben dem eigenen Motiv für Mörlens auswählen.',r:'team'}]},
   {id:'0.99.160',v:'0.99.160',datum:'2026-11-24',titel:'Finanzen und persönliche Drive-Ordner',kurz:'Unter Heute findet ihr eure freigegebenen Vereinsordner. In den Bereichen seht ihr die passenden Ordner direkt.',punkte:[{ic:'i',t:'Einzelne Aufgaben bei der Einladung',d:'Wähle zuerst die Funktion im Verein. Aufgaben aus einem weiteren Bereich kannst du einzeln ergänzen.',r:'admin'}]},
   {id:'0.99.159',v:'0.99.159',datum:'2026-11-24',titel:'Firmenfarbe auf der Bande',kurz:'Im Bandenplan könnt ihr das Bildzeichen in Firmenfarbe zeigen. Der Name daneben steht in Vereinsblau.',punkte:[{ic:'i',t:'Gestaltung am Platz abstimmen',d:'Vergleicht beide Vorschläge mit dem Originallogo. Die Partnerleitung kann die gewählte Fassung für den Druck freigeben.',r:'team'}]},
   {id:'0.99.158',v:'0.99.158',datum:'2026-11-24',titel:'Bandenplan in Vereinsfarben',kurz:'Im Stadion startet ihr mit der Reihe für 2027/28. Freie Plätze zeigen ihre Partnerstufe.',punkte:[{ic:'i',t:'CI und Original vergleichen',d:'Tippt eine belegte Bande an und wechselt die Logofarben. Im Bandenplan kann die Partnerleitung die abgestimmte CI-Fassung freigeben und die Druckdateien herunterladen.',r:'team'}]},
@@ -30277,8 +30278,9 @@ const BANDE = (() => {
       const lw = Math.min(aw * .32, Hu * 1.45), gap = Math.min(H * .10, aw * .04), sw = (aw - lw - 2 * gap) / 2, b = logoBox(lw, Hu);
       img(b, cx - b.w / 2, m + (Hu - b.h) / 2);
       const fs = Math.min(Hu * .85, sw / (Math.max(mess('EVENT', nF).w, mess('KREATIV', nF).w) / 100));
-      const left = einpassen('EVENT', nF, sw, Hu, fs, 1), right = einpassen('KREATIV', nF, sw, Hu, fs, 1);
-      txt(left, x0 + sw / 2, (H - left.h) / 2, 'event'); txt(right, W - m - sw / 2, (H - right.h) / 2, 'kreativ');
+      const old = spec.left === 'EVENT' && spec.right === 'KREATIV';
+      const left = einpassen(old ? 'EVENT' : 'KREATIV', nF, sw, Hu, fs, 1), right = einpassen(old ? 'KREATIV' : 'EVENT', nF, sw, Hu, fs, 1);
+      txt(left, x0 + sw / 2, (H - left.h) / 2, old ? 'event' : 'kreativ'); txt(right, W - m - sw / 2, (H - right.h) / 2, old ? 'kreativ' : 'event');
     } else if(pattern === 'moerlens'){
       const claim = einpassen('Restobar & Patisserie', cF, aw, Hu * .22, H * .19, 1), gap = H * .05, b = logoBox(aw, Hu - claim.h - gap), y = m + (Hu - b.h - claim.h - gap) / 2;
       img(b, cx - b.w / 2, y); txt(claim, cx, y + b.h + gap, 'claim', claimF);
@@ -31533,9 +31535,20 @@ function bcKnoepfe(){
 /* ---------- Zeichnen ---------- */
 function bcInhalt(spec, hasLogo){
   const pattern = BANDE.muster(spec), nameAn = !!hasLogo && pattern === 'normal' && spec.nameAn === true;
-  return { name:!hasLogo || nameAn ? BANDE.sauber(BANDE.ohneKontakt(spec.name || spec.firma)) : '', claim:hasLogo && pattern === 'moerlens' ? 'Restobar & Patisserie' : '', web:'', telefon:'', branche:spec.branche || '', kontakt:false, nameAn, pattern, logoFarbe:spec.logoFarbe, akzent:spec.akzent };
+  const old = spec.left === 'EVENT' && spec.right === 'KREATIV';
+  const sides = pattern === 'bb' ? { left:old ? 'EVENT' : 'KREATIV', right:old ? 'KREATIV' : 'EVENT' } : {};
+  return { ...sides, name:!hasLogo || nameAn ? BANDE.sauber(BANDE.ohneKontakt(spec.name || spec.firma)) : '', claim:hasLogo && pattern === 'moerlens' ? 'Restobar & Patisserie' : '', web:'', telefon:'', branche:spec.branche || '', kontakt:false, nameAn, pattern, logoFarbe:spec.logoFarbe, akzent:spec.akzent };
 }
-function bcSpecVoll(){ const l = bcLogo(); return Object.assign({}, BC.spec, bcInhalt(BC.spec, !!l), { logo:l ? l.bild : null, logoGewollt:!!l }); }
+function bcSpecVoll(){
+  const l = bcLogo(), saved = BC.d?.entwuerfe?.find(e => e.id === BC.entwurf);
+  const spec = { ...BC.spec };
+  if(saved && BANDE.muster(spec) === 'bb'){
+    // Ein gespeicherter Stand ohne Seitenangabe entstand mit EVENT links, unabhängig vom aktuellen Druckstatus.
+    const current = saved.inhalt?.left === 'KREATIV' && saved.inhalt?.right === 'EVENT';
+    spec.left = current ? 'KREATIV' : 'EVENT'; spec.right = current ? 'EVENT' : 'KREATIV';
+  }
+  return { ...spec, ...bcInhalt(spec, !!l), logo:l ? l.bild : null, logoGewollt:!!l };
+}
 function bcNeu(sofort){ clearTimeout(BC.vorT); BC.vorT = setTimeout(bcZeichnen, sofort ? 0 : 140); }
 async function bcZeichnen(){
   const tok = ++BC.tok, sp = bcSpecVoll();
@@ -31653,12 +31666,13 @@ function bcSpeichernDialog(){
     const fa = inp.value.trim(); if(!fa){ kToast('Bitte die Firma eintragen.'); inp.focus(); return; }
     try{ if(fa.trim().toLowerCase() !== (s.firma || '').trim().toLowerCase()) bcEigenerName(fa);
       const snapshot=bcSpecVoll(),vorEntwurf=BC.entwurf,entwurf=gesperrt?null:vorEntwurf,sponsor=BC.sponsor||null,firmaKey=BC.firmaKey,tok=BC.tok,platz=M.querySelector('#bcDlgPlatz').value||null;
+      if(gesperrt && BANDE.muster(snapshot)==='bb'){ snapshot.left='KREATIV'; snapshot.right='EVENT'; }
       const aktuell=()=>BC.spec.firma===snapshot.firma&&BC.firmaKey===firmaKey&&(BC.sponsor||null)===sponsor&&BC.entwurf===vorEntwurf&&BC.tok===tok;
       const logo=await bcLogoSichern(fa,bcLogo(),sponsor,aktuell);
       const res=await BANDE.vorbereiten(snapshot,{basis:'partner/',wappen:'plakat/wappen/svbsc-moerlenbach.webp'}),layout=BANDE.layout(snapshot,res),inhalt=bcInhalt(snapshot,!!logo);
       const r = await bcRpc('banden_entwurf_speichern', { p:{ id:entwurf, firma:fa, sponsor, logo, format:snapshot.format, stil:snapshot.stil, layout:snapshot.layout, inhalt, vorschau:bcVorschauUrl(layout,res), platz } });
       if(!aktuell()){kToast('Bandenentwurf für '+fa+' gespeichert.');return;}
-      BC.entwurf = r.id; BC.platz = r.platz || null; ++BC.tok; BC.lay=layout; BC.res=res; closeOverlay(); await bcLaden(true); bcListe(); bcLogosZeigen(); bcFormularFuellen(); bcBuehne(); bcInfo();
+      BC.entwurf = r.id; BC.platz = r.platz || null; ++BC.tok; BC.lay=layout; BC.res=res; closeOverlay(); await bcLaden(true); bcListe(); bcLogosZeigen(); bcFormularFuellen(); bcVorschlaege(); bcBuehne(); bcInfo();
       kToast(platz ? `Gespeichert. ${bcPlatzName(bcPlatz(platz))} ist für ${fa} reserviert.` : 'Gespeichert.');
     }catch(e){ kToast(e.message); } }, 'Speichert …');
 }
@@ -41425,8 +41439,8 @@ if(typeof vtZeigen==='function'){
     }else if(pattern==='bb'){
       const lw=Math.min(frame.w*.32,frame.h*1.45),gap=Math.min(H*.10,frame.w*.04),sw=(frame.w-lw-2*gap)/2,size=Math.min(frame.h*.85,sw/3.16),th=size*.7;
       img(frame.x+(frame.w-lw)/2,frame.y,lw,frame.h);
-      txt(fields.left==='EVENT'?fields.left:'EVENT',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
-      txt(fields.right==='KREATIV'?fields.right:'KREATIV',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt('KREATIV',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt('EVENT',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
     }else if(pattern==='moerlens'&&claim){
       const a=d.assets[logo],ch=Math.min(H*.14,frame.h*.22),gap=Math.min(H*.05,frame.h*.08),lh=Math.min(frame.h-ch-gap,frame.w*a.height/a.width),lw=lh*a.width/a.height,ly=frame.y+(frame.h-lh-gap-ch)/2;
       img(frame.x+(frame.w-lw)/2,ly,lw,lh);

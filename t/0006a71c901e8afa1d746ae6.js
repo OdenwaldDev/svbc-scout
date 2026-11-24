@@ -436,8 +436,9 @@ const BANDE = (() => {
       const lw = Math.min(aw * .32, Hu * 1.45), gap = Math.min(H * .10, aw * .04), sw = (aw - lw - 2 * gap) / 2, b = logoBox(lw, Hu);
       img(b, cx - b.w / 2, m + (Hu - b.h) / 2);
       const fs = Math.min(Hu * .85, sw / (Math.max(mess('EVENT', nF).w, mess('KREATIV', nF).w) / 100));
-      const left = einpassen('EVENT', nF, sw, Hu, fs, 1), right = einpassen('KREATIV', nF, sw, Hu, fs, 1);
-      txt(left, x0 + sw / 2, (H - left.h) / 2, 'event'); txt(right, W - m - sw / 2, (H - right.h) / 2, 'kreativ');
+      const old = spec.left === 'EVENT' && spec.right === 'KREATIV';
+      const left = einpassen(old ? 'EVENT' : 'KREATIV', nF, sw, Hu, fs, 1), right = einpassen(old ? 'KREATIV' : 'EVENT', nF, sw, Hu, fs, 1);
+      txt(left, x0 + sw / 2, (H - left.h) / 2, old ? 'event' : 'kreativ'); txt(right, W - m - sw / 2, (H - right.h) / 2, old ? 'kreativ' : 'event');
     } else if(pattern === 'moerlens'){
       const claim = einpassen('Restobar & Patisserie', cF, aw, Hu * .22, H * .19, 1), gap = H * .05, b = logoBox(aw, Hu - claim.h - gap), y = m + (Hu - b.h - claim.h - gap) / 2;
       img(b, cx - b.w / 2, y); txt(claim, cx, y + b.h + gap, 'claim', claimF);

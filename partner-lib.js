@@ -3278,8 +3278,9 @@ const BANDE = (() => {
       const lw = Math.min(aw * .32, Hu * 1.45), gap = Math.min(H * .10, aw * .04), sw = (aw - lw - 2 * gap) / 2, b = logoBox(lw, Hu);
       img(b, cx - b.w / 2, m + (Hu - b.h) / 2);
       const fs = Math.min(Hu * .85, sw / (Math.max(mess('EVENT', nF).w, mess('KREATIV', nF).w) / 100));
-      const left = einpassen('EVENT', nF, sw, Hu, fs, 1), right = einpassen('KREATIV', nF, sw, Hu, fs, 1);
-      txt(left, x0 + sw / 2, (H - left.h) / 2, 'event'); txt(right, W - m - sw / 2, (H - right.h) / 2, 'kreativ');
+      const old = spec.left === 'EVENT' && spec.right === 'KREATIV';
+      const left = einpassen(old ? 'EVENT' : 'KREATIV', nF, sw, Hu, fs, 1), right = einpassen(old ? 'KREATIV' : 'EVENT', nF, sw, Hu, fs, 1);
+      txt(left, x0 + sw / 2, (H - left.h) / 2, old ? 'event' : 'kreativ'); txt(right, W - m - sw / 2, (H - right.h) / 2, old ? 'kreativ' : 'event');
     } else if(pattern === 'moerlens'){
       const claim = einpassen('Restobar & Patisserie', cF, aw, Hu * .22, H * .19, 1), gap = H * .05, b = logoBox(aw, Hu - claim.h - gap), y = m + (Hu - b.h - claim.h - gap) / 2;
       img(b, cx - b.w / 2, y); txt(claim, cx, y + b.h + gap, 'claim', claimF);
@@ -4773,8 +4774,8 @@ const BANDENWAHL = (() => {
     }else if(pattern==='bb'){
       const lw=Math.min(frame.w*.32,frame.h*1.45),gap=Math.min(H*.10,frame.w*.04),sw=(frame.w-lw-2*gap)/2,size=Math.min(frame.h*.85,sw/3.16),th=size*.7;
       img(frame.x+(frame.w-lw)/2,frame.y,lw,frame.h);
-      txt(fields.left==='EVENT'?fields.left:'EVENT',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
-      txt(fields.right==='KREATIV'?fields.right:'KREATIV',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt('KREATIV',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt('EVENT',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
     }else if(pattern==='moerlens'&&claim){
       const a=d.assets[logo],ch=Math.min(H*.14,frame.h*.22),gap=Math.min(H*.05,frame.h*.08),lh=Math.min(frame.h-ch-gap,frame.w*a.height/a.width),lw=lh*a.width/a.height,ly=frame.y+(frame.h-lh-gap-ch)/2;
       img(frame.x+(frame.w-lw)/2,ly,lw,lh);

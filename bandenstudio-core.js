@@ -99,8 +99,8 @@
     }else if(pattern==='bb'){
       const lw=Math.min(frame.w*.32,frame.h*1.45),gap=Math.min(H*.10,frame.w*.04),sw=(frame.w-lw-2*gap)/2,size=Math.min(frame.h*.85,sw/3.16),th=size*.7;
       img(frame.x+(frame.w-lw)/2,frame.y,lw,frame.h);
-      txt(fields.left==='EVENT'?fields.left:'EVENT',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
-      txt(fields.right==='KREATIV'?fields.right:'KREATIV',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt('KREATIV',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt('EVENT',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
     }else if(pattern==='moerlens'&&claim){
       const a=d.assets[logo],ch=Math.min(H*.14,frame.h*.22),gap=Math.min(H*.05,frame.h*.08),lh=Math.min(frame.h-ch-gap,frame.w*a.height/a.width),lw=lh*a.width/a.height,ly=frame.y+(frame.h-lh-gap-ch)/2;
       img(frame.x+(frame.w-lw)/2,ly,lw,lh);
