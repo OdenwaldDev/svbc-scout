@@ -848,18 +848,26 @@ if(typeof SU_STICH!=='undefined')SU_STICH.planung=((SU_STICH.planung||'')+' aufg
    - Freigaben: die App rechnet aus, wer im Drive welchen Ordner braucht. Die Leitung gibt frei und hakt ab.
    - Mein Konto: Google-Konto für den Drive (gmail-Adressen gelten automatisch).
    ===================================================================== */
-const ABL = { d:null, am:0, laedt:null, bearb:false, q:'', offen:new Set() };
+const ABL = { d:null, nutzer:null, am:0, laedt:null, bearb:false, q:'', offen:new Set() };
 // Kurzlink beim Start merken, bevor die App die Adresse ändert
 const ABL_ZIEL = (() => { try{ const m = /^#drive=([a-z0-9-]{2,60})$/.exec(location.hash || ''); if(m){ sessionStorage.setItem('sv_drive', m[1]); return m[1]; }
   return sessionStorage.getItem('sv_drive') || ''; }catch(e){ return ''; } })();
 
+function ablNutzer(){return typeof SVU==='undefined'?null:SVU?.id||null;}
+function ablAktuell(){
+  const user=ablNutzer();
+  if(ABL.nutzer!==user){ABL.nutzer=user;ABL.d=null;ABL.laedt=null;ABL.am=0;ABL.bearb=false;ABL.q='';ABL.offen.clear();
+    document.querySelectorAll('.abl,.abl-chip,.abl-persoenlich').forEach(el=>el.remove());}
+  return !!ABL.d&&Date.now()-ABL.am<300000;
+}
 function ablLaden(neu){
+  ablAktuell();const user=ABL.nutzer;
   if(!neu && ABL.d && Date.now() - ABL.am < 300000) return Promise.resolve(ABL.d);
   if(ABL.laedt) return ABL.laedt;
-  ABL.laedt = SVB.sb.rpc('ablage_laden', { p_bereich:'planung' }).then(({ data, error }) => {
-    if(error) throw new Error(svFehlerText(error)); ablSetzen(data); return ABL.d; })
-    .finally(() => { ABL.laedt = null; });
-  return ABL.laedt;
+  const lauf = SVB.sb.rpc('ablage_laden', { p_bereich:'planung' }).then(({ data, error }) => {
+    if(error) throw new Error(svFehlerText(error)); if(ablNutzer()!==user)return null;ablSetzen(data); return ABL.d; })
+    .finally(() => { if(ABL.laedt===lauf)ABL.laedt=null; });
+  ABL.laedt=lauf;return lauf;
 }
 function ablSetzen(d){ ABL.d = d || { links:[], gruppen:[], aendern:false }; ['links', 'gruppen', 'auswahl'].forEach(k => { ABL.d[k] = ABL.d[k] || []; }); ABL.am = Date.now(); }
 function ablOben(){ return ABL.d.links.filter(l => l.oben).sort((a, b) => a.oben - b.oben); }
@@ -873,21 +881,65 @@ function ablMeine(){
 }
 function ablUnter(l){ return l.ebene === 2 ? String(l.gruppe || '').replace(/^\d+\s+/, '') : l.ebene === 1 ? 'Google Drive' : 'Ganzer Verein'; }
 function ablKachel(l){ return `<a class="abl-o" href="${svEsc(l.url)}" target="_blank" rel="noopener" data-ablo="${svEsc(l.id)}"><span class="abl-ic">${SVI('file')}</span><span><b>${svEsc(l.name || l.titel)}</b><small>${svEsc(ablUnter(l))}</small></span></a>`; }
+function ablEigene(gruppe){
+  return (ABL.d?.persoenlich||[]).filter(l=>!gruppe||gruppe(l.gruppe));
+}
+function ablOrdnerDialog(gruppe){
+  const alle=ablEigene(gruppe);
+  const modal=svModal('<div class="mhead"><h2>Meine Drive-Ordner</h2></div><label>Ordner suchen<input class="search" type="search" autocomplete="off"></label><div data-driveordner></div>');
+  const feld=modal.querySelector('input'),ziel=modal.querySelector('[data-driveordner]');
+  const malen=()=>{
+    const q=feld.value.trim().toLocaleLowerCase('de'),sichtbar=alle.filter(l=>(l.titel+' '+l.gruppe).toLocaleLowerCase('de').includes(q));
+    const gruppen=new Map();
+    for(const l of sichtbar){const name=l.gruppe.replace(/^\d+\s+/,'')||'Vereins-Drive';if(!gruppen.has(name))gruppen.set(name,[]);gruppen.get(name).push(l);}
+    ziel.innerHTML=[...gruppen].map(([name,links])=>`<section><h3>${svEsc(name)}</h3>${links.map(ablKachel).join('')}</section>`).join('')||'<p>Kein passender Ordner gefunden.</p>';
+  };
+  feld.oninput=malen;malen();
+}
+function ablPostfach(ziel){
+  const m=svModal('<div class="mhead"><h2>Meine Drive-Ordner</h2></div><p>Mit welcher E-Mail-Adresse bist du bei Google Drive freigegeben?</p><form data-postfach><label>E-Mail-Adresse<input name="mail" type="email" autocomplete="email" required></label><button class="btn" type="submit">Code per E-Mail anfordern</button></form><form data-code hidden><label>Code aus der E-Mail<input name="code" required minlength="8" maxlength="8" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false"></label><button class="btn" type="submit">Ordner anzeigen</button><button class="btn ghost" type="button" data-adresse>Adresse ändern oder neuen Code anfordern</button></form><p role="status" data-hinweis></p>');
+  const mail=m.querySelector('[data-postfach]'),code=m.querySelector('[data-code]'),info=m.querySelector('[data-hinweis]');
+  const overlay=document.getElementById('overlay'),user=ablNutzer();
+  const aktiv=()=>m.contains(mail)&&mail.isConnected&&(!overlay||overlay.classList.contains('open'))&&user===ablNutzer();
+  mail.elements.mail.value=ABL.d?.google||SVU?.email||'';
+  code.querySelector('[data-adresse]').onclick=()=>{code.hidden=true;mail.hidden=false;info.textContent='Einen weiteren Code kannst du nach drei Minuten anfordern.';mail.elements.mail.focus();};
+  mail.onsubmit=async ev=>{
+    ev.preventDefault();const b=mail.querySelector('button');b.disabled=true;
+    try{await SVB.admin('drive_postfach',{email:mail.elements.mail.value.trim()});
+      if(!aktiv())return;
+      mail.hidden=true;code.hidden=false;code.elements.code.value='';code.elements.code.focus();info.textContent='Für eine freigegebene Adresse kommt der Code per E-Mail. Er gilt zehn Minuten.';
+    }catch(e){info.textContent=e.message||'Bitte versuche es noch einmal.';}finally{b.disabled=false;}
+  };
+  code.onsubmit=async ev=>{
+    ev.preventDefault();const b=code.querySelector('button');b.disabled=true;
+    try{const {data,error}=await SVB.sb.rpc('drive_code_bestaetigen',{p_code:code.elements.code.value});
+      if(!aktiv())return;if(error)throw error;if(!data){info.textContent='Der Code passt nicht oder ist abgelaufen.';return;}
+      await ablLaden(true);if(!aktiv())return;ablUeberall();if(ziel)await ablZielOeffnen(ziel,aktiv);else ablOrdnerDialog();
+    }catch(e){info.textContent=e.message||'Die Ordner konnten nicht geladen werden.';}finally{b.disabled=false;}
+  };
+}
+function ablDriveEinstieg(gruppe){
+  if(!gruppe&&ABL.d?.drive_stand&&!ABL.d.drive_bestaetigt)return '<button type="button" class="abl-o" data-drive-postfach><span><b>Meine Drive-Ordner</b><small>Google-Adresse bestätigen</small></span></button>';
+  const links=ablEigene(gruppe);if(!links.length)return '';
+  if(links.length===1)return ablKachel(links[0]);
+  return `<button type="button" class="abl-o" data-persdrive><span class="abl-ic">${SVI('file')}</span><span><b>Meine Drive-Ordner</b><small>${links.length} freigegebene Ordner</small></span></button>`;
+}
 function ablHtml(){
-  const d = ABL.d; if(!d || !d.links.length) return '';
+  const d = ABL.d; if(!d)return '';const perso=ablDriveEinstieg();
+  if(!d.links.length&&!perso)return '';
   const M = ablMeine(), viele = !d.alles && M.length > 4, zeig = viele ? M.slice(0, 3) : M;
   const n = d.links.filter(l => l.ebene > 0).length;
-  const alle = d.alles || viele ? `<button type="button" class="abl-o abl-alle" data-ablalle><span class="abl-ic">${SVI('grid')}</span><span><b>${d.alles ? 'Ganzer Drive' : 'Alle deine Ordner'}</b><small>${n} Ordner</small></span></button>` : '';
-  if(!zeig.length && !alle) return '';
-  return `<div class="abl" aria-label="Ablage im Drive"><div class="abl-k"><b>Ablage</b></div><div class="abl-l">${zeig.map(ablKachel).join('')}${alle}</div></div>`;
+  const alle = d.links.length&&(d.alles || viele) ? `<button type="button" class="abl-o abl-alle" data-ablalle><span class="abl-ic">${SVI('grid')}</span><span><b>${d.alles ? 'Ganzer Drive' : 'Alle deine Ordner'}</b><small>${n} Ordner</small></span></button>` : '';
+  if(!zeig.length && !alle&&!perso) return '';
+  return `<div class="abl" aria-label="Ablage im Drive"><div class="abl-k"><b>Ablage</b></div><div class="abl-l">${perso}${zeig.map(ablKachel).join('')}${alle}</div></div>`;
 }
-function ablBinden(root){ const b = root.querySelector('[data-ablalle]'); if(b) b.onclick = () => ablAlle(); }
+function ablBinden(root){const postfach=root.querySelector('[data-drive-postfach]');if(postfach)postfach.onclick=()=>ablPostfach(); const direkt=root.querySelector('[data-persdrive]');if(direkt)direkt.onclick=()=>ablOrdnerDialog();const b = root.querySelector('[data-ablalle]'); if(b) b.onclick = () => ablAlle(); }
 
 // Auf Heute: in der To-do-Kurzansicht vor „Mehr anzeigen“, ohne To-dos als eigener Block über dem Rest
 function ablHeute(){
   const home = document.getElementById('panel-home'), el = document.getElementById('svHeute'); if(!home || !el) return;
   if(typeof SVU === 'undefined' || !SVU || !SVU.id) return;
-  if(!ABL.d){ ablLaden().then(() => ablHeute()).catch(() => {}); return; }
+  if(!ablAktuell()){ ablLaden().then(() => {if(ABL.d)ablHeute();}).catch(() => {}); return; }
   const c = document.getElementById('prioHeute'), html = ablHtml();
   let s = document.querySelector('#panel-home .abl'); let eigen = document.getElementById('ablHeute');
   if(!html){ if(s) s.remove(); if(eigen) eigen.remove(); return; }
@@ -900,16 +952,25 @@ function ablHeute(){
 // In der Planung: gleich unter den Reitern
 function ablPlanung(){
   const P = document.getElementById('panel-planung'), nav = P && P.querySelector('.pl-nav'); if(!nav) return;
-  if(!ABL.d){ ablLaden().then(() => ablPlanung()).catch(() => {}); return; }
+  if(!ablAktuell()){ ablLaden().then(() => {if(ABL.d)ablPlanung();}).catch(() => {}); return; }
   let s = P.querySelector('.abl'); const html = ablHtml(); if(!html){ if(s) s.remove(); return; }
   const t = document.createElement('div'); t.innerHTML = html; const neu = t.firstElementChild; neu.classList.add('abl-pl');
   if(s) s.replaceWith(neu); else nav.after(neu);
   ablBinden(neu);
 }
 // In den Bereichen der App: der passende Ordner als Kurzknopf, wenn er für die Person bestimmt ist
-const ABL_TAB = { sponsoring:'partner', jugend:'jugend', kalender:'veranstaltungen' };
+const ABL_TAB = { sponsoring:'partner', jugend:'jugend', kalender:'veranstaltungen', veranstaltungen:'veranstaltungen',
+  finanzen:'finanzen', kasse:'finanzen', foerderung:'foerderakten', verein:'organisation',studio:'medien',plakat:'medien',spieltag:'heimspiel',training:'sport' };
+const ABL_BEREICH={partner:/^04\b|partner|sponsoring/i,jugend:/^12\b|jugend/i,veranstaltungen:/^06\b|veranstaltung/i,
+  finanzen:/^03\b|finanzen/i,foerderakten:/förderantr[aä]g|foerderantr[aä]g|förderakten|foerderakten/i,organisation:/^0[12]\b/,medien:/^(00|07)\b/,heimspiel:/^05\b/,sport:/^(08|09|10|11|12|13)\b/};
 function ablTab(tab){
   const k = ABL_TAB[tab], P = document.getElementById('panel-' + tab); if(!k || !P || !ABL.d) return;
+  const filter=g=>ABL_BEREICH[k].test(g);
+  const html=ablDriveEinstieg(filter);let perso=P.querySelector(':scope > .abl-persoenlich');
+  if(html){
+    if(!perso){perso=document.createElement('div');perso.className='abl-persoenlich';P.prepend(perso);}
+    perso.innerHTML=html;const auswahl=perso.querySelector('[data-persdrive]');if(auswahl)auswahl.onclick=()=>ablOrdnerDialog(filter);
+  }else perso?.remove();
   const l = ABL.d.links.find(x => x.kurz === k); let c = P.querySelector(':scope > .abl-chip');
   if(!l){ if(c) c.remove(); return; }
   if(!c){ c = document.createElement('a'); c.className = 'abl-chip'; c.target = '_blank'; c.rel = 'noopener'; P.prepend(c); }
@@ -1021,10 +1082,13 @@ async function ablFreigaben(){
 }
 
 /* ---------- Kurzlink …/#drive=<kurz> ---------- */
-async function ablZielOeffnen(k){
+async function ablZielOeffnen(k,aktiv=()=>true){
   try{ sessionStorage.removeItem('sv_drive'); }catch(e){}
   try{ history.replaceState(history.state, '', location.pathname + location.search); }catch(e){}
   const { data, error } = await SVB.sb.rpc('ablage_kurz', { p_kurz: k });
+  if(!aktiv())return;
+  if(error){const stand=await ablLaden(true).catch(()=>null);if(!aktiv())return;
+    if(stand?.drive_stand&&!stand.drive_bestaetigt){try{sessionStorage.setItem('sv_drive',k);}catch(_){} return ablPostfach(k);}}
   if(error) return svModal(`<div class="mhead"><div><h2 style="margin:0">Drive</h2><div class="msub">${svEsc(svFehlerText(error))}</div></div></div><p class="note">Wenn du den Ordner brauchst, sag dem Vorstand Bescheid.</p>`);
   // Nur in den Google Drive weiterleiten, nie auf eine fremde Seite
   if(!/^https:\/\/(drive|docs)\.google\.com\//.test(String(data && data.url || ''))) return kToast('Dieser Link führt nicht in den Google Drive');
@@ -1055,9 +1119,9 @@ window.addEventListener('hashchange', () => ablAdresse());
 { const _ph = prioHeute; prioHeute = function(){ const r = _ph.apply(this, arguments); try{ ablHeute(); }catch(e){} return r; }; }
 { const _h = htRender; htRender = function(){ const r = _h.apply(this, arguments); try{ ablHeute(); }catch(e){} return r; }; }
 { const _r = plRender; plRender = async function(){ const r = await _r.apply(this, arguments); try{ ablPlanung(); }catch(e){} return r; }; }
-{ const _gt = goTab; goTab = function(t){ const r = _gt.apply(this, arguments); setTimeout(() => { try{ if(ABL.d) ablTab(t); else if(ABL_TAB[t] && typeof SVU !== 'undefined' && SVU && SVU.id) ablLaden().then(() => ablTab(t)).catch(() => {}); }catch(e){} }, 400); return r; }; }
+{ const _gt = goTab; goTab = function(t){ const r = _gt.apply(this, arguments); setTimeout(() => { try{ if(ablAktuell()) ablTab(t); else if(ABL_TAB[t] && typeof SVU !== 'undefined' && SVU && SVU.id) ablLaden().then(() => ablTab(t)).catch(() => {}); }catch(e){} }, 400); return r; }; }
 
-(function(){ try{ const s=document.createElement('style'); s.id='svm76css'; s.textContent="/* Beta 0.78 · Ablage: Drive-Ordner als ruhige Zeile */\n.abl{display:flex;flex-direction:column;gap:6px;}\n.abl-k{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 4px 0;}\n.abl-k b{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2);}\n.abl-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;}\n.abl-o{display:flex;align-items:center;gap:10px;min-height:60px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;}\n.abl-o:hover{border-color:var(--ink2);}\n.abl-o:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}\n.abl-o>span:last-child{display:flex;flex-direction:column;min-width:0;}\n.abl-o b{font-size:15px;font-weight:650;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto;}\n.abl-o small{font-size:12.5px;color:var(--ink2);}\n.abl-ic{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--line);color:var(--ink2);}\n.abl-ic svg{width:18px;height:18px;}\n.abl-pl{margin:12px 0 4px;}\n/* Kachel „Ganzer Drive“ */\nbutton.abl-o{font:inherit;text-align:left;cursor:pointer;width:100%;}\n.abl-alle .abl-ic{color:var(--ink);}\n.abl-l .abl-alle:nth-child(odd){grid-column:1/-1;}\n/* Ganzer Drive: Suche, Bereiche, Ordner */\n.abl-such input{width:100%;min-height:48px;font-size:16px!important;}\n.abl-a{display:flex;flex-direction:column;gap:8px;margin-top:12px;}\n.abl-kopf{display:flex;flex-wrap:wrap;gap:8px;}\n.abl-kopf .btn{min-height:44px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;}\n.abl-kopf .btn svg{width:16px;height:16px;}\n.abl-g{border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;}\n.abl-g>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:0 14px;cursor:pointer;list-style:none;}\n.abl-g>summary::-webkit-details-marker{display:none;}\n.abl-g>summary b{font-size:15px;font-weight:650;}\n.abl-g>summary small{font-size:13px;color:var(--ink2);flex:none;}\n.abl-g>summary:focus-visible{outline:2px solid var(--brand);outline-offset:-2px;}\n.abl-r{display:flex;align-items:center;gap:4px;border-top:1px solid var(--line);padding-right:6px;}\n.abl-ra{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 14px;color:var(--ink);text-decoration:none;font-size:15px;}\n.abl-ra>span:nth-child(2){min-width:0;overflow-wrap:anywhere;}\n.abl-r1 .abl-ra{color:var(--ink2);font-weight:600;}\n.abl-ra .abl-ic{width:28px;height:28px;border-radius:8px;}\n.abl-ra .abl-ic svg{width:15px;height:15px;}\n.abl-ra:focus-visible,.abl-rb:focus-visible{outline:2px solid var(--brand);outline-offset:-2px;}\n.abl-pin{flex:none;font-style:normal;font-size:12px;font-weight:650;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:2px 8px;}\n.abl-rb{all:unset;position:relative;flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:10px;color:var(--ink2);cursor:pointer;}\n.abl-rb svg{width:18px;height:18px;}\n.abl-rb[aria-pressed=\"true\"]{color:var(--ink);}\n.abl-rb[aria-pressed=\"true\"] svg{fill:currentColor;}\n/* Ohne To-dos: eigener Block auf Heute */\n.abl-heute{margin:0 0 18px;}\n/* Kurzknopf im Bereich der App */\n.abl-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;margin:0 0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;font-size:14px;font-weight:650;}\n.abl-chip svg{width:16px;height:16px;color:var(--ink2);}\n.abl-chip:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}\n/* Formular: Kurzlink und wer sieht */\n.abl-kl{display:block;margin-top:4px;font-size:12.5px;color:var(--ink2);overflow-wrap:anywhere;}\n.abl-sicht{border:0;padding:0;margin:14px 0 0;}\n.abl-sicht legend{font-weight:650;font-size:15px;padding:0;margin-bottom:4px;}\n.abl-wahl{display:flex;flex-wrap:wrap;gap:8px;}\n.abl-w{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-size:14px;}\n.abl-w input{width:18px;height:18px;margin:0;}\n/* Freigaben */\n.abl-fh{margin:16px 0 6px;}\n.abl-fz{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line);}\n.abl-fk{display:flex;flex-direction:column;gap:2px;min-width:0;}\n.abl-fk b{font-size:15px;}\n.abl-fk small,.abl-fk span{font-size:13.5px;color:var(--ink2);overflow-wrap:anywhere;}\n.abl-fb{display:flex;flex-wrap:wrap;gap:8px;}\n.abl-fb .btn{min-height:44px!important;display:inline-flex;align-items:center;text-decoration:none;}\n.abl-og{margin-top:14px;}\n/* Mein Konto */\n.abl-acc{display:flex;gap:8px;flex-wrap:wrap;}\n.abl-acc input{flex:1 1 200px;min-height:44px;font-size:16px;}\n.abl-acc .btn{min-height:44px!important;}\n.abl-eig{font-style:normal;font-weight:650;color:var(--ink);}\n"; document.head.appendChild(s); }catch(e){} })();
+(function(){ try{ const s=document.createElement('style'); s.id='svm76css'; s.textContent="/* Beta 0.78 · Ablage: Drive-Ordner als ruhige Zeile */\n.abl{display:flex;flex-direction:column;gap:6px;}\n.abl-k{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 4px 0;}\n.abl-k b{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2);}\n.abl-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;}\n.abl-o{display:flex;align-items:center;gap:10px;min-height:60px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;}\n.abl-o:hover{border-color:var(--ink2);}\n.abl-o:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}\n.abl-o>span:last-child{display:flex;flex-direction:column;min-width:0;}\n.abl-o b{font-size:15px;font-weight:650;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto;}\n.abl-o small{font-size:12.5px;color:var(--ink2);}\n.abl-ic{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--line);color:var(--ink2);}\n.abl-ic svg{width:18px;height:18px;}\n.abl-pl{margin:12px 0 4px;}\n/* Kachel „Ganzer Drive“ */\nbutton.abl-o{font:inherit;text-align:left;cursor:pointer;width:100%;}\n.abl-alle .abl-ic{color:var(--ink);}\n.abl-l .abl-alle:nth-child(odd){grid-column:1/-1;}\n/* Ganzer Drive: Suche, Bereiche, Ordner */\n.abl-such input{width:100%;min-height:48px;font-size:16px!important;}\n.abl-a{display:flex;flex-direction:column;gap:8px;margin-top:12px;}\n.abl-kopf{display:flex;flex-wrap:wrap;gap:8px;}\n.abl-kopf .btn{min-height:44px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;}\n.abl-kopf .btn svg{width:16px;height:16px;}\n.abl-g{border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden;}\n.abl-g>summary{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:0 14px;cursor:pointer;list-style:none;}\n.abl-g>summary::-webkit-details-marker{display:none;}\n.abl-g>summary b{font-size:15px;font-weight:650;}\n.abl-g>summary small{font-size:13px;color:var(--ink2);flex:none;}\n.abl-g>summary:focus-visible{outline:2px solid var(--brand);outline-offset:-2px;}\n.abl-r{display:flex;align-items:center;gap:4px;border-top:1px solid var(--line);padding-right:6px;}\n.abl-ra{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:48px;padding:4px 14px;color:var(--ink);text-decoration:none;font-size:15px;}\n.abl-ra>span:nth-child(2){min-width:0;overflow-wrap:anywhere;}\n.abl-r1 .abl-ra{color:var(--ink2);font-weight:600;}\n.abl-ra .abl-ic{width:28px;height:28px;border-radius:8px;}\n.abl-ra .abl-ic svg{width:15px;height:15px;}\n.abl-ra:focus-visible,.abl-rb:focus-visible{outline:2px solid var(--brand);outline-offset:-2px;}\n.abl-pin{flex:none;font-style:normal;font-size:12px;font-weight:650;color:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:2px 8px;}\n.abl-rb{all:unset;position:relative;flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:10px;color:var(--ink2);cursor:pointer;}\n.abl-rb svg{width:18px;height:18px;}\n.abl-rb[aria-pressed=\"true\"]{color:var(--ink);}\n.abl-rb[aria-pressed=\"true\"] svg{fill:currentColor;}\n/* Ohne To-dos: eigener Block auf Heute */\n.abl-heute{margin:0 0 18px;}\n/* Kurzknopf im Bereich der App */\n.abl-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;margin:0 0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;font-size:14px;font-weight:650;}\n.abl-chip svg{width:16px;height:16px;color:var(--ink2);}\n.abl-chip:focus-visible{outline:2px solid var(--brand);outline-offset:2px;}\n/* Formular: Kurzlink und wer sieht */\n.abl-kl{display:block;margin-top:4px;font-size:12.5px;color:var(--ink2);overflow-wrap:anywhere;}\n.abl-sicht{border:0;padding:0;margin:14px 0 0;}\n.abl-sicht legend{font-weight:650;font-size:15px;padding:0;margin-bottom:4px;}\n.abl-wahl{display:flex;flex-wrap:wrap;gap:8px;}\n.abl-w{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-size:14px;}\n.abl-w input{width:18px;height:18px;margin:0;}\n/* Freigaben */\n.abl-fh{margin:16px 0 6px;}\n.abl-fz{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line);}\n.abl-fk{display:flex;flex-direction:column;gap:2px;min-width:0;}\n.abl-fk b{font-size:15px;}\n.abl-fk small,.abl-fk span{font-size:13.5px;color:var(--ink2);overflow-wrap:anywhere;}\n.abl-fb{display:flex;flex-wrap:wrap;gap:8px;}\n.abl-fb .btn{min-height:44px!important;display:inline-flex;align-items:center;text-decoration:none;}\n.abl-og{margin-top:14px;}\n/* Mein Konto */\n.abl-acc{display:flex;gap:8px;flex-wrap:wrap;}\n.abl-acc input{flex:1 1 200px;min-height:44px;font-size:16px;}\n.abl-acc .btn{min-height:44px!important;}\n.abl-eig{font-style:normal;font-weight:650;color:var(--ink);}\n\n#modal [data-postfach] input,#modal [data-code] input{display:block;box-sizing:border-box;width:100%;min-height:46px;margin:4px 0 12px;padding:8px 12px;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px}\n#modal [data-postfach] button,#modal [data-code] button{min-height:44px}\n#modal [data-code] [data-adresse]{margin:6px 0}\n#modal [data-code][hidden],#modal [data-postfach][hidden]{display:none}\n"; document.head.appendChild(s); }catch(e){} })();
 /* =====================================================================
    Beta 0.79 · Struktur und Navigation (Audit 11/2026, Teil C)
    1. Ein Name je Ziel: „Planung“ ist der Bereich mit den Reitern Planung, Termine, Aufgaben, Vorstand & Ziele.

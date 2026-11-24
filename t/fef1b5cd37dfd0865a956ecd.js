@@ -592,7 +592,8 @@ function n88Unter(t){
   const q = N88_QUELLE[t]; if(!q) return [];
   if(q === 'spo'){
     if(typeof SPO_REITER === 'undefined') return [];
-    try{ if(typeof spoDarf === 'function' && !spoDarf('sponsoring')) return []; }catch(e){}
+    if(typeof spoDarf !== 'function')return [];
+    if(!spoDarf('sponsoring'))return spoEinzelansichten().map(([k,l])=>({k:'spo:'+k,l,go:()=>n88Partner(k)}));
     return SPO_REITER.filter(([k]) => k !== 'bandencreator' && !(k === 'trikots' && svDarf('sponsoring:trikots') === false)).map(([k, l]) => ({ k:'spo:' + k, l, go:() => n88Partner(k) }));
   }
   const H = typeof SV4_HUB !== 'undefined' && SV4_HUB[q]; if(!H) return [];
@@ -1187,6 +1188,9 @@ async function zgKorb(id, rolleWahl){
   // Funktionen setzt nur ein Admin (admin_funktion_set), darum gibt es die Auswahl nur für ihn.
   const frDarf = !!K.rechte_aendern && rollen.includes('viewer') && typeof isAdmin === 'function' && isAdmin() && typeof R80_FROLLE !== 'undefined';
   if(frDarf && zgFr(rolleWahl)) Z.rolle = rolleWahl; else if(frDarf && !rolleWahl) Z.rolle = zgFrVor(K, Z.rolle) || Z.rolle;
+  const teile=new Set();
+  let katalog=[];
+  if(frDarf){try{katalog=await r80Bereiche();}catch(e){kToast('Die Aufgabenliste konnte nicht geladen werden. Bitte öffne die Anfrage erneut.');return;}}
   const eff = () => Z.rolle.startsWith('f:') ? 'viewer' : Z.rolle;   // Rolle, die wirklich im Konto steht
   const std = k => { const b = (K.bereiche || []).find(x => x.key === k); return Z.rolle === 'admin' || !!(b && (b.vorgabe || []).includes(eff())); };
   const an = k => k in Z.hand ? Z.hand[k] : (std(k) || (!!K.rechte_aendern && k in plus));   // ohne das Recht dazu zeigt der Korb nur, was die Rolle wirklich bringt
@@ -1208,12 +1212,15 @@ async function zgKorb(id, rolleWahl){
     ${K.rolle_moeglich === false ? `<p class="zk-hinweis">Vorschlag aus dem Organigramm: ${svEsc(zgName(K.rolle))}. Diese Rolle vergibt nur ein Admin.</p>` : ''}
     <h3>Mit diesen Rechten</h3>
     <div class="zk-rechte" id="zkRechte" role="group" aria-label="Bereiche"></div>
-    <p class="zk-klein">${K.rechte_aendern ? 'Antippen nimmt einen Bereich heraus oder dazu. Feinere Rechte stellst du später unter Nutzer & Rollen ein.' : 'Einzelne Bereiche ändert nur ein Admin. Du gibst mit den Rechten der Rolle frei.'}</p>
-    <p class="zk-satz" id="zkSatz" aria-live="polite"></p>
+    <p class="zk-klein">${K.rechte_aendern ? 'Die Auswahl oben gilt für den ganzen Bereich. Einzelne Aufgaben kannst du darunter ergänzen.' : 'Einzelne Bereiche ändert nur ein Admin. Du gibst mit den Rechten der Rolle frei.'}</p>
+    <div id="zkTeile"></div><p class="zk-satz" id="zkSatz" aria-live="polite"></p>
     <div class="zk-akt"><button type="button" class="btn" id="zkOk">${SVI('check')} ${K.frei ? 'Bestätigen' : 'Freigeben'}</button>${K.frei ? '' : '<button type="button" class="btn ghost" id="zkNein">Ablehnen</button>'}<button type="button" class="btn ghost" id="zkAb">Abbrechen</button></div>
   </div>`);
   const R = M.querySelector('#zkRechte'), S = M.querySelector('#zkSatz'), sel = M.querySelector('#zkRolle'); sel.value = Z.rolle;
+  const extra=M.querySelector('#zkTeile');
+  if(frDarf)r80Einzelrechte(extra,katalog,teile);
   const malen = () => {
+    extra.hidden=!frDarf||Z.rolle==='admin';
     { const hw = M.querySelector('#zkRolleHinweis'); if(hw){ const t = Z.rolle === 'spieler' ? 'Spieler sehen Termine, ihr Spielerkonto und ihre Mannschaft (Kader, Spiele, Tabelle), nur zum Ansehen. „1. Mannschaft“ unten ist der Trainerbereich mit Schreibrechten, Verletzungen und Kontaktdaten. Für Spieler bitte aus lassen.'
         : Z.rolle === 'helfer' ? 'Helfer sehen Termine und ihre eigenen Einsätze.' : Z.rolle === 'viewer' ? 'Gäste sehen Termine, Rankings und Teile des Scoutings. Für Spieler, Helfer, Abteilungsleiter und Stellvertreter gibt es eigene Rollen.'
         : Z.rolle.startsWith('f:') ? zgName(Z.rolle) + ': Tipp unten die Bereiche an, die die Person ' + (Z.rolle === 'f:leitung' ? 'leitet' : 'vertritt') + '. Dort bekommt sie alles, was zur Funktion gehört. Dazu sieht sie, was jeder Gast sieht.' : ''; hw.textContent = t; hw.hidden = !t; } }
@@ -1235,14 +1242,25 @@ async function zgKorb(id, rolleWahl){
     b.disabled = true;
     try{
       let mail = '';
-      if(!K.frei){ const r = await SVB.admin('freigeben', { user_id:id, role:rolle }); mail = r && r.mail === 'gesendet' ? ', die Mail ist raus' : ''; }
-      else if(rolle !== K.rolle_jetzt){ const { error } = await SVB.sb.rpc('admin_update', { p_id:id, p_role:rolle, p_active:null, p_name:null }); if(error) throw error; }
-      if(K.rechte_aendern && Z.rolle !== 'admin') for(const x of (K.bereiche || [])){ const on = an(x.key);
-        if(on !== std(x.key)){ let error = true;
-          // Abteilungsleiter und Stellvertreter: der Bereich bekommt die Funktion (setzt die Rechte der Unterbereiche nach ihrer Stufe)
-          if(fs && on){ try{ error = (await SVB.sb.rpc('admin_funktion_set', { p_user:id, p_bereich:x.key, p_stufe:fs })).error; }catch(e){ error = e; } }
-          if(error) error = (await SVB.sb.rpc('admin_zugriff_set', { p_user:id, p_bereich:x.key, p_an:on })).error;
-          if(error) fehl.push(x.titel); } }
+      const auftrag={funktionen:{},bereiche:{},teile:Object.fromEntries([...teile].map(k=>[k,true]))};
+      if(K.rechte_aendern && Z.rolle!=='admin')for(const x of (K.bereiche||[])){
+        const on=an(x.key);
+        if(on===std(x.key))continue;
+        if(fs && on)auftrag.funktionen[x.key]=fs;
+        else auftrag.bereiche[x.key]=on;
+      }
+      const mitAuftrag=Z.rolle!=='admin' && K.rechte_aendern &&
+        [auftrag.funktionen,auftrag.bereiche,auftrag.teile].some(obj=>Object.keys(obj).length);
+      if(!K.frei){
+        const r=await SVB.admin('freigeben',{user_id:id,role:rolle,...(mitAuftrag?{vereinsauftrag:auftrag}:{})});
+        mail=r&&r.mail==='gesendet'?', die Mail ist raus':'';
+      }else if(mitAuftrag){
+        const konto=rolle!==K.rolle_jetzt?{schritt:'rolle',rolle}:null;
+        const {error}=await SVB.sb.rpc('admin_vereinsauftrag',{p_user:id,p_auftrag:auftrag,p_konto:konto});
+        if(error)throw error;
+      }else if(rolle!==K.rolle_jetzt){
+        const {error}=await SVB.sb.rpc('admin_update',{p_id:id,p_role:rolle,p_active:null,p_name:null});if(error)throw error;
+      }
       if(Z.spieler && K.spieler){ const { error } = await SVB.sb.rpc('konto_spieler_setzen', { p_user:id, p_spieler:K.spieler.id }); if(error) fehl.push('Spieler'); }
       if(Z.helfer && K.helfer){ const { error } = await SVB.sb.rpc('einsatz_person_setzen', { p_key:'h:' + K.helfer.id, p_user:id }); if(error) fehl.push('Helfer'); }
       if(K.frei){ try{ await SVB.sb.rpc('zugang_korb_fertig', { p_id:id }); }catch(e){} }

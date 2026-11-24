@@ -152,7 +152,7 @@ function spoDarf(k){ return svDarf(k)===true; }
 
 SVR_TAB.sponsoring='sponsoring';
 if(typeof SV_SIDE!=='undefined')Object.keys(SV_SIDE).forEach(r=>{ const L=SV_SIDE[r]; if(L.includes('Partner'))return; const i=L.indexOf('Verein'); L.splice(i<0?L.length-1:i+1,0,'Partner'); });
-{ const _ta=svTabAllowed; svTabAllowed=function(t){ if(t==='sponsoring')return spoDarf('sponsoring'); return _ta.apply(this,arguments); }; }
+{ const _ta=svTabAllowed; svTabAllowed=function(t){ if(t==='sponsoring')return spoDarf('sponsoring')||spoEinzelansichten().length>0; return _ta.apply(this,arguments); }; }
 SV_TBL.sponsoring=['heart','Partner'];
 Object.assign(SV_PAGES,{sponsoring:['Partner','Firmen, Verträge, Ausrüstung und Banden']});
 // Datum lokal rechnen (kein UTC-Versatz am späten Abend): 'JJJJ-MM-TT' plus n Tage bzw. Jahre
@@ -191,11 +191,28 @@ function spoReiterAn(){ const seg=document.querySelector('#panel-sponsoring .spo
   spoReiterZeigen(seg); }
 // aktiven Reiter in der wischbaren Leiste sichtbar machen (nur waagerecht, die Seite springt nicht)
 function spoReiterZeigen(seg){ try{ const b=seg.querySelector('.on'); if(b&&seg.scrollWidth>seg.clientWidth)seg.scrollLeft=Math.max(0,b.offsetLeft-(seg.clientWidth-b.offsetWidth)/2); }catch(e){} }
-function spoWechsel(v){ SPO.view=v==='uebersicht'?'zentrale':v; spoReiterAn(); spoBody(); }
+// Direkter Weg zu einzeln freigegebenen Werkzeugen ohne Laden von CRM, Partnerkontakten oder Rechnungsdaten.
+function spoEinzelansichten(){
+  const ansichten=[];
+  if(spoDarf('finanzen')||spoDarf('sponsoring:vertrag'))ansichten.push(['vertraege','Vertragsablage']);
+  if(spoDarf('sponsoring:trikots'))ansichten.push(['trikots','Trikotstudio'],['bandencreator','Bandencreator']);
+  return ansichten;
+}
+function spoEinzelZeigen(P){
+  const a=spoEinzelansichten();
+  if(!a.length){P.innerHTML='<div class="card"><div class="empty">Für diesen Bereich fehlt die Freigabe.</div></div>';return;}
+  if(!a.some(([k])=>k===SPO.view))SPO.view=a[0][0];
+  P.innerHTML='<div class="card spo-einzel"><h2>Meine Aufgaben</h2><div class="btnrow" role="group" aria-label="Freigeschaltete Aufgaben">'+a.map(([k,t])=>'<button type="button" class="btn ghost" data-einzelansicht="'+k+'" aria-pressed="'+(SPO.view===k)+'">'+t+'</button>').join('')+'</div></div><div id="spoB"></div>';
+  P.querySelectorAll('[data-einzelansicht]').forEach(b=>b.onclick=()=>{spoWechsel(b.dataset.einzelansicht);P.querySelector('[data-einzelansicht="'+SPO.view+'"]')?.focus();});
+  spoBody();
+}
+function spoWechsel(v){
+  if(!spoDarf('sponsoring')){const P=spoPanel();if(P){SPO.view=v;spoEinzelZeigen(P);}return;}
+  SPO.view=v==='uebersicht'?'zentrale':v; spoReiterAn(); spoBody(); }
 async function spoRender(){
   const P=spoPanel(); if(!P)return;
   if(SPO.view==='uebersicht')SPO.view='zentrale';
-  if(!spoDarf('sponsoring')){ P.innerHTML='<div class="card"><div class="empty">Der Partner-Bereich ist für dich nicht freigeschaltet.</div></div>'; return; }
+  if(!spoDarf('sponsoring')){spoEinzelZeigen(P);return;}
   P.innerHTML=`<div class="svt-top spo-top"><div class="spo-kopf"><h2>Partner</h2><p>Firmen, Verträge, Ausrüstung und Banden</p></div>
     <div class="svt-seg spo-seg" role="tablist" aria-label="Bereiche im Partnerbereich">${SPO_REITER.map(([k,l])=>`<button type="button" role="tab" aria-selected="${k===SPO.view}" class="${k===SPO.view?'on':''}" data-spov="${k}">${l}</button>`).join('')}</div></div><div id="spoB"><div class="card"><div class="empty">Lade …</div></div></div>`;
   P.querySelectorAll('[data-spov]').forEach(b=>b.onclick=()=>spoWechsel(b.dataset.spov));

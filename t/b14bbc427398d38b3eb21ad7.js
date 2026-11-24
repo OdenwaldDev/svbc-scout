@@ -547,7 +547,14 @@ function svDatenAsk(then){
 /* ---------- Admin: Aufgaben je Person (Einladen & Team-Liste) ---------- */
 let SV_AUFMAP={}, SV_INV_AUF=null;
 const SV_AUF_STD={admin:['training','kasse','scouting','kader'],vorstand:['scouting','kader'],planer:['scouting','kader'],trainer:['training','scouting'],viewer:[]};
-{ const _adm=SVB.admin; SVB.admin=async function(action,payload){ const r=await _adm.apply(this,arguments);
+{ const _adm=SVB.admin; SVB.admin=async function(action,payload){
+  if(action==='invite'&&payload.vereinsauftrag&&SV_INV_AUF){
+    const wahl=SV_INV_AUF.slice();
+    const r=await _adm.call(this,action,{...payload,vereinsauftrag:{...payload.vereinsauftrag,einfuehrung:wahl}});
+    if(r&&r.user_id)SV_INV_AUF=null;
+    return r;
+  }
+  const r=await _adm.apply(this,arguments);
   if(action==='invite'&&r&&r.user_id&&SV_INV_AUF){ try{ await SVB.sb.rpc('admin_aufgaben_set',{p_user:r.user_id,p_aufgaben:SV_INV_AUF}); }catch(e){ console.warn(e); } SV_INV_AUF=null; }
   return r; }; }
 { const _ar=svAdminRender; svAdminRender=async function(){ const r=await _ar.apply(this,arguments); try{ await svAdminAuf(); }catch(e){ console.warn(e); } return r; }; }

@@ -88,7 +88,7 @@ function bcPlatzWegDialog(id){
 const R80_GRUPPEN = ['Übersicht', 'Mannschaften', 'Spieltag', 'Kader & Scouting', 'Verein', 'Werkzeuge', 'Verwaltung'];
 const R80_GRUPPE = { planung:'Übersicht', termine:'Übersicht', mannschaft:'Mannschaften', mannschaften:'Mannschaften', spieltag:'Spieltag', plakat:'Spieltag',
   kader:'Kader & Scouting', scouting:'Kader & Scouting', verein:'Verein', sponsoring:'Verein', foerderung:'Verein', orga:'Verein', kasse:'Verein', shop:'Verein',
-  studio:'Werkzeuge', wissen:'Werkzeuge', verwaltung:'Verwaltung', finanzen:'Verwaltung' };
+  studio:'Werkzeuge', wissen:'Werkzeuge', verwaltung:'Verwaltung', finanzen:'Verein' };
 function r80Gruppe(k){ return R80_GRUPPE[k] || 'Weitere'; }
 
 // Für wen die Rolle gedacht ist, und was nicht an einem Bereich hängt
@@ -192,6 +192,30 @@ const R80_AUFGABEN = [
 
 /* ---------- Einladen mit Funktionen: Bereich und Funktion (Leitung, Stellvertretung, Helfer) gleich mitgeben ---------- */
 const R80_STUFE_T = { leitung:'Leitung', stellv:'Stellvertretung', helfer:'Helfer' };
+// Eine zusätzliche Aufgabe schaltet nur ihren Schlüssel frei. Mannschaften werden im Teamfeld vergeben.
+function r80Einzelrechte(box,bereiche,wahl) {
+  const el=document.createElement('details'); el.className='r80-teilwahl';
+  const summary=document.createElement('summary'); el.append(summary);
+  const zaehlen=()=>{summary.textContent='Einzelne Aufgaben freischalten'+(wahl.size?' ('+wahl.size+')':'');};
+  zaehlen();
+  const intro=document.createElement('p');intro.className='r80-invh';
+  intro.textContent='Zusätzlich zur Vereinsfunktion. Wähle genau die Aufgaben, die diese Person übernehmen soll.';el.append(intro);
+  for(const b of bereiche.filter(x=>!x.parent)){
+    const kinder=bereiche.filter(x=>x.parent===b.key&&!x.key.startsWith('team:'));
+    if(!kinder.length)continue;
+    const gruppe=document.createElement('details'),titel=document.createElement('summary');
+    titel.textContent=b.titel;gruppe.append(titel);
+    for(const k of kinder){
+      const label=document.createElement('label'),input=document.createElement('input');
+      input.type='checkbox';input.checked=wahl.has(k.key);input.dataset.einzelrecht=k.key;
+      input.onchange=()=>{if(input.checked)wahl.add(k.key);else wahl.delete(k.key);zaehlen();};
+      const hinweis=k.key==='sponsoring:bank'?' (setzt den Partnerbereich voraus)':k.key==='sponsoring:team'?' (für Vorstand und Administration)':'';
+      label.append(input,document.createTextNode(k.titel+hinweis));gruppe.append(label);
+    }
+    el.append(gruppe);
+  }
+  box.append(el);return el;
+}
 async function r80InvFunktionen(){
   const P = document.getElementById('panel-admin'), f = P && P.querySelector('#svInv'); if(!f || !isAdmin() || f.querySelector('.r80-invf')) return;
   // Mannschaftsfunktion nur zeigen, wenn eine Mannschaft gewählt ist, und klar benennen
@@ -201,9 +225,9 @@ async function r80InvFunktionen(){
   let L; try{ L = await r80Bereiche(); }catch(e){ return; }
   const top = L.filter(b => !b.parent), kids = k => L.filter(b => b.parent === k && !/^team:/.test(b.key)).length, titel = k => (top.find(t => t.key === k) || {}).titel || k;
   const box = document.createElement('div'); box.className = 'r80-invf';
-  const zeilen = [];   // {b: Bereich oder '', s: Stufe oder ''}
+  const teile = new Set(), zeilen = [];   // {b: Bereich oder '', s: Stufe oder ''}
   const bereichOpts = (z, i) => `<option value="">Bereich wählen</option>` + R80_GRUPPEN.concat(['Weitere']).map(g => { const T = top.filter(t => r80Gruppe(t.key) === g && (t.key === z.b || !zeilen.some((y, k) => k !== i && y.b === t.key))); return T.length ? `<optgroup label="${svEsc(g)}">${T.map(t => `<option value="${svEsc(t.key)}"${t.key === z.b ? ' selected' : ''}>${svEsc(t.titel)}</option>`).join('')}</optgroup>` : ''; }).join('');
-  const stufeOpts = z => !z.b ? `<option value="">erst Bereich wählen</option>` : !kids(z.b) ? `<option value="leitung" selected>Zugriff</option>`
+  const stufeOpts = z => !z.b ? `<option value="">erst Bereich wählen</option>` : !kids(z.b) && z.b !== 'finanzen' ? `<option value="leitung" selected>Zugriff</option>`
     : `<option value=""${z.s ? '' : ' selected'}>Funktion wählen</option>` + ['leitung', 'stellv', 'helfer'].map(s => `<option value="${s}"${s === z.s ? ' selected' : ''}>${R80_STUFE_T[s]}</option>`).join('');
   const zeichnen = () => {
     const rv0 = (f.querySelector('#svInvRole') || {}).value || '';
@@ -212,7 +236,8 @@ async function r80InvFunktionen(){
         <select data-r80is="${i}" aria-label="Funktion"${z.b ? '' : ' disabled'}>${stufeOpts(z)}</select></div>
         <button type="button" class="iconbtn" data-r80ix="${i}" aria-label="Funktion entfernen" title="Entfernen">✕</button></div>`).join('')}</div>` : ''}
       <button type="button" class="btn ghost r80-invadd">${SVI('plus')} Funktion hinzufügen</button>`;
-    box.querySelectorAll('[data-r80ib]').forEach(s => s.onchange = () => { const z = zeilen[+s.dataset.r80ib]; z.b = s.value; z.s = z.b && !kids(z.b) ? 'leitung' : (z.b ? (z.vor || (f.querySelector('#svInvRole').value.startsWith('f:') ? f.querySelector('#svInvRole').value.slice(2) : '')) : ''); zeichnen(); const n = box.querySelector(`[data-r80is="${s.dataset.r80ib}"]`); if(n && !n.disabled && !z.s) n.focus(); });
+    if(rv0!=='admin')r80Einzelrechte(box,L,teile);
+    box.querySelectorAll('[data-r80ib]').forEach(s => s.onchange = () => { const z = zeilen[+s.dataset.r80ib]; z.b = s.value; z.s = z.b && !kids(z.b) && z.b !== 'finanzen' ? 'leitung' : (z.b ? (z.vor || (f.querySelector('#svInvRole').value.startsWith('f:') ? f.querySelector('#svInvRole').value.slice(2) : '')) : ''); zeichnen(); const n = box.querySelector(`[data-r80is="${s.dataset.r80ib}"]`); if(n && !n.disabled && !z.s) n.focus(); });
     box.querySelectorAll('[data-r80is]').forEach(s => s.onchange = () => { zeilen[+s.dataset.r80is].s = s.value; });
     box.querySelectorAll('[data-r80ix]').forEach(b => b.onclick = () => { zeilen.splice(+b.dataset.r80ix, 1); zeichnen(); });
     box.querySelector('.r80-invadd').onclick = () => { if(zeilen.length >= top.length) return; const rv = f.querySelector('#svInvRole').value; zeilen.push({ b:'', s:'', vor:rv.startsWith('f:') ? rv.slice(2) : '' }); zeichnen(); const n = box.querySelector(`[data-r80ib="${zeilen.length - 1}"]`); if(n) n.focus(); };
@@ -225,19 +250,17 @@ async function r80InvFunktionen(){
     const offen = zeilen.find(z => z.b && !z.s);
     if(offen){ e && e.preventDefault && e.preventDefault(); kToast('Wähl bei „' + titel(offen.b) + '“ noch die Funktion.'); const n = box.querySelector(`[data-r80is="${zeilen.indexOf(offen)}"]`); if(n) n.focus(); return false; }
     const fk = zeilen.filter(z => z.b && z.s).map(z => ({ b:z.b, s:z.s, t:titel(z.b) }));
-    SVR._fk = fk.length ? fk : null;
+    const auftrag = {funktionen:Object.fromEntries(fk.map(z=>[z.b,z.s])),teile:Object.fromEntries([...teile].map(k=>[k,true]))};
+    SVR._vereinsauftrag=rs.value!=='admin'&&(fk.length||teile.size)?auftrag:null;
     if(fr){ if(![...rs.options].some(o => o.value === 'viewer')) return false; rs.value = 'viewer'; R80_FR_LETZTE = R80_FROLLE[fr]; }   // technisch Gast plus Funktionen
-    try{ return await go.call(f, e); } finally { R80_FR_LETZTE = null; if(fr && rs.isConnected) rs.value = fr; } };
+    try{ return await go.call(f, e); } finally { SVR._vereinsauftrag=null; R80_FR_LETZTE = null; if(fr && rs.isConnected) rs.value = fr; } };
 }
 { const _ar = svAdminRender; svAdminRender = async function(){ const r = await _ar.apply(this, arguments); try{ await r80InvFunktionen(); }catch(e){ console.warn('Einladen mit Funktionen', e); } return r; }; }
 { const _adm = SVB.admin; SVB.admin = async function(action, payload){
-  const fk = action === 'invite' ? SVR._fk : null; if(action === 'invite') SVR._fk = null;
-  const r = await _adm.call(this, action, payload);
-  if(fk && r && r.user_id){ let ok = 0; const okL = [];
-    for(const z of fk){ let e = true; try{ const { error } = await SVB.sb.rpc('admin_funktion_set', { p_user:r.user_id, p_bereich:z.b, p_stufe:z.s }); e = error; }catch(x){} okL.push(!e); if(!e) ok++; }
-    const fehlt = fk.filter((z, i) => !okL[i]).map(z => z.t);
-    kToast(!fehlt.length ? '✓ Eingeladen mit ' + ok + (ok === 1 ? ' Funktion' : ' Funktionen') : 'Eingeladen, aber ' + fehlt.join(', ') + (fehlt.length === 1 ? ' fehlt' : ' fehlen') + ' noch. Trag es bei der Person unter „Bereiche & Funktionen“ nach.'); }
-  return r; }; }
+  if(action==='invite' && SVR._vereinsauftrag){
+    payload={...payload,vereinsauftrag:SVR._vereinsauftrag};SVR._vereinsauftrag=null;
+  }
+  return _adm.call(this,action,payload); }; }
 
 /* ---------- Team-Liste: Funktionen je Person sichtbar, deutlicher Knopf „Bereiche & Funktionen“ ---------- */
 async function r80TeamFunktionen(){
@@ -250,7 +273,7 @@ async function r80TeamFunktionen(){
     let d = row.querySelector(':scope > .r80-uf');
     if(!d){ d = document.createElement('div'); d.className = 'r80-uf'; row.appendChild(d); b.classList.add('r80-hid'); }
     const F = L.filter(x => x.user_id === row.dataset.u && x.stufe !== 'aus');
-    d.innerHTML = F.map(x => `<span>${svEsc(titel(x.bereich))} · ${svEsc(hatTeile(x.bereich) ? R80_STUFE_T[x.stufe] || x.stufe : 'Zugriff')}</span>`).join('')
+    d.innerHTML = F.map(x => `<span>${svEsc(titel(x.bereich))} · ${svEsc((hatTeile(x.bereich)||x.bereich==='finanzen') ? R80_STUFE_T[x.stufe] || x.stufe : 'Zugriff')}</span>`).join('')
       + `<button type="button" class="btn ghost r80-fb">${SVI('layers')}${F.length ? 'Bereiche & Funktionen' : 'Funktionen vergeben'}</button>`;
     d.querySelector('.r80-fb').onclick = () => b.click();
   });
@@ -278,7 +301,7 @@ function r80InvFRolle(){
   const sync = e => { const s = rs.value.startsWith('f:') ? rs.value.slice(2) : null; hint.hidden = !s;
     const Z = box._zeilen;
     if(s){ hint.textContent = R80_FROLLE[rs.value] + ': wähl unten mindestens einen Bereich. Dazu sieht die Person, was jeder Gast sieht.';
-      Z.forEach(z => { z.vor = s; if(z.b && kidsN(z.b)) z.s = s; }); if(!Z.length) Z.push({ b:'', s:'', vor:s }); }
+      Z.forEach(z => { z.vor = s; if(z.b && (kidsN(z.b)||z.b==='finanzen')) z.s = s; }); if(!Z.length) Z.push({ b:'', s:'', vor:s }); }
     box._zeichnen();
     if(s && e && e.isTrusted){ const n = box.querySelector('[data-r80ib="0"]'); if(n && !n.value) n.focus(); } };
   const kidsN = k => (box._kids ? box._kids(k) : 1);

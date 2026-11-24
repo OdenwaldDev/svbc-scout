@@ -33,10 +33,10 @@ async function svrPerson(id){
   // Kopf eines Bereichs: Funktion wählen (wie Rolle, Leitung, Stellvertretung, Helfer, kein Zugriff), darunter der Stand
   function kopf(t,kids){ const teile=kids.filter(k=>!/^team:/.test(k.key)), f=F[t.key]||'', e=eff(t.key), anK=teile.filter(k=>eff(k.key)).length;
     let angepasst=false; if(f&&f!=='aus'){ const r=RANG[f]||3; angepasst=!e||teile.some(k=>eff(k.key)!==((RANG[ST[k.key]||'stellv']||2)<=r)); } else if(f==='aus') angepasst=e;
-    const stand=!e?'kein Zugriff':teile.length?(anK===teile.length?'alles':anK?`${anK} von ${teile.length} Teilen`:'nur das Grundlegende'):'Zugriff';
-    const opts=teile.length?[['','Wie die Rolle'],['leitung','Leitung'],['stellv','Stellvertretung'],['helfer','Helfer'],['aus','Kein Zugriff']]:[['','Wie die Rolle'],['leitung','Zugriff'],['aus','Kein Zugriff']];
+    const stand=!e?(anK?anK+' einzelne Aufgaben':'kein Zugriff'):teile.length?(anK===teile.length?'alles':anK?`${anK} von ${teile.length} Teilen`:'nur das Grundlegende'):'Zugriff';
+    const opts=teile.length||t.key==='finanzen'?[['','Wie die Rolle'],['leitung','Leitung'],['stellv','Stellvertretung'],['helfer','Helfer'],['aus','Kein Zugriff']]:[['','Wie die Rolle'],['leitung','Zugriff'],['aus','Kein Zugriff']];
     return `<div class="svr-row svr-kopf${f?' abw':''}"><div class="svr-rt"><b>${svEsc(t.titel)}</b>${t.hinweis?`<span>${svEsc(t.hinweis)}</span>`:''}
-      <span class="svr-stand${e?' an':''}">${f?svEsc(teile.length||f==='aus'?STUFE_T[f]:'Zugriff')+(angepasst?' (angepasst)':'')+': ':'Wie die Rolle: '}${svEsc(stand)}</span></div>
+      <span class="svr-stand${e?' an':''}">${f?svEsc(teile.length||t.key==='finanzen'||f==='aus'?STUFE_T[f]:'Zugriff')+(angepasst?' (angepasst)':'')+': ':'Wie die Rolle: '}${svEsc(stand)}</span></div>
       <select class="svr-fk" data-svrf="${svEsc(t.key)}" aria-label="Funktion für ${svEsc(t.titel)}">${opts.map(([v,l])=>`<option value="${v}"${v===f?' selected':''}>${svEsc(l)}</option>`).join('')}</select></div>`; }
   function zeichnen(){
     const L=(D.bereiche||[]).slice().sort((a,b)=>(a.sort||0)-(b.sort||0)), top=L.filter(b=>!b.parent);
@@ -78,7 +78,7 @@ async function svrPerson(id){
       zeichnen(); });
     B.querySelectorAll('[data-svrf]').forEach(s=>s.onchange=async()=>{ const k=s.dataset.svrf, v=s.value||null, warAngepasst=/angepasst/.test((s.closest('.svr-row').querySelector('.svr-stand')||{}).textContent||''); B.querySelectorAll('select,button').forEach(x=>x.disabled=true);
       const {error}=await SVB.sb.rpc('admin_funktion_set',{p_user:id,p_bereich:k,p_stufe:v});
-      if(error)kToast('Das hat nicht geklappt. Prüf die Verbindung und versuch es noch mal.'); else kToast((v?'✓ '+(X[k]||{}).titel+': '+(v==='aus'?'kein Zugriff':(L.some(b=>b.parent===k&&!/^team:/.test(b.key))?STUFE_T[v]:'Zugriff')):(X[k]||{}).titel+': wie die Rolle')+(warAngepasst?'. Die einzelnen Anpassungen in diesem Bereich sind ersetzt.':''));
+      if(error)kToast('Das hat nicht geklappt. Prüf die Verbindung und versuch es noch mal.'); else kToast((v?'✓ '+(X[k]||{}).titel+': '+(v==='aus'?'kein Zugriff':(k==='finanzen'||L.some(b=>b.parent===k&&!/^team:/.test(b.key))?STUFE_T[v]:'Zugriff')):(X[k]||{}).titel+': wie die Rolle')+(warAngepasst?'. Die einzelnen Anpassungen in diesem Bereich sind ersetzt.':''));
       await laden(); });
     B.querySelectorAll('[data-svrs]').forEach(s=>s.onclick=async()=>{ const k=s.dataset.svrs, neu=!eff(k), wieRolle=neu===ohneEigene(k);
       s.disabled=true; const {error}=await SVB.sb.rpc('admin_zugriff_set',{p_user:id,p_bereich:k,p_an:wieRolle?null:neu});
