@@ -1,4 +1,4 @@
-import { cents, euro, isDay, isOriginal, sourceUrl } from './domain.mjs?v=beta-0.99.152';
+import { cents, euro, isDay, isOriginal, sourceUrl } from './domain.mjs?v=beta-0.99.153';
 
 // Redaktionelle Arbeitshypothesen, keine behaupteten Bearbeitungszeiten oder Förderauflagen.
 const profiles = [

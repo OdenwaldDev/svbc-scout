@@ -974,6 +974,205 @@ body.ed-aktiv{--ed-dunkel:#101b2b;--ed-hell:#f4efe4;--ed-akzent:#e99952;display:
  .ed-vereinsheft .heft-spieltag .ed-abbildung,.ed-vereinsheft .heft-studio .ed-abbildung{height:clamp(195px,37svh,380px);aspect-ratio:auto}
  .heft-studio .ed-bild{object-fit:contain;background:#19252b}
 }
+/* Der Vorhang wechselt mit dem Kapitel. Die Fotos bleiben am Platz. */
+.ed-stadionreise{--nacht:#07152a;--tinte:#071224;--papier:#f4f1e9;--orange:#ff963e;--eis:#a9dcf8;color:var(--papier);background:var(--nacht)}
+.ed-stadionreise .sf-scene{display:grid;grid-template-columns:minmax(0,1fr);align-content:stretch;align-items:center;position:relative;min-height:100%;background:var(--nacht);color:var(--papier);isolation:isolate;overflow:hidden;--innen:clamp(32px,6vw,120px)}
+.sf-scene>.sf-media{position:absolute;inset:0;z-index:-3;margin:0;overflow:hidden}
+.sf-bild,.sf-postfoto{display:block;width:100%;height:100%;object-fit:cover}
+.sf-scene::before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(90deg,#061126f5 0%,#061126d9 35%,#06112645 64%,transparent 90%)}
+.sf-body{padding:clamp(36px,6vh,90px) var(--innen);width:min(63%,1060px);position:relative;box-sizing:border-box}
+.sf-rubrik{font:700 clamp(12px,1.07vw,19px)/1.3 'Barlow',sans-serif;letter-spacing:.17em;text-transform:uppercase;color:var(--eis);margin:0 0 1.65em}
+.sf-body h2{font:italic 900 clamp(62px,min(8.4vw,15vh),165px)/.87 'Barlow Condensed',sans-serif;letter-spacing:-.024em;text-transform:uppercase;margin:0 0 .28em;max-width:13ch;text-wrap:balance}
+.sf-body h2 em{font:inherit;color:var(--orange)}
+.sf-text{font:500 clamp(18px,1.6vw,32px)/1.4 'Barlow',sans-serif;max-width:37ch;margin:0;text-wrap:pretty}
+.sf-wege{display:flex;flex-wrap:wrap;gap:.5em 1.25em;margin-top:1.4em}
+.sf-wege button,.sf-detail{background:transparent;color:inherit;text-align:left;border:0;border-bottom:2px solid var(--orange);font:800 clamp(16px,1.35vw,25px)/1.12 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.02em;min-height:44px;padding:.45em 0;cursor:pointer}
+.sf-detail{margin-top:14px}
+.sf-scene :focus-visible,.sf-nav :focus-visible{outline:3px solid #33a7ef;outline-offset:3px}
+.sf-auftakt .sf-bild{object-position:58% 50%}
+.sf-auftakt .sf-body{align-self:end;padding-bottom:clamp(56px,12vh,160px)}
+.sf-auftakt .sf-rubrik{color:#c6e8ff}
+.sf-auftakt h2{font-size:clamp(74px,min(10vw,17vh),190px);max-width:11.8ch}
+.sf-auftakt::before{background:linear-gradient(90deg,#061326ed 0%,#071528b8 34%,#07152821 62%,transparent 82%),linear-gradient(0deg,#0511226b,transparent 45%)}
+.sf-verein{--innen:clamp(35px,6.6vw,112px)}
+.sf-verein .sf-media{left:32%}
+.sf-verein .sf-bild{object-position:52% 48%}
+.sf-verein::before{background:linear-gradient(90deg,#082349 12%,#082349 30%,#082349e8 40%,#08234932 62%,transparent 84%)}
+.sf-verein h2{font-size:clamp(76px,min(11vw,17vh),196px)}
+.sf-studio .sf-media{inset:0 0 0 43%;display:flex;align-items:center;background:#071a2c}
+.sf-studio .sf-bild{height:auto;object-fit:contain}
+.sf-studio::before{background:linear-gradient(106deg,#07152a 0 39.5%,#0e4678 39.55% 39.85%,transparent 39.9%),radial-gradient(ellipse at 77% 85%,#286f8b54,transparent 53%);z-index:-4}
+.sf-studio .sf-body{width:44%;padding-right:3vw}
+.sf-studio h2{font-size:clamp(60px,min(7.9vw,14vh),145px)}
+.ed-stadionreise .sf-bande{color:#102743;background:var(--papier);align-content:stretch;grid-template-rows:auto 1fr}
+.sf-bande::before{display:none}
+.sf-bande .sf-body{grid-row:1;width:100%;display:grid;grid-template-columns:1.12fr 1fr;column-gap:5vw;align-items:center;padding-block:clamp(22px,4vh,65px);position:relative}
+.sf-bande .sf-rubrik{color:#265875;grid-column:1/-1;margin-bottom:10px}
+.sf-bande h2{grid-column:1;grid-row:2/4;max-width:14ch;font-size:clamp(55px,min(7.3vw,12vh),140px);margin:0}
+.sf-bande h2 em{color:#b34e11}
+.sf-bande .sf-text{font-size:clamp(17px,1.5vw,29px)}
+.sf-bande .sf-detail{justify-self:start;color:#143453;margin-top:4px}
+.sf-bande .sf-media{position:relative;grid-row:2;grid-column:1;align-self:stretch;min-height:31vh;z-index:0;background:#203627}
+.sf-bande .sf-bild{position:absolute;inset:0;object-position:center 49%;transition:transform .45s ease}
+.sf-bande.sf-nah .sf-bild{transform:scale(1.42)}
+.sf-spieltag .sf-media{inset:0 0 0 40%}
+.sf-spieltag::before{background:linear-gradient(90deg,#07152a 8%,#07152a 37%,#07152acf 46%,#07152a15 68%),linear-gradient(0deg,#061427b3,transparent 45%)}
+.sf-spieltag .sf-body{width:51%}
+.sf-taktik{position:absolute;right:var(--innen);bottom:clamp(24px,5vh,60px);width:min(31vw,480px);pointer-events:none}
+.sf-taktik svg{width:100%;display:block;height:auto}
+.sf-serie .sf-media{filter:brightness(.53)}
+.sf-serie::before{background:linear-gradient(90deg,#041328fa 0%,#08182be8 43%,#06233b69 77%,#051326a6)}
+.sf-serie .sf-body{width:53%}
+.sf-post{position:absolute;width:min(35vw,52vh,560px);right:7vw;align-self:center;top:50%;transform:translateY(-50%) rotate(1.5deg);box-shadow:0 16px 44px #0007;background:var(--papier);color:var(--nacht)}
+.sf-postbild,.sf-druckpost{aspect-ratio:4/5;position:relative;overflow:hidden}
+.sf-postfoto{position:absolute;inset:0}
+.sf-postschrift{position:absolute;inset:auto 0 0;padding:22% 7% 7%;background:linear-gradient(transparent,#041329dc 77%);color:white}
+.sf-postschrift small{display:block;font:700 clamp(10px,.9vw,15px)/1.3 'Barlow',sans-serif;letter-spacing:.11em;text-transform:uppercase}
+.sf-postschrift strong{display:block;font:italic 900 clamp(31px,4.4vw,82px)/.9 'Barlow Condensed',sans-serif;text-transform:uppercase}
+.sf-postnav{display:flex;align-items:center;justify-content:center;gap:16px;padding:2px 8px}
+.sf-postwechsel{font:700 20px/1 'Barlow',sans-serif;border:0;background:transparent;color:var(--tinte);min-width:44px;min-height:44px;cursor:pointer}
+.sf-poststand{font:600 14px/1 'Barlow',sans-serif;font-variant-numeric:tabular-nums}
+.sf-druckpost{display:none}
+.sf-brief::before{background:linear-gradient(90deg,#07152af2 0%,#07152adb 43%,#07152a33 80%),linear-gradient(0deg,#051022aa,transparent 65%)}
+.sf-brief .sf-body{width:68%}
+.sf-brief h2{font-size:clamp(61px,min(7.5vw,12vh),130px);max-width:17ch}
+.sf-unterschrift{display:flex;align-items:center;gap:15px;margin-top:1.45em}
+.sf-portraet{width:clamp(45px,4.7vw,78px);aspect-ratio:1;object-fit:cover;border-radius:50%}
+.sf-signatur{font:700 clamp(26px,2.5vw,45px)/1 'Caveat',cursive;color:#f4d8b8}
+.sf-nav.ed-nav{position:relative;background:#071224;color:var(--papier,#fff);border-top:1px solid #335071;min-height:60px;padding-block:7px max(7px,env(safe-area-inset-bottom))}
+.sf-nav::before{content:"";position:absolute;top:-2px;left:0;height:2px;width:var(--fortschritt,0%);background:#ff963e}
+.sf-nav .ed-controls button{display:inline-flex;align-items:center;justify-content:center;gap:.5em;border:1px solid #56708c;border-radius:2px;background:transparent;color:white;cursor:pointer}
+.sf-nav .ed-controls button:last-child{width:auto;min-width:48px;padding-inline:16px;background:#ff963e;color:#091729;border-color:#ff963e;font:800 19px/1 'Barlow Condensed',sans-serif;text-transform:uppercase}
+@media screen{
+ .ed-stadionreise .sf-scene[hidden]{display:none!important}
+ .sf-enter .sf-body{animation:sf-satz .4s ease-out both}
+ .sf-enter::after{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0}
+ @keyframes sf-satz{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+@media screen and (max-width:760px){
+ .ed-stadionreise .sf-scene{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;--innen:clamp(20px,6vw,40px)}
+ .sf-scene>.sf-media{position:relative;inset:auto;order:0;width:100%;height:clamp(180px,33svh,380px);flex:none;z-index:0}
+ .sf-scene::before{display:none}
+ .sf-scene .sf-body{width:auto;display:block;align-self:stretch;order:2;padding:24px var(--innen) 28px}
+ .sf-rubrik{font-size:12px;margin-bottom:11px;letter-spacing:.13em}
+ .sf-scene .sf-body h2{font-size:clamp(49px,12vw,85px);max-width:17ch;margin:0 0 .18em}
+ .sf-scene .sf-text{font-size:clamp(17px,4.4vw,20px);line-height:1.36}
+ .sf-auftakt .sf-media{height:clamp(215px,40svh,420px)}
+ .sf-auftakt .sf-bild{object-position:75% 55%}
+ .sf-auftakt .sf-media:after,.sf-brief .sf-media:after{content:"";position:absolute;inset:auto 0 0;height:24%;background:linear-gradient(transparent,var(--nacht))}
+ .sf-auftakt .sf-body{padding-top:4px}.sf-auftakt .sf-body h2{font-size:clamp(62px,15vw,96px)}
+ .sf-verein .sf-bild{object-position:50% 44%}
+ .sf-wege{gap:6px 15px;margin-top:12px}
+ .sf-studio>.sf-media{height:auto;aspect-ratio:1200/630}
+ .sf-studio .sf-bild{height:100%}
+ .sf-bande .sf-media{height:clamp(180px,31svh,290px);min-height:0}
+ .sf-bande .sf-bild{object-fit:contain}
+ .sf-bande .sf-detail{margin-top:8px}
+ .sf-spieltag>.sf-media{height:clamp(190px,32svh,350px)}
+ .sf-taktik{right:12px;top:10px;bottom:auto;width:min(33vw,145px);z-index:1}
+ .sf-serie>.sf-media{position:absolute;inset:0;width:100%;height:100%;z-index:-2}
+ .sf-serie::before{display:block;background:linear-gradient(0deg,#061528 8%,#061528df 47%,#06223e55)}
+ .sf-post{position:relative;inset:auto;order:1;align-self:center;width:min(57%,29svh);margin:22px 0 0;transform:rotate(1.5deg)}
+ .sf-postschrift strong{font-size:clamp(25px,7vw,45px)}
+ .sf-postnav{gap:4px}.sf-poststand{font-size:12px}
+ .sf-brief .sf-media{height:clamp(140px,24svh,275px)}
+ .sf-brief .sf-body{padding-top:10px}
+ .sf-unterschrift{margin-top:14px}
+ .sf-nav.ed-nav{padding-inline:12px;gap:8px;min-height:56px}
+ .sf-nav .ed-partner{font-size:13px;max-width:25vw}
+ .sf-nav .ed-controls{gap:6px}.sf-nav .ed-stand{min-width:33px}
+ .sf-nav .ed-controls button:last-child{padding-inline:10px}
+}
+@media screen and (max-width:350px){.sf-nav .sf-weitertext{display:none}}
+@media (prefers-reduced-motion:reduce){.sf-enter::after,.sf-enter .sf-body{animation:none}.sf-bande .sf-bild{transition:none}}
+@media print{
+ .ed-stadionreise .sf-scene,.ed-stadionreise .sf-scene[hidden]{display:grid!important;width:320mm;height:180mm;min-height:0;--innen:17mm;page-break-inside:avoid;break-after:page}
+ .ed-stadionreise .sf-scene:last-child{break-after:auto}
+ .sf-scene .sf-body{padding-block:9mm}
+ .sf-body h2,.sf-scene .sf-body h2{font-size:23mm}
+ .sf-auftakt .sf-body h2,.sf-verein .sf-body h2{font-size:31mm}
+ .sf-rubrik{font-size:3.6mm}.sf-text,.sf-bande .sf-text{font-size:5.2mm}
+ .sf-nav.ed-nav,.sf-wege,.sf-detail,.sf-postnav{display:none!important}
+ .sf-post{right:6mm;width:152mm;display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:3mm;box-shadow:none;background:transparent;transform:translateY(-50%);break-inside:avoid}
+ .sf-post .sf-druckpost,.sf-post .sf-druckpost[hidden]{display:block!important}
+ .sf-postschrift strong{font-size:10mm}.sf-postschrift small{font-size:2.5mm}
+ .sf-bande .sf-media{min-height:0}.sf-bande.sf-nah .sf-bild{transform:none}
+}
+@media screen{
+ .sf-post .sf-postbild[hidden]{display:none}
+ .sf-post .sf-druckpost:not([hidden]){display:block}
+}
+.sf-postwechsel{font-size:clamp(13px,1.1vw,18px)}
+.sf-taktik{color:#ffbf70;filter:drop-shadow(0 2px 4px #071224)}
+@media print{.sf-post .sf-postbild[hidden]{display:block!important}}
+/* An der Seitenlinie, auf der Tartanbahn und im Flutlicht hat jedes Kapitel eine eigene Kante. */
+.sf-verein::before{background:linear-gradient(108deg,#092c58 0%,#092c58 32%,#0e58af 32.15%,#0e58af 33.1%,#12498394 33.2%,#08234952 45%,transparent 64%)}
+.sf-verein .sf-body{width:49%;padding-right:2vw}
+.sf-studio .sf-body:after{content:"";display:block;height:11px;width:75%;max-width:320px;margin-top:1.5em;background:repeating-linear-gradient(90deg,#abd7ecab 0 1px,transparent 1px 20%) left bottom/100% 8px no-repeat,linear-gradient(#abd7ec8c,#abd7ec8c) left top/100% 1px no-repeat;transform:skewX(-18deg)}
+.sf-spieltag .sf-body{padding-right:2.5vw}
+.sf-spieltag .sf-body h2{font-size:clamp(55px,min(6.9vw,11.8vh),130px);max-width:15ch}
+.sf-spieltag .sf-taktik{right:4%;bottom:3%;width:min(29vw,430px);filter:drop-shadow(0 2px 3px #071224) drop-shadow(0 0 1px #0b151c)}
+.sf-spieltag .sf-taktik path[stroke-dasharray]{stroke:#fcf1cf}
+.sf-spieltag .sf-taktik path:last-child{fill:#e58435;stroke:#ffd093}
+@media screen{
+ .sf-enter::after{animation:none;content:none}
+ .sf-auftakt.sf-enter::after,.sf-brief.sf-enter::after{content:"";background:linear-gradient(121deg,transparent 18%,#a1deec30 46%,#ffb7738c 50%,transparent 61%);background-size:200% 100%;animation:sf-licht .54s ease-out}
+ .sf-verein.sf-enter::after,.sf-serie.sf-enter::after{content:"";background:#165ba8;animation:sf-stoff .44s cubic-bezier(.25,.1,.3,1)}
+ .sf-bande.sf-enter::after,.sf-studio.sf-enter::after{content:"";background:#efecc8;animation:sf-blende .38s ease-out}
+ .sf-spieltag.sf-enter .sf-taktik svg{animation:sf-linie .6s ease-out both}
+ @keyframes sf-licht{0%{opacity:0;background-position:100% center}28%{opacity:.76}100%{opacity:0;background-position:0% center}}
+ @keyframes sf-stoff{0%{opacity:1;clip-path:polygon(0 0,43% 0,18% 100%,0% 100%)}100%{opacity:0;clip-path:polygon(0 0,0 0,0 100%,0 100%)}}
+ @keyframes sf-blende{from{opacity:.3}to{opacity:0}}
+ @keyframes sf-linie{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
+}
+@media screen and (max-width:760px){
+ .ed-stadionreise .sf-auftakt,.ed-stadionreise .sf-brief{justify-content:flex-end}
+ .sf-auftakt>.sf-media,.sf-brief>.sf-media,.sf-verein>.sf-media,.sf-spieltag>.sf-media{position:absolute;inset:0;z-index:-3;height:100%;width:100%}
+ .sf-auftakt .sf-bild{object-position:87% center}
+ .sf-auftakt .sf-media:after,.sf-brief .sf-media:after{display:none}
+ .sf-auftakt::before,.sf-brief::before,.sf-verein::before,.sf-spieltag::before{display:block}
+ .sf-auftakt::before{background:linear-gradient(0deg,#031021 3%,#031021f5 21%,#031021b8 41%,#04162921 67%,transparent 84%)}
+ .sf-auftakt .sf-body{padding:clamp(210px,40svh,430px) var(--innen) clamp(35px,8svh,80px)}
+ .sf-auftakt .sf-body h2{max-width:10ch}
+ .sf-verein .sf-bild{object-position:56% top;height:63%;object-fit:cover}
+ .sf-verein::before{background:linear-gradient(165deg,transparent 0 36%,#2c87d8 36.15% 37%,#123b71 37.15%,#071d38 81%)}
+ .ed-stadionreise .sf-verein{justify-content:flex-end}
+ .sf-verein .sf-body{padding:clamp(215px,36svh,375px) var(--innen) clamp(20px,4svh,45px)}
+ .sf-verein .sf-body h2{font-size:clamp(64px,17vw,100px);max-width:10ch}
+ .sf-verein .sf-wege{gap:8px 14px;align-items:flex-start}
+ .sf-studio>.sf-media{height:auto;aspect-ratio:1200/630;margin-top:6svh}
+ .sf-studio .sf-body{position:relative;padding-top:33px}
+ .sf-studio .sf-body:before{content:"";position:absolute;height:15px;top:-1px;left:0;right:0;clip-path:polygon(0 0,100% 0,0 100%);background:#38a6d6}
+ .sf-studio .sf-body:after{margin-top:22px;width:75%}
+ .ed-stadionreise .sf-bande{justify-content:center;padding-block:20px}
+ .sf-bande .sf-body{order:0;padding-top:10px;padding-bottom:18px}
+ .sf-bande>.sf-media{order:1;width:100%;height:auto;aspect-ratio:1.8;flex:none}
+ .sf-bande .sf-bild{object-fit:cover}
+ .ed-stadionreise .sf-spieltag{justify-content:flex-end}
+ .sf-spieltag .sf-bild{height:61%;object-position:47% 42%}
+ .sf-spieltag::before{background:linear-gradient(0deg,#07152a 34%,#07152ae6 44%,#07152a08 67%)}
+ .sf-spieltag .sf-body{padding-top:clamp(210px,38svh,410px);padding-bottom:clamp(25px,5svh,50px)}
+ .sf-spieltag .sf-body h2{font-size:clamp(47px,12.5vw,74px);max-width:15ch}
+ .sf-spieltag .sf-taktik{right:5%;top:1%;bottom:auto;width:42%}
+ .sf-brief .sf-bild{object-position:68% center}
+ .sf-brief::before{background:linear-gradient(0deg,#031022 2%,#06152aef 30%,#071528b5 58%,#07152810 85%)}
+ .sf-brief .sf-body{padding:clamp(160px,26svh,300px) var(--innen) clamp(30px,9svh,80px)}
+ .sf-brief .sf-body h2{font-size:clamp(74px,20vw,115px)}
+}
+@media (prefers-reduced-motion:reduce){
+ .ed-stadionreise .sf-enter::after,.ed-stadionreise .sf-enter .sf-body,.ed-stadionreise .sf-enter .sf-taktik svg{animation:none;content:none}
+}
+@media screen and (max-width:760px){
+ .sf-verein .sf-body{width:100%}
+ .ed-stadionreise .sf-studio{justify-content:center}
+ .sf-studio>.sf-media{margin-top:0}
+}
+@media print{
+ .sf-serie .sf-post{top:44mm;transform:none;height:94mm}
+ .sf-post .sf-postbild{height:94mm;aspect-ratio:auto;display:block;break-inside:avoid}
+ .sf-post .sf-postschrift{top:68mm;bottom:auto;height:26mm;padding:6mm 4mm 2mm;box-sizing:border-box}
+ .sf-postschrift small,.sf-postschrift strong{break-inside:avoid;line-height:1}
+}
 </style></head><body><div id="film" data-s="start" data-licht="1" class="anlass">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture></div>
@@ -1277,6 +1476,88 @@ const LOGO = (() => {
   g.REISE_MEDIEN=Object.freeze({starten});
 })(window);
 
+/* Szenen für das persönliche Gesundheitspartner-Gespräch in anlass.html. */
+function stadionszene(f, i, { bildpfad, esc, titel, wahl }) {
+  const quelle = bildpfad(f.bild);
+  const bild = (src, alt, klasse) => '<img class="'+klasse+'" src="'+esc(src)+'" alt="'+esc(alt || '')+'" draggable="false">';
+  const medium = quelle ? '<figure class="sf-media">'+bild(quelle, f.alt, 'sf-bild')+'</figure>' : '';
+  let objekt = '';
+  let aktion = wahl;
+  if (f.layout === 'bande') {
+    aktion += '<button class="sf-detail" type="button" aria-pressed="false">Bande näher ansehen</button>';
+  }
+  if (f.layout === 'spieltag') {
+    // Die Hütchen und die Linie zeigen den gemeinsamen Laufweg zum Ziel.
+    objekt = '<div class="sf-taktik" aria-hidden="true"><svg viewBox="0 0 380 170" fill="none"><g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path stroke-dasharray="8 8" d="M18 134 C60 140 40 47 94 74 S133 164 162 119 S175 37 210 62 S264 115 307 65 L345 32"/><path d="m329 34 18-6-5 18"/><path d="m50 112 8-18 8 18z M127 106l8-18 8 18z M191 83l8-18 8 18z M259 83l8-18 8 18z"/></g></svg></div>';
+  }
+  if (f.layout === 'serie' && Array.isArray(f.beitrag)) {
+    const motive = f.beitrag.slice(0,2).filter(m => m && bildpfad(m.bild) && m.titel);
+    if (motive.length === 2) {
+      const kacheln = motive.map((m, k) =>
+        '<div class="sf-postbild'+(k?' sf-druckpost':'')+'"'+(k?' hidden':'')+'>'+
+        bild(bildpfad(m.bild), m.alt, 'sf-postfoto')+
+        '<div class="sf-postschrift"><small>'+esc(m.rubrik || '')+'</small><strong>'+esc(m.titel)+'</strong></div></div>').join('');
+      objekt = '<div class="sf-post" role="group" aria-label="Beispielbeitrag mit zwei Bildern">'+kacheln+
+        '<div class="sf-postnav"><span class="sf-poststand" aria-live="polite">1 / 2</span><button type="button" class="sf-postwechsel">Zum Studiofoto →</button></div></div>';
+    }
+  }
+  if (f.layout === 'brief' && f.signatur) {
+    const portr = bildpfad(f.portraet);
+    aktion += '<div class="sf-unterschrift">'+(portr?bild(portr,'','sf-portraet'):'')+'<span class="sf-signatur">'+esc(f.signatur)+'</span></div>';
+  }
+  return '<section class="ed-slide sf-scene sf-'+f.layout+'" aria-labelledby="ed-h-'+i+'"'+(i?' hidden':'')+'>'+
+    medium+objekt+'<div class="sf-body"><p class="sf-rubrik">'+esc(f.rubrik || '')+'</p><h2 id="ed-h-'+i+'">'+titel+'</h2>'+
+    (f.text?'<p class="sf-text">'+esc(f.text)+'</p>':'')+aktion+'</div></section>';
+}
+
+function stadionBedienen(deck, blättern) {
+  function postWechsel(post, richtung) {
+    const bilder = Array.from(post.querySelectorAll('.sf-postbild'));
+    const stand = bilder.findIndex(bild => !bild.hidden);
+    const ziel = richtung == null ? 1-stand : Math.max(0, Math.min(1, stand+richtung));
+    if (stand === ziel) return;
+    bilder.forEach((bild,i) => { bild.hidden = i !== ziel; });
+    post.querySelector('.sf-poststand').textContent = (ziel+1)+' / 2';
+    post.querySelector('.sf-postwechsel').textContent = ziel?'← Zum Spielfoto':'Zum Studiofoto →';
+  }
+  deck.addEventListener('click', event => {
+    const detail = event.target.closest('.sf-detail');
+    if (detail) {
+      const nah = detail.closest('section').classList.toggle('sf-nah');
+      detail.setAttribute('aria-pressed',String(nah));
+      detail.textContent = nah?'Ganze Bande ansehen':'Bande näher ansehen';
+    }
+    const wechseln = event.target.closest('.sf-postwechsel');
+    if (wechseln) postWechsel(wechseln.closest('.sf-post'));
+  });
+  deck.addEventListener('keydown', event => {
+    const post = event.target.closest('.sf-post');
+    if (post && (event.key==='ArrowLeft' || event.key==='ArrowRight')) {
+      event.stopPropagation();
+      event.preventDefault();
+      postWechsel(post,event.key==='ArrowRight'?1:-1);
+    }
+  });
+  let start;
+  deck.addEventListener('touchstart', event => {
+    const finger = event.touches[0];
+    start = event.touches.length===1 && !event.target.closest('button,a') ?
+      { x:finger.clientX, y:finger.clientY, post:event.target.closest('.sf-post'), szene:event.target.closest('section') } : null;
+  }, {passive:true});
+  deck.addEventListener('touchcancel', () => { start=null; }, {passive:true});
+  deck.addEventListener('touchend', event => {
+    const von = start;
+    start=null;
+    if (!von || event.touches.length || !von.szene || von.szene.hidden) return;
+    const x = event.changedTouches[0].clientX-von.x;
+    const y = event.changedTouches[0].clientY-von.y;
+    if (Math.abs(x)<55 || Math.abs(x)<Math.abs(y)*1.6 || getSelection()?.toString()) return;
+    const richtung = x<0?1:-1;
+    if (von.post) postWechsel(von.post,richtung);
+    else blättern(richtung);
+  }, {passive:true});
+}
+
 /* =====================================================================
    Beta 0.99.89 · Präsentation zu einem Anlass (anlass.html)
    Albert, 18.11.2026: eine eigene Präsentation für eine Firma, die kein Paket bucht, sondern Partner einer Aktion wird
@@ -1417,6 +1698,7 @@ function redaktion(daten){
   }
   const vereinsreise=daten.vereinsreise===true;
   const heft=vereinsreise && daten.gestaltung==='vereinsheft';
+  const stadion=vereinsreise && daten.gestaltung==='stadionreise';
   const layouts=new Set(['auftakt','verein','studio','bande','spieltag','serie','brief']);
   const logo=bildpfad(daten.logo);
   function seite(f,i){
@@ -1438,6 +1720,10 @@ function redaktion(daten){
     const ende=vereinsreise && typeof f.akzent==='string' && f.akzent && typeof f.titel==='string' && f.titel.endsWith(f.akzent)?f.akzent:'';
     const titel=ende?esc(f.titel.slice(0,-ende.length))+'<em>'+esc(ende)+'</em>':esc(f.titel);
     const wege=vereinsreise && Array.isArray(f.wege)?f.wege.filter(w=>w && Number.isInteger(w.ziel) && w.ziel>=0 && w.ziel<folien.length && w.ziel!==i && typeof w.text==='string' && w.text.trim()):[];
+    if(stadion && layouts.has(f.layout)){
+      const wahl=wege.length?'<div class="sf-wege">'+wege.map(w=>'<button type="button" data-kapitel="'+w.ziel+'">'+esc(w.text)+' <span aria-hidden="true">↗</span></button>').join('')+'</div>':'';
+      return stadionszene(f,i,{bildpfad,esc,titel,wahl});
+    }
     const wahl=wege.length?'<div class="ed-wege">'+wege.map(w=>'<button type="button" data-kapitel="'+w.ziel+'">'+esc(w.text)+' <span aria-hidden="true">↗</span></button>').join('')+'</div>':'';
     const untertitel=layout==='auftakt' && f.untertitel?'<p class="heft-untertitel">'+esc(f.untertitel)+'</p>':'';
     const signatur=layout==='brief' && f.signatur?'<p class="heft-signatur">'+esc(f.signatur)+'</p>':'';
@@ -1446,7 +1732,7 @@ function redaktion(daten){
   document.body.classList.add('ed-aktiv');
   const deck=document.createElement('main');
   deck.className=daten.geschichte===true?'ed-deck ed-geschichte':'ed-deck';
-  if(vereinsreise)deck.classList.add(heft?'ed-vereinsheft':'ed-vereinsreise');
+  if(vereinsreise)deck.classList.add(stadion?'ed-stadionreise':heft?'ed-vereinsheft':'ed-vereinsreise');
   deck.setAttribute('aria-label',A.titel||'Partnerpräsentation');
   deck.innerHTML=folien.map(seite).join('');
   const originale=$$('.ed-bande-original img',deck);
@@ -1457,6 +1743,10 @@ function redaktion(daten){
   nav.className='ed-nav';
   nav.setAttribute('aria-label','Präsentation durchblättern');
   nav.innerHTML='<img src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach"><span class="ed-partner">'+esc(A.firma)+'</span><div class="ed-controls"><button type="button" aria-label="Vorherige Folie">←</button><span class="ed-stand" aria-live="polite" aria-atomic="true"></span><button type="button" aria-label="Nächste Folie">→</button></div>';
+  if(stadion){
+    nav.classList.add('sf-nav');
+    nav.querySelector('[aria-label="Nächste Folie"]').innerHTML='<span class="sf-weitertext">Weiter</span> <span aria-hidden="true">→</span>';
+  }
   const pause=document.createElement('button');
   pause.className='ed-filmpause';
   pause.hidden=true;
@@ -1467,7 +1757,11 @@ function redaktion(daten){
   let aktuell=0;
   function zeige(index){
     aktuell=Math.max(0,Math.min(slides.length-1,index));
-    slides.forEach((s,i)=>{s.hidden=i!==aktuell;});
+    slides.forEach((s,i)=>{
+      s.hidden=i!==aktuell;
+      if(stadion)s.classList.toggle('sf-enter',i===aktuell);
+    });
+    if(stadion)zur.querySelector('.sf-weitertext').textContent=aktuell===0?'Los':aktuell===slides.length-1?'Ende':'Weiter';
     nav.style.setProperty('--fortschritt',((aktuell+1)/slides.length*100)+'%');
     deck.scrollTop=0;
     medien.zeigen('kapitel'+aktuell);
@@ -1484,6 +1778,7 @@ function redaktion(daten){
     const ziel=e.target.closest('[data-kapitel]');
     if(ziel){weiter(Number(ziel.dataset.kapitel));(zur.disabled?vor:zur).focus({preventScroll:true});}
   });
+  if(stadion)stadionBedienen(deck,richtung=>richtung===1?weiter(aktuell+1):zurueck());
   vor.onclick=zurueck; zur.onclick=()=>weiter(aktuell+1);
   document.addEventListener('keydown',e=>{
     if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
@@ -1495,9 +1790,29 @@ function redaktion(daten){
 }
 
 async function los(){
-  if(!/^([a-z0-9]+-)*[a-hjkmnp-z2-9]{8}$/.test(kurz)){ leer(); return; }
-  try{ A=await rpc('partner_anlass',{p_kurz:kurz}); }catch(e){ A=null; }
-  if(!A||!A.ok){ leer(); return; }
+  const termin=new URLSearchParams(location.search).get('termin');
+  if(termin!==null){
+    try{
+      if(!/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(termin))throw new Error();
+      await new Promise((ok,nein)=>{
+        const sdk=document.createElement('script'); sdk.src='vendor/supabase.js';
+        sdk.onload=ok; sdk.onerror=nein; document.head.append(sdk);
+      });
+      const sb=window.supabase.createClient(RU,RA,{auth:{storageKey:'svbc-auth',detectSessionInUrl:false,flowType:'implicit'}});
+      const {data,error}=await sb.rpc('partner_termin_ansicht',{p_deck:termin});
+      if(error || !data?.ok)throw new Error();
+      A=data;
+    }catch{
+      leer();
+      $('.a-leer h2').textContent='Gespräch erneut öffnen';
+      $('.a-leer .unter').innerHTML='Prüfe deine Anmeldung und wähle die Firma erneut. <a class="zeile" href="partnerstart.html">Zur Firmenauswahl</a>';
+      return;
+    }
+  }else{
+    if(!/^([a-z0-9]+-)*[a-hjkmnp-z2-9]{8}$/.test(kurz)){ leer(); return; }
+    try{ A=await rpc('partner_anlass',{p_kurz:kurz}); }catch(e){ A=null; }
+    if(!A||!A.ok){ leer(); return; }
+  }
   D=A.daten||{}; document.title=A.titel+' · '+A.firma+' · SV/BSC Mörlenbach'; $('#fuer').textContent=A.firma;
   if(redaktion(D.redaktion))return;
   await logos();

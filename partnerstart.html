@@ -89,7 +89,7 @@ h1 em{font-style:inherit;color:#ff8a3c}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Firma eingeben" aria-label="Firma suchen oder neu anlegen" aria-controls="liste">
     </div>
-    <div class="liste" id="liste" role="list" aria-live="polite"></div>
+    <div class="liste" id="liste" role="group" aria-label="Suchergebnisse" aria-live="polite"></div>
     <p class="hin" id="hin"></p>
   </section>
 
@@ -116,13 +116,16 @@ h1 em{font-style:inherit;color:#ff8a3c}
 
 <div id="los" hidden role="status"><div><div class="logo"><i aria-hidden="true"></i><i class="b" aria-hidden="true"></i><img src="partner/r-svbsc.png" alt="" width="480" height="273"></div><p>Präsentation für</p><b id="losF"></b></div></div>
 
-<script src="vendor/supabase.js?v=beta-0.99.152"></script>
+<script src="vendor/supabase.js?v=beta-0.99.153"></script>
 <script>
 (function(){
 'use strict';
 const C={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo"}, $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s||'').toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+const kompakt=s=>norm(s).replace(/ /g,'');
+const namen=d=>[d.firma,d.kurzname,...(Array.isArray(d.passung?.start_alias)?d.passung.start_alias:[])].filter(Boolean);
+const gleicherName=(d,t)=>namen(d).some(name=>kompakt(name)===kompakt(t));
 const heute=()=>{ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 const PFEIL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 const PLUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
@@ -134,7 +137,7 @@ function zeig(v){ ['vSuche','vNeu','vInfo'].forEach(id=>{ $('#'+id).hidden=id!==
 function info(h,t,knopf,ziel){ $('#iH').textContent=h; $('#iT').textContent=t; const k=$('#iK'); k.textContent=knopf||''; k.hidden=!knopf; if(ziel)k.href=ziel; zeig('vInfo'); }
 
 async function laden(){ const {data,error}=await sb.rpc('partner_decks_liste'); if(error)throw error;
-  DECKS=((data&&data.decks)||[]).filter(d=>d.aktiv!==false&&d.code&&d.firma).map(d=>Object.assign({n:norm([d.firma,d.kurzname,d.branche,d.passung&&d.passung.suchnamen,d.passung&&d.passung.marke&&d.passung.marke.name].filter(Boolean).join(' '))},d)); }
+  DECKS=((data&&data.decks)||[]).filter(d=>d.aktiv!==false&&d.code&&d.firma).map(d=>Object.assign({n:norm([...namen(d),d.branche,d.passung&&d.passung.suchnamen,d.passung&&d.passung.marke&&d.passung.marke.name].filter(Boolean).join(' '))},d)); }
 
 async function start(){
   if(!window.supabase||!C.url){ info('Gerade nicht erreichbar','Bitte die Seite neu laden.','Neu laden',location.href); return; }
@@ -148,13 +151,13 @@ async function start(){
 }
 
 function treffer(t){ const w=norm(t).split(' ').filter(Boolean); if(!w.length)return [];
-  return DECKS.filter(d=>w.every(x=>d.n.includes(x))).map(d=>({d,r:(d.n.startsWith(w[0])?0:(' '+d.n).includes(' '+w[0])?1:2)})).sort((a,b)=>a.r-b.r||a.d.firma.localeCompare(b.d.firma,'de')).slice(0,6).map(x=>x.d); }
+  return DECKS.filter(d=>w.every(x=>d.n.includes(x)) || namen(d).some(n=>kompakt(n).includes(kompakt(t)))).map(d=>({d,r:(gleicherName(d,t)?-1:d.n.startsWith(w[0])?0:(' '+d.n).includes(' '+w[0])?1:2)})).sort((a,b)=>a.r-b.r||a.d.firma.localeCompare(b.d.firma,'de')).slice(0,6).map(x=>x.d); }
 
 function suche(){ const t=$('#q').value.trim(), L=$('#liste'), H=$('#hin'); H.className='hin';
   if(norm(t).length<2){ L.innerHTML=''; H.textContent=t?'Noch ein Buchstabe.':''; return; }
-  const T=treffer(t), gleich=T.some(d=>norm(d.firma)===norm(t));
-  L.innerHTML=T.map((d,i)=>'<button type="button" class="z" role="listitem" data-i="'+i+'" style="animation-delay:'+(i*35)+'ms"><span class="t"><b>'+esc(d.firma)+'</b>'+(d.branche?'<small>'+esc(d.branche)+'</small>':'')+'</span>'+PFEIL+'</button>').join('')
-    +(gleich?'':'<button type="button" class="z neu" role="listitem" id="neuB"><span class="t"><b>„'+esc(t)+'“ neu anlegen</b><small>Die Firma steht danach auch in der App.</small></span>'+PLUS+'</button>');
+  const T=treffer(t), gleich=T.some(d=>gleicherName(d,t));
+  L.innerHTML=T.map((d,i)=>'<button type="button" class="z" data-i="'+i+'" style="animation-delay:'+(i*35)+'ms"><span class="t"><b>'+esc(d.firma)+'</b>'+(d.passung?.start_anlass?'<small>Persönliche Präsentation</small>':d.branche?'<small>'+esc(d.branche)+'</small>':'')+'</span>'+PFEIL+'</button>').join('')
+    +(gleich?'':'<button type="button" class="z neu" id="neuB"><span class="t"><b>„'+esc(t)+'“ neu anlegen</b><small>Die Firma steht danach auch in der App.</small></span>'+PLUS+'</button>');
   L.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>los(T[+b.dataset.i]));
   const nb=$('#neuB'); if(nb)nb.onclick=()=>neuAuf(t);
   H.textContent=T.length?'':'Noch nicht dabei. Du kannst die Firma gleich anlegen.'; }
@@ -163,7 +166,7 @@ function neuAuf(t){ $('#nFirma').value=t; $('#nAp').value=''; $('#nOrt').value='
 
 async function anlegen(e){ e.preventDefault(); if(laeuft)return; const H=$('#nHin'), firma=$('#nFirma').value.trim().replace(/\s+/g,' '); H.textContent='';
   if(firma.length<2){ H.textContent='Bitte den Namen der Firma eintragen.'; $('#nFirma').focus(); return; }
-  const da=DECKS.find(d=>norm(d.firma)===norm(firma)); if(da){ los(da); return; }
+  const da=DECKS.find(d=>gleicherName(d,firma)); if(da){ los(da); return; }
   laeuft=true; const K=$('#nLos'); K.disabled=true; K.textContent='Wird angelegt …';
   try{
     const r={firma:firma,ansprechpartner:$('#nAp').value.trim()||null,ort:$('#nOrt').value.trim()||null,status:'gespraech',notiz:'Im Termin angelegt (Partner-Start).',geaendert_am:new Date().toISOString()};
@@ -177,12 +180,13 @@ async function anlegen(e){ e.preventDefault(); if(laeuft)return; const H=$('#nHi
 
 // Start der Präsentation: ein Eintrag im Verlauf der Firma (einmal je Tag), dann die Reise im Vollbild
 async function los(d){ if(laeuft)return; laeuft=true; $('#losF').textContent=d.firma; $('#los').hidden=false; const t0=Date.now(); let kid=null;
+  const ziel=d.passung?.start_anlass?'anlass.html?termin='+encodeURIComponent(d.id):'partner.html?reise=1#d='+encodeURIComponent(d.code);
   if(d.sponsor){ try{ const h=heute(), {data:alt}=await sb.from('sponsor_kontakte').select('id,notiz').eq('sponsor',d.sponsor).eq('am',h).limit(30);
       const schon=(alt||[]).find(k=>/\(Partner-Start\)/.test(k.notiz||''));
       if(schon)kid=schon.id; else{ const {data:n,error}=await sb.from('sponsor_kontakte').insert({sponsor:d.sponsor,art:'sonst',am:h,notiz:'Präsentation im Termin gezeigt (Partner-Start).'}).select('id').single(); if(!error&&n)kid=n.id; } }catch(e){} }
-  try{ sessionStorage.setItem('ps-kontakt',JSON.stringify({code:String(d.code).toLowerCase(),id:kid})); }catch(e){}
+  try{ if(!d.passung?.start_anlass)sessionStorage.setItem('ps-kontakt',JSON.stringify({code:String(d.code).toLowerCase(),id:kid})); }catch(e){}
   const rest=Math.max(0,(matchMedia('(prefers-reduced-motion:reduce)').matches?200:1100)-(Date.now()-t0));
-  setTimeout(()=>{ location.href='partner.html?reise=1#d='+encodeURIComponent(d.code); },rest); }
+  setTimeout(()=>{ location.href=ziel; },rest); }
 
 $('#q').addEventListener('input',suche);
 $('#q').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const b=document.querySelector('#liste .z'); if(b)b.click(); } });
