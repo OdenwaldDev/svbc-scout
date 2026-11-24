@@ -241,6 +241,7 @@ function hzTitel(home, z, text, ruhig){ let t = home.querySelector(':scope > .hz
 function hzOrdnen(){ const home = document.getElementById('panel-home'), hello = document.getElementById('svHeute') && document.getElementById('svHello'); if(!home || !hello || hello.parentNode !== home || HZ.laeuft) return;
   HZ.laeuft = true; if(HZ.beob) HZ.beob.disconnect();
   try{ const P = hzPlan(); HZ.k = P.k; HZ.scout = !!P.scout; home.dataset.hz = P.k + (P.scout ? ' scout' : '');
+    const trainer = hzTrainerKarte(home, P.k);
     const weg = new Set(P.weg.concat(P.listen ? [] : HZ_LISTEN)), kinder = [...home.children];
     // 1. ausblenden, was diese Sicht nicht braucht (die Karte bleibt im Dokument, das Modul findet sie weiter)
     kinder.forEach(x => { if(x.classList.contains('hz-k') || x.id === 'hzAnp') return; const aus = x.id ? weg.has(x.id) : (!P.listen && (x.classList.contains('sechead') || x.classList.contains('frow')));
@@ -251,12 +252,12 @@ function hzOrdnen(){ const home = document.getElementById('panel-home'), hello =
     const neuHier = (() => { try{ const o = el('o1karte'); return o && typeof o1Stand === 'function' && o1Stand().fertig === 0 ? o : null; }catch(e){ return null; } })();
     const still = gruppe('a').concat(gruppe('b')).filter(hzStill);   // eine Karte, die selbst sagt, dass gerade nichts ansteht, rückt nach unten
     const dringt = gruppe('d').filter(hzDringt);
-    const A = gruppe('a').filter(x => !still.includes(x)).concat(dringt), B = gruppe('b').filter(x => !still.includes(x)), C = gruppe('c'), D = gruppe('d').filter(x => !dringt.includes(x)).concat(still), E = gruppe('e').filter(x => x !== neuHier), bekannt = new Set([hello, neuHier, ...A, ...B, ...C, ...D, ...E].filter(Boolean));
+    const A = gruppe('a').filter(x => !still.includes(x)).concat(dringt), B = gruppe('b').filter(x => !still.includes(x)), C = gruppe('c'), D = gruppe('d').filter(x => !dringt.includes(x)).concat(still), E = gruppe('e').filter(x => x !== neuHier), bekannt = new Set([hello, trainer, neuHier, ...A, ...B, ...C, ...D, ...E].filter(Boolean));
     // Karten, die hier noch niemand kennt, bleiben sichtbar: unter „Im Blick“
     const fremd = kinder.filter(x => x.id && !bekannt.has(x) && !weg.has(x.id) && !HZ_LISTEN.includes(x.id) && x.id !== 'hzAnp' && !x.classList.contains('hz-k'));
     const listen = kinder.filter(x => !bekannt.has(x) && !fremd.includes(x) && !x.classList.contains('hz-k') && x.id !== 'hzAnp');   // Scouting-Listen und ihre Überschriften in ihrer Reihenfolge
     const hatA = A.some(hzDa), hatB = B.some(hzDa), hatD = D.concat(fremd).some(hzDa);
-    const folge = [hello, hzTitel(home, 'a', hatA ? HZ_TITEL.a : 'Gerade wartet nichts auf dich.', !hatA), ...A, hatB ? hzTitel(home, 'b', HZ_TITEL.b) : null, ...B, ...C, neuHier, hatD ? hzTitel(home, 'd', HZ_TITEL.d) : null, ...D, ...fremd, ...E, ...listen, hzAnpassen(home)].filter(Boolean);
+    const folge = [hello, trainer, hatA || !trainer ? hzTitel(home, 'a', hatA ? HZ_TITEL.a : 'Gerade wartet nichts auf dich.', !hatA) : null, ...A, hatB ? hzTitel(home, 'b', HZ_TITEL.b) : null, ...B, ...C, neuHier, hatD ? hzTitel(home, 'd', HZ_TITEL.d) : null, ...D, ...fremd, ...E, ...listen, hzAnpassen(home)].filter(Boolean);
     home.querySelectorAll(':scope > .hz-k').forEach(t => { if(!folge.includes(t)) t.remove(); });
     // Nur umhängen, was nicht an seinem Platz steht: Wer gerade in einer Karte tippt, behält so fast immer seinen Platz. Geht der Fokus doch verloren, kommt er zurück.
     const fokus = document.activeElement; let ref = home.firstElementChild;
@@ -282,6 +283,96 @@ if(typeof htOrdnen === 'function'){ const _o = htOrdnen; htOrdnen = function(){ 
 if(typeof htRender === 'function'){ const _r = htRender; htRender = function(){ const r = _r.apply(this, arguments); try{ hzOrdnen(); }catch(e){} return r; }; }
 if(typeof fr100Ich === 'function'){ const _f = fr100Ich; fr100Ich = async function(){ const r = await _f.apply(this, arguments); try{ hzBald(); }catch(e){} return r; }; }
 if(typeof document !== 'undefined') setTimeout(() => { try{ hzOrdnen(); }catch(e){} }, 0);
+
+// Die eigene Mannschaft kommt aus der persönlichen Funktion, auch wenn die Rolle weitere Teams lesen darf.
+function hzTrainiert(id){
+  return ['haupttrainer', 'co'].includes(svrFunk(id)) && SVR.mann.some(m => m.id === id) &&
+    (id === 'h1' || (id === 'h2' && svDarf('team:h2') !== false));
+}
+function hzTrainerKarte(home, sicht){
+  let karte = home.querySelector('#hzTrainer');
+  const teams = sicht === 'trainer' && svTabAllowed('training') && svTabAllowed('kalender')
+    ? ['h1', 'h2'].filter(hzTrainiert) : [];
+  if(!teams.length){ if(karte) karte.remove(); return null; }
+  if(!karte){
+    karte = document.createElement('section');
+    karte.id = 'hzTrainer';
+    karte.setAttribute('aria-labelledby', 'hzTrainerTitel');
+  }
+  const team = teams.includes(karte.dataset.team) ? karte.dataset.team : teams[0];
+  karte.dataset.team = team;
+  const heute = kalHeute(), jetzt = new Date(), minuten = jetzt.getHours()*60 + jetzt.getMinutes();
+  const uhr = i => {
+    const m = /^(\d{1,2})[:.](\d{2})(?::\d{2})?(?:\s*Uhr)?$/i.exec(String(i.z || '').trim());
+    return m && +m[1]<24 && +m[2]<60 ? +m[1]*60 + +m[2] : null;
+  };
+  const termine = KAL.items.filter(i => i.m === team && !i.erg && (i.d > heute || (i.d === heute && (uhr(i) === null || uhr(i) >= minuten))))
+    .sort((a,b) => a.d.localeCompare(b.d) || (uhr(a) ?? 1440) - (uhr(b) ?? 1440));
+  const training = termine.find(i => i.k === 'training'), spiel = termine.find(i => i.k === 'spiel');
+  const datum = i => {
+    const t = uhr(i), tag = i.d === heute ? 'Heute' : i.d === kalAdd(heute,1) ? 'Morgen' : kalLang(i.d);
+    const z = t === null ? i.z : Math.floor(t/60) + ':' + String(t%60).padStart(2,'0') + ' Uhr';
+    return [tag, z].filter(Boolean).join(' · ');
+  };
+  function erlaubt(ziel){
+    if(ziel === 'abst' || ziel === 'antwort') return svTabAllowed('kabine') && svrSubOk('kabine:abst');
+    if(ziel === 'verf') return svrSubOk('training:injuries') && svrSubOk('training:urlaub');
+    if(ziel === 'kader') return svrSubOk('training:players');
+    return true;
+  }
+  const knopf = (ziel, titel) => !erlaubt(ziel) ? '' : '<button type="button" data-trziel="' + ziel + '">' + titel + '</button>';
+  const titel = team === 'h1' ? '1. Mannschaft' : '2. Mannschaft';
+  const wahl = teams.length > 1 ? '<div class="hz-teamwahl" aria-label="Mannschaft wählen">' + teams.map(id => '<button type="button" data-trteam="' + id + '" aria-pressed="' + (team === id) + '">' + (id === 'h1' ? 'Erste' : 'Zweite') + '</button>').join('') + '</div>' : '';
+  let inhalt;
+  if(KAL.err) inhalt = '<p>Die Termine konnten nicht geladen werden.</p>' + knopf('neu','Erneut laden');
+  else if(!KAL.loaded) inhalt = '<p>Termine werden geladen …</p>';
+  else {
+    const ort = i => i.ort ? '<span>' + svEsc(i.ort) + '</span>' : '';
+    inhalt = '<div class="hz-termine"><section><h3>Nächstes Training</h3>' +
+      (training ? '<strong>' + svEsc(datum(training)) + '</strong>' + ort(training) + (training.info && erlaubt('antwort') ? '<span class="hz-antworten">' + svEsc(training.info) + '</span>' : '') + knopf('antwort','Rückmeldungen ansehen')
+        : '<strong>Noch kein Termin</strong>' + knopf('abst','Trainingsabstimmungen')) + '</section>' +
+      '<section><h3>Nächstes Spiel</h3>' + (spiel ? '<strong>' + svEsc(spiel.gegner ? (spiel.heim === true ? 'Gegen ' : spiel.heim === false ? 'Bei ' : '') + spiel.gegner : 'Gegner offen') + '</strong><span>' + svEsc(datum(spiel)) + '</span>' + ort(spiel) + knopf('spiel','Spieldetails')
+        : '<strong>Noch kein Spiel angesetzt</strong>' + knopf('kal','Zum Kalender')) + '</section></div>';
+  }
+  const aktionen = knopf('verf','Wer fehlt?') + knopf('kader','Zum Kader');
+  const html = '<div class="hz-trkopf"><div><p>Trainerteam</p><h2 id="hzTrainerTitel">' + titel + '</h2></div>' + (wahl || '<img src="partner/svbsc.png" alt="" width="54" height="42">') + '</div>' + inhalt +
+    (aktionen ? '<footer>' + aktionen + '</footer>' : '');
+  // Die Startseite sortiert sich bei jeder DOM-Änderung. Vorhandene Knöpfe und ihren Fokus erhalten.
+  if(karte._hzHtml !== html){
+    karte.innerHTML = html;
+    karte._hzHtml = html;
+  }
+  karte.onclick = async ev => {
+    const b = ev.target.closest('button'); if(!b || !karte.contains(b)) return;
+    if(b.dataset.trteam){ karte.dataset.team = b.dataset.trteam; hzOrdnen(); karte.querySelector('[data-trteam="' + karte.dataset.team + '"]')?.focus(); return; }
+    const ziel = b.dataset.trziel;
+    if(!erlaubt(ziel) || svRole() !== 'trainer' || !hzTrainiert(team)) return;
+    if(ziel === 'neu'){ b.disabled = true; try{ await kalLoad(null,null,true); } finally{ b.disabled = false; } return; }
+    if(ziel === 'kal'){ goTab('kalender'); return; }
+    if(ziel === 'spiel'){ kalDetail(spiel.id); return; }
+    const ctx = team === 'h2' ? '2' : '1';
+    mnCtxSet(ctx, false);
+    if(ziel === 'antwort'){
+      sv4Go('kabine:abst');
+      kbAbstimmungOeffnen(training.poll, ctx, 'training', () => svRole() === 'trainer' && hzTrainiert(team) && svrSubOk('kabine:abst'));
+    } else if(ziel === 'abst') sv4Go('kabine:abst');
+    else sv4Go(ziel === 'verf' ? 'training:verf' : 'training:players');
+  };
+  return karte;
+}
+
+// Beim Zurückkommen einen veralteten Rückmeldestand nachladen. Der Kalender bündelt Anfragen.
+function hzTrainerAktualisieren(){
+  if(document.visibilityState !== 'visible' || svCurTab() !== 'home' || svRole() !== 'trainer' ||
+      !document.getElementById('hzTrainer') || KAL.busy) return;
+  kalLoad();
+}
+document.addEventListener('visibilitychange', hzTrainerAktualisieren);
+{ const vorher = goTab; goTab = function(tab){
+  const r = vorher.apply(this, arguments);
+  if(tab === 'home') hzTrainerAktualisieren();
+  return r;
+}; }
 
 /* Förderzentrale verwendet Sitzung und Vereinsidentität der Sportzentrale. */
 let svFoerderRueckkehr = new URLSearchParams(location.search).get('outlook');
@@ -2085,49 +2176,3 @@ const R122_SZ = [['start', 'Start'], ['worum', 'Worum es geht'], ['verb', 'Woher
   ['groesse', 'Wie wollt ihr dabei sein?'], ['platz', 'Euer Platz'], ['extras', 'Schwarzes Brett'], ['bon', 'Zettel'], ['ja', 'Seid ihr dabei?']];
 const R122_SZN = Object.fromEntries(R122_SZ);
 const R122_GRUND = { kinder: 'Kindern etwas ermöglichen', sehen: 'Im Ort gesehen werden', leute: 'Gute Leute finden', netz: 'Andere Betriebe treffen', zurueck: 'Etwas zurückgeben', vorn: 'Vorne mit dabei sein' };
-const R122_VERB = { hier: 'von hier', familie: 'einer spielt bei uns', ehemalig: 'hat selbst hier gespielt', partner: 'ist schon Partner', neu: 'kennt uns noch kaum' };
-const R122_PLATZ = { bande: 'an der Bande', trikot: 'auf einem Jugendtrikot', tag: 'ein Heimspiel lang', wand: 'lieber leise dabei' };
-const R122_PAKET = { keins: 'ein einzelner Baustein', supporter: 'SVM Supporter', club: 'Club Partner', premium: 'Premium Partner', p1896: '1896 Partner' };
-// Welche Leistung zu welchem Grund passt. Hat die Firma davon nichts gebucht, gilt der Grund als offene Möglichkeit.
-const R122_PASST = { kinder: ['baelle_jugend', 'trikot_jugend', 'team_jugend', 'trainer_jugend', 'zeltlager', 'aermel_jugend'], sehen: ['club', 'premium', 'p1896', 'bande_erste', 'sotd', 'matchball', 'tor_monat'],
-  leute: ['jobpost', 'premium', 'p1896'], netz: ['business_treff', 'club', 'premium', 'p1896'], zurueck: ['ferienspiele', 'zeltlager', 'supporter', 'club', 'premium', 'p1896'], vorn: ['p1896', 'sotd', 'tor_monat'] };
-const r122E = s => (typeof svEsc === 'function' ? svEsc(s) : String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])));
-function r122Dauer(s){ s = Math.max(0, Math.round(+s || 0)); if(s < 60) return s + ' Sek.'; const m = Math.floor(s / 60), r = s % 60; return m + ':' + String(r).padStart(2, '0') + ' Min.'; }
-function r122Tag(ts){ try{ return new Date(ts).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }catch(e){ return ''; } }
-async function r122Laden(neu){ if(R122.d && !neu && Date.now() - R122.am < 60000) return R122.d; if(R122.laedt) return R122.laedt;
-  R122.laedt = svtRpc('partner_reise_uebersicht', {}).then(d => { R122.d = Array.isArray(d) ? d : []; R122.am = Date.now(); return R122.d; }).catch(() => { R122.d = R122.d || []; return R122.d; }).finally(() => { R122.laedt = null; });
-  return R122.laedt; }
-function r122Ergebnis(x){ const st = x.stand || {}; return x.ergebnis === 'dabei' ? 'Ja' + (st.weg === 'gleich' ? ', unterschreibt gleich' : st.weg === 'angebot' ? ', Angebot und Antrag per Mail' : '') : x.ergebnis === 'nein' ? 'Heute nicht' : ''; }
-function r122Zeile(x){ const st = x.stand || {}, t = [];
-  if(x.schritt) t.push('bis „' + (R122_SZN[x.schritt] || x.schritt) + '“');
-  if(st.paket) t.push(R122_PAKET[st.paket] || st.paket);
-  if(x.dauer_s) t.push(r122Dauer(x.dauer_s));
-  if(x.sitzungen) t.push(x.sitzungen + '× geöffnet' + (x.allein ? ', davon ' + x.allein + '× allein' : ''));
-  const e = r122Ergebnis(x); return (e ? '<b class="r122-erg r122-' + r122E(x.ergebnis) + '">' + r122E(e) + '</b> · ' : '') + r122E(t.join(' · ')); }
-
-/* ---------- 1. Zeile und Knopf in der Liste der Präsentationen ---------- */
-async function r122Karten(B){ const H = B && B.querySelector('.pd-l'); if(!H) return; const L = await r122Laden(); if(!H.isConnected) return;
-  H.querySelectorAll('[data-pded]').forEach(b => { const k = b.closest('.pd-d'), x = L.find(y => y.deck === b.dataset.pded); if(!k || k.querySelector('.r122-z')) return;
-    const z = document.createElement('div'); z.className = 'r122-z';
-    z.innerHTML = x ? `<small>${typeof SVI === 'function' ? SVI('chart') : ''} Präsentation: ${r122Zeile(x)}</small><button type="button" class="btn ghost sm" data-r122="${r122E(x.deck)}">Auswertung</button>` : '<small class="r122-leer">Präsentation noch nicht durchgeklickt</small>';
-    const a = k.querySelector('.pd-akt'); k.insertBefore(z, a || null); });
-  H.querySelectorAll('[data-r122]').forEach(b => b.onclick = () => r122Blatt(b.dataset.r122)); }
-if(typeof pdKarten === 'function'){ const _k = pdKarten; pdKarten = function(B, D){ const r = _k.apply(this, arguments); try{ r122Karten(B); }catch(e){} return r; }; }
-
-/* ---------- 2. Blatt „Auswertung“ ---------- */
-function r122Antworten(st){ if(!st || !Object.keys(st).length) return '<p class="note">Noch keine Antworten gespeichert.</p>'; const z = [];
-  if(st.verb) z.push(['Kennt uns', R122_VERB[st.verb] || st.verb]);
-  if((st.antrieb || []).length) z.push(['Wichtig, in dieser Reihenfolge', st.antrieb.map((a, i) => (i + 1) + '. ' + (R122_GRUND[a] || a)).join(', ')]);
-  if(st.skeptisch) z.push(['Vorbehalt', 'weiß noch nicht, ob es etwas bringt']);
-  if(st.platz) z.push(['Sieht sich', R122_PLATZ[st.platz] || st.platz]);
-  if(st.paket) z.push(['Gewählt', (R122_PAKET[st.paket] || st.paket) + (st.laufzeit > 1 ? ', ' + st.laufzeit + ' Saisons' : '')]);
-  if((st.extras || []).length) z.push(['Zusätze', st.extras.join(', ')]);
-  if((st.info || []).length) z.push(['Nachgelesen', st.info.map(k => R122_PAKET[k] || k).join(', ')]);
-  if(st.jahr) z.push(['Betrieb seit', st.jahr]);
-  if(st.ja) z.push(['Ergebnis', r122Ergebnis({ ergebnis: st.ja, stand: st }) + (st.wann ? '. ' + st.wann : '')]);
-  return '<dl class="r122-dl">' + z.map(x => `<dt>${r122E(x[0])}</dt><dd>${r122E(x[1])}</dd>`).join('') + '</dl>'; }
-function r122Balken(S){ const sum = {}; S.forEach(s => Object.entries(s.szenen || {}).forEach(([k, v]) => { sum[k] = (sum[k] || 0) + (+v || 0); })); const max = Math.max(1, ...Object.values(sum));
-  return '<div class="r122-bal">' + R122_SZ.filter(x => sum[x[0]]).map(x => `<div><span>${r122E(x[1])}</span><i style="--w:${(sum[x[0]] / max).toFixed(3)}"></i><b>${r122E(r122Dauer(sum[x[0]]))}</b></div>`).join('') + '</div>'; }
-function r122Waerme(cv, K, hoch){ const W = hoch ? 270 : 480, Hh = hoch ? 480 : 300, d = Math.min(2, window.devicePixelRatio || 1); cv.width = W * d; cv.height = Hh * d; cv.style.aspectRatio = W + '/' + Hh;
-  const c = cv.getContext('2d'); c.scale(d, d); c.fillStyle = '#0c1235'; c.fillRect(0, 0, W, Hh); c.strokeStyle = 'rgba(243,245,250,.14)'; c.lineWidth = 1;
-  for(let i = 1; i < 4; i++){ c.beginPath(); c.moveTo(0, Hh * i / 4); c.lineTo(W, Hh * i / 4); c.stroke(); }

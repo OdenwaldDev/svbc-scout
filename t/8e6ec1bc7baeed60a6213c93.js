@@ -150,6 +150,29 @@ function svLinkBox(link,name,role,kind){
 }
 
 /* ---------- Start ---------- */
+function svEinladungsziel(){
+  let h=(location.hash||'').slice(1);
+  // Ein vorbereiteter Trainertermin befüllt ausschließlich das reguläre Formular.
+  // Die Daten stehen im Fragment und verschwinden vor der weiteren Navigation aus der Adresszeile.
+  if(h.startsWith('trainer-einladen?')){
+    const q=new URLSearchParams(h.slice('trainer-einladen?'.length)), p=document.getElementById('panel-admin');
+    const name=(q.get('name')||'').trim(), email=(q.get('email')||'').trim(), team=q.get('team');
+    const passt=name.length>0 && name.length<=80 && email.length<=120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && ['h1','h2'].includes(team);
+    h='';
+    if(p && canManage() && passt){
+      h='admin';
+      if(!p._draft || (!p._draft.name && !p._draft.email) || p._draft.email?.toLowerCase()===email.toLowerCase())
+        p._draft={name,email,role:'trainer',mannschaft:team,funktion:'haupttrainer'};
+      else kToast('Im Formular ist bereits eine andere Einladung offen.');
+    }
+    history.replaceState(history.state,'',location.pathname+location.search+(h?'#'+h:''));
+  }
+  return h;
+}
+window.addEventListener('hashchange',()=>{
+  if(location.hash.startsWith('#trainer-einladen?') && document.getElementById('gate')?.classList.contains('done'))
+    goTab(svEinladungsziel() || 'home');
+});
 function svInit(){
   document.body.classList.add('role-'+svRole()); if(!canEdit())document.body.classList.add('ro');
   document.querySelectorAll('[data-tab="kandidaten"],[data-sheet="kandidaten"]').forEach(b=>{ if(svGast())b.style.display='none'; });
@@ -165,7 +188,8 @@ function svInit(){
   const bg=document.getElementById('sheetBg'); if(bg)bg.onclick=()=>svSheet(false);
   const ms=document.getElementById('tbSearch'); if(ms)ms.onclick=svSearchOpen;
   svSearchWire(); svHello(); svRealtime(); svActivity(); svBadges();
-  const h=(location.hash||'').slice(1); goTab(/^[a-z]+$/.test(h)?h:(svStartBereich()||'home'));
+  const h=svEinladungsziel();
+  goTab(/^[a-z]+$/.test(h)?h:(svStartBereich()||'home'));
   { const _rh=renderHome; renderHome=function(){ const r=_rh.apply(this,arguments); svHello(); svTiles(); svActivitySoon(); svBadges(); return r; }; }
   svTiles();
   { const _ar=crmAfterRemote; crmAfterRemote=function(){ const r=_ar.apply(this,arguments); svActivitySoon(); return r; }; }

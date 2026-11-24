@@ -1,3 +1,49 @@
+const R122_VERB = { hier: 'von hier', familie: 'einer spielt bei uns', ehemalig: 'hat selbst hier gespielt', partner: 'ist schon Partner', neu: 'kennt uns noch kaum' };
+const R122_PLATZ = { bande: 'an der Bande', trikot: 'auf einem Jugendtrikot', tag: 'ein Heimspiel lang', wand: 'lieber leise dabei' };
+const R122_PAKET = { keins: 'ein einzelner Baustein', supporter: 'SVM Supporter', club: 'Club Partner', premium: 'Premium Partner', p1896: '1896 Partner' };
+// Welche Leistung zu welchem Grund passt. Hat die Firma davon nichts gebucht, gilt der Grund als offene Möglichkeit.
+const R122_PASST = { kinder: ['baelle_jugend', 'trikot_jugend', 'team_jugend', 'trainer_jugend', 'zeltlager', 'aermel_jugend'], sehen: ['club', 'premium', 'p1896', 'bande_erste', 'sotd', 'matchball', 'tor_monat'],
+  leute: ['jobpost', 'premium', 'p1896'], netz: ['business_treff', 'club', 'premium', 'p1896'], zurueck: ['ferienspiele', 'zeltlager', 'supporter', 'club', 'premium', 'p1896'], vorn: ['p1896', 'sotd', 'tor_monat'] };
+const r122E = s => (typeof svEsc === 'function' ? svEsc(s) : String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])));
+function r122Dauer(s){ s = Math.max(0, Math.round(+s || 0)); if(s < 60) return s + ' Sek.'; const m = Math.floor(s / 60), r = s % 60; return m + ':' + String(r).padStart(2, '0') + ' Min.'; }
+function r122Tag(ts){ try{ return new Date(ts).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); }catch(e){ return ''; } }
+async function r122Laden(neu){ if(R122.d && !neu && Date.now() - R122.am < 60000) return R122.d; if(R122.laedt) return R122.laedt;
+  R122.laedt = svtRpc('partner_reise_uebersicht', {}).then(d => { R122.d = Array.isArray(d) ? d : []; R122.am = Date.now(); return R122.d; }).catch(() => { R122.d = R122.d || []; return R122.d; }).finally(() => { R122.laedt = null; });
+  return R122.laedt; }
+function r122Ergebnis(x){ const st = x.stand || {}; return x.ergebnis === 'dabei' ? 'Ja' + (st.weg === 'gleich' ? ', unterschreibt gleich' : st.weg === 'angebot' ? ', Angebot und Antrag per Mail' : '') : x.ergebnis === 'nein' ? 'Heute nicht' : ''; }
+function r122Zeile(x){ const st = x.stand || {}, t = [];
+  if(x.schritt) t.push('bis „' + (R122_SZN[x.schritt] || x.schritt) + '“');
+  if(st.paket) t.push(R122_PAKET[st.paket] || st.paket);
+  if(x.dauer_s) t.push(r122Dauer(x.dauer_s));
+  if(x.sitzungen) t.push(x.sitzungen + '× geöffnet' + (x.allein ? ', davon ' + x.allein + '× allein' : ''));
+  const e = r122Ergebnis(x); return (e ? '<b class="r122-erg r122-' + r122E(x.ergebnis) + '">' + r122E(e) + '</b> · ' : '') + r122E(t.join(' · ')); }
+
+/* ---------- 1. Zeile und Knopf in der Liste der Präsentationen ---------- */
+async function r122Karten(B){ const H = B && B.querySelector('.pd-l'); if(!H) return; const L = await r122Laden(); if(!H.isConnected) return;
+  H.querySelectorAll('[data-pded]').forEach(b => { const k = b.closest('.pd-d'), x = L.find(y => y.deck === b.dataset.pded); if(!k || k.querySelector('.r122-z')) return;
+    const z = document.createElement('div'); z.className = 'r122-z';
+    z.innerHTML = x ? `<small>${typeof SVI === 'function' ? SVI('chart') : ''} Präsentation: ${r122Zeile(x)}</small><button type="button" class="btn ghost sm" data-r122="${r122E(x.deck)}">Auswertung</button>` : '<small class="r122-leer">Präsentation noch nicht durchgeklickt</small>';
+    const a = k.querySelector('.pd-akt'); k.insertBefore(z, a || null); });
+  H.querySelectorAll('[data-r122]').forEach(b => b.onclick = () => r122Blatt(b.dataset.r122)); }
+if(typeof pdKarten === 'function'){ const _k = pdKarten; pdKarten = function(B, D){ const r = _k.apply(this, arguments); try{ r122Karten(B); }catch(e){} return r; }; }
+
+/* ---------- 2. Blatt „Auswertung“ ---------- */
+function r122Antworten(st){ if(!st || !Object.keys(st).length) return '<p class="note">Noch keine Antworten gespeichert.</p>'; const z = [];
+  if(st.verb) z.push(['Kennt uns', R122_VERB[st.verb] || st.verb]);
+  if((st.antrieb || []).length) z.push(['Wichtig, in dieser Reihenfolge', st.antrieb.map((a, i) => (i + 1) + '. ' + (R122_GRUND[a] || a)).join(', ')]);
+  if(st.skeptisch) z.push(['Vorbehalt', 'weiß noch nicht, ob es etwas bringt']);
+  if(st.platz) z.push(['Sieht sich', R122_PLATZ[st.platz] || st.platz]);
+  if(st.paket) z.push(['Gewählt', (R122_PAKET[st.paket] || st.paket) + (st.laufzeit > 1 ? ', ' + st.laufzeit + ' Saisons' : '')]);
+  if((st.extras || []).length) z.push(['Zusätze', st.extras.join(', ')]);
+  if((st.info || []).length) z.push(['Nachgelesen', st.info.map(k => R122_PAKET[k] || k).join(', ')]);
+  if(st.jahr) z.push(['Betrieb seit', st.jahr]);
+  if(st.ja) z.push(['Ergebnis', r122Ergebnis({ ergebnis: st.ja, stand: st }) + (st.wann ? '. ' + st.wann : '')]);
+  return '<dl class="r122-dl">' + z.map(x => `<dt>${r122E(x[0])}</dt><dd>${r122E(x[1])}</dd>`).join('') + '</dl>'; }
+function r122Balken(S){ const sum = {}; S.forEach(s => Object.entries(s.szenen || {}).forEach(([k, v]) => { sum[k] = (sum[k] || 0) + (+v || 0); })); const max = Math.max(1, ...Object.values(sum));
+  return '<div class="r122-bal">' + R122_SZ.filter(x => sum[x[0]]).map(x => `<div><span>${r122E(x[1])}</span><i style="--w:${(sum[x[0]] / max).toFixed(3)}"></i><b>${r122E(r122Dauer(sum[x[0]]))}</b></div>`).join('') + '</div>'; }
+function r122Waerme(cv, K, hoch){ const W = hoch ? 270 : 480, Hh = hoch ? 480 : 300, d = Math.min(2, window.devicePixelRatio || 1); cv.width = W * d; cv.height = Hh * d; cv.style.aspectRatio = W + '/' + Hh;
+  const c = cv.getContext('2d'); c.scale(d, d); c.fillStyle = '#0c1235'; c.fillRect(0, 0, W, Hh); c.strokeStyle = 'rgba(243,245,250,.14)'; c.lineWidth = 1;
+  for(let i = 1; i < 4; i++){ c.beginPath(); c.moveTo(0, Hh * i / 4); c.lineTo(W, Hh * i / 4); c.stroke(); }
   c.globalCompositeOperation = 'lighter'; const r = hoch ? 26 : 30;
   K.forEach(k => { const x = k[1] / 1000 * W, y = k[2] / 1000 * Hh, g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, 'rgba(255,154,74,.55)'); g.addColorStop(.5, 'rgba(232,116,31,.22)'); g.addColorStop(1, 'rgba(232,116,31,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 6.3); c.fill(); });
   c.globalCompositeOperation = 'source-over'; }

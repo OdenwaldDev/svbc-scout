@@ -203,8 +203,8 @@ async function kbCopy(t){ try{ await navigator.clipboard.writeText(t); kToast('�
 
 /* ---------- Abstimmungen: Auswertung ---------- */
 function kbVotes(poll){ return KB.votes.filter(v=>v.poll_id===poll.id); }
-function kbStat(poll){
-  const V=new Map(kbVotes(poll).map(v=>[v.player_id,v])), T=(poll.teilnehmer||[]);
+function kbStat(poll, votes=kbVotes(poll)){
+  const V=new Map(votes.map(v=>[v.player_id,v])), T=(poll.teilnehmer||[]);
   const o={zu:[],ab:[],vllt:[],offen:[]}; T.forEach(t=>{ const v=V.get(t.id); (v?o[v.antwort]:o.offen).push(Object.assign({},t,{v})); });
   return o;
 }
@@ -270,8 +270,9 @@ function kbTeamVon(p){ try{ const t=mnTeam(p); if(t==='1'||t==='2')return t; }ca
 function kbSquadAll(){ const ctx=(()=>{ try{ return mnCtx(); }catch(e){ return '1'; } })(), o=p=>kbTeamVon(p)===ctx?0:1;
   const intern=p=>{ try{ return mnIsIntern(p); }catch(e){ return p.own&&!p.isJugend&&!p.verzicht; } };
   return players.filter(p=>{ const t=kbTeamVon(p); return (t==='1'||t==='2')&&intern(p); }).sort((a,b)=>o(a)-o(b)||(kbTeamVon(a)||'1').localeCompare(kbTeamVon(b)||'1')||a.name.localeCompare(b.name,'de')); }
-function kbPollEditor(id,pre){
-  const p0=id?KB.polls.find(x=>x.id===id):null, pr=pre||{};
+function kbPollEditor(id,pre,geoeffnet){
+  const p0=id?(geoeffnet?.id===id?geoeffnet:KB.polls.find(x=>x.id===id)):null, pr=pre||{};
+  if(id&&!p0) return kToast('Diese Abstimmung konnte nicht geladen werden.');
   const st={titel:p0?p0.titel:(pr.titel||'Training'),art:p0?p0.art:(pr.art||'training'),datum:p0?p0.datum:(pr.datum||TRC.addDays(trToday(),1)),zeit:p0?p0.zeit||'':(pr.zeit||'19:00'),ort:p0?p0.ort||'':(pr.ort||''),notiz:p0?p0.notiz||'':'',
     frist:p0&&p0.frist?p0.frist.slice(0,16):'', sel:new Set(p0?(p0.teilnehmer||[]).map(t=>t.id):vrKader(false).map(x=>x.id))};
   svModal(`<div class="mhead"><div class="rm-ic" style="width:46px;height:46px">${SVI('users')}</div><div><h2 style="margin:0">${p0?'Abstimmung bearbeiten':'Neue Abstimmung'}</h2><div class="msub">Danach „In WhatsApp teilen“. Die Spieler stimmen über den Link ab</div></div></div><div id="kbEd"></div>`);
@@ -305,11 +306,93 @@ function kbPollEditor(id,pre){
   };
   draw();
 }
-function kbPollDetail(id){
+// Einzeldetails haben keine Datums- oder Mengenbegrenzung der Kabinenübersicht.
+async function kbAbstimmungOeffnen(pollId,team,art,darf){
+  const modal=svModal('<h2>Rückmeldungen</h2><div data-hzantwort role="status">Antworten werden geladen …</div>');
+  const status=modal.querySelector('[data-hzantwort]');
+  const offen=()=>status.isConnected && status.closest('#overlay.open') && svCurTab()==='kabine' &&
+    KB.view==='abst' && mnCtx()===team && svTabAllowed('kabine') && darf();
+  try{
+    if(KB.loading) await KB.loadP;
+    if(!offen()) return;
+    const poll=await SVB.sb.from('polls').select('*').eq('id',pollId).eq('team',team).eq('art',art).single();
+    if(poll.error || !poll.data) throw new Error();
+    const votes=[];
+    for(let offset=0;;offset+=500){
+      if(!offen()) return;
+      const page=await SVB.sb.from('poll_votes').select('*').eq('poll_id',pollId).order('player_id').range(offset,offset+499);
+      if(page.error || !Array.isArray(page.data)) throw new Error();
+      votes.push(...page.data);
+      if(page.data.length<500) break;
+    }
+    if(!offen()) return;
+    KB.polls=(KB._p31all||KB.polls).filter(p=>p.id!==pollId).concat(poll.data);
+    mn31KbFilter();
+    KB.votes=KB.votes.filter(v=>v.poll_id!==pollId).concat(votes);
+    kbPollDetail(pollId,{team,art,darf,votes});
+  }catch(e){
+    if(!offen()) return;
+    status.innerHTML='<p>Die Rückmeldungen konnten nicht geladen werden.</p><button type="button" class="btn">Erneut versuchen</button>';
+    status.querySelector('button').onclick=()=>kbAbstimmungOeffnen(pollId,team,art,darf);
+  }
+}
+function kbSpielhinweis(p, modal){
+  if(p.art!=='spiel' || p.geschlossen || p.event_id || !svTabAllowed('kabine') || !canTraining()) return;
+  const box=document.createElement('div'), label=document.createElement('span'), button=document.createElement('button');
+  box.className='kbpop-set';
+  label.textContent='Hinweis für mich, wenn in den letzten zwei Stunden vor Anstoß weniger als elf Spieler zugesagt haben.';
+  button.type='button'; button.className='btn ghost'; button.style.minWidth='44px'; button.style.minHeight='44px';
+  box.append(label,button);
+  const detail=modal.querySelector('#kbDet');
+  async function laden(an){
+    button.disabled=true;
+    try{
+      const {data,error}=await SVB.sb.rpc('mein_spielhinweis',{p_poll:p.id,p_an:an});
+      if(!detail.isConnected || !modal.contains(detail)) return;
+      if(error) throw error;
+      if(typeof data!=='boolean'){ box.remove(); return; }
+      detail.before(box);
+      button.textContent=data?'An':'Aus';
+      button.setAttribute('aria-label','Hinweis für dieses Spiel');
+      button.setAttribute('aria-pressed',String(data));
+      button.onclick=()=>laden(!data);
+    }catch(e){
+      if(!detail.isConnected || !modal.contains(detail)) return;
+      detail.before(box);
+      button.textContent='Erneut laden';
+      button.removeAttribute('aria-label');
+      button.removeAttribute('aria-pressed');
+      button.onclick=()=>laden(null);
+      kToast('Der Stand des Spielhinweises konnte nicht geladen werden.');
+    }finally{ button.disabled=false; }
+  }
+  laden(null);
+}
+function kbPollDetail(id,direkt){
   const p=KB.polls.find(x=>x.id===id); if(!p)return;
-  svModal(`<div class="mhead"><div class="rm-ic" style="width:46px;height:46px">${SVI('users')}</div><div><h2 style="margin:0">${svEsc(p.titel)}</h2><div class="msub">${kbWd(p.datum)}${p.zeit?' · '+svEsc(p.zeit):''}${p.ort?' · '+svEsc(p.ort):''}</div></div></div><div id="kbDet"></div>`);
+  const modal=svModal(`<div class="mhead"><div class="rm-ic" style="width:46px;height:46px">${SVI('users')}</div><div><h2 style="margin:0">${svEsc(p.titel)}</h2><div class="msub">${kbWd(p.datum)}${p.zeit?' · '+svEsc(p.zeit):''}${p.ort?' · '+svEsc(p.ort):''}</div></div></div><div id="kbDet"></div>`);
+  kbSpielhinweis(p,modal);
+  const E=modal.querySelector('#kbDet');
+  const offen=()=>E.isConnected && E.closest('#overlay.open') && (!direkt ||
+    (svCurTab()==='kabine' && KB.view==='abst' && mnCtx()===direkt.team && svTabAllowed('kabine') && direkt.darf()));
+  const stimmen=()=>direkt ? direkt.votes : kbVotes(p);
+  async function aendern(auftrag){
+    if(E.inert || !offen()) return;
+    E.inert=true;
+    try{
+      const {error}=await auftrag();
+      if(error) throw error;
+      if(!offen()) return;
+      if(direkt) await kbAbstimmungOeffnen(id,direkt.team,direkt.art,direkt.darf);
+      else {
+        await kbLoad(true);
+        if(offen()) kbPollDetail(id);
+      }
+    }catch(e){ if(offen()) kToast('Die Änderung konnte nicht gespeichert werden.'); }
+    finally{ E.inert=false; }
+  }
   let such='';
-  const draw=()=>{ const E=document.getElementById('kbDet'); if(!E)return; const s=kbStat(p), fg=kbForgotten(p);
+  const draw=()=>{ const s=kbStat(p,stimmen()), fg=kbForgotten(p);
     const row=x=>{ const v=x.v; return `<div class="kbr"><b>${svEsc(x.name)}${x.gast?' <span class="trpill mid" title="Hat sich selbst über den Gruppenlink eingetragen">neu</span>':''}</b>${v&&v.grund?`<small>${svEsc(TRC.REASONS[v.grund]||v.grund)}</small>`:''}${v&&v.notiz?`<small>„${svEsc(v.notiz)}“</small>`:''}${v?`<em>${v.via==='link'?'über Link':'vom Trainer'} · ${new Date(v.at).toLocaleString('de-DE',{weekday:'short',hour:'2-digit',minute:'2-digit'})}</em>`:''}
       <div class="trseg">${(v&&v.antwort==='vllt'?['zu','vllt','ab']:['zu','ab']).map(a=>`<button type="button" data-set="${svEsc(x.id)}:${a}" class="${v&&v.antwort===a?'on':''}">${KB_ANS[a][0]}</button>`).join('')}</div></div>`; };
     E.innerHTML=`${p.geteilt_at?`<div class="note">✓ In die Gruppe geteilt${p.geteilt_von?' von '+svEsc(p.geteilt_von):''} · ${new Date(p.geteilt_at).toLocaleString('de-DE',{weekday:'short',hour:'2-digit',minute:'2-digit'})} Uhr</div>`:''}${[['zu','Dabei'],['vllt','Vielleicht'],['ab','Nicht dabei'],['offen','Ohne Antwort']].map(([k,t])=>s[k].length?`<div class="sbsec"><h4>${t} <small>${s[k].length}</small></h4>${s[k].map(row).join('')}</div>`:'').join('')}
@@ -319,24 +402,24 @@ function kbPollDetail(id){
       <div class="btnrow sbact"><button class="btn" id="kbTr">${SVI('activity')} ${p.art==='spiel'?'Spiel':'Anwesenheit'} vorbereiten</button><button class="btn ghost" id="kbSh">${SVI('share')} ${p.geteilt_at?'Nochmal teilen':'In die Gruppe teilen'}</button><button class="btn ghost" id="kbCp">${SVI('copy')} Link kopieren</button><button class="btn ghost" id="kbEdit">Bearbeiten</button>
         <button class="btn ghost" id="kbClose">${p.geschlossen?'Wieder öffnen':'Abstimmung schließen'}</button></div>
       <div class="note">„Vorbereiten“ übernimmt die Antworten ins Training bzw. Spiel: Zusagen als da (beim Spiel: im Kader), Absagen mit Grund. Beim Spiel danach „Aus Spielbericht übernehmen“. Startelf und Einwechslungen kommen automatisch.</div>`;
-    E.querySelectorAll('[data-set]').forEach(b=>b.onclick=async()=>{ const [pid,a]=b.dataset.set.split(':'); const cur=kbVotes(p).find(v=>v.player_id===pid);
-      const q=cur&&cur.antwort===a?SVB.sb.from('poll_votes').delete().eq('poll_id',p.id).eq('player_id',pid):SVB.sb.from('poll_votes').upsert({poll_id:p.id,player_id:pid,antwort:a,grund:a==='ab'?(cur&&cur.grund)||null:null,via:'app',at:new Date().toISOString()});
-      const {error}=await q; if(error)return kToast('⚠️ '+error.message); await kbLoad(true); draw(); });
+    E.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>aendern(()=>{ const [pid,a]=b.dataset.set.split(':'); const cur=stimmen().find(v=>v.player_id===pid);
+      return cur&&cur.antwort===a?SVB.sb.from('poll_votes').delete().eq('poll_id',p.id).eq('player_id',pid):SVB.sb.from('poll_votes').upsert({poll_id:p.id,player_id:pid,antwort:a,grund:a==='ab'?(cur&&cur.grund)||null:null,via:'app',at:new Date().toISOString()}); }));
     const aq=document.getElementById('kbAddQ'); if(aq)aq.oninput=()=>{ such=aq.value; const L=document.getElementById('kbAddL'); if(L){ L.innerHTML=kbAddTreffer(p,such); L.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add)); } };
-    let laeuft=false;   // nacheinander: zwei schnelle Tipps sollen nicht die Liste des anderen überschreiben
-    const add=async id=>{ const x=trP(id); if(!x||laeuft)return; laeuft=true; document.querySelectorAll('#kbAddL [data-add]').forEach(b=>b.disabled=true);
-      try{ const tn=[...(p.teilnehmer||[]),{id:x.id,name:x.name}];
-        const {error}=await SVB.sb.from('polls').update({teilnehmer:tn}).eq('id',p.id); if(error)return kToast('⚠️ '+error.message); p.teilnehmer=tn; such=''; await kbLoad(true); kToast('✓ '+x.name+' hinzugefügt'); }
-      finally{ laeuft=false; draw(); } };
-    E.querySelectorAll('#kbAddL [data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));
-    E.querySelectorAll('.sbsec:not(.kbadd) [data-add]').forEach(b=>b.onclick=async()=>{ const x=trP(b.dataset.add); const tn=[...(p.teilnehmer||[]),{id:x.id,name:x.name}];
-      const {error}=await SVB.sb.from('polls').update({teilnehmer:tn}).eq('id',p.id); if(error)return kToast('⚠️ '+error.message); p.teilnehmer=tn; await kbLoad(true); draw(); kToast('✓ '+x.name+' hinzugefügt'); });
-    document.getElementById('kbTr').onclick=()=>{ const rows={}; kbVotes(p).forEach(v=>{ if(v.antwort==='zu')rows[v.player_id]={status:p.art==='spiel'?'bank':'da'}; else if(v.antwort==='ab')rows[v.player_id]={status:'weg',grund:v.grund||'privat',notiz:v.notiz||''}; });
-      TR.prefill={datum:p.datum,rows}; closeOverlay(); goTab('training'); setTimeout(()=>trSessionEditor(p.datum,null,p.art==='spiel'?'spiel':'training'),60); };
+    const add=id=>{ const x=trP(id); if(x) return aendern(()=>SVB.sb.from('polls').update({teilnehmer:[...(p.teilnehmer||[]),{id:x.id,name:x.name}]}).eq('id',p.id)); };
+    E.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(b.dataset.add));
+    document.getElementById('kbTr').onclick=async()=>{
+      if(!offen()) return;
+      const vorlage={poll:p,votes:stimmen()}, team=p.team||'1';
+      closeOverlay(); mnCtxSet(team,false); goTab('training');
+      await trLoad();
+      if(svCurTab()!=='training' || mnCtx()!==team || document.querySelector('#overlay.open')) return;
+      if(p.art==='spiel') svmSpielBewerten({datum:p.datum,vorlage});
+      else sv50Quick(p.datum,null,null,vorlage);
+    };
     document.getElementById('kbCp').onclick=async()=>{ try{ await kbLink(); kbCopy(kbUrl(p.id)); }catch(e){ kToast('⚠️ '+e.message); } };
     document.getElementById('kbSh').onclick=()=>kbShare(p);
-    document.getElementById('kbEdit').onclick=()=>{ closeOverlay(); kbPollEditor(p.id); };
-    document.getElementById('kbClose').onclick=async()=>{ const {error}=await SVB.sb.from('polls').update({geschlossen:!p.geschlossen}).eq('id',p.id); if(error)return kToast('⚠️ '+error.message); p.geschlossen=!p.geschlossen; await kbLoad(true); draw(); };
+    document.getElementById('kbEdit').onclick=()=>{ closeOverlay(); kbPollEditor(p.id,null,p); };
+    document.getElementById('kbClose').onclick=()=>aendern(()=>SVB.sb.from('polls').update({geschlossen:!p.geschlossen}).eq('id',p.id));
   };
   draw();
 }

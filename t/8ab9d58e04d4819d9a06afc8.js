@@ -7,7 +7,7 @@ async function svrMpSet(user,team,funk){
 }
 function svrMpAdd(team){
   const m=SVR.mann.find(x=>x.id===team)||{}; const leute=(SV_USERS||[]).filter(u=>u.active);
-  const M=svModal(`<div class="mhead"><div><h2 style="margin:0">${svEsc(m.name||'')}: Person eintragen</h2><div class="msub">Die Person sieht danach den Bereich dieser Mannschaft. Wer noch keinen Zugang hat, wird oben mit der Rolle „Jugendtrainer“ eingeladen.</div></div></div>
+  const M=svModal(`<div class="mhead"><div><h2 style="margin:0">${svEsc(m.name||'')}: Person eintragen</h2><div class="msub">Die Person sieht danach den Bereich dieser Mannschaft. Für die Traineransicht der Ersten und Zweiten braucht die Person auch die Rolle „Trainer“. Neue Trainer lädst du oben mit ihrer Mannschaft und Funktion ein.</div></div></div>
     <div class="editgrid" style="grid-template-columns:1fr 1fr"><div class="field"><label>Person</label><select id="svrP">${leute.map(u=>`<option value="${svEsc(u.id)}">${svEsc(u.name||u.email)}</option>`).join('')}</select></div>
     <div class="field"><label>Funktion</label><select id="svrF">${Object.entries(SVR_FUNK).map(([k,t])=>`<option value="${k}">${svEsc(t)}</option>`).join('')}</select></div></div>
     <div class="btnrow sbact"><button class="btn" id="svrOk">Eintragen</button><button class="btn ghost" id="svrNo">Abbrechen</button></div>`);

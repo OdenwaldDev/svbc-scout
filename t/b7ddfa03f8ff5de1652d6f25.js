@@ -114,6 +114,7 @@ async function s102Antwort(i){
   // Trainings werden nicht per WhatsApp geteilt: die Frage kommt über die App
   if(akt){ akt.querySelectorAll('a[href*="wa.me"]').forEach(x => x.remove()); if(!(typeof canTraining === 'function' && canTraining())){ const sh = akt.querySelector('#kalShare'); if(sh) sh.remove(); } }
   if(typeof canTraining === 'function' && canTraining()){
+    if(!svrSubOk('kabine:abst') || (i.m === 'h2' && svDarf('team:h2') === false)){ box.remove(); return; }
     box.innerHTML = `<p class="s102-st">${s102E(i.info || '')}</p><button type="button" class="btn ghost" id="s102Zur">Zur Abstimmung</button>`;
     box.querySelector('#s102Zur').onclick = () => { closeOverlay(); try{ if(typeof mnCtxSet === 'function') mnCtxSet(i.m === 'h2' ? '2' : '1'); }catch(e){} goTab('kabine'); };
     return; }

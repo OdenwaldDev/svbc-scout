@@ -239,14 +239,20 @@ const SV50_NOTE=['','sehr gut','gut','befriedigend','ausreichend','mangelhaft','
 function sv50Src(s){ const x=SV50_SRC[s]; return x?`<i class="src50 ${x[1]}">${x[0]}</i>`:''; }
 function sv50Poll(datum){ try{ return typeof KB!=='undefined'&&KB.loaded?KB.polls.find(p=>p.datum===datum&&p.art==='training')||null:null; }catch(e){ return null; } }
 // Standardannahmen für einen Trainingstag: Abstimmung → Anwesenheit, sonst alle da; Verletzte fehlen; Anwesende bekommen eine 3
-function sv50Defaults(datum){
-  const out={}, poll=sv50Poll(datum), V=new Map(poll?kbVotes(poll).map(v=>[v.player_id,v]):[]), inPoll=new Set(poll?(poll.teilnehmer||[]).map(t=>t.id):[]);
-  trSquad().forEach(p=>{
+function sv50Defaults(datum,vorlage){
+  const out={}, poll=vorlage?vorlage.poll:sv50Poll(datum), votes=vorlage?vorlage.votes:(poll?kbVotes(poll):[]);
+  const V=new Map(votes.map(v=>[v.player_id,v])), inPoll=new Set((poll?.teilnehmer||[]).map(t=>t.id));
+  const kader=trSquad(), ids=new Set(kader.map(p=>p.id));
+  const dazu=vorlage?[...inPoll].filter(id=>!ids.has(id)).map(trP).filter(Boolean):[];
+  kader.concat(dazu).forEach(p=>{
     let r;
     if(trInjury(p.id))r={status:'weg',grund:'verletzt',status_src:'default'};
     else if(poll&&inPoll.has(p.id)){ const v=V.get(p.id);
       if(v&&v.antwort==='zu')r={status:'da',status_src:'abstimmung'};
-      else if(v&&v.antwort==='ab')r={status:'weg',grund:v.grund||'ohne',status_src:'abstimmung'};
+      else if(v&&v.antwort==='ab'){
+        r={status:'weg',grund:v.grund||'ohne',status_src:'abstimmung'};
+        if(vorlage && v.notiz)r.notiz=v.notiz;
+      }
       else r={status:'weg',grund:'keine_antwort',status_src:'default'}; }
     else r={status:'da',status_src:'default'};
     if(r.status!=='weg')Object.assign(r,{note:3,note_src:'default'});

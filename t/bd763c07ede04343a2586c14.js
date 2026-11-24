@@ -1429,6 +1429,10 @@ async function svzInhalt(m){ const d=m.data||{}; let h='', knopf='', ohneText=fa
     if(R.length){ ohneText=true; h+=`<div class="svz-liste">${R.map(r=>typeof rdItem==='function'?rdItem(r):`<div class="tra"><div class="tra-b"><b>${svEsc(r.titel)}</b><span>${svEsc(r.detail||'')}</span></div></div>`).join('')}</div>`; }
     knopf=`<button class="btn ghost" type="button" data-svzgo="radar">${SVI('radar')} Ganzes Radar</button>`; }
   else if(m.art==='kontakte'&&Array.isArray(d.spieler)){ h+=`<div class="svz-liste">${d.spieler.slice(0,20).map(x=>svzSpieler(x.id||x,x.why||'')).join('')}</div>`; knopf=`<button class="btn ghost" type="button" data-svzgo="kandidaten">${SVI('users')} Meine Kandidaten</button>`; }
+  else if(m.art==='training'&&d.spielhinweis){
+    if(svTabAllowed('kabine') && canTraining())
+      knopf=`<button class="btn ghost" style="min-height:44px" type="button" data-svzspiel="${svEsc(d.spielhinweis)}" data-team="${svEsc(d.team)}">Zur Spielabstimmung</button>`;
+  }
   else if(m.art==='training'){ knopf=`<button class="btn ghost" type="button" data-svzgo="training">${SVI('activity')} Zum Training</button>`; }
   else if(m.art==='scout_job'&&d.job){ knopf=`<button class="btn" type="button" data-svzjob="${svEsc(d.job)}">${SVI('search')} Ergebnis ansehen</button>`; }
   else if(m.art==='system'&&d.quelle==='checker'){ knopf=typeof canScout==='function'&&canScout()?`<button class="btn ghost" type="button" data-svzq>${SVI('db')} Datenqualität</button>`:''; }
@@ -1440,7 +1444,7 @@ async function svMeldungZeigen(ids){
   if(M===null){ if(typeof kToast==='function')kToast('Die Nachricht lässt sich gerade nicht laden. Bitte gleich nochmal.'); return; }
   if(!M.length){ if(typeof kToast==='function')kToast('Diese Nachricht gibt es nicht mehr.'); return; }
   const pos=new Map(ids.map((x,i)=>[x,i])); M.sort((a,b)=>(pos.get(a.id)??99)-(pos.get(b.id)??99));
-  const teile=[]; for(const m of M){ const [ic,lab]=SVZ_ART[m.art]||['🔔','Meldung']; const x=await svzInhalt(m);
+  const teile=[]; for(const m of M){ const [ic,lab]=m.data?.spielhinweis?['','Spielabstimmung']:(SVZ_ART[m.art]||['🔔','Meldung']); const x=await svzInhalt(m);
     teile.push(`<section class="svz-m" data-svzm="${m.id}"><div class="svz-kopf"><span class="svz-ic">${ic}</span><div><b>${svEsc(m.titel)}</b><small>${svEsc(lab)} · ${svzZeit(m.created_at)}</small></div></div>
       ${m.text&&!x.ohneText?`<p class="svz-text">${svEsc(m.text)}</p>`:''}${x.h}${x.knopf?`<div class="btnrow">${x.knopf}</div>`:''}</section>`); }
   SVZ.offen=ids.join(',');
@@ -1449,6 +1453,21 @@ async function svMeldungZeigen(ids){
   const W=document.querySelector('#modal .svz'); if(W){
     W.querySelectorAll('[data-svp],[data-svzp]').forEach(x=>x.onclick=e=>{ e.stopPropagation(); const id=x.dataset.svp||x.dataset.svzp; closeOverlay(); setTimeout(()=>openModal(id),60); });
     W.querySelectorAll('[data-svzgo]').forEach(b=>b.onclick=()=>{ closeOverlay(); const t=b.dataset.svzgo; if(t==='kandidaten'&&typeof svMyCands==='function'&&svMyCands().length)kandFP='__me'; goTab(t); });
+    W.querySelectorAll('[data-svzspiel]').forEach(b=>b.onclick=async()=>{
+      const offen=()=>W.isConnected && W.contains(b) && W.closest('#overlay.open');
+      if(!offen()) return;
+      b.disabled=true;
+      try{
+        const id=b.dataset.svzspiel, {data,error}=await SVB.sb.rpc('mein_spielhinweis',{p_poll:id,p_an:null});
+        if(!offen()) return;
+        if(error) return kToast('Die Spielabstimmung konnte nicht geladen werden.');
+        if(data!==true) return kToast('Dieser Spielhinweis ist nicht mehr aktiv.');
+        const team=b.dataset.team;
+        closeOverlay(); mnCtxSet(team,false); sv4Go('kabine:abst');
+        await kbAbstimmungOeffnen(id,team,'spiel',()=>canTraining() && svrSubOk('kabine:abst'));
+      }catch(e){ if(offen()) kToast('Die Spielabstimmung konnte nicht geladen werden.'); }
+      finally{ b.disabled=false; }
+    });
     W.querySelectorAll('[data-svzjob]').forEach(b=>b.onclick=()=>{ closeOverlay(); setTimeout(()=>sc2JobView(b.dataset.svzjob),60); });
     W.querySelectorAll('[data-svzq]').forEach(b=>b.onclick=()=>{ closeOverlay(); setTimeout(()=>svqDetail(),60); });
     W.querySelectorAll('[data-star]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const p=trP(b.dataset.star); if(!p)return; const on=!p.star; crmSet(p.id,{f:on?1:undefined}); try{crmApply();}catch(x){} b.classList.toggle('on',on); if(typeof kToast==='function')kToast(on?'⭐ '+p.name+' auf der Merkliste':'Von der Merkliste genommen'); });
@@ -1705,14 +1724,15 @@ function svmPrueffWire(B){
 /* =====================================================================
    3.1 Training erfassen: Eindruck statt Noten, ohne Position, ohne „Details“
    ===================================================================== */
-function svmTrainQuick(datum,sid,ki){
+function svmTrainQuick(datum,sid,ki,vorlage){
   const s0=sid?TR.st.sessions.find(s=>s.id===sid):trSessionOn(datum||trToday(),'training');
   const st={datum:s0?s0.d:(datum||trToday()),no:s0&&s0.no!=null?s0.no:null,ns:s0?s0.ns:null,n:s0?s0.n||'':'',rows:{},orig:new Set(),open:null,ki:!!ki};
   const fill=()=>{
     st.rows={}; st.orig=new Set();
-    const cur=trSessionOn(st.datum,'training'), D=sv50Defaults(st.datum); st.poll=D.poll;
+    const passt=vorlage?.poll.datum===st.datum && (vorlage.poll.team||'1')===mnCtx();
+    const cur=trSessionOn(st.datum,'training'), D=sv50Defaults(st.datum,passt?vorlage:null); st.poll=D.poll;
     const have=new Map(((cur&&cur.a)||[]).map(a=>[a[0],a]));
-    new Set([...svAktuelleSpieler().map(p=>p.id),...have.keys()]).forEach(id=>{   // 0.83: aktuelle Spielerliste der Mannschaft plus schon Erfasste
+    new Set([...svAktuelleSpieler().map(p=>p.id),...have.keys(),...(passt?vorlage.poll.teilnehmer.map(x=>x.id):[])]).forEach(id=>{
       const a=have.get(id);
       if(a){ st.orig.add(id); st.rows[id]={status:a[1],grund:a[2],notiz:a[5]||'',note:a[8],note_src:a[9]||null,status_src:a[10]||'manuell',saved:true}; }
       else if(D.rows[id])st.rows[id]=Object.assign({notiz:''},D.rows[id]); });

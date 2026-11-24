@@ -96,13 +96,19 @@ function svmSpielBewerten(o){
   const fb=typeof fbSpielAm==='function'?fbSpielAm(datum):null, fq=typeof mn31Q==='function'?mn31Q(datum):null, fqs={};
   ((fq&&fq.spieler)||[]).forEach(x=>{ if(x.app_id&&trP(x.app_id))fqs[x.app_id]=x; });
   const have=new Map(((s0&&s0.a)||[]).map(a=>[a[0],a]));
+  const vorlage=o.vorlage, antworten=new Map();
+  if(vorlage?.poll.art==='spiel' && vorlage.poll.datum===datum && (vorlage.poll.team||'1')===mnCtx()){
+    const dabei=new Set(vorlage.poll.teilnehmer.map(x=>x.id));
+    for(const v of vorlage.votes) if(dabei.has(v.player_id) && (v.antwort==='zu'||v.antwort==='ab')) antworten.set(v.player_id,v);
+  }
   const abw=id=>{ try{ return typeof SV91!=='undefined'&&SV91.loaded?SV91.abw.find(a=>a.player_id===id&&a.von<=datum&&datum<=a.bis)||null:null; }catch(e){ return null; } };
-  new Set([...trSquad().map(p=>p.id),...have.keys(),...Object.keys((fb&&fb.rows)||{}),...Object.keys(fqs)]).forEach(id=>{ if(!trP(id))return;
+  new Set([...trSquad().map(p=>p.id),...have.keys(),...Object.keys((fb&&fb.rows)||{}),...Object.keys(fqs),...antworten.keys()]).forEach(id=>{ if(!trP(id))return;
     const a=have.get(id), f=fb&&fb.rows[id], q=fqs[id], qst=q?(q.start?'da':(q.min||0)>0?'spaet':'bank'):null;
     if(a&&(a[10]||'manuell')!=='default')st.rows[id]={status:a[1],grund:a[2],src:a[10]||'manuell',note:a[8],nsrc:a[9]||null,notiz:a[5]||'',saved:true,tore:a[6],vorlagen:a[7],min:a[11]};
     else if(q)st.rows[id]={status:qst,src:'import',note:a?a[8]:null,nsrc:a?a[9]:null,notiz:a?a[5]||'':'',saved:!!a,tore:q.tore,vorlagen:q.vorlagen,min:q.min};
     else if(f)st.rows[id]={status:f.status,src:'fde',note:a?a[8]:null,nsrc:a?a[9]:null,notiz:a?a[5]||'':'',saved:!!a,tore:f.tore};
     else if(a)st.rows[id]={status:a[1],grund:a[2],src:'default',note:a[8],nsrc:a[9]||null,notiz:a[5]||'',saved:true};
+    else if(antworten.has(id)){ const v=antworten.get(id); st.rows[id]={status:v.antwort==='zu'?'bank':'weg',grund:v.antwort==='ab'?(v.grund||'ohne'):null,src:'abstimmung',notiz:v.notiz||''}; }
     else { const ab=abw(id), inj=trInjury(id); st.rows[id]=ab||inj?{status:'weg',grund:inj?'verletzt':(['urlaub','krank','arbeit','familie','uni','privat'].includes(ab.grund)?ab.grund:'privat'),src:'default',notiz:''}:{status:'zuschauer',src:'default',notiz:''}; } });
   const SRC={manuell:['App','m'],ki:['Co-Trainer','k'],abstimmung:['Abstimmung','a'],import:['FuPa','i'],fde:['fussball.de','i'],default:['Annahme','d']};
   const srcH=k=>{ const x=SRC[k]; return x?`<i class="src50 ${x[1]}">${x[0]}</i>`:''; };
@@ -120,7 +126,7 @@ function svmSpielBewerten(o){
       <div class="q50-ges"><span>Gesamteindruck ${st.ns?sv50Src(st.ns):''}</span>${svmEiBtns(svmEiK(st.no),'sbges')}</div>
       <div class="field q50-note"><label>Notiz zum Spiel</label><input id="sbN" maxlength="2000" value="${svEsc(st.n)}" placeholder="z.B. starke erste Halbzeit, nach der Pause zu passiv"></div>
       ${s0&&s0.hw?`<div class="q50-info">${SVI('info')} ${svEsc(s0.hw)}</div>`:''}
-      <div class="q50-info">${fb?`${SVI('check')} Startelf, Wechsel und Kader aus dem Spielbericht von fussball.de übernommen.`:have.size?'Einsätze aus der App.':'Kein Spielbericht gefunden. Alle stehen erst einmal auf „zugeschaut“, tippe an, wer gespielt hat.'}</div>
+      <div class="q50-info">${fb?`${SVI('check')} Startelf, Wechsel und Kader aus dem Spielbericht von fussball.de übernommen.`:have.size?'Einsätze aus der App.':antworten.size?'Die Zu- und Absagen stammen aus der Spielabstimmung.':'Kein Spielbericht gefunden. Alle stehen erst einmal auf „zugeschaut“, tippe an, wer gespielt hat.'}</div>
       <div class="q50-sum sb22-sum">${SVM_EIN.map(([k,t])=>`<span><b>${c[k]||0}</b> ${t}</span>`).join('')}</div>
       <div class="q50l">${list.map(p=>{ const r=st.rows[p.id], weg=r.status==='weg', spielt=r.status==='da'||r.status==='spaet', ann=r.src==='default';
         return `<div class="q50r sb22-r${weg?' weg':''}${ann?' ann':''}" data-sb="${svEsc(p.id)}">
@@ -792,12 +798,28 @@ async function svrAdminExtras(){
   const f=P.querySelector('#svInv');
   if(f&&!f.querySelector('.svr-inv')){
     const rs=f.querySelector('#svInvRole'), d=document.createElement('div'); d.className='svr-inv';
-    const mOpts=SVR.mann.filter(m=>m.id!=='h1').map(m=>`<option value="${svEsc(m.id)}">${svEsc(m.name)}</option>`).join('');
+    const mOpts=SVR.mann.map(m=>`<option value="${svEsc(m.id)}">${svEsc(m.name)}</option>`).join('');
     d.innerHTML=`<div><label for="svInvTeam">Mannschaft</label><select id="svInvTeam"><option value="">keine</option>${mOpts}</select></div>
       <div><label for="svInvFunk">Funktion</label><select id="svInvFunk">${Object.entries(SVR_FUNK).map(([k,t])=>`<option value="${k}">${svEsc(t)}</option>`).join('')}</select></div>`;
     rs.closest('div').after(d);
-    const sync=()=>{ d.classList.toggle('pflicht',rs.value==='jugend'); };
+    const sync=()=>{
+      d.classList.toggle('pflicht',rs.value==='jugend');
+      const team=f.querySelector('#svInvTeam'), erste=team.querySelector('option[value="h1"]');
+      if(erste){
+        erste.disabled=erste.hidden=rs.value!=='trainer';
+        if(erste.disabled && team.value==='h1'){ team.value=''; team.dispatchEvent(new Event('change')); }
+      }
+    };
     rs.addEventListener('change',sync); sync();
+    const auswahl=f.querySelector('#svInvTeam'), funktion=f.querySelector('#svInvFunk');
+    const draft=P._draft;
+    if(draft && draft.role===rs.value && draft.mannschaft &&
+       [...auswahl.options].some(o=>o.value===draft.mannschaft && !o.disabled)){
+      auswahl.value=draft.mannschaft;
+      if(SVR_FUNK[draft.funktion]) funktion.value=draft.funktion;
+    }
+    const merken=()=>{if(P._draft) Object.assign(P._draft,{mannschaft:auswahl.value,funktion:funktion.value});};
+    f.addEventListener('input',merken); f.addEventListener('change',merken);
     // Absenden: Mannschaft und Funktion mitschicken (die Nutzerverwaltung trägt sie gleich ein)
     const go=f.onsubmit; f.onsubmit=async e=>{
       const team=f.querySelector('#svInvTeam').value, funk=f.querySelector('#svInvFunk').value;
@@ -822,7 +844,7 @@ async function svrTeamsCard(){
   const c=document.getElementById('svrTeamsCard'); if(!c)return;
   const {data,error}=await SVB.sb.from('mannschaft_personen').select('mannschaft,user_id,funktion'); if(error){ c.innerHTML=`<div class="empty">Mannschaften konnten nicht geladen werden.</div>`; return; }
   SVR_MP=data||[]; const nm=id=>{ const u=(SV_USERS||[]).find(x=>x.id===id); return u?(u.name||u.email):'?'; };
-  const teams=SVR.mann.filter(m=>m.id!=='h1');
+  const teams=SVR.mann;
   c.innerHTML=`<div class="adm-head"><div><h3 style="margin:0">Mannschaften</h3><p class="note" style="margin:6px 0 0">Wer in einer Mannschaft eingetragen ist, sieht deren Bereich. Zwei Haupttrainer sind möglich. Neue Jugendtrainer lädst du oben mit der Rolle „Jugendtrainer“ ein.</p></div></div>
     <div class="svr-teams">${teams.map(m=>{ const L=SVR_MP.filter(x=>x.mannschaft===m.id).sort((a,b)=>Object.keys(SVR_FUNK).indexOf(a.funktion)-Object.keys(SVR_FUNK).indexOf(b.funktion));
       return `<div class="svr-team"><div class="svr-th"><b>${svEsc(m.kurz)}</b><span>${svEsc(m.name)}</span><em>${svEsc(SVR_STUFE[m.stufe]||'')}</em></div>
