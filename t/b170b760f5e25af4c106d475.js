@@ -593,14 +593,14 @@ function n88Unter(t){
   if(q === 'spo'){
     if(typeof SPO_REITER === 'undefined') return [];
     try{ if(typeof spoDarf === 'function' && !spoDarf('sponsoring')) return []; }catch(e){}
-    return SPO_REITER.map(([k, l]) => ({ k:'spo:' + k, l, go:() => n88Partner(k) }));
+    return SPO_REITER.filter(([k]) => k !== 'bandencreator' && !(k === 'trikots' && svDarf('sponsoring:trikots') === false)).map(([k, l]) => ({ k:'spo:' + k, l, go:() => n88Partner(k) }));
   }
   const H = typeof SV4_HUB !== 'undefined' && SV4_HUB[q]; if(!H) return [];
   return H.tabs.filter(([k]) => n88Erlaubt(k)).map(([k, l]) => ({ k, l, go:() => n88Hub(t, k) }));
 }
 // Welche Unterseite gerade offen ist
 function n88Jetzt(t){
-  if(N88_QUELLE[t] === 'spo') return typeof SPO !== 'undefined' ? 'spo:' + (SPO.view === 'uebersicht' ? 'zentrale' : SPO.view) : '';
+  if(N88_QUELLE[t] === 'spo') return typeof SPO !== 'undefined' ? 'spo:' + (SPO.view === 'uebersicht' ? 'zentrale' : SPO.view === 'bandencreator' ? 'banden' : SPO.view) : '';
   try{ return typeof sv4Sub === 'function' ? sv4Sub(svCurTab()) : svCurTab(); }catch(e){ return ''; }
 }
 // Erst den Bereich öffnen (der setzt zum Beispiel die richtige Mannschaft), dann den Reiter oben antippen,

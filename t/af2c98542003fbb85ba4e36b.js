@@ -126,13 +126,25 @@
     ++loadGeneration;cfg=o;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
   }
   async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project};}
-  async function amSpielfeld(){
+  async function amSpielfeld(quer=false){
     const generation=loadGeneration;
     if(loading)await loading;else if(!project)await load();
-    const doc=documentNow,stand=preview;
+    let doc=documentNow,stand=preview;
+    const original=doc,ursprungsbild=stand;
     if(generation!==loadGeneration||!doc||!stand)throw Error('Eure Bandenansicht ist noch nicht verfügbar.');
-    const [foto,motiv]=await Promise.all([R().image('partner/r-bande.webp'),R().image(stand)]);
-    if(documentNow!==doc||preview!==stand)throw Error('Die Gestaltung wurde zwischenzeitlich geändert.');
+    const foto=await R().image('partner/r-bande.webp');
+    let motiv;
+    if(quer&&root.PARTNER_MOTIVLAYOUT){
+      const quelle=await root.PARTNER_MOTIVLAYOUT.layout(doc,null);
+      if(quelle?.quer){
+        doc=await root.PARTNER_MOTIVLAYOUT.grundentwurf(quelle.quer,doc.title,doc.width,doc.height);
+        const mass=Math.min(1,1800/doc.width);
+        motiv=R().canvas(Math.round(doc.width*mass),Math.round(doc.height*mass));
+        await R().render(motiv.getContext('2d'),doc,mass);
+      }
+    }
+    if(!motiv)motiv=await R().image(stand);
+    if(documentNow!==original||preview!==ursprungsbild)throw Error('Die Gestaltung wurde zwischenzeitlich geändert.');
     // Befestigungspunkte der beiden Felder im vorhandenen Foto. Für eine Einzelbande
     // sehen wir nur das linke Feld. Typografie und Zeichen behalten ihr Seitenverhältnis.
     const einfach=doc.width/doc.height<4.7;

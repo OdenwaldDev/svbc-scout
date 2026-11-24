@@ -344,7 +344,7 @@ function b27Bande(s){ const frei = s.stand === 'frei';
 function b27Detail(){ const R = b27Reihe(), o = R.find(x => x.s.id === B27.sel), darf = !!(B27.d && B27.d.darf);
   if(!o) return '<p class="pz-tc-tipp">Tipp im Plan oder in der Leiste auf einen Platz. Dann siehst du, wo er steht und wer dort vorgesehen ist.</p>';
   const s = o.s, frei = s.stand === 'frei';
-  return `<p class="bp-wo"><b>${b27Nr(o)} · ${bpE(b27Wo(o))}</b> ${frei ? 'ist noch frei.' : bpE((s.stand === 'fest' ? 'Fest vergeben an ' : 'Vorgemerkt für ') + bpFirma(s.firma) + '.')}</p>${b27Bande(s)}${s.notiz ? `<p class="pz-tc-tipp b27-notiz">${bpE(s.notiz)}</p>` : ''}
+  return `<p class="bp-wo"><b>${b27Nr(o)} · ${bpE(b27Wo(o))}</b> ${frei ? 'ist noch frei.' : bpE((s.stand === 'fest' ? 'Fest vergeben an ' : 'Vorgemerkt für ') + bpFirma(s.firma) + '.')}</p>${s.zone==='premium'?'<p class="pz-tc-tipp">'+(s.temporaer_standard?'Vorläufig mit einer Standardbande belegt.':'Bevorzugter Einzelplatz für Premium-Partner.')+'</p>':''}${b27Bande(s)}${s.notiz ? `<p class="pz-tc-tipp b27-notiz">${bpE(s.notiz)}</p>` : ''}
     <div class="b27-kn">${darf ? `<button type="button" class="pz-tc-k" data-b27setzen="${s.id}">${frei ? 'Firma eintragen' : 'Ändern'}</button>` : ''}${!frei ? `<button type="button" class="pz-tc-k leise" data-b27gest="${s.id}">Bande gestalten</button>` : ''}${darf && !frei ? `<button type="button" class="pz-tc-k leise" data-b27frei="${s.id}">Frei machen</button>` : ''}</div>
     ${darf ? '' : '<p class="pz-tc-tipp">Eintragen können Admin, Vorstand und die Leitung im Bereich Partner.</p>'}`; }
 function b27Schalter(){ return `<div class="b27-sw" role="group" aria-label="Welcher Stand"><button type="button" data-b27modus="heute" aria-pressed="${B27.modus === 'heute'}">Aktuell</button><button type="button" data-b27modus="neu" aria-pressed="${B27.modus === 'neu'}">Ab Saison ${b27Saison()}</button></div>`; }
@@ -447,13 +447,14 @@ function b27Dialog(id, I){ const s = ((B27.d && B27.d.slots) || []).find(x => x.
     <label class="pz-tc-dlgf"><span>Firma aus der Partnerliste</span><select id="b27Sp"><option value="">nicht in der Liste</option>${F.map(f => `<option value="${f.id}"${f.id === s.sponsor ? ' selected' : ''}>${bpE(f.firma)}</option>`).join('')}</select></label>
     <label class="pz-tc-dlgf" id="b27FrW"><span>Oder Name der Firma</span><input type="text" id="b27Fr" maxlength="120" value="${s.sponsor ? '' : bpE(s.firma || '')}" autocomplete="off"></label>
     <div class="bp-bwahl" role="radiogroup" aria-label="Wie fest ist das?">${[['vorgemerkt', 'Vorgemerkt'], ['fest', 'Fest vergeben']].map(([k, t]) => `<label><input type="radio" name="b27St" value="${k}"${(s.stand === 'fest' ? 'fest' : 'vorgemerkt') === k ? ' checked' : ''}><span>${t}</span></label>`).join('')}</div>
+    ${s.zone==='premium'?'<label class="bn-check"><input type="checkbox" id="b27Temp"'+(s.temporaer_standard?' checked':'')+'> Diesen Premium-Platz vorläufig mit einer Standardbande auffüllen</label>':''}
     <label class="pz-tc-dlgf"><span>Notiz (nur intern)</span><textarea id="b27No" maxlength="300" rows="2">${bpE(s.notiz || '')}</textarea></label>
     <p class="pz-tc-tipp" id="b27H" role="alert" hidden></p>
     <div class="pz-tc-dlgk"><button type="button" class="btn" id="b27Ok">Speichern</button><button type="button" class="btn ghost" id="b27Nein">Abbrechen</button></div>`);
   const sp = M.querySelector('#b27Sp'), frw = M.querySelector('#b27FrW'), zeig = () => { frw.hidden = !!sp.value; }; sp.onchange = zeig; zeig();
   M.querySelector('#b27Nein').onclick = () => closeOverlay();
   M.querySelector('#b27Ok').onclick = () => paEinmal(M.querySelector('#b27Ok'), async () => { const h = M.querySelector('#b27H'); h.hidden = true;
-    try{ await bcRpc('banden_plan_setzen', { p:{ id, stand:(M.querySelector('input[name="b27St"]:checked') || {}).value || 'vorgemerkt', sponsor:sp.value || null, firma:sp.value ? null : M.querySelector('#b27Fr').value, notiz:M.querySelector('#b27No').value } });
+    try{ await bcRpc('banden_plan_setzen', { p:{ id, temporaer_standard:!!M.querySelector('#b27Temp')?.checked, stand:(M.querySelector('input[name="b27St"]:checked') || {}).value || 'vorgemerkt', sponsor:sp.value || null, firma:sp.value ? null : M.querySelector('#b27Fr').value, notiz:M.querySelector('#b27No').value } });
       closeOverlay(); await b27Laden(true); b27Zeigen(I); kToast('Gespeichert.'); }catch(e){ h.textContent = e.message; h.hidden = false; } }, 'Speichert …'); }
 
 // Der Plan im Bandencreator bekommt den Schalter; „Aktuell“ bleibt, wie es war

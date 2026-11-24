@@ -200,8 +200,9 @@ async function bcRender(B){
   if(B.querySelector('.pz-bc') && BC.d){ bcAnsichtZeigen(); return; }
   B.innerHTML = `<div class="pz pz-tc pz-bc"><div class="pz-tc-kopf"><span class="pz-hand">Rund um unseren Platz</span><h2>Bandencreator</h2>
     <p>Das Logo steht groß auf der Bande. Fehlt darin der Firmenname, kannst du ihn ergänzen.</p></div>
-    <div class="pz-bc-sw"><div class="pz-tc-seg" id="bcAnsicht" role="group" aria-label="Ansicht"><button type="button" data-bcansicht="gestalten">Gestalten</button><button type="button" data-bcansicht="plan">Bandenplan</button></div></div>
+    <div class="pz-bc-sw"><div class="pz-tc-seg" id="bcAnsicht" role="group" aria-label="Ansicht"><button type="button" id="bcBestand">Bestand</button><button type="button" data-bcansicht="gestalten">Gestalten</button><button type="button" data-bcansicht="plan">Bandenplan</button></div></div>
     <div id="bcInhalt"><div class="pz-tc-buehne pz-bc-laden"><div class="pz-tc-laden"><i></i>Bandencreator wird geladen …</div></div></div></div>`;
+  B.querySelector('#bcBestand').onclick = () => spoWechsel('banden');
   B.querySelector('#bcAnsicht').onclick = e => { const b = e.target.closest('[data-bcansicht]'); if(b){ BC.ansicht = b.dataset.bcansicht; bcAnsichtZeigen(); } };
   try{ await bcLaden(); }catch(e){ const I = B.querySelector('#bcInhalt'); if(I) I.innerHTML = `<div class="pz-tc-block"><p class="pz-tc-tipp">Konnte nicht laden: ${bcE(e.message)}</p></div>`; return; }
   if(!BC.spec.firma) bcFirmaLeer();

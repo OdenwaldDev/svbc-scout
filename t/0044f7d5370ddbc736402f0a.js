@@ -186,7 +186,7 @@ async function spoBanden(B){
   const R=BD.rolle;
   B.innerHTML=`<div class="card bd-kopf"><div class="bd-k1"><div><h3 class="trh" style="margin:0">${SVI('grid')} Banden am Sportplatz</h3>
         <p class="note" style="margin:6px 0 0">Bei der Begehung am 29.09.2026${R&&R.namen?' mit '+svEsc(R.namen):''} hieß es: 14 Banden sollten erneuert werden, sofern die Partner dabei bleiben. Ein Angebot kommt. Die Zahlen unten sind unsere Einschätzung nach den Fotos.</p></div>
-        <button class="btn sm" type="button" id="bdNeu">${SVI('plus')} Bande</button></div>
+        <div class="btnrow">${svDarf('sponsoring:trikots')!==false?'<button class="btn sm ghost" type="button" id="bdPlan">Stadionplan</button><button class="btn sm ghost" type="button" id="bdGestalten">Bande gestalten</button>':''}<button class="btn sm" type="button" id="bdNeu">${SVI('plus')} Bande</button></div></div>
       <div class="bd-std"><div><b>Standardmaß</b><span>500 × 80 cm, zwei Platten à 250 × 80 cm</span></div><div><b>Material</b><span>3 mm Aluminiumverbund</span></div>
         <div><b>Haltbarkeit</b><span>Druck bleibt 7 bis 10 Jahre farbstabil, danach neu mit Folie bekleben, die Platten bleiben</span></div>
         <div><b>Rückseiten</b><span>Meist noch alte Schutzfolie drauf, deshalb hinten nicht mehr beschriftbar</span></div></div>
@@ -204,6 +204,7 @@ async function spoBanden(B){
   if(BD.springen){ BD.springen=false; const g=B.querySelector('.bd-f'); if(g)try{ g.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} }
   const zb=B.querySelector('#bdZuord'); if(zb)zb.onclick=()=>bdZuordnen(B);
   B.querySelectorAll('[data-bd]').forEach(x=>x.onclick=()=>bdForm(BD.L.find(b=>b.id===x.dataset.bd),B));
+  for(const [id,ansicht] of [['bdPlan','plan'],['bdGestalten','gestalten']]){ const link=B.querySelector('#'+id); if(link)link.onclick=()=>{ BC.ansicht=ansicht; spoWechsel('bandencreator'); }; }
   B.querySelector('#bdNeu').onclick=()=>bdForm(null,B);
 }
 function bdForm(b,B){
@@ -578,6 +579,8 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.156',v:'0.99.156',datum:'2026-11-24',titel:'Neue Leistungen für Partnergespräche',kurz:'Das Vereinsteam kann Firmenangebote vorbereiten und direkt im Termin zeigen.',punkte:[{ic:'i',t:'Angebot öffnen',d:'In der Firmenakte lassen sich ein Paket und freie Ärmel für die persönliche Präsentation zusammenstellen.',r:'admin'},{ic:'i',t:'Partnerpakete und Bausteine',d:'Für neue Gespräche gibt es die überarbeiteten Paketleistungen und eine gemeinsame Liste für Zusatzprojekte.',r:'admin'}]},
+  {id:'0.99.155',v:'0.99.155',datum:'2026-11-24',titel:'Termine in der Firmenakte vorbereiten',kurz:'Das Partnerteam kann pro Firma einen internen Entwurf mit Paket, Bandenmotiv und freien Ärmeln speichern.',punkte:[{ic:'i',t:'Mannschaft oder Seite zuerst',d:'In der Firmenakte findet ihr freie Ärmel und seht das Firmenlogo auf Trikot und Trainingsanzug.',r:'admin'}]},
   {id:'0.99.154',v:'0.99.154',datum:'2026-11-24',titel:'Direkt zum Partnerangebot',kurz:'Persönliche Angebote lassen sich direkt mit Paket, Bande und Ärmel öffnen.',punkte:[{ic:'i',t:'Ärmel auswählen',d:'Im Gespräch könnt ihr nach Mannschaft oder Ärmelseite suchen und die freien Plätze auf Trikot und Trainingsanzug ansehen.',r:'admin'}]},
   {id:'0.99.153',v:'0.99.153',datum:'2026-11-24',titel:'Ein Gang durch das Partnergespräch',kurz:'Im persönlichen Partnerflow könnt ihr am Spielfeldrand die Bande aus der Nähe ansehen.',punkte:[{ic:'i',t:'Beitrag durchwischen',d:'Beide Motive des geplanten Vereinsbeitrags lassen sich direkt im Gespräch ausprobieren.',r:'admin'}]},
   {id:'0.99.152',v:'0.99.152',datum:'2026-11-24',titel:'Vereinsheft für Partnergespräche',kurz:'Die neue Präsentationsansicht verbindet Bilder aus Verein und Studio.',punkte:[{ic:'i',t:'Gemeinsam blättern',d:'Die Kapitel lassen sich auf dem Handy und als vollständiges Heft im PDF ansehen.',r:'admin'}]},

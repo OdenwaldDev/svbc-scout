@@ -1972,11 +1972,10 @@ if(typeof n77Koepfe === 'function'){ const _k = n77Koepfe; n77Koepfe = function(
 const S120_GRUPPEN = [
   ['start', 'Übersicht', ['zentrale', 'termine']],
   ['firmen', 'Firmen', ['sponsoren', 'ansprechen', 'decks']],
-  ['flaechen', 'Werbeflächen', ['trikots', 'bandencreator', 'banden', 'stadionheft', 'ausruestung']],
+  ['bausteine', 'Bausteine', ['bausteine']],
+  ['flaechen', 'Werbeflächen', ['trikots', 'banden', 'bandencreator', 'stadionheft', 'ausruestung']],
   ['verwaltung', 'Verwaltung', ['steuerung', 'ablage', 'shopfin']]
 ];
-// Name in der zweiten Reihe, wenn er dort anders heißen soll als in der Seitenleiste
-const S120_NAME = { sponsoren:'Firmenliste' };
 // Am Handy steht der kurze Name auf dem Knopf (nur Anzeige, vorgelesen wird der lange)
 const S120_KURZ = { flaechen:'Flächen' };
 const S120 = { letzte:{} };
@@ -1994,7 +1993,7 @@ function s120Zeig(){
   const top = document.querySelector('#panel-sponsoring .spo-top.s120'), seg = top && top.querySelector('.spo-seg'), G = top && top.querySelector('.s120-grp'); if(!seg || !G) return;
   const akt = s120Gruppe(SPO.view); S120.letzte[akt] = SPO.view;
   let n = 0;
-  seg.querySelectorAll('[data-spov]').forEach(b => { const da = s120Gruppe(b.dataset.spov) === akt; b.hidden = !da; if(da) n++; });
+  seg.querySelectorAll('[data-spov]').forEach(b => { const da = s120Gruppe(b.dataset.spov) === akt && b.dataset.spov !== 'bandencreator'; b.hidden = !da; if(da) n++; if(b.dataset.spov==='banden' && SPO.view==='bandencreator'){ b.classList.add('on'); b.setAttribute('aria-selected','true'); } });
   seg.hidden = n < 2;
   G.querySelectorAll('[data-s120]').forEach(b => { const an = b.dataset.s120 === akt; b.classList.toggle('on', an); b.setAttribute('aria-selected', an ? 'true' : 'false');
     const g = S120_GRUPPEN.find(x => x[0] === b.dataset.s120); b.hidden = !g[2].some(k => seg.querySelector('[data-spov="' + k + '"]')); });
@@ -2004,7 +2003,7 @@ function s120Bau(){
   const top = document.querySelector('#panel-sponsoring .spo-top'), seg = top && top.querySelector('.spo-seg'); if(!seg) return;
   s120Ordnen();
   const ord = S120_GRUPPEN.flatMap(g => g[2]);
-  [...seg.querySelectorAll('[data-spov]')].sort((a, b) => ord.indexOf(a.dataset.spov) - ord.indexOf(b.dataset.spov)).forEach(b => { if(S120_NAME[b.dataset.spov]) b.textContent = S120_NAME[b.dataset.spov]; seg.appendChild(b); });
+  [...seg.querySelectorAll('[data-spov]')].sort((a, b) => ord.indexOf(a.dataset.spov) - ord.indexOf(b.dataset.spov)).forEach(b => { seg.appendChild(b); });
   top.classList.add('s120'); seg.setAttribute('aria-label', 'Seiten der gewählten Gruppe');
   if(!top.querySelector('.s120-grp')){
     const G = document.createElement('div'); G.className = 's120-grp';

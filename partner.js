@@ -229,6 +229,7 @@
     direktBereit=true;
     $('#pdDirektAngebot').onclick=angebotAnzeigen;
     angebotEinstiegAktualisieren();
+    paketfassungSenden();
     const einstieg=new URLSearchParams(location.search);
     if(einstieg.get('angebot')==='1')angebotAnzeigen();
     else if(einstieg.get('entwurf')==='1'&&TV()&&D.vertrag_darf===true)direktEntwurfBearbeiten();
@@ -296,9 +297,21 @@
     const imBlick=id=>{ const e=document.getElementById(id); if(!e)return false; const r=e.getBoundingClientRect(); return r.top<innerHeight&&r.bottom>0; };
     return !imBlick('baukasten')&&!imBlick('abschluss'); }
   const katalogImBlick=()=>['pakete','bausteine'].some(id=>{ const w=document.getElementById(id); if(!w||w.hidden)return false; const r=w.getBoundingClientRect(); return r.top<innerHeight&&r.bottom>0; });
+  function heimspielStandSenden(){
+    if(D?.paketfassung!==2)return;
+    const l=lk('sotd');
+    $('#reiseRahmen')?.contentWindow?.postMessage({reise:'heimspiel-stand',frei:l?frei(l,null):0},location.origin);
+  }
+  function paketfassungSenden(){
+    if(D?.paketfassung!==2)return;
+    const leistungen=(D.leistungen||[]).filter(l=>Array.isArray(l.punkte));
+    $('#reiseRahmen')?.contentWindow?.postMessage({reise:'paketfassung',fassung:2,leistungen,hauptpartner:D.hauptpartner},location.origin);
+    heimspielStandSenden();
+  }
+  function bandenzusatzErlaubt(){return D?.paketfassung!==2||S.korb.some(e=>['club','premium','p1896'].includes(e.key));}
   function anzugStandSenden(){const f=$('#reiseRahmen');if(!f?.contentWindow||!D)return;const keys=['aermel_anzug_l','aermel_anzug_r'],plaetze=(D.anzug_aermel?.plaetze||[]).map(t=>{const l=lk(t.key),map=l?.frei_je_naechste||l?.frei_je||{},frei=l&&+map[t.team]===1?1:0;return {id:t.id,team:t.team,seite:t.seite,key:t.key,name:t.name,kurz:t.kurz,frei,status:frei?'frei':t.status==='frei'?'vergeben':t.status,ab_jahr:t.ab_jahr};});f.contentWindow.postMessage({reise:'anzug-stand',plaetze,preise:Object.fromEntries(keys.map(k=>[k,lk(k)?.preis??600])),erlaubt:keys.some(k=>!!lk(k))},location.origin);}
   window.addEventListener('message',e=>{const f=$('#reiseRahmen');if(f&&e.source===f.contentWindow&&e.origin===location.origin&&e.data?.reise==='bereit'){
-    anzugStandSenden();
+    paketfassungSenden();anzugStandSenden();
     const w=D?.deck.passung?.angebotsentwurf;
     if(w?.team){
       aermelTeamSenden([],w);
@@ -334,7 +347,7 @@
     if(da)return dabeiFest()?'Euer Betrieb ist Partner des SV/BSC. Was ihr gebucht habt und die Rechnung stehen weiter unten.':'Deine Unterschrift ist bei uns. Was ihr gebucht habt und die Vertragsbedingungen stehen weiter unten.';
     return P.hero?esc(P.hero):'Bei uns lernen Kinder aus dem Ort Fußball. Vielleicht kennst du manche schon, aus der Nachbarschaft oder weil ihre Eltern bei euch arbeiten.'; }
   const STUFEN=()=>L.filter(l=>l.art==='paket'&&l.preis!=null).sort((a,b)=>(STUFE.indexOf(a.key)+1||9)-(STUFE.indexOf(b.key)+1||9)||+a.preis-+b.preis);
-  const bausteinListe=w=>L.filter(l=>l.bereich===w&&l.art!=='paket'&&!['spende','sonstiges'].includes(l.art)&&l.preis!=null&&(!['aermel_anzug_l','aermel_anzug_r'].includes(l.key)||M.some(m=>frei(l,m.id)>0)));
+  const bausteinListe=w=>L.filter(l=>(l.key!=='bande_erste'||bandenzusatzErlaubt())&&(D.paketfassung!==2||l.key!=='jobpost')&&l.bereich===w&&l.art!=='paket'&&!['spende','sonstiges'].includes(l.art)&&l.preis!=null&&(!['aermel_anzug_l','aermel_anzug_r'].includes(l.key)||M.some(m=>frei(l,m.id)>0)));
   const hatPaket=()=>S.korb.some(e=>(lk(e.key)||{}).art==='paket');
   const oder=a=>a.length>1?a.slice(0,-1).join(', ')+' oder '+a[a.length-1]:(a[0]||'');
   // Worum es geht, in einem Satz aus den Daten: wie viele Pakete, ab welchem Preis, welche Bausteine es gibt
@@ -537,10 +550,11 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     el.innerHTML=n?`<b>${n===1?'1 Platz':n+' Plätze'} frei:</b> ${fr.map(b=>`${esc(b.titel)} ${b.frei}`).join(', ')}.`:'Gerade sind alle Plätze vergeben. Wir setzen euch gern auf die Liste.'; }
   // Maße und Paket-Hinweis stehen sofort, damit die Station nicht nachwächst, während jemand weiterscrollt
   function bdMass(){ const F=typeof BANDE!=='undefined'&&BANDE.FORMATE[BD.format], el=$('#bdMass'); if(!el)return;
-    el.textContent=F?(F.paket?F.paket+', ':'')+F.lang+'. Druck auf Aluminiumverbund, Herstellung und Montage übernimmt der Verein, wenn sie im Paket stecken.':''; }
+    el.textContent=F?(F.paket?F.paket+', ':'')+F.lang+(D.paketfassung===2?'. Die Druckkosten kommen hinzu, die Montage ist im Paket enthalten.':'. Druck auf Aluminiumverbund, Herstellung und Montage übernimmt der Verein, wenn sie im Paket stecken.') : ''; }
   function bdText(){ bdFrei(); bdMass();
     const l=lk('bande_erste'), P=$('#bdPasst'); if(!P)return;
     const pk=S.korb.find(e=>/^(club|premium|p1896)$/.test(e.key)); if(pk&&lk(pk.key)){ P.innerHTML=`<p><b>${esc(lk(pk.key).titel)}</b>: ${pk.key==='p1896'?'Die Doppelbande (5 m)':'Die Einzelbande (2,50 m)'} ist in eurem Paket enthalten.</p>`; return; }
+    if(D.paketfassung===2&&!pk){P.innerHTML='<p>Die erste Bande ist beim Club Partner für 496 € netto je Saison dabei.</p><button type="button" class="knopf-w" data-zu="pakete">Club Partner ansehen</button>';return;}
     if(l&&!fertig()){ const drin=imKorb('bande_erste',null);
       P.innerHTML=`<p><b>${esc(l.titel)}</b>${l.preis!=null?' · '+ca(l)+eur(l.preis)+' '+esc(PLIB.EINHEIT[l.einheit]||''):''}. Ab dem Club Partner ist eine Bande im Paket.</p>
         <button type="button" class="knopf-w tk-dazu" data-bddazu${drin?' disabled':''}>${drin?'Ist in eurer Auswahl':'In die Auswahl'}</button>`;
@@ -888,7 +902,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       const bs=[...rg.querySelectorAll('[role="radio"]:not([disabled])')], i=bs.indexOf(document.activeElement), n=bs[(Math.max(0,i)+d+bs.length)%bs.length]; if(n){ n.focus(); if(n.getAttribute('aria-checked')!=='true')n.click(); } }); }
 
   // ---------- Katalog: Pakete und Bausteine ----------
-  function katalog(){ pakete(); bausteine(); seiteBs(); }
+  function katalog(){ pakete(); bausteine(); seiteBs(); heimspielStandSenden(); }
   // Verfügbarkeit in Worten (für Paket und Baustein gleich)
   function standText(l,f,tm){ const naechst=!l.je_mannschaft&&f===0&&l.frei_naechste>0;
     if(f===0&&l.key==='p1896'&&D.exklusiv_vergeben)return ['aus','Für eure Branche schon vergeben'];
@@ -905,7 +919,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function paketKarte(l,emp){ const f=frei(l,null), drin=imKorb(l.key,null), st=standText(l,f,null), istE=emp&&emp.key===l.key, wd=widmung(), zeigW=wd&&(istE||(!emp&&drin));
     const marke=st?`<span class="max ${st[0]}">${esc(st[1])}</span>`:l.plaetze>1?`<span class="max">Höchstens ${l.plaetze} Partner</span>`:'';
     const tag=istE?`<span class="pk-tag">${l.key==='p1896'?'Ankerpartner · ':''}${emp.aus==='antw'?'Passt zu euch':'Unsere Empfehlung'}</span>`:l.key==='p1896'?'<span class="pk-tag">Ankerpartner</span>':'';
-    const punkte=(String(l.text||'').match(/[^.]+\.?/g)||[]).map(s=>s.trim()).filter(Boolean);
+    const punkte=l.punkte||(String(l.text||'').match(/[^.]+\.?/g)||[]).map(s=>s.trim()).filter(Boolean);
     const orange=istE&&!hatPaket()&&f!==0;
     return `<article class="pk-k ${l.key}${drin?' drin':''}${drin&&S.neu===l.key+'|'?' neu':''}${f===0?' voll':''}${istE?' empf':''}" id="pk-${l.key}" role="listitem">
       <div class="pk-o">${tag}</div>
@@ -919,9 +933,10 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const emp=fertig()?null:paketEmpfehlung(), sl=Lp.scrollLeft, erst=!Lp.firstElementChild;
     const reihe=emp?st.slice().sort((a,b)=>(b.key===emp.key)-(a.key===emp.key)):st;   // 0.99.55: die Empfehlung steht vorn
     { const kz=(D.deck||{}).kurzname||(D.deck||{}).firma||'euch', h=$('#pkH'), ld=$('#pkLead');
-      if(h)h.textContent=emp?'Unser Vorschlag für euch':(st.length===4?'Die vier Pakete':'Die Pakete');
+      if(h)h.textContent=emp?'Unser Vorschlag für euch':(st.length===4&&D.paketfassung!==2?'Die vier Pakete':'Die Pakete');
       if(ld)ld.textContent=emp?`Dieses Paket passt zu ${kz} am besten, es steht deshalb vorn. Die anderen Stufen seht ihr daneben. Jedes Paket gilt für eine Saison, alle Preise netto.`:'Jedes Paket gilt für eine Saison und kommt dem ganzen Verein zugute. Die Preise stehen auf den Karten, alle netto.'; }
-    Lp.innerHTML=reihe.map(l=>paketKarte(l,emp)).join(''); Lp.scrollLeft=sl;
+    const haupt=D.paketfassung===2&&D.hauptpartner;
+    Lp.innerHTML=reihe.map(l=>paketKarte(l,emp)).join('')+(haupt?`<article class="pk-k" role="listitem"><span class="pk-tag">Vergeben</span><h3 class="pk-n">${esc(haupt.titel)}</h3><ul class="pk-l">${haupt.punkte.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></article>`:''); Lp.scrollLeft=sl;
     Lp.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{ angetippt=b; klickLeistung(b.dataset.add,null,b.dataset.wie); angetippt=null; });
     if(Lp.punkte)Lp.punkte();
     if(erst){ const z=(emp&&document.getElementById('pk-'+emp.key))||Lp.querySelector('.drin'); if(z)requestAnimationFrame(()=>{ karteZeigen(Lp,z,'auto'); if(Lp.punkte)Lp.punkte(); }); }
@@ -933,7 +948,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     stationenNeu(); }
   // 0.99.55 Trichter: nach der Paketwahl bis zu drei passende Zusätze zum Antippen (Highlights, Stream, Matchball, Jugend-Events)
   function upsellHtml(pk){ const basis=['highlights_social','stream_einblendung','matchball','sotd','zeltlager','ferienspiele','tor_monat'];
-    const ls=basis.map(lk).filter(l=>l&&l.preis!=null&&!l.je_mannschaft&&frei(l,null)!==0&&!imKorb(l.key,null)&&!(pk.key==='p1896'&&l.key==='sotd')).map((l,i)=>({l,w:score(l)*10-i})).sort((a,b)=>b.w-a.w).slice(0,3).map(x=>x.l);
+    const ls=basis.map(lk).filter(l=>l&&(D.paketfassung!==2||l.key!=='jobpost')&&l.preis!=null&&!l.je_mannschaft&&frei(l,null)!==0&&!imKorb(l.key,null)&&!(pk.key==='p1896'&&l.key==='sotd')).map((l,i)=>({l,w:score(l)*10-i})).sort((a,b)=>b.w-a.w).slice(0,3).map(x=>x.l);
     if(!ls.length)return '';
     return `<ul class="pk-up" aria-label="Passt dazu">${ls.map(l=>`<li><div><b>${esc(l.titel)}</b>${l.kurz?`<small>${esc(l.kurz)}</small>`:''}<em>${eur(l.key==='sotd'?PLIB.sotdPreis(l,[pk]):l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto</em></div><button type="button" class="knopf-w" data-up="${l.key}">Dazunehmen</button></li>`).join('')}</ul>`; }
   // 0.99.53: Fotos zu Zeltlager und Ferienspielen
@@ -977,6 +992,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       ${c.netto_jahr>0?`<p class="s"><span>Je Saison</span><b>${eur(c.netto_jahr,true)}</b></p>`:''}${c.einmalig>0?`<p class="s"><span>Einmalig</span><b>${eur(c.einmalig,true)}</b></p>`:''}
       <p class="bs-n2">Alle Preise netto. Laufzeit und Start legt ihr im Abschluss fest.</p><button type="button" class="knopf-o" data-zu="baukasten">Weiter zum Abschluss</button>`; }
   function dazu(key,mannschaft,still,naechste){ const l=lk(key); if(!l)return;
+    if(key==='bande_erste'&&!bandenzusatzErlaubt()){toast('Die erste Bande ist beim Club Partner dabei.');return;}
     if(l.art==='paket')S.korb=S.korb.filter(e=>{ const x=lk(e.key); const raus=x&&x.art==='paket'; if(raus&&!still)toast('Es geht immer nur ein Paket. Statt '+x.titel+' habt ihr jetzt '+l.titel+' gewählt.'); return !raus; });
     const m=l.je_mannschaft?(mannschaft||S.team):null; if(imKorb(key,m))return;
     S.korb.push({id:++uid,key,mannschaft:m,menge:1,preis:null,text:'',naechste:!!naechste}); }
@@ -1064,7 +1080,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const quelle=direktAngebotQuelle();if(!quelle)return;
     const {art,wert}=quelle, entwurf=art==='entwurf', firma=D.deck.kurzname||D.deck.firma;
     const vorschlag=D.deck.passung?.angebotsentwurf;
-    const posten=entwurf?[{key:wert.paket}]:wert.positionen;
+    const posten=entwurf?(wert.paket==='nur_aermel'?[]:[{key:wert.paket}]):wert.positionen;
     const inhalte=posten.map(p=>{
       const l=lk(p.key)||{};
       const team=p.mannschaft?M.find(m=>m.id===p.mannschaft)?.name||p.mannschaft:'';
@@ -1082,7 +1098,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       entwurf,firma,positionen:inhalte,metadaten:meta,
       summe:!entwurf&&wert.netto_gesamt!=null?'Gesamt über die Laufzeit '+eur(wert.netto_gesamt)+' netto':'',
       hinweis:entwurf?(vorschlag.vorbehalt==='branche'||wert.paket==='p1896'&&D.exklusiv_vergeben?'Ob der 1896-Platz in eurer Branche verfügbar ist, klären wir vor einer Zusage.':'Die Platzierung stimmen wir gemeinsam ab.'):'',
-      bande:bandentyp?()=>window.PD_BANDENSTUDIO.amSpielfeld():null,
+      bande:bandentyp?()=>window.PD_BANDENSTUDIO.amSpielfeld(entwurf&&wert.quer===true):null,
       stadion:bandentyp?()=>platzwahlOeffnen(posten.find(p=>['p1896','premium','club'].includes(p.key))?.key||'club'):null,
       aermel:mitAermel?{
         plaetze:async()=>(await partnerAermelLaden()).filter(p=>umfang?p.team===umfang.team&&p.seite===umfang.seite&&umfang.kleidung.includes(p.art):posten.some(e=>{
@@ -1103,7 +1119,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   function direktEntwurfBearbeiten(){
     if(!TV()||D.vertrag_darf!==true||!window.PARTNER_ENTWURF)return;
     const alt=D.deck.passung?.angebotsentwurf||null;
-    window.PARTNER_ENTWURF.oeffnen({alt,pakete:L.filter(l=>window.PARTNER_ANGEBOT.pakete.includes(l.key)),plaetze:partnerAermelLaden,
+    window.PARTNER_ENTWURF.oeffnen({alt,pakete:[...L.filter(l=>window.PARTNER_ANGEBOT.pakete.includes(l.key)),{key:'nur_aermel',titel:'Nur Ärmel'}],plaetze:partnerAermelLaden,
       speichern:async entwurf=>{
         const gespeichert=await rpc('partner_angebotsentwurf_setzen',{p_code:code,p_entwurf:entwurf,p_vorher:alt});
         D.deck.passung={...D.deck.passung,angebotsentwurf:gespeichert};
@@ -1128,13 +1144,17 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const positionen=[...new Set(keys)].map(k=>lk(k)).filter(l=>l&&l.preis!=null&&!['spende','sonstiges'].includes(l.art)).map(l=>({key:l.key,mannschaft:l.je_mannschaft?(['aermel_anzug_l','aermel_anzug_r'].includes(l.key)?(M.some(m=>m.id===w.anzug_team)?w.anzug_team:null):(S.korb.find(e=>e.key===l.key)?.mannschaft||null)):null,menge:1,nachlass:0}));
     return {positionen,saisons:+w.saisons,beginn:w.beginn,auto:!!w.auto};
   }
+  function vereinbartePosition(p){
+    const stand=S.angebot&&D.angebot?.nr===S.angebot.nr?D.angebot:S.konditionen&&D.konditionen?.id===S.konditionen.id?D.konditionen:null;
+    return stand?.positionen?.find(x=>x.key===p.key && (x.mannschaft||null)===(p.mannschaft||null));
+  }
   function konditionenOeffnen(w){
     if(S.busy)return;
     if(!TV()||D.vertrag_darf!==true||fertig()||!window.PD_KONDITIONEN)return;
     const geschlossen=()=>$('#reiseRahmen')?.contentWindow?.postMessage({reise:'creator-zu'},location.origin);
     const r=w&&!S.konditionen&&!S.angebot?konditionenReisewahl(w):null;
     if(w&&!S.konditionen&&!S.angebot&&!r){toast('Die Auswahl aus der Präsentation ist nicht mehr aktuell. Bitte prüf Paket und Beginn.');geschlossen();return;}
-    window.PD_KONDITIONEN.oeffnen({code,positionen:r?r.positionen:posFuerServer().filter(e=>e.key!=='spende'),saisons:r?r.saisons:S.saisons,beginn:r?r.beginn:beginn(),auto_verlaengerung:r?r.auto:S.auto,katalog:L,mannschaften:M,rpc,geschlossen,gespeichert:k=>{D.konditionen=k;konditionenUebernehmen(k,true);}});
+    window.PD_KONDITIONEN.oeffnen({code,positionen:r?r.positionen:posFuerServer().filter(e=>e.key!=='spende').map(e=>({...e,vereinbarung:vereinbartePosition(e)?.vereinbarung})),saisons:r?r.saisons:S.saisons,beginn:r?r.beginn:beginn(),auto_verlaengerung:r?r.auto:S.auto,katalog:L,mannschaften:M,rpc,geschlossen,gespeichert:k=>{D.konditionen=k;konditionenUebernehmen(k,true);}});
   }
   window.addEventListener('message',e=>{const f=$('#reiseRahmen');if(!f||e.source!==f.contentWindow||e.origin!==location.origin)return;
     if(e.data?.reise==='bereit'){setTimeout(konditionenSenden,500);return;}
@@ -1279,7 +1299,9 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     if(fSel){ const n=K.querySelector(fSel); if(n)n.focus({preventScroll:true}); }
     if(!S.ergebnis)abschluss();
   }
-  function nachKorb(weltenAuch){ const k=$('#baukasten'), y0=k?k.getBoundingClientRect().top:0; korb(); if(weltenAuch){ katalog(); } kopfZahl();
+  function nachKorb(weltenAuch){
+    if(!bandenzusatzErlaubt()&&S.korb.some(e=>e.key==='bande_erste')){S.korb=S.korb.filter(e=>e.key!=='bande_erste');toast('Die Zusatzbande entfällt mit dem Bandenpaket.');}
+     const k=$('#baukasten'), y0=k?k.getBoundingClientRect().top:0; korb(); if(weltenAuch){ katalog(); } kopfZahl();
     if(weltenAuch&&k){ const d=k.getBoundingClientRect().top-y0; if(Math.abs(d)>1)window.scrollTo({top:window.scrollY+d,behavior:'instant'}); } }
 
   // ---------- Abschluss ----------
@@ -1423,7 +1445,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       hatTrikot(c)?`Trikots und Ärmel rechnen wir getrennt nach bestätigter Stückzahl ab: ${eur(c.trikot_netto,true)} netto. Ein abweichender Endbetrag braucht eine eigene Vereinbarung.`:'',
       'Bevor etwas mit eurem Logo gedruckt wird, zeigen wir es euch.'].filter(Boolean);
     const kurzHtml=kurzP.length?`<div class="vt-kurz"><b>Das Wichtigste in Kürze</b><ul>${kurzP.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>`:'';
-    const tab=c.positionen.map(p=>{ const l=lk(p.key)||{}; return `<div><span>${esc(p.titel)}${p.mannschaft?', '+esc(mname(p.mannschaft)):''}${p.menge>1?', Menge '+p.menge:''}${PLIB.preisHinweis(p)?', '+esc(PLIB.preisHinweis(p)):''}${l.art==='paket'&&widmung()&&!sp?`<small class="wid"><b>${esc(widmung().titel)}</b>${widmung().text?' '+esc(widmung().text):''}</small>`:''}${l.text&&!sp?`<small>${esc(l.text)}</small>`:''}</span><span>${c.abrechnung_fassung===1&&CA_KEYS.includes(p.key)?'ca. ':''}${eur(p.summe,true)}${p.einheit==='saison'?' / Saison':p.einheit==='einmalig'?' einmalig':''}</span></div>`; }).join('');
+    const tab=c.positionen.map(p=>{ const l=lk(p.key)||{},beschreibung=vereinbartePosition(p)?.beschreibung||l.text; return `<div><span>${esc(p.titel)}${p.mannschaft?', '+esc(mname(p.mannschaft)):''}${p.menge>1?', Menge '+p.menge:''}${PLIB.preisHinweis(p)?', '+esc(PLIB.preisHinweis(p)):''}${l.art==='paket'&&widmung()&&!sp?`<small class="wid"><b>${esc(widmung().titel)}</b>${widmung().text?' '+esc(widmung().text):''}</small>`:''}${beschreibung&&!sp?`<small>${esc(beschreibung)}</small>`:''}</span><span>${c.abrechnung_fassung===1&&CA_KEYS.includes(p.key)?'ca. ':''}${eur(p.summe,true)}${p.einheit==='saison'?' / Saison':p.einheit==='einmalig'?' einmalig':''}</span></div>`; }).join('');
     W.innerHTML=`<div class="vertrag" id="vertrag"><div class="vt-k"><div><b>${sp?'Spendenzusage':'Partnervertrag'}</b><small>${sp?'':(e?`Laufzeit ${datum(beginn())} bis ${datum(e)}${S.auto?', verlängert sich automatisch':''}`:'Einmalige Leistungen')}</small></div><img src="${WAPPEN}" width="320" height="182" alt=""></div>
       ${warSchon?'<div class="vt-neu" role="status">Du hast das Paket geändert. Bitte sieh dir den Vertrag noch einmal an und unterschreib neu.</div>':''}
       <div class="vt-p" id="vtKopf"></div>
@@ -1633,7 +1655,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     tor_monat:'das Tor des Monats trägt euren Namen',highlights_social:'eure Spielhighlights laufen mit eurem Namen auf Social Media',stream_einblendung:'euer Logo läuft live im Stream der Heimspiele mit',jobpost:'wir veröffentlichen eure Stellenanzeige',business_treff:'ein Partnertreffen findet bei euch statt'};
   const undListe=a=>a.length>1?a.slice(0,-1).join(', ')+' und '+a[a.length-1]:(a[0]||'');
   function dankSaetze(ps){ const mn=id=>nbsp((M.find(m=>m.id===id)||{}).name||id), s=[];
-    ps.forEach(p=>{ let t=DANK[p.key]; if(!t){ t='zu eurem Paket gehört '+p.titel; }
+    ps.forEach(p=>{ let t=(D.paketfassung===2?{supporter:'euer Logo kommt auf die Supporterwand',p1896:'eure Doppelbande hängt neben dem Hauptpartner'}[p.key]:'')||DANK[p.key]; if(!t){ t='zu eurem Paket gehört '+p.titel; }
       t=t.replace('{t}',p.mannschaft?mn(p.mannschaft):'Mannschaft').replace('{T}',p.mannschaft?'die '+mn(p.mannschaft)+' ':'eine Jugendmannschaft '); if(!s.includes(t))s.push(t); });
     // Komma vor „und“ nur bei genau zwei Hauptsätzen, bei drei Gliedern nicht (kein Serienkomma)
     const t3=s.slice(0,3), x=t3.length>2?t3.slice(0,-1).join(', ')+' und '+t3[t3.length-1]:t3.length===2?t3[0]+', und '+t3[1]:(t3[0]||''); return x?x.charAt(0).toUpperCase()+x.slice(1)+'.':''; }

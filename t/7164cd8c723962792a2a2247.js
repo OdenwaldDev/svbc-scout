@@ -423,11 +423,11 @@ function bnHtml(){ const d=B29.d;
   if(!d)return '<p role="status">Platzwünsche und Verträge werden geladen.</p>';
   const P=d.partner||[], V=(d.vorschlaege||[]).filter(x=>x.kandidaten.length), A=d.angebote||[], fehlt=(d.fehlen||[]);
   return `<div class="bn-kopf"><div><h3>Warteliste und Platzwechsel</h3><p>Das System schlägt vor. Du klärst die Zusage und bestätigst den Wechsel.</p></div><button type="button" class="pz-tc-k" data-bnpartner="neu">Partner oder Wartenden erfassen</button></div>
-    <p class="pz-tc-tipp">Zuerst bestehende Partner mit Wunsch nach einem besseren Platz, danach Wartende. Innerhalb dieser Gruppen zählt die älteste belegte Zusage, sonst die Unterschrift, sonst der bestätigte Beginn der Partnerschaft. Fehlt das Datum, wird ein bestehender Partner noch nicht automatisch vorgeschlagen. Ein freier Mittelplatz bleibt für seine Partnerstufe reserviert.</p>
+    <p class="pz-tc-tipp">An der Hauptreihe wählen Premium-Partner die Einzelplätze neben den acht 1896-Banden in der Reihenfolge ihrer Zusage. Die übrigen Einzelplätze liegen weiter außen. Dort kommen zuerst bestehende Partner mit Nachrückwunsch, danach Wartende. Innerhalb dieser Gruppen zählt die älteste belegte Zusage, sonst die Unterschrift, sonst der bestätigte Beginn der Partnerschaft. Fehlt das Datum, wird ein bestehender Partner noch nicht automatisch vorgeschlagen. Ein freier Mittelplatz bleibt für seine Partnerstufe reserviert.</p>
     ${fehlt.length?`<div class="bn-hinweis"><b>Angaben ergänzen</b><p>${fehlt.map(x=>bpE(x.firma)+' ('+bpE(x.platz)+')').join(', ')}: Zusage und Vertragsstand sind noch nicht erfasst.</p></div>`:''}
     <div class="bn-gruppe"><h4>Offene Platzangebote</h4>${A.length?A.map(a=>`<article class="bn-zeile"><div><b>${bpE(a.firma)} → ${bpE(a.kennung)}</b><span>${a.abgelaufen?'Frist abgelaufen':'Vorgemerkt bis '+bnDatum(a.bis)}. Noch keine Nachricht verschickt.</span></div><div class="bn-kn">${!a.abgelaufen?`<button type="button" class="pz-tc-k" data-bnangebot="${a.id}" data-aktion="annehmen">Zugesagt, Plan ändern</button><button type="button" class="pz-tc-k leise" data-bnangebot="${a.id}" data-aktion="ablehnen">Abgelehnt</button>`:''}<button type="button" class="pz-tc-k leise" data-bnangebot="${a.id}" data-aktion="zurueckziehen">${a.abgelaufen?'Frist abschließen':'Zurückziehen'}</button></div></article>`).join(''):'<p class="pz-tc-tipp">Noch kein Platzangebot vorgemerkt. Hier wird nichts von selbst verschickt.</p>'}</div>
     <div class="bn-gruppe"><h4>Vorschläge für freie Plätze</h4>${V.length?bnVorschlaege(V):'<p class="pz-tc-tipp">Aktuell passt kein freier Platz zu den erfassten Nachrückwünschen. Ergänze zuerst die Angaben der bestehenden Partner oder trage Wartende ein.</p>'}</div>
-    <div class="bn-gruppe"><h4>Partner und Wartende (${P.length})</h4>${P.length?P.map(i=>`<article class="bn-zeile"><div><b>${bpE(i.firma)}</b><span>${bpE(i.platz||'Warteliste')} · ${bnPaket(i.paket||i.wunschpaket)} · ${i.status==='beendet'?'Beendet':!i.platz&&i.wunsch_aktiv?'Platzwunsch aktiv':i.nachruecken?'Nachrücken gewünscht':'Kein Nachrückwunsch'}</span><small>Zusage: ${bnDatum(i.zugesagt_am)} · Unterschrift: ${bnDatum(i.unterschrieben_am)} · Dabei seit: ${bnDatum(i.partner_seit)}<br>Vertrag: ${bnDatum(i.beginn)} bis ${bnDatum(i.ende)}</small></div><button type="button" class="pz-tc-k leise" data-bnpartner="${i.id}">Angaben pflegen</button></article>`).join(''):'<p class="pz-tc-tipp">Noch keine Platzwünsche erfasst.</p>'}</div>
+    <div class="bn-gruppe"><h4>Partner und Wartende (${P.length})</h4>${P.length?P.map(i=>`<article class="bn-zeile"><div><b>${bpE(i.firma)}</b><span>${bpE(i.platz||'Warteliste')} · ${(i.stufe_einzel==='premium'?'Premium Partner':bnPaket(i.paket||i.wunschpaket))} ${i.rasenwunsch==='kunst'?'· Kunstrasen ':''}· ${i.status==='beendet'?'Beendet':!i.platz&&i.wunsch_aktiv?'Platzwunsch aktiv':i.nachruecken?'Nachrücken gewünscht':'Kein Nachrückwunsch'}</span><small>Zusage: ${bnDatum(i.zugesagt_am)} · Unterschrift: ${bnDatum(i.unterschrieben_am)} · Dabei seit: ${bnDatum(i.partner_seit)}<br>Vertrag: ${bnDatum(i.beginn)} bis ${bnDatum(i.ende)}</small></div><button type="button" class="pz-tc-k leise" data-bnpartner="${i.id}">Angaben pflegen</button></article>`).join(''):'<p class="pz-tc-tipp">Noch keine Platzwünsche erfasst.</p>'}</div>
     <details class="bn-log"><summary>Änderungsverlauf</summary>${(d.verlauf||[]).length?`<ol>${d.verlauf.map(x=>`<li><b>${bnDatum(x.am)}</b> ${x.art==='banden_plan'?'Belegung geändert: '+bpE(x.nachher?.kennung||'')+' '+bpE(x.nachher?.firma||x.nachher?.stand||''):'Partnerangaben geändert'}</li>`).join('')}</ol>`:'<p>Noch keine Änderungen erfasst.</p>'}</details><button type="button" class="pz-tc-k leise" data-bnneu>Stand neu laden</button>`;
 }
 function bnZeigen(I){ if(B27.modus!=='neu'||!B27.d?.darf)return;
@@ -445,15 +445,18 @@ function bnPartnerDialog(id,I){ const i=(B29.d?.partner||[]).find(x=>x.id===id)|
   const datum=(k,t)=>`<label class="pz-tc-dlgf"><span>${t}</span><input type="date" data-bndatum="${k}" value="${bpE(i[k]||'')}"></label>`;
   const M=svModal(`<div class="mhead"><div><h2>Partnerangaben zur Bande</h2><div class="msub">Saison ${b27Saison()}. Nur intern sichtbar.</div></div></div><div class="bn-form">
     <label class="pz-tc-dlgf"><span>Firma</span><select id="bnFirma"><option value="">Bitte wählen</option>${F.map(f=>`<option value="${f.id}"${f.id===i.sponsor?' selected':''}>${bpE(f.firma)}</option>`).join('')}</select></label>
-    <label class="pz-tc-dlgf"><span>Partnerstufe</span><select id="bnPaket">${['normal','p1896','haupt'].map(k=>`<option value="${k}"${k===(i.paket||i.wunschpaket||'normal')?' selected':''}>${bnPaket(k)}</option>`).join('')}</select></label>
-    <label class="pz-tc-dlgf"><span>Stand</span><select id="bnStatus">${[['wartet','Wartet auf einen Platz'],['aktiv','Bestehender Partner'],['beendet','Beendet']].map(([k,t])=>`<option value="${k}"${k===(i.status||'wartet')?' selected':''}>${t}</option>`).join('')}</select></label>
+    <label class="pz-tc-dlgf"><span>Partnerstufe</span><select id="bnPaket">${['normal','premium','p1896','haupt'].map(k=>`<option value="${k}"${k===(i.stufe_einzel==='premium'?'premium':i.paket||i.wunschpaket||'normal')?' selected':''}>${k==='premium'?'Premium Partner':bnPaket(k)}</option>`).join('')}</select></label>
+    <label class="pz-tc-dlgf"><span>Gewünschte Spielstätte</span><select id="bnRasen"><option value="haupt">Hauptplatz</option><option value="kunst"${i.rasenwunsch==='kunst'?' selected':''}>Kunstrasenplatz</option></select></label><label class="pz-tc-dlgf"><span>Stand</span><select id="bnStatus">${[['wartet','Wartet auf einen Platz'],['aktiv','Bestehender Partner'],['beendet','Beendet']].map(([k,t])=>`<option value="${k}"${k===(i.status||'wartet')?' selected':''}>${t}</option>`).join('')}</select></label>
     ${datum('zugesagt_am','Verbindliche Zusage am')}${datum('unterschrieben_am','Unterschrieben am')}${datum('partner_seit','Durchgehend Partner seit')}${datum('beginn','Vertragsbeginn')}${datum('ende','Vertragsende')}
     <label class="pz-tc-dlgf"><span>Wunschplatz, falls festgelegt</span><select id="bnWunsch"><option value="">Kein einzelner Wunschplatz</option>${(B27.d.slots||[]).map(s=>`<option value="${s.id}"${s.id===i.wunsch?' selected':''}>${bpE(s.kennung)} · ${s.rolle==='mitte'?'Hauptpartner':s.rolle==='top'?'1896 Partner':'Einzelbande'}</option>`).join('')}</select></label></div>
     <label class="bn-check"><input type="checkbox" id="bnNach"${i.nachruecken?' checked':''}> Partner möchte bei einem besseren Platz nachrücken</label>
     <label class="bn-check"><input type="checkbox" id="bnFlex"${i.flexibel===false?'':' checked'}> Auch andere passende Plätze anbieten</label>
     <label class="pz-tc-dlgf"><span>Notiz und Beleg für die Daten</span><textarea id="bnNotiz" maxlength="500" rows="2">${bpE(i.notiz||'')}</textarea></label><p class="pz-tc-tipp">Nur belegte Daten eintragen. Ein Angebot oder eine Vormerkung ist noch keine Zusage. Ohne Datumsangabe rückt ein bestehender Partner nicht automatisch vor.</p><p role="alert" id="bnFehler" hidden></p><div class="pz-tc-dlgk"><button type="button" class="btn" id="bnOk">Angaben speichern</button><button type="button" class="btn ghost" id="bnAb">Abbrechen</button></div>`);
+  const rasen=M.querySelector('#bnRasen'),wunsch=M.querySelector('#bnWunsch');
+  function spielstaette(){wunsch.disabled=rasen.value==='kunst';if(wunsch.disabled)wunsch.value='';}
+  rasen.onchange=spielstaette;spielstaette();
   M.querySelector('#bnAb').onclick=()=>closeOverlay();
-  M.querySelector('#bnOk').onclick=()=>paEinmal(M.querySelector('#bnOk'),async()=>{const p={id:i.id||null,saison:B27.saison,sponsor:M.querySelector('#bnFirma').value,paket:M.querySelector('#bnPaket').value,status:M.querySelector('#bnStatus').value,wunsch:M.querySelector('#bnWunsch').value||null,nachruecken:M.querySelector('#bnNach').checked,flexibel:M.querySelector('#bnFlex').checked,notiz:M.querySelector('#bnNotiz').value};M.querySelectorAll('[data-bndatum]').forEach(f=>p[f.dataset.bndatum]=f.value||null);
+  M.querySelector('#bnOk').onclick=()=>paEinmal(M.querySelector('#bnOk'),async()=>{const p={id:i.id||null,saison:B27.saison,sponsor:M.querySelector('#bnFirma').value,paket:M.querySelector('#bnPaket').value==='premium'?'normal':M.querySelector('#bnPaket').value,stufe_einzel:M.querySelector('#bnPaket').value==='premium'?'premium':'standard',rasen:rasen.value,status:M.querySelector('#bnStatus').value,wunsch:M.querySelector('#bnWunsch').value||null,nachruecken:M.querySelector('#bnNach').checked,flexibel:M.querySelector('#bnFlex').checked,notiz:M.querySelector('#bnNotiz').value};M.querySelectorAll('[data-bndatum]').forEach(f=>p[f.dataset.bndatum]=f.value||null);
     try{await bcRpc('banden_partner_setzen',{p});closeOverlay();await bnNeu(I);kToast('Partnerangaben gespeichert.');}catch(e){const f=M.querySelector('#bnFehler');f.hidden=false;f.textContent=e.message;}},'Speichert …');
 }
 function bnVorschlag(platz,interesse,I){const r=(B29.d?.vorschlaege||[]).find(x=>x.platz===platz),k=r?.kandidaten.find(x=>x.interesse===interesse);if(!k)return;
@@ -616,6 +619,428 @@ const PD_LOGOWERK = (() => {
   return { einrichten, lesen, fassung, bild };
 })();
 
+// Ein konkreter Ärmel ist immer Mannschaft, Satz und Seite aus Trägersicht.
+(function(root){
+  'use strict';
+  const SEITEN={aermel_l:'Linker Ärmel',aermel_r:'Rechter Ärmel'};
+  const ARTEN={heim:'Heimtrikot',auswaerts:'Auswärtstrikot',anzug:'Trainingsanzug'};
+
+  function freie(daten,{leistungen,anzug,ohneJugend=false,naechste=true}={}){
+    if(!Array.isArray(daten?.saetze)||!Array.isArray(daten?.plaetze)||!Array.isArray(daten?.mannschaften)||!Array.isArray(leistungen))
+      throw Error('Der Stand der Ärmelplätze fehlt.');
+    const teams=new Map(daten.mannschaften.map(m=>[m.id,m]));
+    const satzPlaetze=new Map();
+    for(const p of daten.plaetze){
+      if(!Object.hasOwn(SEITEN,p.platz))continue;
+      if(!satzPlaetze.has(p.satz))satzPlaetze.set(p.satz,[]);
+      satzPlaetze.get(p.satz).push(p);
+    }
+    const kapazitaet=new Map(leistungen.map(l=>[l.key,l]));
+    const anzugTeams=new Set((anzug?.plaetze||[]).filter(p=>p.angeboten!==false).map(p=>p.team+':'+p.seite));
+    const frei=[];
+    for(const s of daten.saetze){
+      const m=teams.get(s.mannschaft);
+      if(!m||m.id==='mini'||m.id==='muster'||s.muster||!Object.hasOwn(ARTEN,s.art))continue;
+      const jugend=m.art==='jugend';
+      if(jugend?ohneJugend:!['h1','h2'].includes(m.id))continue;
+      for(const p of satzPlaetze.get(s.id)||[]){
+        if(p.status!=='frei')continue;
+        if(jugend){
+          const anzugKey=p.platz==='aermel_l'?'aermel_anzug_l':'aermel_anzug_r';
+          const l=kapazitaet.get(s.art==='anzug'?anzugKey:'aermel_jugend');
+          const anzahl=(naechste?l?.frei_je_naechste:l?.frei_je)?.[m.id];
+          if(!(anzahl>0)||s.art==='anzug'&&!anzugTeams.has(m.id+':'+p.platz))continue;
+        }else if(s.art!=='anzug'){
+          // Alte Erwachsenenpositionen können nur die ganze Mannschaft sperren.
+          // Bei der Zweiten gibt es Decks ohne diesen alten pauschalen Katalogeintrag.
+          const l=kapazitaet.get(m.id==='h1'?'aermel_erste':'aermel_zweite');
+          if(l&&(naechste?l.frei_naechste:l.frei)===0)continue;
+        }
+        frei.push({team:m.id,name:m.name,art:s.art,seite:p.platz,platz:s.id+':'+p.platz});
+      }
+    }
+    const teamSort=new Map(daten.mannschaften.map((m,i)=>[m.id,i]));
+    const arten=Object.keys(ARTEN),seiten=Object.keys(SEITEN);
+    return frei.sort((a,b)=>teamSort.get(a.team)-teamSort.get(b.team)||arten.indexOf(a.art)-arten.indexOf(b.art)||seiten.indexOf(a.seite)-seiten.indexOf(b.seite));
+  }
+
+  // Jeder nachfolgende Filter enthält nur noch tatsächlich passende Kombinationen.
+  function filtern(plaetze,wunsch={},folge=['team','art','seite']){
+    let treffer=plaetze;
+    const optionen={};
+    for(const feld of folge){
+      const moeglich=[...new Set(treffer.map(p=>p[feld]))];
+      optionen[feld]=moeglich;
+      const wert=moeglich.includes(wunsch[feld])?wunsch[feld]:moeglich[0];
+      treffer=treffer.filter(p=>p[feld]===wert);
+    }
+    return {platz:treffer[0]||null,optionen};
+  }
+  function wahl(container,plaetze,bevorzugt,onChange){
+    const doc=container.ownerDocument;
+    const teamNamen=new Map(plaetze.map(p=>[p.team,p.name]));
+    const sprachfeld={team:'Mannschaft',art:'Kleidungsstück',seite:'Ärmelseite'};
+    const titel=(feld,wert)=>feld==='team'?teamNamen.get(wert):feld==='art'?ARTEN[wert]:SEITEN[wert];
+    const rahmen=doc.createElement('div');rahmen.className='pa-wahl';
+    container.replaceChildren(rahmen);
+    if(!plaetze.length){
+      const p=doc.createElement('p');p.textContent='Aktuell ist hier kein Ärmel frei.';rahmen.append(p);onChange(null);return;
+    }
+    let folge=['team','art','seite'],wunsch=bevorzugt||{};
+    const modus=doc.createElement('button');modus.type='button';modus.className='pa-modus';
+    const felder=doc.createElement('div');felder.className='pa-felder';rahmen.append(felder,modus);
+    function zeigen(fokus){
+      const {platz,optionen}=filtern(plaetze,wunsch,folge);
+      wunsch=platz;
+      felder.replaceChildren();
+      for(const feld of folge){
+        const label=doc.createElement('label');label.append(sprachfeld[feld]);
+        const select=doc.createElement('select');select.dataset.paFeld=feld;
+        for(const wert of optionen[feld]){const o=doc.createElement('option');o.value=wert;o.textContent=titel(feld,wert);select.append(o);}
+        select.value=platz[feld];select.onchange=()=>{wunsch={...platz,[feld]:select.value};zeigen(feld);};
+        label.append(select);felder.append(label);
+        if(fokus===feld)select.focus({preventScroll:true});
+      }
+      modus.hidden=teamNamen.size<2||new Set(plaetze.map(p=>p.seite)).size<2;
+      modus.textContent=folge[0]==='team'?'Nach Ärmelseite suchen':'Nach Mannschaft suchen';
+      onChange(platz);
+    }
+    modus.onclick=()=>{folge=folge[0]==='team'?['seite','art','team']:['team','art','seite'];zeigen(folge[0]);};
+    zeigen();
+  }
+  const api={freie,filtern,wahl,ARTEN,SEITEN};
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PARTNER_AERMEL=api;
+})(typeof window==='undefined'?globalThis:window);
+
+// Bandenlogo aus der Firmenvorbereitung auch im freigegebenen Angebot gleich setzen.
+(function(root){
+  'use strict';
+  // Nur klar getrennte Blöcke anbieten. Das obere Zeichen muss kompakt sein
+  // und von einem breiteren Schriftblock durch transparente Zeilen getrennt sein.
+  function markenteile({data,width,height}){
+    if(width<32||height<32||width>3*height)return null;
+    const streifen=[];let block=null;
+    for(let y=0;y<height;y++){
+      let links=width,rechts=-1;
+      for(let x=0;x<width;x++)if(data[(y*width+x)*4+3]>0){
+        if(links===width)links=x;rechts=x;
+      }
+      if(rechts<0){block=null;continue;}
+      if(!block){block={links,rechts,oben:y,unten:y};streifen.push(block);}
+      block.links=Math.min(links,block.links);block.rechts=Math.max(rechts,block.rechts);block.unten=y;
+    }
+    if(streifen.length<2)return null;
+    const oben=streifen[0],unten=streifen.slice(1),luecke=unten[0].oben-oben.unten-1;
+    if(luecke<Math.max(3,.055*height)||unten.some((s,i)=>i&&s.oben-unten[i-1].unten-1>=.85*luecke))return null;
+    const box=s=>{
+      const x=Math.min(...s.map(b=>b.links)),y=s[0].oben;
+      return {x,y,w:Math.max(...s.map(b=>b.rechts))-x+1,h:s[s.length-1].unten-y+1};
+    };
+    const zeichen=box([oben]),schrift=box(unten);
+    if(zeichen.w/zeichen.h>2.25||zeichen.h<height*.24||schrift.w<width*.5||schrift.w/schrift.h<2)return null;
+    return {zeichen,schrift};
+  }
+
+  function querfassung(quelle,{zeichen,schrift}){
+    const h=Math.min(schrift.h,Math.floor(zeichen.h/.84)),symbolH=h*.84;
+    const symbolW=zeichen.w*symbolH/zeichen.h,textW=schrift.w*h/schrift.h,xText=symbolW+h*.30;
+    const c=root.BD_RENDER.canvas(Math.ceil(xText+textW),h),x=c.getContext('2d');
+    x.imageSmoothingQuality='high';
+    x.drawImage(quelle,zeichen.x,zeichen.y,zeichen.w,zeichen.h,0,(h-symbolH)/2,symbolW,symbolH);
+    x.drawImage(quelle,schrift.x,schrift.y,schrift.w,schrift.h,xText,0,textW,h);
+    return c;
+  }
+
+  async function aufbereiten(src){
+    const R=root.BD_RENDER,C=root.BD_CORE;
+    if(!C.isRaster(src))return null;
+    const im=await R.image(src),mass=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight));
+    const cv=R.canvas(Math.max(1,Math.round(im.naturalWidth*mass)),Math.max(1,Math.round(im.naturalHeight*mass)));
+    const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.imageSmoothingQuality='high';
+    ctx.drawImage(im,0,0,cv.width,cv.height);
+    let r;
+    try{r=C.cutout(ctx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height);}
+    catch(_){return {original:cv,quer:null};}
+    cv.width=r.width;cv.height=r.height;ctx.putImageData(new ImageData(r.data,r.width,r.height),0,0);
+    const teile=r.confidence==='prüfen'?null:markenteile(r);
+    return {original:cv,quer:teile?querfassung(cv,teile):null};
+  }
+
+  async function grundentwurf(cv,firma,breite,hoehe){
+    const C=root.BD_CORE,R=root.BD_RENDER,doc=C.create(firma);
+    doc.width=breite;doc.height=hoehe;
+    const asset={name:firma,kind:'raster',src:cv.toDataURL('image/png'),width:cv.width,height:cv.height};
+    doc.assets.marke=await R.analyseAsset(asset);
+    return C.template(doc,'kante',{asset:'marke',nameAn:false});
+  }
+
+  async function layout(d,logo){
+    const bilder=d?.elements.filter(e=>e.type==='image')||[];
+    const einzeln=bilder.length===1?d.assets[bilder[0].asset]:null;
+    const src=d?(einzeln&&!einzeln.vector?einzeln.src:null):logo;
+    let quelle=null;
+    if(src)try{quelle=await aufbereiten(src);}catch(err){if(!d)throw err;}
+    return quelle;
+  }
+  root.PARTNER_MOTIVLAYOUT={layout,grundentwurf};
+})(window);
+
+// Motivvorschau der angemeldeten Firmenvorbereitung. Alle Quellen gehören zur
+// übergebenen Firma. Eine Gestaltungswahl landet ausschließlich im internen Entwurf.
+(function(root){
+  'use strict';
+  const aktiv=new WeakMap();
+  const ART={heim:'Heimtrikot',auswaerts:'Auswärtstrikot',anzug:'Trainingsanzug'};
+  const SEITE={aermel_l:'Linker Ärmel',aermel_r:'Rechter Ärmel'};
+
+  function element(tag,klasse,inhalt){
+    const e=document.createElement(tag);
+    if(klasse)e.className=klasse;
+    if(inhalt)e.textContent=inhalt;
+    return e;
+  }
+  function beschriften(canvas,text){
+    canvas.setAttribute('role','img');canvas.setAttribute('aria-label',text);return canvas;
+  }
+
+  async function amSpielfeld(doc){
+    const R=root.BD_RENDER,foto=await R.image('partner/r-bande.webp');
+    const scale=Math.min(1,1800/doc.width);
+    const druck=R.canvas(Math.max(1,Math.round(doc.width*scale)),Math.max(1,Math.round(doc.height*scale)));
+    await R.render(druck.getContext('2d'),doc,scale);
+    // Foto der zwei Plattenfelder: nur Papierfläche bedrucken. Der dunklere
+    // Falz und der Lichtverlauf der Platte bleiben auch im weißen Motiv sichtbar.
+    const einzeln=doc.width/doc.height<4.7,px=foto.naturalWidth,py=foto.naturalHeight;
+    const links=.041,rechts=einzeln?.496:.961,mitte=.517,feldW=(rechts-links)*px;
+    const faktor=Math.min(feldW/doc.width,.269*py/doc.height),w=faktor*doc.width,h=faktor*doc.height;
+    const breite=Math.round(px*(einzeln?.518:1)),hoehe=Math.round(breite/(einzeln?1.55:2.04));
+    const startY=Math.round(mitte*py-hoehe/2);
+    const bild=R.canvas(breite,hoehe),x=bild.getContext('2d');
+    x.drawImage(foto,0,-startY);
+    x.globalCompositeOperation='multiply';x.imageSmoothingQuality='high';
+    x.drawImage(druck,links*px+(feldW-w)/2,mitte*py-startY-h/2,w,h);
+    return beschriften(bild,doc.title+' · Bande am Spielfeldrand');
+  }
+
+  async function aermel(design,art,seite){
+    const cvLogo=design.trikot||design.logo;
+    if(!root.BD_CORE.isRaster(cvLogo))throw Error('Für diese Firma fehlt ein Ärmellogo.');
+    const o={logo:cvLogo,firma:design.firma,art,seite,breite:1440};
+    const cv=await (art==='anzug'?root.TRAININGSANZUG.zeichnen(o):root.TRAININGSANZUG.trikotDetail({...o,variante:'weiss'}));
+    return beschriften(cv,design.firma+' · '+ART[art]+' · '+SEITE[seite]);
+  }
+
+  function anzeigen(container,{design,auswahl={},gestaltung={},geaendert}){
+    const token={};aktiv.set(container,token);
+    const aktuell=()=>aktiv.get(container)===token;
+    const galerie=element('section','pvm-galerie');
+    galerie.setAttribute('aria-label','Gestaltungsvorschau für '+(design?.firma||'diese Firma'));
+    container.replaceChildren(galerie);
+    if(!design?.firma){galerie.append(element('p','pvm-status','Für diese Firma sind noch keine Gestaltungsvorlagen hinterlegt.'));return;}
+    function motiv(titel,zeile){
+      const figure=element('figure','pvm-motiv'),caption=element('figcaption'),flaeche=element('div','pvm-bild');
+      caption.append(element('strong','',titel),element('span','',zeile));
+      flaeche.append(element('p','pvm-status','Vorschau lädt …'));
+      figure.append(flaeche,caption);galerie.append(figure);return flaeche;
+    }
+    function fehler(host,e,neu){
+      if(!aktuell())return;
+      const status=element('p','pvm-status',e.message||'Vorschau gerade nicht verfügbar.');
+      if(neu){const retry=element('button','pvm-link','Erneut laden');retry.type='button';retry.onclick=neu;status.append(retry);}
+      host.replaceChildren(status);
+    }
+    const seite=auswahl.seite,kleidung=auswahl.kleidung||[];
+    const mitBande=['p1896','premium','club','bande_erste'].includes(auswahl.paket);
+    async function bandenbild(){
+      const bande=motiv('Bande',design.dokument?'Gespeicherter Entwurf':'Interne Gestaltungsvorschau');
+      bande.parentElement.classList.add('pvm-bande');
+      const bedienung=element('div','pvm-werkzeuge');bande.parentElement.append(bedienung);
+      async function laden(){
+        bedienung.replaceChildren();
+        try{
+          const d=design.dokument?root.BD_CORE.normalise(design.dokument):null;
+          const quelle=await root.PARTNER_MOTIVLAYOUT.layout(d,design.logo);
+          if(!aktuell())return;
+          if(!d&&!quelle){fehler(bande,Error('Für diese Firma fehlt ein Bandenentwurf oder Firmenlogo.'));return;}
+          const breite=d?.width||(auswahl.paket==='p1896'?5000:2500);
+          let quer=!!(quelle?.quer&&gestaltung.quer===true),fassung=0;
+          async function zeichnen(){
+            const runde=++fassung;
+            try{
+              const doc=quer||!d?await root.PARTNER_MOTIVLAYOUT.grundentwurf(quer?quelle.quer:quelle.original,design.firma,breite,d?.height||800):d;
+              const cv=await amSpielfeld(doc);if(aktuell()&&runde===fassung)bande.replaceChildren(cv);
+            }catch(e){if(aktuell()&&runde===fassung)fehler(bande,e,zeichnen);}
+          }
+          if(quelle?.quer&&typeof geaendert==='function'){
+            const box=element('label','pvm-wahl'),wahl=element('input');wahl.type='checkbox';wahl.checked=quer;
+            box.append(wahl,document.createTextNode('Zeichen links, Schriftzug rechts'));bedienung.append(box);
+            wahl.onchange=()=>{quer=wahl.checked;geaendert({quer});zeichnen();};
+          }
+          await zeichnen();
+        }catch(e){fehler(bande,e,laden);}
+      }
+      await laden();
+    }
+    if(mitBande)bandenbild();
+    if(!Object.hasOwn(SEITE,seite))return;
+    for(const art of new Set(kleidung)){
+      if(!Object.hasOwn(ART,art))continue;
+      const foto=motiv(ART[art],[auswahl.teamName,SEITE[seite]].filter(Boolean).join(' · '));
+      async function laden(){
+        try{const cv=await aermel(design,art,seite);if(aktuell())foto.replaceChildren(cv);}
+        catch(e){fehler(foto,e,design.trikot||design.logo?laden:null);}
+      }
+      laden();
+    }
+  }
+  root.PARTNER_VEREINSMOTIVE={anzeigen};
+})(window);
+
+// Persönliche Gesprächsvorbereitung in der Firmenakte, ausschließlich für das Vereinsteam.
+(function(root){
+  'use strict';
+  function angebotslink(basis,code){
+    const url=new URL('partner.html',basis||new URL('.',location.href));
+    url.search='?angebot=1&intern=1';
+    url.hash=new URLSearchParams({d:code});
+    return url.href;
+  }
+  function oeffnen(firma,name,rpc,basis,uebernommen){
+    const vorige=document.getElementById('vereinswerkstatt');
+    if(vorige?.open)return;
+    vorige?.remove();
+    const dialog=document.createElement('dialog'),fokus=document.activeElement;
+    dialog.id='vereinswerkstatt';dialog.setAttribute('aria-labelledby','vwTitel');
+    dialog.innerHTML=`<header><div><p>Interne Gesprächsvorbereitung</p><h2 id="vwTitel"></h2></div><button type="button" data-zu>Schließen</button></header>
+      <p data-info role="status">Firmenentwurf wird geladen …</p>
+      <form hidden><label>Leistung<select name="paket" required></select></label><details data-details><summary>Was gehört dazu?</summary><p></p></details>
+      <label><input type="checkbox" name="aermel"> Ärmel einplanen</label><div data-filter></div>
+      <fieldset data-kleidung hidden><legend>Auf diesen Kleidungsstücken zeigen</legend></fieldset>
+      <div data-motive></div><label>Notiz fürs Gespräch<textarea name="notiz" rows="2" maxlength="800"></textarea></label>
+      <div class="vw-aktionen"><button class="btn" type="submit">Intern speichern</button><button type="button" data-frisch>Bestand aktualisieren</button></div></form>
+      <section data-praesentation hidden><div class="vw-aktionen"><button type="button" class="btn" data-freigeben>In die Präsentation übernehmen</button><a class="btn" target="_blank" rel="noopener" data-angebot hidden>Zum Angebot ↗</a></div>
+      <p>In der Präsentation sieht die Firma die freigegebene Auswahl. Die Gesprächsnotiz bleibt intern.</p></section>
+      <button type="button" data-neu hidden>Gespeicherten Stand neu laden</button>
+      <div data-verwerfen hidden><p>Ungespeicherte Änderungen verwerfen?</p><button type="button" data-bleiben>Weiter bearbeiten</button> <button type="button" data-weg>Verwerfen</button></div>`;
+    const q=s=>dialog.querySelector(s),form=q('form'),paket=form.elements.paket,aermel=form.elements.aermel,notiz=form.elements.notiz;
+    const info=q('[data-info]'),filter=q('[data-filter]'),teile=q('[data-kleidung]'),motive=q('[data-motive]');
+    const preis=n=>new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:2,minimumFractionDigits:0}).format(n);
+    let daten,gewaehlt=null,kleidung=[],gestaltung={quer:false},schmutzig=false,busy=false,konflikt=false,zeichnet=false;
+    q('#vwTitel').textContent=name;
+    const text=t=>{info.textContent=t;};
+    function zustand(){
+      return {paket:paket.value,team:gewaehlt?.team,seite:gewaehlt?.seite,kleidung:aermel.checked?kleidung:[],gestaltung,notiz:notiz.value};
+    }
+    let freigabe=null;
+    const publizieren=q('[data-freigeben]'),ansehen=q('[data-angebot]');
+    function angebotsaktionen(){
+      q('[data-praesentation]').hidden=!freigabe;
+      if(!freigabe)return;
+      publizieren.disabled=busy||konflikt||schmutzig||!daten?.version;
+      ansehen.hidden=!freigabe.hat_angebot;
+      if(freigabe.hat_angebot){
+        ansehen.href=angebotslink(basis,freigabe.code);
+      }
+    }
+    function sperren(){
+      angebotsaktionen();
+      form.inert=busy;
+      q('[type=submit]').disabled=busy||konflikt||!paket.value||(aermel.checked&&!kleidung.length);
+      q('[data-neu]').disabled=busy;
+    }
+    function vorschau(){
+      root.PARTNER_VEREINSMOTIVE.anzeigen(motive,{design:daten.design,auswahl:{...zustand(),teamName:gewaehlt?.name||''},gestaltung,
+        geaendert:wert=>{gestaltung={quer:!!wert.quer};schmutzig=true;angebotsaktionen();}});
+    }
+    function details(){
+      const p=daten.pakete.find(p=>p.key===paket.value);
+      q('[data-details]').hidden=!p;q('[data-details] p').textContent=p?
+        (p.preis!=null?preis(p.preis)+' netto '+(p.einheit==='saison'?'je Saison. ':''): '')+(p.text||''):'';
+    }
+    function arme(wunsch={},bisher=[]){
+      filter.hidden=!aermel.checked;teile.hidden=true;
+      if(!aermel.checked){gewaehlt=null;kleidung=[];vorschau();sperren();return;}
+      let initial=true;
+      root.PARTNER_AERMEL.wahl(filter,daten.frei,wunsch,p=>{
+        const start=initial;initial=false;
+        gewaehlt=p;teile.hidden=!p;teile.querySelectorAll('label').forEach(l=>l.remove());
+        const artListe=p?[...new Set(daten.frei.filter(x=>x.team===p.team&&x.seite===p.seite).map(x=>x.art))]:[];
+        const passt=p&&p.team===wunsch.team&&p.seite===wunsch.seite;
+        kleidung=start&&bisher.length?(passt?bisher.filter(a=>artListe.includes(a)):[]):p?[p.art]:[];
+        if(start&&bisher.some(a=>!kleidung.includes(a)))text('Ein bisheriger Ärmel ist vergeben. Bitte die Auswahl vor dem Speichern prüfen.');
+        for(const art of artListe){
+          const label=document.createElement('label'),el=document.createElement('input');
+          el.type='checkbox';el.value=art;el.checked=kleidung.includes(art);
+          label.append(el,document.createTextNode(' '+root.PARTNER_AERMEL.ARTEN[art]));teile.append(label);
+          el.onchange=()=>{kleidung=Array.from(teile.querySelectorAll('input:checked'),i=>i.value);schmutzig=true;vorschau();sperren();};
+        }
+        if(!start&&!zeichnet)schmutzig=true;
+        vorschau();sperren();
+      });
+    }
+    function setzen(v){
+      zeichnet=true;
+      paket.replaceChildren(new Option('Bitte auswählen',''));
+      for(const p of daten.pakete)paket.add(new Option(p.titel,p.key));
+      paket.add(new Option('Nur Ärmel','nur_aermel'));paket.value=v.paket||'';
+      notiz.value=v.notiz||'';gestaltung={quer:v.gestaltung?.quer===true};
+      aermel.checked=paket.value==='nur_aermel'||!!v.kleidung?.length;aermel.disabled=paket.value==='nur_aermel';
+      details();arme({team:v.team,seite:v.seite,art:v.kleidung?.[0]},v.kleidung||[]);zeichnet=false;
+    }
+    async function laden(behalten){
+      if(busy)return;
+      busy=true;sperren();const alt=behalten&&daten?zustand():null,version=daten?.version,warSchmutzig=schmutzig;
+      try{
+        const [stand,link]=await Promise.all([rpc('partner_vereinsentwurf_laden',{p_firma:firma}),rpc('partner_vereinsfreigabe',{p_firma:firma}).catch(()=>null)]);
+        freigabe=link?.deck?link:null;
+        if(!dialog.isConnected)return;
+        if(alt&&stand.version!==version){konflikt=true;text('Das Team hat den Firmenentwurf geändert. Neu laden verwirft deine ungespeicherten Eingaben.');q('[data-neu]').hidden=false;return;}
+        daten=stand;konflikt=false;q('[data-neu]').hidden=true;form.hidden=false;
+        const jahr=Number(stand.saisonbeginn.slice(0,4));
+        text('Saison '+jahr+'/'+String(jahr+1).slice(-2)+(stand.version?' · Gespeicherter Vereinsentwurf':' · Neuer Vereinsentwurf'));
+        setzen(alt||stand.stand||{});schmutzig=alt?warSchmutzig:false;
+      }catch(e){text(e.message||'Der Firmenentwurf ist gerade nicht erreichbar.');q('[data-neu]').hidden=!!daten&&!konflikt;}
+      finally{busy=false;sperren();}
+    }
+    paket.onchange=()=>{
+      schmutzig=true;details();aermel.disabled=paket.value==='nur_aermel';
+      if(aermel.disabled&&!aermel.checked){aermel.checked=true;arme();}else{vorschau();sperren();}
+    };
+    aermel.onchange=()=>{schmutzig=true;arme();};notiz.oninput=()=>{schmutzig=true;};
+    q('[data-frisch]').onclick=()=>laden(true);q('[data-neu]').onclick=()=>laden(false);
+    form.addEventListener('input',()=>{schmutzig=true;angebotsaktionen();});
+    form.addEventListener('change',angebotsaktionen);
+    publizieren.onclick=async()=>{
+      if(publizieren.disabled||!freigabe)return;
+      busy=true;sperren();
+      try{
+        freigabe=await rpc('partner_vereinsentwurf_freigeben',{p_firma:firma,p_deck:freigabe.deck,p_version:daten.version,p_vorher:freigabe.vorher||null});
+        uebernommen?.(freigabe);
+        text('Die Auswahl ist in der Firmenpräsentation. Ein bestehendes verbindliches Angebot hat Vorrang.');
+      }catch(err){
+        konflikt=err.code==='40001';text(err.message||'Die Auswahl konnte nicht übernommen werden.');q('[data-neu]').hidden=!konflikt;
+      }finally{busy=false;sperren();}
+    };
+    form.onsubmit=async e=>{
+      e.preventDefault();if(q('[type=submit]').disabled)return;busy=true;sperren();
+      try{
+        const ergebnis=await rpc('partner_vereinsentwurf_speichern',{p_firma:firma,p_version:daten.version,p_stand:zustand()});
+        if(!dialog.isConnected)return;
+        daten.version=ergebnis.version;daten.stand=ergebnis.stand;schmutzig=false;text('Für das Vereinsteam gespeichert.');
+      }catch(err){
+        konflikt=err.code==='40001';text((err.message||'Speichern fehlgeschlagen.')+(konflikt?' Neu laden verwirft deine ungespeicherten Eingaben.':''));
+        q('[data-neu]').hidden=!konflikt;
+      }finally{busy=false;sperren();}
+    };
+    function schliessen(){if(busy&&schmutzig)return;if(!schmutzig){dialog.close();return;}q('[data-verwerfen]').hidden=false;q('[data-bleiben]').focus();}
+    dialog.oncancel=e=>{e.preventDefault();schliessen();};
+    q('[data-zu]').onclick=schliessen;q('[data-bleiben]').onclick=()=>{q('[data-verwerfen]').hidden=true;q('[data-zu]').focus();};q('[data-weg]').onclick=()=>dialog.close();
+    dialog.addEventListener('close',()=>{dialog.remove();if(fokus?.isConnected&&!document.querySelector('#vereinswerkstatt[open]'))fokus.focus();},{once:true});
+    document.body.append(dialog);dialog.showModal();laden(false);
+  }
+  root.PARTNER_VEREINSWERKSTATT={oeffnen,angebotslink};
+})(window);
+
 /* Trikots getrennt abrechnen: Mengen bestätigen oder einen eigenen, in Textform
    belegten Endbetrag festhalten. Der ursprüngliche Vertrag bleibt unverändert. */
 const S131 = (() => {
@@ -776,7 +1201,7 @@ if(typeof vtZeigen==='function'){
     const katalog=(o.katalog||[]).filter(l=>l&&l.aktiv!==false&&l.preis!=null&&!['spende','sonstiges'].includes(l.art));
     const teams=(o.mannschaften||[]).filter(m=>m&&m.aktiv!==false);
     const L=k=>katalog.find(l=>l.key===k);
-    let zeilen=(o.positionen||[]).map(p=>({key:p.key,mannschaft:p.mannschaft||null,menge:+p.menge||1,nachlass:+p.nachlass||0,zusaetzlich:!!(p.zusaetzlich||p.zusatzpaket)}));
+    let zeilen=(o.positionen||[]).map(p=>({key:p.key,mannschaft:p.mannschaft||null,menge:+p.menge||1,nachlass:+p.nachlass||0,zusaetzlich:!!(p.zusaetzlich||p.zusatzpaket),vereinbarung:{...(p.vereinbarung||{})}}));
     let zu=false,busy=false;
     const zuvor=document.activeElement,altOverflow=document.body.style.overflow;
     const hintergrund=document.createElement('div');hintergrund.className='pk132-hintergrund';
@@ -803,10 +1228,23 @@ if(typeof vtZeigen==='function'){
       gratis.hidden=!c.gratis_saison;auto.disabled=c.gratis_saison||busy;if(c.gratis_saison)auto.checked=false;
       $('.pk132-summe').innerHTML=(c.hat_saison?'<div><span>Je Saison, netto'+(c.rabatt&&c.netto_jahr>0?' einschließlich '+c.rabatt+' % Laufzeitvorteil':'')+'</span><b>'+euro(c.netto_jahr)+'</b></div>':'')+(c.einmalig?'<div><span>Einmalige Leistungen, netto</span><b>'+euro(c.einmalig)+'</b></div>':'')+'<div class="pk132-gesamt"><span>Gesamt über die Laufzeit, netto</span><b>'+euro(c.netto_gesamt)+'</b></div>';
       c.positionen.forEach((p,i)=>{const e=$('[data-pk132betrag="'+i+'"]');if(e)e.textContent=(['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend','aermel_anzug_l','aermel_anzug_r'].includes(p.key)?'ca. ':'')+euro(p.summe)+(p.saisonal?' je Saison':'');});}
+    function vereinbarungen(p,i){
+      const bande=['club','premium','p1896','bande_erste','bande_zweite'].includes(p.key);
+      function feld(key,name,optionen){
+        const option=(v,t)=>'<option value="'+v+'"'+(p.vereinbarung?.[key]===v?' selected':'')+'>'+t+'</option>';
+        return '<label>'+name+'<select data-pk132wahl="'+i+'" data-feld="'+key+'">'+option('','Paketvorgabe')+optionen.map(([v,t])=>option(v,t)).join('')+'</select></label>';
+      }
+      return '<div class="pk132-felder">'+feld('foerderung','Förderbereich',[['gesamt','Gesamtfußball'],['jugend','Jugend'],['senioren','Senioren']])+
+        (bande?feld('kategorie','Bandenplatz',[['standard','Standardplatz'],['premium','Bevorzugter Platz']])+feld('rasen','Spielstätte',[['haupt','Hauptplatz'],['kunst','Kunstrasenplatz']]):'')+'</div>';
+    }
     function render(){
       const pkAnzahl=zeilen.filter(p=>L(p.key)?.art==='paket').length;
       $('.pk132-zeilen').innerHTML=zeilen.length?zeilen.map((p,i)=>{const l=L(p.key)||{};
-        return '<article class="pk132-zeile"><div class="pk132-zeilenkopf"><h3>'+esc(l.titel||p.key)+'</h3><button type="button" data-pk132weg="'+i+'" aria-label="'+esc(l.titel||p.key)+' entfernen">Entfernen</button></div><div class="pk132-felder">'+(l.je_mannschaft?'<label>Mannschaft<select data-pk132team="'+i+'"><option value="">Bitte wählen</option>'+teams.filter(m=>l.bereich!=='jugend'||m.art==='jugend').map(m=>'<option value="'+esc(m.id)+'"'+(m.id===p.mannschaft?' selected':'')+'>'+esc(m.name||m.id)+'</option>').join('')+'</select></label>':'')+(['stueck','spieltag'].includes(l.einheit)?'<label>Menge<input type="number" min="1" max="99" step="1" data-pk132menge="'+i+'" value="'+p.menge+'"></label>':'')+'<label>Individueller Nachlass<input type="number" min="0" max="100" step="0.01" inputmode="decimal" data-pk132nach="'+i+'" value="'+p.nachlass+'"><span>Prozent</span></label></div>'+(l.art==='paket'&&pkAnzahl>1?'<label class="pk132-check"><input type="checkbox" data-pk132zusatz="'+i+'"'+(p.zusaetzlich?' checked':'')+'> Als zusätzliches Paket genehmigen</label>':'')+'<p class="pk132-betrag" data-pk132betrag="'+i+'"></p></article>';}).join(''):'<p class="pk132-leer">Füge zuerst die gewünschte Leistung hinzu.</p>';
+        return '<article class="pk132-zeile"><div class="pk132-zeilenkopf"><h3>'+esc(l.titel||p.key)+'</h3><button type="button" data-pk132weg="'+i+'" aria-label="'+esc(l.titel||p.key)+' entfernen">Entfernen</button></div><div class="pk132-felder">'+(l.je_mannschaft?'<label>Mannschaft<select data-pk132team="'+i+'"><option value="">Bitte wählen</option>'+teams.filter(m=>l.bereich!=='jugend'||m.art==='jugend').map(m=>'<option value="'+esc(m.id)+'"'+(m.id===p.mannschaft?' selected':'')+'>'+esc(m.name||m.id)+'</option>').join('')+'</select></label>':'')+(['stueck','spieltag'].includes(l.einheit)?'<label>Menge<input type="number" min="1" max="99" step="1" data-pk132menge="'+i+'" value="'+p.menge+'"></label>':'')+'<label>Individueller Nachlass<input type="number" min="0" max="100" step="0.01" inputmode="decimal" data-pk132nach="'+i+'" value="'+p.nachlass+'"><span>Prozent</span></label></div>'+(l.art==='paket'&&pkAnzahl>1?'<label class="pk132-check"><input type="checkbox" data-pk132zusatz="'+i+'"'+(p.zusaetzlich?' checked':'')+'> Als zusätzliches Paket genehmigen</label>':'')+vereinbarungen(p,i)+'<p class="pk132-betrag" data-pk132betrag="'+i+'"></p></article>';}).join(''):'<p class="pk132-leer">Füge zuerst die gewünschte Leistung hinzu.</p>';
+      hintergrund.querySelectorAll('[data-pk132wahl]').forEach(f=>f.onchange=()=>{
+        const w=zeilen[+f.dataset.pk132wahl].vereinbarung;
+        if(f.value)w[f.dataset.feld]=f.value;else delete w[f.dataset.feld];
+      });
       hintergrund.querySelectorAll('[data-pk132weg]').forEach(b=>b.onclick=()=>{const i=+b.dataset.pk132weg;zeilen.splice(i,1);render();const n=$('[data-pk132weg="'+Math.min(i,zeilen.length-1)+'"]')||$('#pk132Leistung');n.focus();});
       hintergrund.querySelectorAll('[data-pk132nach]').forEach(f=>f.oninput=()=>{zeilen[+f.dataset.pk132nach].nachlass=f.value===''?0:+f.value;summe();});
       hintergrund.querySelectorAll('[data-pk132menge]').forEach(f=>f.oninput=()=>{zeilen[+f.dataset.pk132menge].menge=f.value===''?0:+f.value;summe();});
@@ -817,7 +1255,7 @@ if(typeof vtZeigen==='function'){
     $('#pk132Dazu').onclick=()=>{const key=$('#pk132Leistung').value,l=L(key);if(!l){fehler('Wähl zuerst eine Leistung.');return;}
       if(!l.je_mannschaft&&zeilen.some(p=>p.key===key)){fehler('Diese Leistung steht schon in der Auswahl.');return;}
       if(zeilen.length>=24){fehler('In eine Auswahl passen höchstens 24 Leistungen.');return;}
-      zeilen.push({key,mannschaft:null,menge:1,nachlass:0,zusaetzlich:l.art==='paket'&&zeilen.some(p=>L(p.key)?.art==='paket')});$('#pk132Leistung').value='';fehler('');render();const i=zeilen.length-1;($('[data-pk132team="'+i+'"]')||$('[data-pk132nach="'+i+'"]')).focus();};
+      zeilen.push({key,mannschaft:null,menge:1,nachlass:0,vereinbarung:{},zusaetzlich:l.art==='paket'&&zeilen.some(p=>L(p.key)?.art==='paket')});$('#pk132Leistung').value='';fehler('');render();const i=zeilen.length-1;($('[data-pk132team="'+i+'"]')||$('[data-pk132nach="'+i+'"]')).focus();};
     $('#pk132Saisons').onchange=summe;$('#pk132Auto').onchange=summe;
     $('.pk132-zu').onclick=schliessen;$('#pk132Abbrechen').onclick=schliessen;
     function taste(e){if(zu)return;if(e.key==='Escape'){e.preventDefault();e.stopPropagation();schliessen();return;}
@@ -831,7 +1269,7 @@ if(typeof vtZeigen==='function'){
       if(zeilen.some(p=>!Number.isInteger(p.menge)||p.menge<1||p.menge>99)){fehler('Bitte prüf die Mengen von 1 bis 99.');return;}
       if(zeilen.some(p=>L(p.key).je_mannschaft&&!p.mannschaft)){fehler('Bitte wähl zu jeder Mannschaftsleistung die Mannschaft.');return;}
       const pk=zeilen.filter(p=>L(p.key).art==='paket');if(pk.length>1&&pk.filter(p=>!p.zusaetzlich).length!==1){fehler('Lass genau eine Partnerstufe als Grundpaket stehen und kennzeichne die weiteren als zusätzliches Paket.');return;}
-      const p={positionen:zeilen.map(x=>({key:x.key,mannschaft:x.mannschaft,menge:x.menge,nachlass:x.nachlass,zusaetzlich:x.zusaetzlich})),saisons,beginn,auto_verlaengerung:c.gratis_saison?false:$('#pk132Auto').checked};
+      const p={positionen:zeilen.map(x=>({key:x.key,mannschaft:x.mannschaft,menge:x.menge,nachlass:x.nachlass,zusaetzlich:x.zusaetzlich,...(Object.keys(x.vereinbarung).length?{vereinbarung:x.vereinbarung}:{})})),saisons,beginn,auto_verlaengerung:c.gratis_saison?false:$('#pk132Auto').checked};
       busy=true;hintergrund.querySelectorAll('button,input,select').forEach(e=>e.disabled=true);const b=$('#pk132Speichern');b.textContent='Speichert …';b.setAttribute('aria-busy','true');
       let snapshot;try{snapshot=await o.rpc('partner_konditionen_setzen',{p_code:o.code,p});if(!snapshot||!snapshot.id)throw new Error('Die Bestätigung fehlt. Bitte prüf den Stand vor einem neuen Versuch.');}
       catch(e){busy=false;hintergrund.querySelectorAll('button,input,select').forEach(x=>x.disabled=false);b.textContent='Konditionen speichern';b.removeAttribute('aria-busy');summe();fehler(e.message||'Das Speichern hat nicht geklappt. Deine Auswahl bleibt stehen.');return;}

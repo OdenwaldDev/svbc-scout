@@ -1559,7 +1559,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.154';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.156';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -1854,7 +1854,7 @@ const GERAHMT=(()=>{ try{ return window.parent!==window; }catch(e){ return true;
 // Ein Abstecher in den Creator beendet die Reise nicht. Antworten und Folie bleiben im selben Rahmen erhalten.
 ['reiseBande','reiseAermel'].forEach((id,i)=>{ const b=$('#'+id); if(!b)return; b.hidden=!GERAHMT; b.onclick=()=>{ if(!GERAHMT)return; clearInterval(szUhr); REISEFILM.sichtbar(false); window.parent.postMessage({reise:'creator',art:i?'aermel':'bande',paket:pk(),seite:AERMEL_SEITE,kleidung:KLEIDUNG},location.origin); }; });
 window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===location.origin&&e.data?.reise==='creator-zu')REISEFILM.sichtbar(true);});
-let FIRMA=null, KONTEXT_BEREIT=!GERAHMT;
+let FIRMA=null, KONTEXT_BEREIT=!GERAHMT, paketfassung=1;
 let TERMIN=false, MERKT=false, WIDMUNG=null;   // WIDMUNG seit 0.99.82: {titel, text} aus der Präsentation der Firma, steht am Ticket
 const teilenB=$('#reiseTeilen');if(teilenB){teilenB.hidden=!GERAHMT;teilenB.onclick=()=>{if(!GERAHMT)return;REISEFILM.sichtbar(false);window.parent.postMessage({reise:'teilen-stand',stand:standJetzt()},location.origin);window.parent.postMessage({reise:'teilen-oeffnen'},location.origin);};}
 const studioB=$('#studioB');if(studioB)studioB.onclick=()=>{if(!GERAHMT||!TERMIN)return;REISEFILM.sichtbar(false);window.parent.postMessage({reise:'studio-oeffnen'},location.origin);};
@@ -2223,7 +2223,7 @@ function tkZeig(wechsel){ if(KONDITIONEN){konditionenTicket();return;} const p=p
     const P=PAK[p], g=gruende(), txt=g.map(x=>x[1]).join(' '), rat=ratText(i,rg), auch=P.auch.filter(x=>!STICH.some(s=>x.includes(s)&&txt.includes(s))).slice(0,g.length<2?3:1);
     const selbst=(eigeneWahl()&&S.pi==null)||(S.pi!=null&&S.pi!==rg); ueber=selbst?'Eure Wahl':'Unser Vorschlag';
     const kind=['club','premium','p1896'].includes(p)?'<p class="klein">Bande: Druck exkl., Montage inkl.</p>':'';
-    h='<article class="tk tk-'+p+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">'+(p==='p1896'?'Acht Plätze, einer je Branche':'Höchstens '+P.pl+' Partner')+'</p><h3>'+P.t+ib(p,P.t).replace('data-i=','data-preis="1" data-i=')+'</h3>'+(WIDMUNG?'<p class="tk-wid">'+esc(WIDMUNG.titel)+'</p>':'')+'</div><p class="tk-preis">'+eur(P.p)+'<small>je Saison, netto</small></p></div><div class="tk-in">'
+    h='<article class="tk tk-'+p+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">'+(p==='p1896'?(paketfassung===2?'Acht Plätze am Hauptplatz':'Acht Plätze, einer je Branche'):'Höchstens '+P.pl+' Partner')+'</p><h3>'+P.t+ib(p,P.t).replace('data-i=','data-preis="1" data-i=')+'</h3>'+(WIDMUNG?'<p class="tk-wid">'+esc(WIDMUNG.titel)+'</p>':'')+'</div><p class="tk-preis">'+eur(P.p)+'<small>je Saison, netto</small></p></div><div class="tk-in">'
       +(WIDMUNG&&WIDMUNG.text?'<p class="tk-widt">'+esc(WIDMUNG.text)+'</p>':'')
       +(g.length?'<h4>Darum passt das zu euch</h4><ul>'+g.map(x=>'<li>'+(x[0]?'<q>'+x[0]+'</q>':'')+x[1]+'</li>').join('')+'</ul>':'')
       +(auch.length&&!(g.length>=3||(rat&&g.length>=2))?'<h4>'+(g.length?'Außerdem dabei':'Das ist dabei')+'</h4><ul>'+auch.map(x=>'<li>'+x+'</li>').join('')+'</ul>':'')+kind+rat+'</div></article>'; }
@@ -2240,8 +2240,9 @@ $('#nichtB').onclick=()=>geh(ORD.indexOf('antrieb'));
 function exPreis(k){ const e=EX[k]; return ANZUG_KEYS.includes(k)?ANZUG_STAND?.preise?.[k]??e.p:e.preis?e.preis(pk()):e.p; }
 function anzugTeamName(team){return ANZUG_STAND?.plaetze.find(t=>t.team===team)?.name||String(team||'').toUpperCase();}
 function exTitel(k){return EX[k].t+(ANZUG_KEYS.includes(k)&&S.anzugTeam?' · '+anzugTeamName(S.anzugTeam):'');}
+let freieExtraHeimspiele=null;
 function exWahl(){ const p=punkte(), paket=pk(), fest=paket==='keins'?kleinstBaustein():null;
-  let l=Object.keys(EX).filter(k=>(!ANZUG_KEYS.includes(k)||k===anzugKey()&&anzugFrei().length>0)&&k!==fest&&!(EX[k].nicht||[]).includes(paket)&&(!EX[k].nur||EX[k].nur.includes(paket))).map(k=>{ const t=EX[k].tags; let sc=0, best=null, bw=0; for(const d in t){ const w=t[d]*p[d]; sc+=w; if(w>bw){ bw=w; best=d; } } return {k,sc,best:best&&ECHO[best].some(x=>S.antrieb.includes(x))?best:null}; });
+  let l=Object.keys(EX).filter(k=>(k!=='sotd'||freieExtraHeimspiele!==0)&&(!ANZUG_KEYS.includes(k)||k===anzugKey()&&anzugFrei().length>0)&&k!==fest&&!(EX[k].nicht||[]).includes(paket)&&(!EX[k].nur||EX[k].nur.includes(paket))).map(k=>{ const t=EX[k].tags; let sc=0, best=null, bw=0; for(const d in t){ const w=t[d]*p[d]; sc+=w; if(w>bw){ bw=w; best=d; } } return {k,sc,best:best&&ECHO[best].some(x=>S.antrieb.includes(x))?best:null}; });
   l.sort((a,b)=>b.sc-a.sc); const aus=[], zahl={}, zwing=(k,sagt)=>{ const x=l.find(e=>e.k===k); if(x&&!aus.includes(x)){ if(sagt)x.sagt=sagt; aus.push(x); zahl[x.best]=(zahl[x.best]||0)+1; } };
   if(anzugFrei().length)zwing(anzugKey());
   if(S.platz==='tag')zwing('sotd',ZITAT.tag); if(S.platz==='trikot')zwing('trikot_jugend',ZITAT.trikot); if(S.antrieb.includes('kinder'))zwing('baelle_jugend',ZITAT.kinder);
@@ -2259,7 +2260,8 @@ function exBild(k){ const x=EX[k], n=esc(S.name||'Euer Name');
 function exZeig(hinweis){ exPutzen(); const l=exWahl(), paket=pk(), bandeHinweis=paket==='supporter'&&(S.platz==='bande'||S.antrieb.includes('sehen'));
   let h=l.map(e=>{if(ANZUG_KEYS.includes(e.k))return anzugKarte(); const x=EX[e.k], pr=exPreis(e.k), drin=S.extras.has(e.k), weil=e.sagt?'Ihr habt gesagt: '+e.sagt:e.best?WEIL_EX[e.best]:'Auch möglich';
     return '<button type="button" class="zt'+(drin?' drin':'')+'" data-k="'+e.k+'" aria-pressed="'+drin+'">'+exBild(e.k)+ib(e.k,x.t).replace('data-i=','data-preis="1" data-i=')+'<span class="tx"><span class="weil-t">'+weil+'</span><b>'+x.t+'</b><p>'+x.k+'</p><span class="pr"><em>'+(x.ca?'ca. ':'')+eur(pr)+'<small>'+x.e+'</small></em><span>'+(drin?'Wieder raus':'Dazunehmen')+'</span></span></span></button>'; }).join('');
-  if(bandeHinweis)h+='<div class="zt hinweis"><span class="tx"><span class="weil-t">Ehrlich gerechnet</span><b>Bande dazu?</b><p>Supporter plus eigene Bande kostet mehr als der Club Partner. Dort ist die Bande schon dabei.</p><button class="knopf dunkel" type="button" id="clubB">Zum Club Partner</button></span></div>';
+  if(bandeHinweis&&paketfassung===2)h+='<div class="zt hinweis"><div class="tx"><b>Eine Bande am Spielfeld?</b><p>Beim Club Partner ist sie für 496 € netto je Saison dabei.</p><button class="knopf dunkel" type="button" id="clubB">Zum Club Partner</button></div></div>';
+  else if(bandeHinweis)h+='<div class="zt hinweis"><span class="tx"><span class="weil-t">Ehrlich gerechnet</span><b>Bande dazu?</b><p>Supporter plus eigene Bande kostet mehr als der Club Partner. Dort ist die Bande schon dabei.</p><button class="knopf dunkel" type="button" id="clubB">Zum Club Partner</button></span></div>';
   $('#exL').innerHTML=h; $('#exL').hidden=!h;
   $('#exUnter').textContent=hinweis||ANZUG_HINWEIS||(h?'Passt zu euren Antworten. Muss nicht sein.':'Zu eurem Paket fehlt nichts. Mehr braucht es nicht.');
   $$('#exL .zt[data-k]').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(S.extras.has(k))S.extras.delete(k); else S.extras.add(k); konditionenNutzerPruefen(); exZeig(); regieZeig(); });
@@ -2344,6 +2346,59 @@ const INFO={
     t:['Über Tore reden die Leute. Zum Tor des Monats gibt es ein Video und einen Beitrag auf Instagram und Facebook, mit eurem Logo. Diesen Platz gibt es nur einmal.'],
     d:['Video und Beitrag zum Tor des Monats, jeden Monat.','Euer Logo im Beitrag.','Nur ein Partner je Saison.']}
 };
+// Die gewählte Fassung kommt ausschließlich vom Deck. Alte Einladungen behalten ihren Flyer.
+function paketfassungUebernehmen(daten){
+  if(daten.fassung!==2||paketfassung===2||!Array.isArray(daten.leistungen))return;
+  const katalog=Object.fromEntries(daten.leistungen.map(l=>[l.key,l]));
+  if(!ST.every(key=>Array.isArray(katalog[key]?.punkte)&&katalog[key].punkte.length))return;
+  paketfassung=2;
+  for(const [i,key] of ST.entries()){
+    const l=katalog[key], punkte=l.punkte.map(esc);
+    Object.assign(PAK[key],{t:esc(l.titel),auch:punkte});
+    if(l.preis!=null)PAK[key].p=Number(l.preis);
+    Object.assign(INFO[key],{l:esc(l.kurz),t:[],d:punkte,g:GUT});
+    const gruppe=$('[data-frage="groesse"] [data-w="'+i+'"]');
+    $('span:not(.ib)',gruppe).textContent=l.kurz;
+    const info=$('.ib',gruppe);if(info)info.setAttribute('aria-label','Mehr zu '+l.titel);
+    for(const grund of ['ehre','netz','team','buehne'])GRUND[grund][key]=punkte[0];
+    if(key!=='supporter'){
+      GRUND.buehne[key]=punkte[1];GRUND.netz[key]=punkte[3];GRUND.team[key]=punkte[2];
+    }
+  }
+  KLEIN.team='baelle_jugend';
+  FEHLT.netz=[[1,'fehlt hier die Einladung zum Partnerabend']];FEHLT.team=[];
+  EX.jobpost.nur=[]; SATZ.team='Frag, ob der Betrieb schon jemanden aus dem Verein beschäftigt.';
+  EX.bande_erste.nur=['club','premium','p1896'];
+  for(const key of ['sotd','bande_erste']){
+    const l=katalog[key];if(!l)continue;
+    Object.assign(EX[key],{t:esc(l.titel),k:esc(l.kurz)});
+    Object.assign(INFO[key],{l:esc(l.kurz),t:[],d:l.punkte.map(esc)});
+    if(key==='bande_erste'&&l.preis!=null)EX[key].p=Number(l.preis);
+  }
+  const haupt=daten.hauptpartner;
+  if(haupt?.punkte?.length){
+    const button=document.createElement('button');button.type='button';button.className='zeile leise';
+    button.textContent=haupt.titel+' · vergeben';
+    button.onclick=()=>{
+      $('#infoT').textContent=haupt.titel;
+      const inhalt=document.createElement('ul');haupt.punkte.forEach(s=>{const li=document.createElement('li');li.textContent=s;inhalt.append(li);});
+      $('#infoIn').replaceChildren(inhalt);$('#info').classList.add('da');$('#info').scrollTop=0;
+    };
+    $('.gr-fuss').append(button);
+  }
+  if($('#tk'))tkZeig(false);
+  if(ORD[S.i]==='extras')exZeig();
+}
+window.addEventListener('message',e=>{
+  if(e.source!==window.parent||e.origin!==location.origin)return;
+  if(e.data?.reise==='paketfassung')paketfassungUebernehmen(e.data);
+  if(e.data?.reise==='heimspiel-stand' && paketfassung===2 && Number.isInteger(e.data.frei) && e.data.frei>=0 && freieExtraHeimspiele!==e.data.frei){
+    freieExtraHeimspiele=e.data.frei;
+    if(KONDITIONEN)return;
+    if(freieExtraHeimspiele===0 && S.extras.delete('sotd')){merken();if(ORD[S.i]==='bon')bonZeig(true);if(ORD[S.i]==='ja')$('#jaWas').textContent=wahlText();}
+    if(ORD[S.i]==='extras')exZeig();
+  }
+});
 const ib=(k,name)=>'<span class="ib" role="button" tabindex="0" data-i="'+k+'" aria-label="Mehr zu '+esc(name)+'">i</span>';
 function infoZeig(k,mitPreis){ const x=INFO[k]; if(!x)return; const P=PAK[k], E=EX[k], name=P?P.t:E.t, preis=P?eur(P.p)+' je Saison, netto':(E.ca?'ca. ':'')+eur(exPreis(k))+' '+E.e+', netto';
   $('#infoT').textContent=name;

@@ -2497,6 +2497,79 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   return doc;
 };
 
+// Bandenlogo aus der Firmenvorbereitung auch im freigegebenen Angebot gleich setzen.
+(function(root){
+  'use strict';
+  // Nur klar getrennte Blöcke anbieten. Das obere Zeichen muss kompakt sein
+  // und von einem breiteren Schriftblock durch transparente Zeilen getrennt sein.
+  function markenteile({data,width,height}){
+    if(width<32||height<32||width>3*height)return null;
+    const streifen=[];let block=null;
+    for(let y=0;y<height;y++){
+      let links=width,rechts=-1;
+      for(let x=0;x<width;x++)if(data[(y*width+x)*4+3]>0){
+        if(links===width)links=x;rechts=x;
+      }
+      if(rechts<0){block=null;continue;}
+      if(!block){block={links,rechts,oben:y,unten:y};streifen.push(block);}
+      block.links=Math.min(links,block.links);block.rechts=Math.max(rechts,block.rechts);block.unten=y;
+    }
+    if(streifen.length<2)return null;
+    const oben=streifen[0],unten=streifen.slice(1),luecke=unten[0].oben-oben.unten-1;
+    if(luecke<Math.max(3,.055*height)||unten.some((s,i)=>i&&s.oben-unten[i-1].unten-1>=.85*luecke))return null;
+    const box=s=>{
+      const x=Math.min(...s.map(b=>b.links)),y=s[0].oben;
+      return {x,y,w:Math.max(...s.map(b=>b.rechts))-x+1,h:s[s.length-1].unten-y+1};
+    };
+    const zeichen=box([oben]),schrift=box(unten);
+    if(zeichen.w/zeichen.h>2.25||zeichen.h<height*.24||schrift.w<width*.5||schrift.w/schrift.h<2)return null;
+    return {zeichen,schrift};
+  }
+
+  function querfassung(quelle,{zeichen,schrift}){
+    const h=Math.min(schrift.h,Math.floor(zeichen.h/.84)),symbolH=h*.84;
+    const symbolW=zeichen.w*symbolH/zeichen.h,textW=schrift.w*h/schrift.h,xText=symbolW+h*.30;
+    const c=root.BD_RENDER.canvas(Math.ceil(xText+textW),h),x=c.getContext('2d');
+    x.imageSmoothingQuality='high';
+    x.drawImage(quelle,zeichen.x,zeichen.y,zeichen.w,zeichen.h,0,(h-symbolH)/2,symbolW,symbolH);
+    x.drawImage(quelle,schrift.x,schrift.y,schrift.w,schrift.h,xText,0,textW,h);
+    return c;
+  }
+
+  async function aufbereiten(src){
+    const R=root.BD_RENDER,C=root.BD_CORE;
+    if(!C.isRaster(src))return null;
+    const im=await R.image(src),mass=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight));
+    const cv=R.canvas(Math.max(1,Math.round(im.naturalWidth*mass)),Math.max(1,Math.round(im.naturalHeight*mass)));
+    const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.imageSmoothingQuality='high';
+    ctx.drawImage(im,0,0,cv.width,cv.height);
+    let r;
+    try{r=C.cutout(ctx.getImageData(0,0,cv.width,cv.height).data,cv.width,cv.height);}
+    catch(_){return {original:cv,quer:null};}
+    cv.width=r.width;cv.height=r.height;ctx.putImageData(new ImageData(r.data,r.width,r.height),0,0);
+    const teile=r.confidence==='prüfen'?null:markenteile(r);
+    return {original:cv,quer:teile?querfassung(cv,teile):null};
+  }
+
+  async function grundentwurf(cv,firma,breite,hoehe){
+    const C=root.BD_CORE,R=root.BD_RENDER,doc=C.create(firma);
+    doc.width=breite;doc.height=hoehe;
+    const asset={name:firma,kind:'raster',src:cv.toDataURL('image/png'),width:cv.width,height:cv.height};
+    doc.assets.marke=await R.analyseAsset(asset);
+    return C.template(doc,'kante',{asset:'marke',nameAn:false});
+  }
+
+  async function layout(d,logo){
+    const bilder=d?.elements.filter(e=>e.type==='image')||[];
+    const einzeln=bilder.length===1?d.assets[bilder[0].asset]:null;
+    const src=d?(einzeln&&!einzeln.vector?einzeln.src:null):logo;
+    let quelle=null;
+    if(src)try{quelle=await aufbereiten(src);}catch(err){if(!d)throw err;}
+    return quelle;
+  }
+  root.PARTNER_MOTIVLAYOUT={layout,grundentwurf};
+})(window);
+
 // Kompakte, rein lesende Ansicht des persönlichen Angebots.
 (function(root){
   'use strict';
@@ -2512,7 +2585,7 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
       return {art,wert};
     }
     const entwurf=d.deck.passung?.angebotsentwurf;
-    return (!vertragsdatum || Date.parse(entwurf?.erstellt_am)>Date.parse(vertragsdatum)) && entwurf && pakete.includes(entwurf.paket) ? {art:'entwurf',wert:entwurf} : null;
+    return (!vertragsdatum || Date.parse(entwurf?.erstellt_am)>Date.parse(vertragsdatum)) && entwurf && (pakete.includes(entwurf.paket)||entwurf.paket==='nur_aermel'&&entwurf.kleidung?.length>0) ? {art:'entwurf',wert:entwurf} : null;
   }
   function element(tag,klasse,text){
     const e=document.createElement(tag);
@@ -2619,7 +2692,8 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     let frei=[],platz=null,laden=false,schreibt=false,erster=true;
     for(const p of o.pakete)felder.paket.add(new Option(p.titel,p.key));
     felder.paket.value=o.pakete.some(p=>p.key===alt.paket)?alt.paket:o.pakete[0]?.key||'';
-    felder.aermel.checked=kleidung.length>0;
+    felder.aermel.checked=kleidung.length>0||felder.paket.value==='nur_aermel';
+    felder.aermel.disabled=felder.paket.value==='nur_aermel';
     const pruefen=()=>{send.disabled=schreibt||!felder.paket.value||(felder.aermel.checked&&(laden||!platz||!satz.querySelector('input:checked')));};
     function auswahl(p){
       platz=p;satz.replaceChildren();satz.hidden=!p;
@@ -2640,7 +2714,13 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
       if(felder.aermel.checked&&!laden)root.PARTNER_AERMEL.wahl(wahl,frei,{team:alt.team,seite:alt.seite,art:kleidung[0]},auswahl);
       pruefen();
     }
-    form.onchange=pruefen;felder.aermel.onchange=zeigen;form.querySelector('[data-zu]').onclick=()=>dialog.close();
+    form.onchange=pruefen;felder.aermel.onchange=zeigen;
+    felder.paket.onchange=()=>{
+      felder.aermel.disabled=felder.paket.value==='nur_aermel';
+      if(felder.aermel.disabled&&!felder.aermel.checked){felder.aermel.checked=true;zeigen();}
+      else pruefen();
+    };
+    form.querySelector('[data-zu]').onclick=()=>dialog.close();
     form.onsubmit=async e=>{
       e.preventDefault();if(send.disabled)return;
       schreibt=true;pruefen();status.textContent='Wird gespeichert …';
@@ -3629,9 +3709,11 @@ const BANDENWAHL = (() => {
     const fokus = document.activeElement, d = document.createElement('dialog'); d.className = 'bw';
     d.setAttribute('aria-labelledby','bwTitel'); d.innerHTML = `<header class="bw-kopf"><div><p class="bw-kicker">SV/BSC Mörlenbach · Saison ${E(opt.saison)}/${String(+opt.saison+1).slice(-2)}</p><h2 id="bwTitel" tabindex="-1">Euer Platz am Spielfeldrand</h2></div><button type="button" class="bw-zu" aria-label="Zurück zur Präsentation">Schließen</button></header><div class="bw-in"><p role="status">Der Belegungsplan wird geladen.</p></div>`;
     document.body.appendChild(d); offen = d; const dialogZu=modalOeffnen(d); d.querySelector('h2').focus();
-    let lebt = true, resize = null, raf = 0, S = [], sel = null, kam = 0, ziel = 0, boxen = [], pxm = 40, paket = opt.paket === 'p1896' ? 'p1896' : 'club', eigen = null,
+    let lebt = true, resize = null, raf = 0, S = [], sel = null, kam = 0, ziel = 0, boxen = [], pxm = 40, paket = ['p1896','premium'].includes(opt.paket) ? opt.paket : 'club', eigen = null, neueZonen=false, rasen='haupt', alterWunsch=null,
       raum=null, raumBereit=false, stadionEinstieg=false, flach=false, heute=false, bestand=null, bereich='', bestandSel=null, hold=0, letzteTafeln=[],fotoSchliessen=null,fensterStop=null;
     const imgs = new Map(), ruhig = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    const passtZuPaket=s=>klasse(s)===(paket==='p1896'?'p1896':'normal') &&
+      (!neueZonen || s.zone!=='premium' || paket==='premium' || s.id===alterWunsch);
     const kameraBereich=()=>{if(!heute)return 'nord';const R=bestandRang(bestand?.plaetze||[],bereich);return (R.find(s=>s.id===bestandSel)||R[0])?.linie||'nord';};
     const flachStart=()=>{if(!flach)return;cancelAnimationFrame(raf);raf=0;const R=heute?bestandRang(bestand?.plaetze||[],bereich):S,s=R.find(s=>s.id===(heute?bestandSel:sel));
       kam=ziel=s?s.x0+s.l/2:R.length?(R[0].x0+R[R.length-1].x0+R[R.length-1].l)/2:0;};
@@ -3641,7 +3723,7 @@ const BANDENWAHL = (() => {
       if(s)raum.zentrieren(s.id);else raum.reset();};
     const bestandsEinstieg=()=>{if(heute&&raumBereit&&!stadionEinstieg&&raum?.rundblick){stadionEinstieg=true;raum.rundblick();d.querySelector('#bwBlickpunkt').value='platz';}};
     const nahInfo=()=>{const s=heute?(bestand?.plaetze||[]).find(s=>s.id===bestandSel):S.find(s=>s.id===sel);if(!s)return null;
-      const me=!heute&&klasse(s)===(paket==='p1896'?'p1896':'normal'),bild=me?eigen:imgs.get(s.id);
+      const me=!heute&&rasen!=='kunst'&&passtZuPaket(s),bild=me?eigen:imgs.get(s.id);
       return {bild,titel:(heute?'Bande '+(s.nummer||s.nr):'Platz '+s.kennung)+' · '+(me?opt.firma:s.firma||'Bandenplatz'),status:heute?'Heutiger Bestand':me?'Eure Gestaltungsvorschau · '+stand(s):s.kennzeichnung||stand(s)};};
     const nahStatus=()=>{const b=d.querySelector('#bwFoto');if(!b)return;const n=nahInfo();b.disabled=!n?.bild;d.querySelector('#bwAuswahl').textContent=n?n.titel+' · '+n.status:'Tippe auf eine Bande, um sie näher anzusehen.';};
     const schliessen = () => { lebt = false; cancelAnimationFrame(raf); cancelAnimationFrame(hold);if(fensterStop)window.removeEventListener('blur',fensterStop);raum?.zerstoeren(); resize?.disconnect(); dialogZu(); d.remove(); offen = null; fokus?.focus?.({preventScroll:true}); opt.onClose?.(); };
@@ -3649,7 +3731,7 @@ const BANDENWAHL = (() => {
     const malen = () => {
       const cv = d.querySelector('canvas'); if(!lebt || !cv || !S.length) return;
       const R=heute?bestandRang(bestand?.plaetze||[]):S;
-      const T = (heute&&flach?R.filter(s=>s.bereich===bereich):R).map(s => { const me = !heute && s.id === sel && klasse(s) === (paket === 'p1896' ? 'p1896' : 'normal');
+      const T = (heute&&flach?R.filter(s=>s.bereich===bereich):R).map(s => { const me = !heute && s.id === sel && rasen!=='kunst' && passtZuPaket(s);
         const bild = me ? eigen : imgs.get(s.id);
         return {id:s.id,nr:s.kennung,x0:s.x0,l:s.l,h:s.h||.8,bereich:s.linie,plan:s.plan,an:s.id === (heute?bestandSel:sel),frei:(heute?s.status==='frei':s.stand === 'frei') && !me,img:bild||null,
           name:me ? opt.firma : s.firma || (heute?s.status==='frei'?'Freier Platz':'Bestandsbande':s.rolle === 'mitte' ? 'Hauptpartner' : s.rolle === 'top' ? '1896 Partner' : 'Vergeben'),farbe:bild ? null : s.farbe||'#ffffff',ring:s.rolle === 'mitte' ? '#e8741f' : null}; });
@@ -3664,9 +3746,13 @@ const BANDENWAHL = (() => {
       const s = S.find(s => s.id === sel), el = d.querySelector('#bwDetail'), save = d.querySelector('#bwSpeichern');
       if(heute){const b=(bestand?.plaetze||[]).find(s=>s.id===bestandSel);el.innerHTML=b?`<div class="bw-detailkopf"><b>Bande ${E(b.nummer||b.nr)}</b><span>${E(b.firma||'Bestandsbande')}</span></div><p>Vorhandene Bande am Platz. Diese Ansicht ändert weder die Belegung noch einen Vertrag.</p>`:'<p>Schau dich zwischen den vorhandenen Banden um. Für einen eigenen Platzwunsch wechselst du zum Plan 2027/28.</p>';malen();return;}
       d.querySelectorAll('[data-bwslot]').forEach(b => b.setAttribute('aria-pressed',String(b.dataset.bwslot === sel)));
+      if(rasen==='kunst'){
+        el.textContent='Kunstrasenplatz gewünscht. Die genaue Position besprechen wir mit euch am Platz.';
+        save.disabled=false;save.textContent='Kunstrasen als Wunsch merken';malen();return;
+      }
       if(!s) { el.textContent = 'Wähle einen Platz in der Reihe. Du siehst eure Bande dann zwischen den Nachbarn.'; save.disabled = true; malen();return; }
-      const passt = klasse(s) === (paket === 'p1896' ? 'p1896' : 'normal');
-      el.innerHTML = `<div class="bw-detailkopf"><b>Platz ${E(s.kennung)}</b><span>${E(stand(s))} · ${s.l === 5 ? '5' : '2,5'} × 0,80 m</span></div><p>${s.rolle === 'mitte' ? 'Die Mitte bleibt für den Hauptpartner reserviert.' : !passt ? s.rolle === 'top' ? 'Dieser Platz gehört zu den acht Plätzen für 1896 Partner.' : 'Dieser Einzelplatz gehört zum Club oder Premium Partner.' : s.stand !== 'frei' ? 'Hier ist bereits jemand vorgesehen. Eure Bande im Bild ist eine Vorschau. Ihr könnt diesen Platz für später wünschen.' : 'Eure Bande ist als Vorschau eingesetzt. Ein Platzwunsch reserviert noch keinen Platz.'}</p>`;
+      const passt = passtZuPaket(s);
+      el.innerHTML = `<div class="bw-detailkopf"><b>Platz ${E(s.kennung)}</b><span>${E(stand(s))}${neueZonen&&s.rolle==='reihe'?(s.zone==='premium'?' · Bevorzugt':' · Standard'):''} · ${s.l === 5 ? '5' : '2,50'} × 0,80 m</span></div><p>${s.rolle === 'mitte' ? 'Die Mitte bleibt für den Hauptpartner reserviert.' : !passt ? s.rolle === 'top' ? 'Dieser Platz gehört zu den acht Plätzen für 1896 Partner.' : s.zone==='premium'?'Die Einzelplätze neben dem 1896-Kreis wählen zuerst die Premium-Partner. Für Club-Partner liegen die Standardplätze weiter außen.':'Dieser Einzelplatz gehört zum Club oder Premium Partner.' : s.stand !== 'frei' ? 'Hier ist bereits jemand vorgesehen. Eure Bande im Bild ist eine Vorschau. Ihr könnt diesen Platz für später wünschen.' : 'Eure Bande ist als Vorschau eingesetzt. Ein Platzwunsch reserviert noch keinen Platz.'}</p>`;
       save.disabled = !passt; save.textContent = s.stand === 'frei' ? 'Platzwunsch merken' : 'Für diesen Platz vormerken';
       const r = d.querySelector('#bwWeg'); r.value = String(s.pos); r.setAttribute('aria-valuetext',`Platz ${s.kennung}, ${stand(s)}`); malen();
     };
@@ -3685,12 +3771,16 @@ const BANDENWAHL = (() => {
       S = rang(data.slots || []); if(!S.length) throw new Error('Für diese Saison ist noch kein Belegungsplan hinterlegt.');
       bestand=heuteDaten&&Array.isArray(heuteDaten.plaetze)&&heuteDaten.plaetze.length?heuteDaten:null;
       bereich=bestand?.plaetze.find(s=>s.bereich==='laengsseite')?.bereich||bestand?.plaetze[0]?.bereich||'';
+      neueZonen=data.paketfassung===2;alterWunsch=data.eigen?.wunsch||null;
+      if(neueZonen&&data.eigen?.rasen==='kunst')rasen='kunst';
+      if(!neueZonen&&paket==='premium')paket='club';
+      if(neueZonen&&data.eigen?.einzel==='premium')paket='premium';
       if(data.eigen?.paket === 'p1896') paket = 'p1896';
       sel = S.some(s => s.id === data.eigen?.wunsch) ? data.eigen.wunsch : S.find(s=>s.eigen)?.id||null;
-      const frei = S.filter(s => s.stand === 'frei' && klasse(s) === (paket === 'p1896' ? 'p1896' : 'normal')).length;
+      const frei = S.filter(s => s.stand === 'frei' && rasen!=='kunst' && passtZuPaket(s)).length;
       const innen = d.querySelector('.bw-in'); innen.innerHTML = `<div class="bw-ansicht" role="group" aria-label="Bestand oder Platzplanung"><button type="button" id="bwHeute"${bestand?'':' disabled'}>Heute am Platz</button><button type="button" id="bwZukunft" aria-pressed="true">Plan 2027/28</button></div>
         <div class="bw-bestand-status" id="bwBestandStatus" role="status"${bestand?' hidden':''}><span id="bwBestandText">${heuteDaten?.fehler?'Der heutige Bestand konnte nicht geladen werden. Du kannst es erneut versuchen.':'Für den heutigen Bestand sind noch keine Plätze erfasst. Der Zukunftsplan ist verfügbar.'}</span><button type="button" id="bwBestandNeu">Bestand erneut laden</button></div>
-        <div class="bw-oben"><p id="bwEinordnung">Geh an der Reihe entlang und schau, wie eure Bande neben den anderen wirkt. Mitte und 1896-Plätze bleiben für diese Stufen reserviert.</p><label id="bwPaketLabel">Vorschau für<select id="bwPaket"><option value="club">Club / Premium Partner</option><option value="p1896">1896 Partner</option></select></label><label id="bwBereichLabel" hidden>Bereich<select id="bwBereich">${(bestand?.bereiche||[]).filter(b=>bestand.plaetze.some(p=>p.bereich===b.key)).map(b=>`<option value="${E(b.key)}">${E(b.titel)}</option>`).join('')}</select></label></div>
+        <div class="bw-oben"><p id="bwEinordnung">Geh an der Reihe entlang und schau, wie eure Bande neben den anderen wirkt. Mitte und 1896-Plätze bleiben für diese Stufen reserviert.</p><label id="bwPaketLabel">Vorschau für<select id="bwPaket">${neueZonen?'<option value="club">Club Partner</option><option value="premium">Premium Partner</option>':'<option value="club">Club / Premium Partner</option>'}<option value="p1896">1896 Partner</option></select></label><label id="bwBereichLabel" hidden>Bereich<select id="bwBereich">${(bestand?.bereiche||[]).filter(b=>bestand.plaetze.some(p=>p.bereich===b.key)).map(b=>`<option value="${E(b.key)}">${E(b.titel)}</option>`).join('')}</select></label></div>
         <div class="bw-plan" data-bw-plan aria-label="Plätze von links nach rechts, vom Rasen aus"><span>Links</span><div class="bw-mini" aria-hidden="true">${S.map(s => `<i class="${E(s.rolle)} ${E(s.stand)}" style="flex:${s.l}"></i>`).join('')}</div><span>Rechts</span></div>
         <div class="bw-buehne"><canvas tabindex="0" role="img" aria-label="Begehbare Bandenansicht. WASD zum Gehen, Pfeile zum Drehen, mit Maus oder Finger umsehen. Alternativ die Tasten darunter nutzen."></canvas><span class="bw-bildhinweis" id="bwBildhinweis">Vorschau, keine Reservierung</span><button type="button" class="bw-bildgross" id="bwBildGross">Große Ansicht</button><div class="bw-aufdruck" id="bwAufdruck" hidden><button type="button" id="bwFotoZu" class="bw-zu">Zurück zum Rundgang</button><div id="bwFotoBild"></div><p id="bwFotoText"></p></div></div>
         <div class="bw-navigation" role="group" aria-label="Im Stadion bewegen"><div class="bw-navgruppe"><span>Gehen · gedrückt halten</span><div class="bw-schritte"><button type="button" data-bwbeweg="vor" aria-label="Vorwärts gehen">Vorwärts</button><button type="button" data-bwbeweg="links" aria-label="Seitwärts nach links gehen">Links</button><button type="button" data-bwbeweg="zurueck" aria-label="Rückwärts gehen">Rückwärts</button><button type="button" data-bwbeweg="rechts" aria-label="Seitwärts nach rechts gehen">Rechts</button></div></div><label class="bw-blickpunkt">Blickpunkt<select id="bwBlickpunkt" disabled><option value="banden">Bandenreihe</option><option value="platz">Über den Platz</option><option value="vereinsheim">Zum Vereinsheim</option><option value="anlage">Vereinsheim und Platz</option></select></label><div class="bw-navgruppe"><span>Blick drehen</span><div class="bw-blick"><button type="button" data-bwblick="-1" aria-label="Nach links schauen">↶</button><button type="button" id="bwUebersicht">Startansicht</button><button type="button" data-bwblick="1" aria-label="Nach rechts schauen">↷</button><button type="button" id="bwGross" aria-pressed="false">Groß ansehen</button></div></div></div>
@@ -3699,10 +3789,12 @@ const BANDENWAHL = (() => {
         <p class="bw-bedienung" id="bwVormerkung" hidden></p>
         <div class="bw-gehen" data-bw-plan><button type="button" data-bwgehen="-1" aria-label="Einen Platz nach links">←</button><label>Direkt zu einem Platz<input id="bwWeg" type="range" min="${S[0].pos}" max="${S[S.length-1].pos}" step="1" value="17"></label><button type="button" data-bwgehen="1" aria-label="Einen Platz nach rechts">→</button></div>
         <div class="bw-liste" data-bw-plan role="group" aria-label="Platz auswählen">${S.map(s => `<button type="button" data-bwslot="${E(s.id)}" class="${E(s.rolle)} ${E(s.stand)}" aria-pressed="false"><b>${E(s.kennung)}</b><span>${s.rolle === 'mitte' ? 'Hauptpartner' : s.rolle === 'top' ? '1896' : E(stand(s))}</span></button>`).join('')}</div>
-        <div class="bw-unten"><div id="bwDetail" aria-live="polite"></div><div class="bw-merken" data-bw-plan><label><input id="bwNach" type="checkbox"${data.eigen?.nachruecken ? ' checked' : ''}> Bei einem besseren freien Platz berücksichtigen</label><label><input id="bwFlex" type="checkbox"${data.eigen?.flexibel === false ? '' : ' checked'}> Auch andere passende Plätze anbieten</label><button id="bwSpeichern" type="button" class="bw-haupt">Platzwunsch merken</button><button id="bwZurueck" type="button" class="bw-zu"${data.eigen?.wunsch||data.eigen?.nachruecken?'':' hidden'}>Platzwunsch zurücknehmen</button><p id="bwMeldung" role="status"></p></div></div>
+        <div class="bw-unten"><div id="bwDetail" aria-live="polite"></div><div class="bw-merken" data-bw-plan>${neueZonen?'<label>Gewünschter Platz<select id="bwRasen"><option value="haupt">Hauptplatz</option><option value="kunst">Kunstrasenplatz</option></select></label>':''}<label><input id="bwNach" type="checkbox"${data.eigen?.nachruecken ? ' checked' : ''}> Bei einem besseren freien Platz berücksichtigen</label><label><input id="bwFlex" type="checkbox"${data.eigen?.flexibel === false ? '' : ' checked'}> Auch andere passende Plätze anbieten</label><button id="bwSpeichern" type="button" class="bw-haupt">Platzwunsch merken</button><button id="bwZurueck" type="button" class="bw-zu"${data.eigen?.wunsch||data.eigen?.nachruecken||data.eigen?.rasen==='kunst'?'':' hidden'}>Platzwunsch zurücknehmen</button><p id="bwMeldung" role="status"></p></div></div>
         <button type="button" id="bwPlanStart" class="bw-haupt" hidden>Platz für 2027/28 wählen</button>
         <p class="bw-fuss">Die Reihe ist für 2027/28 geplant. Lage und Nachbarn können sich bis zur Montage ändern. Eure Auswahl bleibt unverbindlich. Andere Firmennamen und Logos erscheinen nur mit Freigabe. ${frei ? '' : 'In dieser Stufe ist gerade kein Platz frei. Mit eurem Wunsch kommt ihr auf die Warteliste.'}</p>`;
       const paketSel = d.querySelector('#bwPaket'); paketSel.value = paket;
+      const platzSel=d.querySelector('#bwRasen');
+      if(platzSel){platzSel.value=rasen;platzSel.onchange=()=>{rasen=platzSel.value;text();};}
       paketSel.onchange = () => { paket = paketSel.value; eigen = null; text(); void eigeneBande(); };
       d.querySelectorAll('[data-bwslot]').forEach(b => b.onclick = () => waehlen(b.dataset.bwslot));
       d.querySelectorAll('[data-bwgehen]').forEach(b => b.onclick = () => { const nah = S.reduce((a,s) => Math.abs(s.x0+s.l/2-ziel) < Math.abs(a.x0+a.l/2-ziel) ? s : a,S[0]); waehlen(S[Math.max(0,Math.min(S.length-1,S.indexOf(nah)+ +b.dataset.bwgehen))].id); });
@@ -3718,6 +3810,7 @@ const BANDENWAHL = (() => {
         d.querySelector('#bwHeute').setAttribute('aria-pressed',String(heute));d.querySelector('#bwZukunft').setAttribute('aria-pressed',String(!heute));
         d.querySelectorAll('[data-bw-plan]').forEach(e=>e.hidden=heute);d.querySelector('#bwPaketLabel').hidden=heute;d.querySelector('#bwBereichLabel').hidden=!heute;d.querySelector('#bwPlanStart').hidden=!heute;
         d.querySelector('#bwEinordnung').textContent=heute?'Die vorhandenen Banden mit ihren Originalaufdrucken. Schau dich frei um. Für die nächste Saison gibt es einen eigenen Platzplan.':'Platzplan für 2027/28. Eure Gestaltung lässt sich an verschiedenen Positionen ansehen. Freigegebene Partner erscheinen mit ihrem Logo. Vormerkungen sind gekennzeichnet.';
+        if(!heute&&neueZonen)d.querySelector('#bwEinordnung').textContent='Hauptpartner in der Mitte, vier 1896-Banden links und rechts. Die angrenzenden Einzelplätze wählen Premium-Partner nach Zusagedatum. Standardplätze liegen außen. Druckkosten kommen hinzu.';
         d.querySelector('#bwBildhinweis').textContent=heute?'Heutiger Bestand · Stadion nach Originalfotos':'Plan 2027/28 · Stadion nach Originalfotos';
         const v=d.querySelector('#bwVormerkung'),vormerkungen=S.filter(s=>s.kennzeichnung&&s.firma);v.hidden=heute||!vormerkungen.length;v.textContent=vormerkungen.map(s=>s.firma+' · Platz '+s.kennung+': '+s.kennzeichnung).join('. ');
         d.querySelector('.bw-fuss').textContent=heute?'Heutiger Bestand laut Vereinsplan. Stadion nach Originalfotos; Maße und Blickwinkel sind angenähert.':'Die Reihe ist für 2027/28 geplant. Lage und Nachbarn können sich bis zur Montage ändern. Eure Auswahl bleibt unverbindlich. Andere Firmennamen und Logos erscheinen nur mit Freigabe.';
@@ -3769,16 +3862,16 @@ const BANDENWAHL = (() => {
         await raum.bereit;if(!lebt)return;if(flach){raum?.zerstoeren();raum=null;return;}raumBereit=true;blickSel.disabled=false;d.querySelector('#bwRaumStatus').textContent='WASD zum Gehen. Pfeile oder Ziehen zum Umsehen. Am Handy die Tasten nutzen.';malen();if(heute){reihenStart();bestandsEinstieg();}else if(sel)raum.zentrieren(sel);
       }catch(_){flachEinrichten();}};
       d.querySelector('#bwSpeichern').onclick = async e => {
-        const b = e.currentTarget, s = S.find(s => s.id === sel); if(heute || !s || b.disabled) return; b.disabled = true;
-        const msg = d.querySelector('#bwMeldung'), w = {saison:opt.saison,wunsch:sel,paket,nachruecken:d.querySelector('#bwNach').checked,flexibel:d.querySelector('#bwFlex').checked};
+        const b = e.currentTarget, s = S.find(s => s.id === sel); if(heute || (rasen!=='kunst' && !s) || b.disabled) return; b.disabled = true;
+        const msg = d.querySelector('#bwMeldung'), w = {saison:opt.saison,wunsch:rasen==='kunst'?null:sel,rasen,paket,nachruecken:rasen!=='kunst'&&d.querySelector('#bwNach').checked,flexibel:d.querySelector('#bwFlex').checked};
         try { const r = await opt.rpc('banden_wunsch_setzen',{p_code:opt.code,p:w}); if(!lebt) return;
-          msg.textContent = r.demo ? 'Probeansicht: Hier wird nichts gespeichert.' : 'Euer Platzwunsch ist gespeichert. Das Partner-Team stimmt den Platz mit euch ab.'; d.querySelector('#bwZurueck').hidden=false; opt.onSaved?.({...w,kennung:s.kennung});
+          msg.textContent = r.demo ? 'Probeansicht: Hier wird nichts gespeichert.' : 'Euer Platzwunsch ist gespeichert. Das Partner-Team stimmt den Platz mit euch ab.'; alterWunsch=w.wunsch; d.querySelector('#bwZurueck').hidden=false; opt.onSaved?.({...w,kennung:rasen==='kunst'?'Kunstrasenplatz':s.kennung});
         } catch(err) { if(lebt) msg.textContent = err.message || 'Der Wunsch wurde nicht gespeichert. Bitte versuche es noch einmal.'; }
         finally { if(lebt) b.disabled = false; }
       };
       d.querySelector('#bwZurueck').onclick = async e => { if(heute)return;const b=e.currentTarget; b.disabled=true;
         try { const r=await opt.rpc('banden_wunsch_setzen',{p_code:opt.code,p:{saison:opt.saison,paket,wunsch:null,nachruecken:false,flexibel:true}}); if(!lebt)return;
-          sel=null; d.querySelector('#bwNach').checked=false; b.hidden=true; text(); d.querySelector('#bwMeldung').textContent=r.demo?'Probeansicht: Hier wird nichts gespeichert.':'Euer Platzwunsch ist zurückgenommen. Bestehende Vereinbarungen bleiben erhalten.'; opt.onSaved?.(null);
+          sel=null;alterWunsch=null;rasen='haupt';if(platzSel)platzSel.value=rasen; d.querySelector('#bwNach').checked=false; b.hidden=true; text(); d.querySelector('#bwMeldung').textContent=r.demo?'Probeansicht: Hier wird nichts gespeichert.':'Euer Platzwunsch ist zurückgenommen. Bestehende Vereinbarungen bleiben erhalten.'; opt.onSaved?.(null);
         } catch(err) { if(lebt)d.querySelector('#bwMeldung').textContent=err.message||'Der Wunsch wurde nicht zurückgenommen. Bitte versuche es noch einmal.'; }
         finally { if(lebt)b.disabled=false; }
       };
@@ -3807,7 +3900,7 @@ const BANDENWAHL = (() => {
     const katalog=(o.katalog||[]).filter(l=>l&&l.aktiv!==false&&l.preis!=null&&!['spende','sonstiges'].includes(l.art));
     const teams=(o.mannschaften||[]).filter(m=>m&&m.aktiv!==false);
     const L=k=>katalog.find(l=>l.key===k);
-    let zeilen=(o.positionen||[]).map(p=>({key:p.key,mannschaft:p.mannschaft||null,menge:+p.menge||1,nachlass:+p.nachlass||0,zusaetzlich:!!(p.zusaetzlich||p.zusatzpaket)}));
+    let zeilen=(o.positionen||[]).map(p=>({key:p.key,mannschaft:p.mannschaft||null,menge:+p.menge||1,nachlass:+p.nachlass||0,zusaetzlich:!!(p.zusaetzlich||p.zusatzpaket),vereinbarung:{...(p.vereinbarung||{})}}));
     let zu=false,busy=false;
     const zuvor=document.activeElement,altOverflow=document.body.style.overflow;
     const hintergrund=document.createElement('div');hintergrund.className='pk132-hintergrund';
@@ -3834,10 +3927,23 @@ const BANDENWAHL = (() => {
       gratis.hidden=!c.gratis_saison;auto.disabled=c.gratis_saison||busy;if(c.gratis_saison)auto.checked=false;
       $('.pk132-summe').innerHTML=(c.hat_saison?'<div><span>Je Saison, netto'+(c.rabatt&&c.netto_jahr>0?' einschließlich '+c.rabatt+' % Laufzeitvorteil':'')+'</span><b>'+euro(c.netto_jahr)+'</b></div>':'')+(c.einmalig?'<div><span>Einmalige Leistungen, netto</span><b>'+euro(c.einmalig)+'</b></div>':'')+'<div class="pk132-gesamt"><span>Gesamt über die Laufzeit, netto</span><b>'+euro(c.netto_gesamt)+'</b></div>';
       c.positionen.forEach((p,i)=>{const e=$('[data-pk132betrag="'+i+'"]');if(e)e.textContent=(['aermel_erste','aermel_zweite','aermel_jugend','trikot_jugend','aermel_anzug_l','aermel_anzug_r'].includes(p.key)?'ca. ':'')+euro(p.summe)+(p.saisonal?' je Saison':'');});}
+    function vereinbarungen(p,i){
+      const bande=['club','premium','p1896','bande_erste','bande_zweite'].includes(p.key);
+      function feld(key,name,optionen){
+        const option=(v,t)=>'<option value="'+v+'"'+(p.vereinbarung?.[key]===v?' selected':'')+'>'+t+'</option>';
+        return '<label>'+name+'<select data-pk132wahl="'+i+'" data-feld="'+key+'">'+option('','Paketvorgabe')+optionen.map(([v,t])=>option(v,t)).join('')+'</select></label>';
+      }
+      return '<div class="pk132-felder">'+feld('foerderung','Förderbereich',[['gesamt','Gesamtfußball'],['jugend','Jugend'],['senioren','Senioren']])+
+        (bande?feld('kategorie','Bandenplatz',[['standard','Standardplatz'],['premium','Bevorzugter Platz']])+feld('rasen','Spielstätte',[['haupt','Hauptplatz'],['kunst','Kunstrasenplatz']]):'')+'</div>';
+    }
     function render(){
       const pkAnzahl=zeilen.filter(p=>L(p.key)?.art==='paket').length;
       $('.pk132-zeilen').innerHTML=zeilen.length?zeilen.map((p,i)=>{const l=L(p.key)||{};
-        return '<article class="pk132-zeile"><div class="pk132-zeilenkopf"><h3>'+esc(l.titel||p.key)+'</h3><button type="button" data-pk132weg="'+i+'" aria-label="'+esc(l.titel||p.key)+' entfernen">Entfernen</button></div><div class="pk132-felder">'+(l.je_mannschaft?'<label>Mannschaft<select data-pk132team="'+i+'"><option value="">Bitte wählen</option>'+teams.filter(m=>l.bereich!=='jugend'||m.art==='jugend').map(m=>'<option value="'+esc(m.id)+'"'+(m.id===p.mannschaft?' selected':'')+'>'+esc(m.name||m.id)+'</option>').join('')+'</select></label>':'')+(['stueck','spieltag'].includes(l.einheit)?'<label>Menge<input type="number" min="1" max="99" step="1" data-pk132menge="'+i+'" value="'+p.menge+'"></label>':'')+'<label>Individueller Nachlass<input type="number" min="0" max="100" step="0.01" inputmode="decimal" data-pk132nach="'+i+'" value="'+p.nachlass+'"><span>Prozent</span></label></div>'+(l.art==='paket'&&pkAnzahl>1?'<label class="pk132-check"><input type="checkbox" data-pk132zusatz="'+i+'"'+(p.zusaetzlich?' checked':'')+'> Als zusätzliches Paket genehmigen</label>':'')+'<p class="pk132-betrag" data-pk132betrag="'+i+'"></p></article>';}).join(''):'<p class="pk132-leer">Füge zuerst die gewünschte Leistung hinzu.</p>';
+        return '<article class="pk132-zeile"><div class="pk132-zeilenkopf"><h3>'+esc(l.titel||p.key)+'</h3><button type="button" data-pk132weg="'+i+'" aria-label="'+esc(l.titel||p.key)+' entfernen">Entfernen</button></div><div class="pk132-felder">'+(l.je_mannschaft?'<label>Mannschaft<select data-pk132team="'+i+'"><option value="">Bitte wählen</option>'+teams.filter(m=>l.bereich!=='jugend'||m.art==='jugend').map(m=>'<option value="'+esc(m.id)+'"'+(m.id===p.mannschaft?' selected':'')+'>'+esc(m.name||m.id)+'</option>').join('')+'</select></label>':'')+(['stueck','spieltag'].includes(l.einheit)?'<label>Menge<input type="number" min="1" max="99" step="1" data-pk132menge="'+i+'" value="'+p.menge+'"></label>':'')+'<label>Individueller Nachlass<input type="number" min="0" max="100" step="0.01" inputmode="decimal" data-pk132nach="'+i+'" value="'+p.nachlass+'"><span>Prozent</span></label></div>'+(l.art==='paket'&&pkAnzahl>1?'<label class="pk132-check"><input type="checkbox" data-pk132zusatz="'+i+'"'+(p.zusaetzlich?' checked':'')+'> Als zusätzliches Paket genehmigen</label>':'')+vereinbarungen(p,i)+'<p class="pk132-betrag" data-pk132betrag="'+i+'"></p></article>';}).join(''):'<p class="pk132-leer">Füge zuerst die gewünschte Leistung hinzu.</p>';
+      hintergrund.querySelectorAll('[data-pk132wahl]').forEach(f=>f.onchange=()=>{
+        const w=zeilen[+f.dataset.pk132wahl].vereinbarung;
+        if(f.value)w[f.dataset.feld]=f.value;else delete w[f.dataset.feld];
+      });
       hintergrund.querySelectorAll('[data-pk132weg]').forEach(b=>b.onclick=()=>{const i=+b.dataset.pk132weg;zeilen.splice(i,1);render();const n=$('[data-pk132weg="'+Math.min(i,zeilen.length-1)+'"]')||$('#pk132Leistung');n.focus();});
       hintergrund.querySelectorAll('[data-pk132nach]').forEach(f=>f.oninput=()=>{zeilen[+f.dataset.pk132nach].nachlass=f.value===''?0:+f.value;summe();});
       hintergrund.querySelectorAll('[data-pk132menge]').forEach(f=>f.oninput=()=>{zeilen[+f.dataset.pk132menge].menge=f.value===''?0:+f.value;summe();});
@@ -3848,7 +3954,7 @@ const BANDENWAHL = (() => {
     $('#pk132Dazu').onclick=()=>{const key=$('#pk132Leistung').value,l=L(key);if(!l){fehler('Wähl zuerst eine Leistung.');return;}
       if(!l.je_mannschaft&&zeilen.some(p=>p.key===key)){fehler('Diese Leistung steht schon in der Auswahl.');return;}
       if(zeilen.length>=24){fehler('In eine Auswahl passen höchstens 24 Leistungen.');return;}
-      zeilen.push({key,mannschaft:null,menge:1,nachlass:0,zusaetzlich:l.art==='paket'&&zeilen.some(p=>L(p.key)?.art==='paket')});$('#pk132Leistung').value='';fehler('');render();const i=zeilen.length-1;($('[data-pk132team="'+i+'"]')||$('[data-pk132nach="'+i+'"]')).focus();};
+      zeilen.push({key,mannschaft:null,menge:1,nachlass:0,vereinbarung:{},zusaetzlich:l.art==='paket'&&zeilen.some(p=>L(p.key)?.art==='paket')});$('#pk132Leistung').value='';fehler('');render();const i=zeilen.length-1;($('[data-pk132team="'+i+'"]')||$('[data-pk132nach="'+i+'"]')).focus();};
     $('#pk132Saisons').onchange=summe;$('#pk132Auto').onchange=summe;
     $('.pk132-zu').onclick=schliessen;$('#pk132Abbrechen').onclick=schliessen;
     function taste(e){if(zu)return;if(e.key==='Escape'){e.preventDefault();e.stopPropagation();schliessen();return;}
@@ -3862,7 +3968,7 @@ const BANDENWAHL = (() => {
       if(zeilen.some(p=>!Number.isInteger(p.menge)||p.menge<1||p.menge>99)){fehler('Bitte prüf die Mengen von 1 bis 99.');return;}
       if(zeilen.some(p=>L(p.key).je_mannschaft&&!p.mannschaft)){fehler('Bitte wähl zu jeder Mannschaftsleistung die Mannschaft.');return;}
       const pk=zeilen.filter(p=>L(p.key).art==='paket');if(pk.length>1&&pk.filter(p=>!p.zusaetzlich).length!==1){fehler('Lass genau eine Partnerstufe als Grundpaket stehen und kennzeichne die weiteren als zusätzliches Paket.');return;}
-      const p={positionen:zeilen.map(x=>({key:x.key,mannschaft:x.mannschaft,menge:x.menge,nachlass:x.nachlass,zusaetzlich:x.zusaetzlich})),saisons,beginn,auto_verlaengerung:c.gratis_saison?false:$('#pk132Auto').checked};
+      const p={positionen:zeilen.map(x=>({key:x.key,mannschaft:x.mannschaft,menge:x.menge,nachlass:x.nachlass,zusaetzlich:x.zusaetzlich,...(Object.keys(x.vereinbarung).length?{vereinbarung:x.vereinbarung}:{})})),saisons,beginn,auto_verlaengerung:c.gratis_saison?false:$('#pk132Auto').checked};
       busy=true;hintergrund.querySelectorAll('button,input,select').forEach(e=>e.disabled=true);const b=$('#pk132Speichern');b.textContent='Speichert …';b.setAttribute('aria-busy','true');
       let snapshot;try{snapshot=await o.rpc('partner_konditionen_setzen',{p_code:o.code,p});if(!snapshot||!snapshot.id)throw new Error('Die Bestätigung fehlt. Bitte prüf den Stand vor einem neuen Versuch.');}
       catch(e){busy=false;hintergrund.querySelectorAll('button,input,select').forEach(x=>x.disabled=false);b.textContent='Konditionen speichern';b.removeAttribute('aria-busy');summe();fehler(e.message||'Das Speichern hat nicht geklappt. Deine Auswahl bleibt stehen.');return;}
@@ -4348,13 +4454,25 @@ const BANDENWAHL = (() => {
     ++loadGeneration;cfg=o;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
   }
   async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project};}
-  async function amSpielfeld(){
+  async function amSpielfeld(quer=false){
     const generation=loadGeneration;
     if(loading)await loading;else if(!project)await load();
-    const doc=documentNow,stand=preview;
+    let doc=documentNow,stand=preview;
+    const original=doc,ursprungsbild=stand;
     if(generation!==loadGeneration||!doc||!stand)throw Error('Eure Bandenansicht ist noch nicht verfügbar.');
-    const [foto,motiv]=await Promise.all([R().image('partner/r-bande.webp'),R().image(stand)]);
-    if(documentNow!==doc||preview!==stand)throw Error('Die Gestaltung wurde zwischenzeitlich geändert.');
+    const foto=await R().image('partner/r-bande.webp');
+    let motiv;
+    if(quer&&root.PARTNER_MOTIVLAYOUT){
+      const quelle=await root.PARTNER_MOTIVLAYOUT.layout(doc,null);
+      if(quelle?.quer){
+        doc=await root.PARTNER_MOTIVLAYOUT.grundentwurf(quelle.quer,doc.title,doc.width,doc.height);
+        const mass=Math.min(1,1800/doc.width);
+        motiv=R().canvas(Math.round(doc.width*mass),Math.round(doc.height*mass));
+        await R().render(motiv.getContext('2d'),doc,mass);
+      }
+    }
+    if(!motiv)motiv=await R().image(stand);
+    if(documentNow!==original||preview!==ursprungsbild)throw Error('Die Gestaltung wurde zwischenzeitlich geändert.');
     // Befestigungspunkte der beiden Felder im vorhandenen Foto. Für eine Einzelbande
     // sehen wir nur das linke Feld. Typografie und Zeichen behalten ihr Seitenverhältnis.
     const einfach=doc.width/doc.height<4.7;

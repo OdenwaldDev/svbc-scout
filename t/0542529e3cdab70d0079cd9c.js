@@ -663,7 +663,7 @@ async function peNeu(){ await peLaden(true); peZeigen(); }
 async function peRpc(fn,args,ok){ try{ const r=await svtRpc(fn,args); if(ok)kToast(ok); await peNeu(); return r; }catch(e){ kToast('⚠️ '+(e.message||e)); try{ e.gezeigt=true; }catch(_){} throw e; } }
 
 // ---------- Einhängen: Reiter „Steuerung“ steht fest in SPO_REITER (svm26); den Kopfknopf „Termin vorbereiten“ gibt es nur noch in der Zentrale ----------
-{ const _b=spoBody; spoBody=function(){ if(SPO.view==='steuerung'){ const B=document.getElementById('spoB'); if(B)peRender(B); return; } return _b.apply(this,arguments); }; }
+{ const _b=spoBody; spoBody=function(){ if(SPO.view==='bausteine'){ const B=document.getElementById('spoB'); if(B)peBausteine(B); return; } if(SPO.view==='steuerung'){ const B=document.getElementById('spoB'); if(B)peRender(B); return; } return _b.apply(this,arguments); }; }
 
 async function peRender(B){
   if(!PE.d){ B.innerHTML='<div class="card"><div class="empty">Lade die Partner-Steuerung …</div></div>'; await peLaden(); if(SPO.view!=='steuerung'||!B.isConnected)return; }
@@ -687,7 +687,7 @@ async function peRender(B){
   B.querySelectorAll('[data-pev]').forEach(b=>b.onclick=()=>{ PE.v=b.dataset.pev; peRender(B); });
   peZeigenIn(B.querySelector('#peB'));
 }
-function peZeigen(){ const B=document.getElementById('spoB'); if(B&&SPO.view==='steuerung')peRender(B); }
+function peZeigen(){ const B=document.getElementById('spoB'); if(B&&SPO.view==='steuerung')peRender(B); if(B&&SPO.view==='bausteine')peBausteine(B); }
 function peZeigenIn(H){ try{ ({heute:peHeute,belegung:peBelegung,laufzeiten:peLaufzeiten,rechnungen:peRechnungen,katalog:peKatalog,team:peTeam,verein:peVerein}[PE.v]||peHeute)(H); }
   catch(e){ console.warn(e); H.innerHTML='<div class="card"><div class="empty">Fehler beim Anzeigen.</div></div>'; } }
 

@@ -185,9 +185,9 @@ async function spoReload(){ await spoLoad(true); spoBody(); }
 
 // Ein gemeinsamer, kompakter Kopf für alle Reiter: Titel „Partner“ und eine waagerecht wischbare Reiterleiste in einer Zeile.
 // Die Zentrale (svm63) ist die Übersicht. Shop-Finanzen hängt svm56 hinten an.
-const SPO_REITER=[['zentrale','Zentrale'],['steuerung','Steuerung'],['sponsoren','Firmen'],['decks','Präsentationen'],['ausruestung','Ausrüstung'],['banden','Banden'],['ablage','Ablage']];
+const SPO_REITER=[['zentrale','Zentrale'],['steuerung','Steuerung'],['sponsoren','Firmenliste'],['decks','Präsentationen'],['bausteine','Bausteine'],['ausruestung','Ausrüstung'],['banden','Banden'],['ablage','Ablage']];
 function spoReiterAn(){ const seg=document.querySelector('#panel-sponsoring .spo-seg'); if(!seg)return;
-  seg.querySelectorAll('[data-spov]').forEach(x=>{ const an=x.dataset.spov===SPO.view; x.classList.toggle('on',an); x.setAttribute('aria-selected',an?'true':'false'); });
+  seg.querySelectorAll('[data-spov]').forEach(x=>{ const an=x.dataset.spov===SPO.view || (SPO.view==='bandencreator' && x.dataset.spov==='banden' && typeof s120An==='function' && s120An()); x.classList.toggle('on',an); x.setAttribute('aria-selected',an?'true':'false'); });
   spoReiterZeigen(seg); }
 // aktiven Reiter in der wischbaren Leiste sichtbar machen (nur waagerecht, die Seite springt nicht)
 function spoReiterZeigen(seg){ try{ const b=seg.querySelector('.on'); if(b&&seg.scrollWidth>seg.clientWidth)seg.scrollLeft=Math.max(0,b.offsetLeft-(seg.clientWidth-b.offsetWidth)/2); }catch(e){} }
@@ -299,6 +299,8 @@ function spoSponsor(id){
       <div class="msub">${[x.ansprechpartner&&(x.ansprechpartner+(x.funktion?' ('+x.funktion+')':'')),x.branche,x.bestand?'Bestandspartner':''].filter(Boolean).map(svEsc).join(' · ')}</div>${x.pate?`<div class="msub spo-pate">Pate bei uns: <b>${svEsc(x.pate)}</b></div>`:''}</div></div>
     <p class="spo-vipz"><button type="button" class="spo-link" id="spoVip" aria-pressed="${x.vip?'true':'false'}">${x.vip?'★ VIP-Firma, Kennzeichen entfernen':'☆ Als VIP-Firma kennzeichnen'}</button></p>
     ${spoAkteSchritt(x)}
+    <a class="btn sm" id="spoDirektangebot" target="_blank" rel="noopener" hidden>Zum Angebot</a>
+    <button class="btn sm" type="button" id="spoWerkstatt">Angebot intern vorbereiten</button>
     <p class="spo-stand">Stand: <b>${svEsc(SPO_STL[x.status]||x.status)}</b> · <button type="button" class="spo-link" id="spoStA" aria-expanded="false">ändern</button></p>
     <div class="spo-stbar" id="spoStB" hidden>${SPO_ST.map(([k,l])=>`<button type="button" class="${x.status===k?'on s-'+k:''}" data-spost="${k}" aria-pressed="${x.status===k}">${l}</button>`).join('')}</div>
     <div class="spo-frage" id="spoPF" hidden><p><b>Ohne Vertrag als Partner führen?</b> Das ist nur für alte Partner gedacht. Neue Partner kommen über den Vertrag dazu.</p>
@@ -320,6 +322,13 @@ function spoSponsor(id){
   const pf=M.querySelector('#spoPF'), sb=M.querySelector('#spoStB'), sa=M.querySelector('#spoStA');
   sa.onclick=()=>{ sb.hidden=!sb.hidden; sa.setAttribute('aria-expanded',String(!sb.hidden)); };
   const ns=M.querySelector('#spoNs'); if(ns)ns.onclick=()=>{ closeOverlay(); setTimeout(()=>pzLos(x.id,ns.dataset.pzk),60); };
+  const direkterLink=M.querySelector('#spoDirektangebot'),basis=typeof svBasis==='function'?svBasis():undefined;
+  function firmenangebot(f){
+    if(!direkterLink.isConnected||!f?.hat_angebot||!f.code)return;
+    direkterLink.href=PARTNER_VEREINSWERKSTATT.angebotslink(basis,f.code);direkterLink.hidden=false;
+  }
+  if(spoDarf('sponsoring:vertrag'))svtRpc('partner_vereinsfreigabe',{p_firma:x.id}).then(firmenangebot).catch(()=>{});
+  M.querySelector('#spoWerkstatt').onclick=()=>PARTNER_VEREINSWERKSTATT.oeffnen(x.id,x.firma,svtRpc,basis,firmenangebot);
   const tr=M.querySelector('#spoTer'); if(tr)tr.onclick=()=>{ closeOverlay(); setTimeout(()=>ptStart(typeof pzVor==='function'?pzVor(x):{id:x.id,firma:x.firma}),80); };
   M.querySelectorAll('[data-spost]').forEach(b=>b.onclick=()=>paEinmal(b,async()=>{ const st=b.dataset.spost; if(st===x.status)return;
     if(typeof peLaden==='function')await peLaden().catch(()=>{});   // erst wissen, ob es einen Vertrag gibt (Akte direkt nach dem Start)
