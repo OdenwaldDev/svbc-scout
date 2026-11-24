@@ -859,6 +859,9 @@ body.ed-aktiv{--ed-dunkel:#101b2b;--ed-hell:#f4efe4;--ed-akzent:#e99952;display:
   @keyframes kapitel-foto{from{transform:scale(1.055)}to{transform:scale(1)}}
   @keyframes kapitel-linie{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 }
+
+.ed-motiv .ed-bande-original img{inset:4% 16%;width:68%;height:92%}
+.ed-abbildung:has(.ed-bande-original) .ed-motiv{width:150%;margin-inline:-25%}
 </style></head><body><div id="film" data-s="start" data-licht="1" class="anlass">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture></div>
@@ -1178,7 +1181,7 @@ function redaktion(daten){
     const bild=bildpfad(f.bild)||(f.typ==='bande'?'partner/r-bande.webp':'');
     const bande=f.typ==='bande'&&logo;
     const schriftzug=bande&&typeof f.schriftzug==='string'?f.schriftzug.trim().slice(0,32):'';
-    const marke=bande?'<div class="ed-bande'+(schriftzug?' ed-bande-breit':'')+'"><img src="'+esc(logo)+'" alt="'+esc(A.firma)+'">'+(schriftzug?'<strong'+(schriftzug.length>7?' style="font-size:'+Math.min(17,58/schriftzug.length)+'cqw"':'')+'>'+esc(schriftzug)+'</strong>':'')+'</div>':'';
+    const marke=bande?'<div class="ed-bande'+(schriftzug?' ed-bande-breit':f.logoGross===true?' ed-bande-original':'')+'"><img src="'+esc(logo)+'" alt="'+esc(A.firma)+'">'+(schriftzug?'<strong'+(schriftzug.length>7?' style="font-size:'+Math.min(17,58/schriftzug.length)+'cqw"':'')+'>'+esc(schriftzug)+'</strong>':'')+'</div>':'';
     const foto=bild?'<figure class="ed-abbildung"><div class="ed-motiv"><img class="ed-bild" src="'+esc(bild)+'" alt="'+esc(f.alt||'')+'">'+marke+'</div>'+(f.credit?'<figcaption>'+esc(f.credit)+'</figcaption>':'')+'</figure>':'';
     const rows=Array.isArray(f.zeilen)?f.zeilen.filter(z=>z&&(z.wert||z.label||z.text)):[];
     const zeilen=rows.length?'<ul class="ed-zeilen">'+rows.map(z=>'<li>'+(z.wert?'<b>'+esc(z.wert)+'</b>':'')+'<div>'+(z.label?'<strong>'+esc(z.label)+'</strong>':'')+(z.text?'<p>'+esc(z.text)+'</p>':'')+'</div></li>').join('')+'</ul>':'';
@@ -1190,6 +1193,10 @@ function redaktion(daten){
   deck.className=daten.geschichte===true?'ed-deck ed-geschichte':'ed-deck';
   deck.setAttribute('aria-label',A.titel||'Partnerpräsentation');
   deck.innerHTML=folien.map(seite).join('');
+  const originale=$$('.ed-bande-original img',deck);
+  if(originale.length && typeof LOGO!=='undefined'){
+    LOGO.alsDataUrl(logo,'original').then(src=>originale.forEach(img=>{img.src=src;})).catch(()=>{ /* Das Original bleibt sichtbar. */ });
+  }
   const nav=document.createElement('nav');
   nav.className='ed-nav';
   nav.setAttribute('aria-label','Präsentation durchblättern');

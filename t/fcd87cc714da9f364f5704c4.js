@@ -578,6 +578,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.147',v:'0.99.147',datum:'2026-11-24',titel:'Originalzeichen auf der Bande',kurz:'Partner können ihre Bande mit einem großen, mittigen Logo ansehen.',punkte:[{ic:'i',t:'Nahansicht',d:'Das Originalzeichen nutzt die Höhe der Bande.',r:'admin'}]},
   {id:'0.99.146',v:'0.99.146',datum:'2026-11-24',titel:'Geschichten im Partnerflow',kurz:'Persönliche Partnergeschichten zeigen Bilder und Bandenentwürfe beim Durchblättern.',punkte:[{ic:'i',t:'Bandenentwurf',d:'Ein großer Schriftzug kann das Partnerlogo auf der Bande ergänzen.',r:'admin'}]},
   {id:'0.99.145',v:'0.99.145',datum:'2026-11-23',titel:'Persönliche Partnerpräsentationen',kurz:'Vorbereitete Partnergespräche lassen sich am Handy und am Bildschirm durchblättern.',punkte:[{ic:'i',t:'Partnergespräch',d:'Eine persönliche Präsentation kann Fotos, ein Paket und konkrete nächste Schritte enthalten.',r:'admin'}]},
   {id:'0.99.144',v:'0.99.144',datum:'2026-11-23',titel:'Euer Logo auf dem Trikotärmel',kurz:'Im Partnerflow seht ihr den Ärmelaufdruck jetzt auch auf dem Stoff des Jugendtrikots.',punkte:[{ic:'i',t:'Ärmel wechseln',d:'Im Trikot-Creator könnt ihr die Nahansichten auf dem blauen Heimtrikot und dem orangefarbenen Auswärtstrikot ansehen.',r:'team'},{ic:'i',t:'Neue Banden',d:'Reguläre Entwürfe starten mit der orangefarbenen Kante aus dem Vereinsdesign.',r:'team'}]},
