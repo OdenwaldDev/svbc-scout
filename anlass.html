@@ -680,6 +680,16 @@ html.zeiger .spot{opacity:1}
 
 .sz-trikot.keine-aermel>*{visibility:hidden}
 .sz-trikot.keine-aermel:after{content:'Die verfügbaren Ärmel findet ihr in der Platzwahl.';position:absolute;inset:0;display:grid;place-items:center;padding:1.5rem;text-align:center;background:#0d192d;color:#fff}
+
+.reise-bb-farben{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.reise-bb-farben[hidden]{display:none}
+.reise-bb-farben button{min-height:44px;padding:8px 14px;border:1px solid #9babc3;border-radius:6px;background:#12213c;color:white;font:700 15px/1.2 var(--b);cursor:pointer}
+.reise-bb-farben button::before{content:"";display:inline-block;width:.75em;height:.75em;margin-inline-end:.5em;border-radius:50%;background:#e8741f}
+.reise-bb-farben [data-bb-farbe="rosa"]::before{background:#ca0f86}
+.reise-bb-farben [aria-pressed="true"]{background:#fff;color:#172541}
+.reise-bb-farben button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.reise-bb-farben [aria-disabled="true"]{cursor:wait}
+.reise-bb-farben p{flex-basis:100%;margin:0;color:#e1e8f2;font:500 14px/1.4 var(--b)}
 /* Präsentation zu einem Anlass (anlass.html), Beta 0.99.89. Grundlage ist reise_stil.css, hier steht nur, was dazukommt. */
 .top .fuer{font:700 12px/1 var(--t);letter-spacing:.16em;text-transform:uppercase;color:var(--hb);max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .anlass .a-los{margin-top:24px}

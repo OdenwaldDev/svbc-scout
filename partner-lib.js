@@ -3155,6 +3155,15 @@ const LOGO = (() => {
    ===================================================================== */
 const BANDE = (() => {
   const C = { marine:'#1d2760', orange:'#e8741f', tinte:'#1c1c22', grau:'#3a3a44', himmel:'#8fc9ec', weiss:'#ffffff' };
+  const BB_LOGO = '3dd57b60-89ca-4b6e-b072-5b8464146c28';
+  // Der Datensatz darf ein neues Partnerbild erhalten. Nur dem Original aus SQL228 gehören die Vektoren.
+  const BB_LOGO_HASH = '6c5a77d4b0259da1e9846c896e5014b5910f623e335b47c78394387bd2270ff7';
+  async function bbOriginal(src){
+    if(src === 'partner/bb-signet.svg' || src === 'partner/bb-signet-original.svg') return true;
+    if(typeof src !== 'string' || !src.startsWith('data:image/png;base64,') || !globalThis.crypto?.subtle) return false;
+    const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(src));
+    return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('')===BB_LOGO_HASH;
+  }
   const FORMATE = {
     '250x80':  { w:2500, h:800,  t:'2,50 × 0,80 m', k:'2,5 m', lang:'2,5 m lang, 80 cm hoch', paket:'Einzelbande', hinweis:'Einzelbande: eine Platte, 2,50 × 0,80 m (Pakete Club und Premium)' },
     '300x80':  { w:3000, h:800,  t:'3,00 × 0,80 m', k:'3 m', lang:'3 m lang, 80 cm hoch', std:true },
@@ -3262,7 +3271,7 @@ const BANDE = (() => {
   // A logo occupies the safe area. Only confirmed symbols get a separate company name.
   function layout(spec, res){
     spec = spec || {}; res = res || {};
-    const F = FORMATE[spec.format] || FORMATE['300x80'], W = F.w, H = F.h, ci = spec.stil !== 'original';
+    const F = FORMATE[spec.format] || FORMATE['300x80'], W = F.w, H = F.h, ci = spec.stil !== 'original' || !!res.bbVektor;
     const ops = [], info = { warn:[], kontrast:[], lesbar:{} }, m = Math.round(Math.min(W, H) * .08), Hu = H - 2 * m, aw = W - 2 * m, x0 = m, cx = W / 2;
     const logo = res.logo && res.logo.w > 0 && res.logo.h > 0 ? res.logo : null, pattern = muster(spec), name = sauber(ohneKontakt(spec.name || spec.firma)), nameAn = spec.nameAn === true && pattern === 'normal';
     const lay = spec.layout === 'mitte' || spec.layout === 'claim' ? 'mitte' : 'links', nF = { fam:'c', w:900 }, cF = { fam:'t', w:600 };
@@ -3280,7 +3289,21 @@ const BANDE = (() => {
       const fs = Math.min(Hu * .85, sw / (Math.max(mess('EVENT', nF).w, mess('KREATIV', nF).w) / 100));
       const old = spec.left === 'EVENT' && spec.right === 'KREATIV';
       const left = einpassen(old ? 'EVENT' : 'KREATIV', nF, sw, Hu, fs, 1), right = einpassen(old ? 'KREATIV' : 'EVENT', nF, sw, Hu, fs, 1);
-      txt(left, x0 + sw / 2, (H - left.h) / 2, old ? 'event' : 'kreativ'); txt(right, W - m - sw / 2, (H - right.h) / 2, old ? 'kreativ' : 'event');
+      if(old || spec.bbSatz === 1){
+        txt(left, x0 + sw / 2, (H - left.h) / 2, old ? 'event' : 'kreativ');
+        txt(right, W - m - sw / 2, (H - right.h) / 2, old ? 'kreativ' : 'event');
+      }else{
+        // Die Laufweite enthält leeren Raum neben V und E. Nur die sichtbaren Glyphenkanten ausrichten.
+        for(const [wort,links] of [[left,true],[right,false]]){
+          MC.font = font(nF, wort.fs);
+          const ink = MC.measureText(wort.L[0]), l = ink.actualBoundingBoxLeft || 0, r = ink.actualBoundingBoxRight ?? wort.w;
+          const x = links ? cx - b.w / 2 - gap - r : cx + b.w / 2 + gap + l;
+          const op = textOp(wort,x,(H - wort.h) / 2,'l',nameF,links ? 'kreativ' : 'event');
+          op.box.x = x - l;
+          op.box.w = l + r;
+          ops.push(op);
+        }
+      }
     } else if(pattern === 'moerlens'){
       const claim = einpassen('Restobar & Patisserie', cF, aw, Hu * .22, H * .19, 1), gap = H * .05, b = logoBox(aw, Hu - claim.h - gap), y = m + (Hu - b.h - claim.h - gap) / 2;
       img(b, cx - b.w / 2, y); txt(claim, cx, y + b.h + gap, 'claim', claimF);
@@ -3335,7 +3358,18 @@ const BANDE = (() => {
     o = o || {}; await schriften(o.basis);
     const res = {}, ci = spec.stil !== 'original';
     if(spec.logo && typeof LOGO !== 'undefined'){
-      try{ const a = await LOGO.aufbereiten(spec.logo); const art = ci ? 'farbe:' + (muster(spec)==='bb' ? C.orange : spec.logoFarbe === 'schwarz' ? C.tinte : C.marine) : 'original';
+      try{ const a = await LOGO.aufbereiten(spec.logo);
+        if(muster(spec)==='bb' && spec.logoId===BB_LOGO && await bbOriginal(spec.logo)) res.bbOriginal=spec.logo;
+        if(res.bbOriginal && spec.bbSatz===2){
+          const datei = spec.bbFarbe==='rosa' ? 'bb-signet-original.svg' : 'bb-signet.svg';
+          const vektor = await laden((o.basis || basisJetzt) + datei);
+          res.logoBild = vektor;
+          res.bbVektor = datei;
+          res.logo = { w:vektor.naturalWidth, h:vektor.naturalHeight, hell:false, farben:a.farben };
+          res.analyse = a;
+          return res;
+        }
+        const art = ci ? 'farbe:' + (muster(spec)==='bb' ? C.orange : spec.logoFarbe === 'schwarz' ? C.tinte : C.marine) : 'original';
         const c = await LOGO.variante(spec.logo, art); res.logo = { w:c.width, h:c.height, hell:a.hell, farben:a.farben }; res.logoBild = c; res.analyse = a; }
       catch(e){ res.logoFehler = e.message || 'Logo lässt sich nicht laden'; } }
     return res;
@@ -3524,18 +3558,25 @@ const BANDE = (() => {
     return new Promise(ok => c.toBlob(b => ok({ blob:b, name:dateiName(L, spec, 'png'), breite:c.width, hoehe:c.height, dpi:Math.round(ppm * 25.4) }), 'image/png'));
   }
   // SVG: Flächen und Schrift als Vektor, Schriften eingebettet, Logo und Doppel-Logo als Bild
-  const fontCache = new Map();
-  async function fontDaten(datei){ if(fontCache.has(datei)) return fontCache.get(datei);
-    const p = fetch(basisJetzt + datei).then(r => { if(!r.ok) throw new Error(); return r.blob(); }).then(b => new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(b); })).catch(() => null);
-    fontCache.set(datei, p); return p; }
+  const dateiCache = new Map();
+  async function dateiDaten(datei){
+    const url=basisJetzt+datei;
+    if(dateiCache.has(url)) return dateiCache.get(url);
+    const p=fetch(url).then(r=>{ if(!r.ok) throw new Error(); return r.blob(); }).then(b=>new Promise((ok,nein)=>{
+      const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=nein; fr.readAsDataURL(b);
+    })).catch(()=>{ dateiCache.delete(url); return null; });
+    dateiCache.set(url,p); return p;
+  }
   const xe = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const r2 = v => Math.round(v * 100) / 100;
   // Farben im SVG nur als #rgb/#rrggbb oder rgb(a)-Zahlen, alles andere wird zu Schwarz
   const fa = c => /^#[0-9a-fA-F]{3,8}$|^rgba?\([\d.,\s%]+\)$|^none$/.test(String(c || '')) ? c : '#1c1c22';
   async function svg(L, res, spec){
-    const B = L.B, fonts = await Promise.all(SCHRIFTEN.map(async ([fam, f, w]) => { const u = await fontDaten(f); return u ? `@font-face{font-family:'${fam}';font-weight:${w};src:url(${u.replace(/^data:[^;]*;/, 'data:font/woff2;')}) format('woff2');}` : ''; }));
+    const B = L.B, fonts = await Promise.all(SCHRIFTEN.map(async ([fam, f, w]) => { const u = await dateiDaten(f); return u ? `@font-face{font-family:'${fam}';font-weight:${w};src:url(${u.replace(/^data:[^;]*;/, 'data:font/woff2;')}) format('woff2');}` : ''; }));
     const bildUrl = im => { if(!im) return null; const c = document.createElement('canvas'); c.width = im.naturalWidth || im.width; c.height = im.naturalHeight || im.height; c.getContext('2d').drawImage(im, 0, 0); return c.toDataURL('image/png'); };
-    const lu = bildUrl(res.logoBild), wu = bildUrl(res.wappenBild), famName = f => FAM[f.fam].replace(/"/g, "'");
+    const bb = ['bb-signet.svg','bb-signet-original.svg'].includes(res.bbVektor) && await dateiDaten(res.bbVektor);
+    if(res.bbVektor && !bb) throw new Error('Die Vektordatei des BB-Zeichens fehlt. Bitte lade die Bande erneut.');
+    const lu = bb || bildUrl(res.logoBild), wu = bildUrl(res.wappenBild), famName = f => FAM[f.fam].replace(/"/g, "'");
     const teile = druckOps(L).map(o => {
       if(o.t === 'rect') return `<rect x="${r2(o.x)}" y="${r2(o.y)}" width="${r2(o.w)}" height="${r2(o.h)}" fill="${fa(o.fill)}"/>`;
       if(o.t === 'linie') return `<line x1="${r2(o.x1)}" y1="${r2(o.y1)}" x2="${r2(o.x2)}" y2="${r2(o.y2)}" stroke="${fa(o.stroke)}" stroke-width="${r2(+o.w || 0)}" stroke-linecap="round"/>`;
@@ -3661,7 +3702,7 @@ const BANDE = (() => {
     return { boxen, pxm:Math.abs(m1[0] - m0[0]) / dpr };
   }
 
-  return { C, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, muster, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, ohneKontakt, laden };
+  return { C, BB_LOGO, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, muster, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, ohneKontakt, laden };
 })();
 
 // Feste, geprüfte Formen für die Planvorschau und den Export.
@@ -4774,8 +4815,8 @@ const BANDENWAHL = (() => {
     }else if(pattern==='bb'){
       const lw=Math.min(frame.w*.32,frame.h*1.45),gap=Math.min(H*.10,frame.w*.04),sw=(frame.w-lw-2*gap)/2,size=Math.min(frame.h*.85,sw/3.16),th=size*.7;
       img(frame.x+(frame.w-lw)/2,frame.y,lw,frame.h);
-      txt('KREATIV',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
-      txt('EVENT',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt('KREATIV',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'right');
+      txt('EVENT',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'left');
     }else if(pattern==='moerlens'&&claim){
       const a=d.assets[logo],ch=Math.min(H*.14,frame.h*.22),gap=Math.min(H*.05,frame.h*.08),lh=Math.min(frame.h-ch-gap,frame.w*a.height/a.width),lw=lh*a.width/a.height,ly=frame.y+(frame.h-lh-gap-ch)/2;
       img(frame.x+(frame.w-lw)/2,ly,lw,lh);
@@ -4803,7 +4844,7 @@ const BANDENWAHL = (() => {
       if(n.type==='Q')n={type:'C',x1:px+2/3*(n.x1-px),y1:py+2/3*(n.y1-py),x2:n.x+2/3*(n.x1-n.x),y2:n.y+2/3*(n.y1-n.y),x:n.x,y:n.y};
       path.commands.push(n);if(n.type==='M'){mx=n.x;my=n.y;}if('x'in n){px=n.x;py=n.y;}if(n.type==='Z'){px=mx;py=my;}
     }
-    return {d:path.toPathData(4),size:fs*s,bounds:{x,y:e.y,w:(x2-x1)*s,h:(y2-y1)*s}};
+    return {d:path.toPathData(4),size:fs*s,bounds:{x:x+x1*s,y:e.y,w:(x2-x1)*s,h:(y2-y1)*s}};
   }
   function preflight(doc,fonts={},trusted=false){
     const d=trusted?doc:normalise(doc),issues=[];const add=(level,message,id)=>issues.push({level,message,id:id||null});
@@ -5063,6 +5104,7 @@ const BANDENWAHL = (() => {
   const rules={codeOK,previewOK,editorURL,editorMessage,customerPayload,textureLayout};
   if(typeof module!=='undefined'&&module.exports){module.exports=rules;return;}
   let cfg=null,project=null,documentNow=null,preview=null,loading=null,loadingError=null,modal=null,editor=null,nonce='',saving=false,previousFocus=null,bodyOverflow='',loadGeneration=0,reloadRequired=false,motiv='haupt',availableMotifs=[],motifFocus=null;
+  let bbSignet=null,bbOriginal=null,bbVergleich=null;
   const $=s=>document.querySelector(s),C=()=>root.BD_CORE,R=()=>root.BD_RENDER;
   const frame=()=>document.getElementById('reiseRahmen');
   const canEdit=()=>!!(project&&(project.bearbeiten===true||project.kundenbearbeitung===true));
@@ -5071,7 +5113,8 @@ const BANDENWAHL = (() => {
   function notify(t){if(cfg&&cfg.toast)cfg.toast(t);}
   function resume(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-editor-zu'},location.origin);if(cfg&&cfg.geschlossen)cfg.geschlossen();}
   const motifs=()=>{const list=project&&project.motive||availableMotifs;return Array.isArray(list)?list.filter(m=>m&&['haupt','moerlens'].includes(m.key)&&typeof m.titel==='string').slice(0,2):[];};
-  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,einzel:documentNow?documentNow.width/documentNow.height<4.7:false,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),busy:!!loading||saving},location.origin);controls();}
+  const farbvorschau=()=>!!bbSignet&&bbSignet.farbe!==bbSignet.gespeichert;
+  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,einzel:documentNow?documentNow.width/documentNow.height<4.7:false,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),bbFarbe:project&&bbSignet?bbSignet.farbe:null,farbvorschau:farbvorschau(),busy:!!loading||saving},location.origin);controls();}
   function rpc(fn,args){
     const routes={bandenstudio_projekt_laden:'bandenstudio_motiv_laden',bandenstudio_projekt_speichern:'bandenstudio_motiv_speichern',bandenstudio_kunde_speichern:'bandenstudio_motiv_kunde_speichern'};
     return cfg.rpc(motiv!=='haupt'&&routes[fn]?routes[fn]:fn,motiv!=='haupt'&&routes[fn]?{...args,p_motiv:motiv}:args);
@@ -5080,7 +5123,7 @@ const BANDENWAHL = (() => {
     const b=$('#bdBearbeiten'),g=$('#bdKundeErlauben'),hint=$('#bdProjektHinweis'),count=$('#bdProjektBestand');
     if(b){b.hidden=!canEdit();b.disabled=saving||!!loading;}
     if(g){g.closest('label').hidden=!(project&&project.kundenfreigabe_darf===true);g.checked=!!(project&&project.kundenbearbeitung);}
-    if(hint)hint.textContent=loadingError?'Der gespeicherte Entwurf lässt sich gerade nicht laden. Lade die Seite erneut.':project?'Gespeicherter Entwurf · Version '+project.version+'. Die Druckfreigabe erfolgt separat.':'Euer Entwurf wird geladen …';
+    if(hint)hint.textContent=loadingError?'Der gespeicherte Entwurf lässt sich gerade nicht laden. Lade die Seite erneut.':farbvorschau()?'Farbvorschau'+(canEdit()?' · Unter Bearbeiten kannst du diese Farbe speichern.':'.'):project?'Gespeicherter Entwurf · Version '+project.version+'. Die Druckfreigabe erfolgt separat.':'Euer Entwurf wird geladen …';
     if(count){const s=project&&project.bestand;count.hidden=!(team()&&s);count.textContent=s?'Entwürfe im Bestand: '+s.projekte+' für '+s.aktive_partner+' aktive Präsentationen.':'';}
     for(const id of ['bdLay','bdFmt']){const el=$('#'+id);if(el)el.hidden=!!cfg;}
     const host=$('#bdMotiv')||$('[data-bandenstudio-motive]'),list=motifs();
@@ -5088,6 +5131,58 @@ const BANDENWAHL = (() => {
       if(host.innerHTML!==content){host.innerHTML=content;host.querySelectorAll?.('[data-bd-motiv]').forEach(b=>b.onclick=()=>{motifFocus=b.dataset.bdMotiv;changeMotif(b.dataset.bdMotiv);});}
       if(motifFocus&&!loading&&!saving){host.querySelector?.('[data-bd-motiv="'+motifFocus+'"]')?.focus({preventScroll:true});motifFocus=null;}
     }
+    const farben=$('[data-bd-bb-farben]');
+    if(farben){
+      farben.hidden=!(project&&bbSignet);
+      if(!farben.hidden&&!farben.childElementCount)farben.innerHTML='<button type="button" data-bb-farbe="orange">Vereinsorange</button><button type="button" data-bb-farbe="rosa">Originalrosa</button>';
+      for(const b of farben.querySelectorAll('[data-bb-farbe]')){
+        b.setAttribute('aria-pressed',String(b.dataset.bbFarbe===bbSignet?.farbe));
+        b.setAttribute('aria-disabled',String(!!loading||saving));
+        b.onclick=()=>changeBBColour(b.dataset.bbFarbe);
+      }
+    }
+  }
+  async function findBBSignet(p,d){
+    const list=p.motive||availableMotifs;
+    if(motiv!=='haupt'||p.generator?.pattern!=='bb'||!Array.isArray(list)||!list.some(m=>m.key==='moerlens'))return null;
+    const images=d.elements.filter(e=>e.type==='image');
+    if(images.length!==1)return null;
+    const key=images[0].asset,vector=d.assets[key]?.vector;
+    if(vector?.paths?.length!==2)return null;
+    // Ein hochgeladenes Ersatzlogo bleibt auch in einer BB-Präsentation sein eigenes Motiv.
+    // Der feste Vergleich liest beide Pfade aus der archivierten Wortbildmarke.
+    if(!bbOriginal)bbOriginal=root.fetch('partner/bb-signet-original.svg').then(async response=>{
+      if(!response.ok)throw Error('BB-Originalzeichen fehlt.');
+      return R().readSVG(await response.text());
+    }).catch(()=>{bbOriginal=null;return null;});
+    const original=await bbOriginal;
+    if(!original||original.width!==vector.width||original.height!==vector.height||
+      !vector.paths.every((path,i)=>path.d===original.paths[i]?.d&&path.stroke==='none'&&path.opacity===1&&path.rule===original.paths[i].rule))return null;
+    const pink=original.paths[0].fill.toLowerCase(),fill=vector.paths[0].fill.toLowerCase();
+    if(!vector.paths.every(path=>path.fill.toLowerCase()===fill)||![pink,C().CI.orange].includes(fill))return null;
+    const farbe=fill===pink?'rosa':'orange';
+    return {key,pink,farbe,gespeichert:farbe};
+  }
+  async function faerbeBB(d,signet,farbe){
+    const asset=d.assets[signet.key],fill=farbe==='rosa'?signet.pink:C().CI.orange;
+    for(const path of asset.vector.paths)path.fill=fill;
+    asset.src=await R().vectorPreview(asset.vector);
+  }
+  async function changeBBColour(farbe){
+    if(!bbSignet||!project||!documentNow||saving||loading||modal||!['orange','rosa'].includes(farbe)||farbe===bbSignet.farbe)return false;
+    const generation=loadGeneration,signet=bbSignet,d=clone(documentNow);
+    const work=(async()=>{
+      await faerbeBB(d,signet,farbe);
+      const next=await makePreview(d);
+      if(generation!==loadGeneration)return false;
+      documentNow=d;preview=next;bbSignet={...signet,farbe};
+      bbVergleich=farbvorschau()?{version:project.version,farbe}:null;
+      return true;
+    })();
+    loading=work;context();
+    try{return await work;}
+    catch(e){if(generation===loadGeneration)notify(errorText(e));return false;}
+    finally{if(loading===work){loading=null;context();if(cfg?.geaendert)cfg.geaendert(project);}}
   }
   async function makeDoc(p){
     if(!C()||!R())throw Error('Das Bandenstudio wird noch geladen. Bitte lade die Seite neu.');
@@ -5125,7 +5220,16 @@ const BANDENWAHL = (() => {
   }
   async function adopt(p,generation){
     if(!p||p.ok===false||!Number.isInteger(p.version))throw Error(p&&p.fehler||'Der Entwurf konnte nicht geladen werden.');
-    const d=await makeDoc(p),im=await makePreview(d);if(generation!==loadGeneration)return null;
+    const d=await makeDoc(p),signet=await findBBSignet(p,d);
+    if(generation!==loadGeneration)return null;
+    const wahl=bbVergleich;
+    if(signet&&wahl?.version===p.version&&wahl.farbe!==signet.gespeichert){
+      await faerbeBB(d,signet,wahl.farbe);
+      signet.farbe=wahl.farbe;
+    }
+    const im=await makePreview(d);if(generation!==loadGeneration)return null;
+    if(motiv==='haupt'&&(!signet||signet.farbe===signet.gespeichert))bbVergleich=null;
+    bbSignet=signet;
     project=p;availableMotifs=motifs();documentNow=d;preview=im;loadingError=null;reloadRequired=false;context();if(cfg&&cfg.geaendert)cfg.geaendert(p);return p;
   }
   async function load(){
@@ -5141,9 +5245,9 @@ const BANDENWAHL = (() => {
   async function prepare(o){
     if(!o||!codeOK(o.code)||typeof o.rpc!=='function')throw Error('Der persönliche Präsentationslink fehlt.');
     if(saving)throw Error('Der aktuelle Entwurf wird noch gespeichert.');if(modal)close();
-    ++loadGeneration;cfg=o;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
+    ++loadGeneration;cfg=o;bbSignet=null;bbVergleich=null;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
   }
-  async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project};}
+  async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project,farbvorschau:farbvorschau()};}
   async function amSpielfeld(quer=false){
     const generation=loadGeneration;
     if(loading)await loading;else if(!project)await load();
@@ -5189,7 +5293,7 @@ const BANDENWAHL = (() => {
   }
   function status(t){const e=modal&&modal.querySelector('[data-bd-status]');if(e)e.textContent=t;}
   function post(o){if(editor&&editor.contentWindow)editor.contentWindow.postMessage(Object.assign({nonce},o),location.origin);}
-  function sendDocument(){if(!modal||!documentNow)return;const g=project.generator||{};post({typ:'bd-editor-laden',doc:clone(documentNow),rolle:team()?'team':'kunde',vorgaben:{firma:g.firma||documentNow.title,name:g.name||g.firma||documentNow.title,nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:project.quelle==='generator'&&['klar','logo','kante'].includes(g.template)?g.template:null});status('');}
+  function sendDocument(){if(!modal||!documentNow)return;const g=project.generator||{};post({typ:'bd-editor-laden',doc:clone(documentNow),farbvorschau:farbvorschau(),rolle:team()?'team':'kunde',vorgaben:{firma:g.firma||documentNow.title,name:g.name||g.firma||documentNow.title,nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:project.quelle==='generator'&&['klar','logo','kante'].includes(g.template)?g.template:null});status('');}
   async function saveFromEditor(data){
     if(!modal||saving||!canEdit())return;saving=true;status('Entwurf wird gespeichert …');const generation=loadGeneration,oldProject=project,oldDoc=documentNow,oldPreview=preview;
     try{
@@ -5235,8 +5339,9 @@ const BANDENWAHL = (() => {
     if(e.data.reise==='bereit')context();
     if(e.data.reise==='bande-editor-oeffnen'){if(canEdit()&&!loading)open();else resume();}
     if(e.data.reise==='bande-motiv-waehlen'&&typeof e.data.motiv==='string')changeMotif(e.data.motiv);
+    if(e.data.reise==='bande-farbe-waehlen')changeBBColour(e.data.farbe);
   });
-  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,amSpielfeld,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,geladen:()=>!!project,regeln:rules};
+  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,amSpielfeld,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,farbeWaehlen:changeBBColour,geladen:()=>!!project,regeln:rules};
 })(typeof window!=='undefined'?window:globalThis);
 
 /* Explicit one-use same-origin handoff; no private data in URL or browser history. */

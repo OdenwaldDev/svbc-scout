@@ -99,8 +99,8 @@
     }else if(pattern==='bb'){
       const lw=Math.min(frame.w*.32,frame.h*1.45),gap=Math.min(H*.10,frame.w*.04),sw=(frame.w-lw-2*gap)/2,size=Math.min(frame.h*.85,sw/3.16),th=size*.7;
       img(frame.x+(frame.w-lw)/2,frame.y,lw,frame.h);
-      txt('KREATIV',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'center');
-      txt('EVENT',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'center');
+      txt('KREATIV',frame.x,(H-th)/2,sw,th,size,'condensed',ink,'right');
+      txt('EVENT',frame.x+frame.w-sw,(H-th)/2,sw,th,size,'condensed',ink,'left');
     }else if(pattern==='moerlens'&&claim){
       const a=d.assets[logo],ch=Math.min(H*.14,frame.h*.22),gap=Math.min(H*.05,frame.h*.08),lh=Math.min(frame.h-ch-gap,frame.w*a.height/a.width),lw=lh*a.width/a.height,ly=frame.y+(frame.h-lh-gap-ch)/2;
       img(frame.x+(frame.w-lw)/2,ly,lw,lh);
@@ -128,7 +128,7 @@
       if(n.type==='Q')n={type:'C',x1:px+2/3*(n.x1-px),y1:py+2/3*(n.y1-py),x2:n.x+2/3*(n.x1-n.x),y2:n.y+2/3*(n.y1-n.y),x:n.x,y:n.y};
       path.commands.push(n);if(n.type==='M'){mx=n.x;my=n.y;}if('x'in n){px=n.x;py=n.y;}if(n.type==='Z'){px=mx;py=my;}
     }
-    return {d:path.toPathData(4),size:fs*s,bounds:{x,y:e.y,w:(x2-x1)*s,h:(y2-y1)*s}};
+    return {d:path.toPathData(4),size:fs*s,bounds:{x:x+x1*s,y:e.y,w:(x2-x1)*s,h:(y2-y1)*s}};
   }
   function preflight(doc,fonts={},trusted=false){
     const d=trusted?doc:normalise(doc),issues=[];const add=(level,message,id)=>issues.push({level,message,id:id||null});

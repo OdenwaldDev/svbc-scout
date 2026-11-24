@@ -680,6 +680,16 @@ html.zeiger .spot{opacity:1}
 
 .sz-trikot.keine-aermel>*{visibility:hidden}
 .sz-trikot.keine-aermel:after{content:'Die verfügbaren Ärmel findet ihr in der Platzwahl.';position:absolute;inset:0;display:grid;place-items:center;padding:1.5rem;text-align:center;background:#0d192d;color:#fff}
+
+.reise-bb-farben{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.reise-bb-farben[hidden]{display:none}
+.reise-bb-farben button{min-height:44px;padding:8px 14px;border:1px solid #9babc3;border-radius:6px;background:#12213c;color:white;font:700 15px/1.2 var(--b);cursor:pointer}
+.reise-bb-farben button::before{content:"";display:inline-block;width:.75em;height:.75em;margin-inline-end:.5em;border-radius:50%;background:#e8741f}
+.reise-bb-farben [data-bb-farbe="rosa"]::before{background:#ca0f86}
+.reise-bb-farben [aria-pressed="true"]{background:#fff;color:#172541}
+.reise-bb-farben button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.reise-bb-farben [aria-disabled="true"]{cursor:wait}
+.reise-bb-farben p{flex-basis:100%;margin:0;color:#e1e8f2;font:500 14px/1.4 var(--b)}
 /* Partnerreise: räumliche Materialien. Nach reise_stil.css einbinden.
    Keine neuen Inhalte oder Bilder der Firma, keine zusätzlichen Schriftarten.
    Optional: .sz-trikot { --schrank-rueckwand: url("partner/r-schrank.webp") }
@@ -1416,6 +1426,7 @@ html.zeiger .spot{opacity:1}
           <div class="sz sz-durch" data-sz="tag" data-spieltag></div>
           <div class="sz sz-wand" data-sz="wand"><h4>Unsere Partnerwand <small>SAISON 2027/28</small></h4><div class="kacheln"><i></i><i></i><i></i><i></i><i></i><div class="ich"><span class="passt" data-name-gross>EUER NAME</span></div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         </div>
+        <div class="reise-bb-farben" id="bbFarben" role="group" aria-label="Farbe des BB-Zeichens" hidden><button type="button" data-bb-farbe="orange">Vereinsorange</button><button type="button" data-bb-farbe="rosa">Originalrosa</button><p id="bbFarbhinweis" role="status" hidden></p></div>
         <div class="trikot-ansichten" id="trikotAnsichten" role="group" aria-label="Trikotansicht" hidden><button type="button" data-trikot-ansicht="ganz" aria-pressed="false">Ganzes Trikot</button><button type="button" data-trikot-ansicht="detail" aria-pressed="true">Ärmel näher</button><button type="button" data-trikot-seite="aermel_r" aria-pressed="true">Rechter Ärmel</button><button type="button" data-trikot-seite="aermel_l" aria-pressed="false">Linker Ärmel</button></div>
       </div>
       <div class="bue-w"><div id="kurzMotive" hidden><p class="unter">Club Partner mit eigener Bande und einem Ärmel auf dem Trainingsanzug der Jugend.</p><div class="tabs"><button class="zeile" type="button" data-kurzmotiv="bande" aria-pressed="true">Eure Bande</button><button class="zeile" type="button" data-kurzmotiv="trikot" aria-pressed="false">Euer Trainingsanzug</button></div></div>
@@ -1559,7 +1570,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.161';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.162';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -2026,8 +2037,23 @@ window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==lo
   AERMEL_SEITE=e.data.seite;if(e.data.kleidung)KLEIDUNG=kleidungswahl(e.data.kleidung);if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
 let MOTIV_FOKUS=null,MOTIV_URSPRUNG=null;
 function markeSetz(){ const bild=u=>'<img src="'+u+'" alt="">';
-  if(BANDE_PROJEKT&&BANDE_PROJEKT.vorschau){$$('.bande-name').forEach(b=>{const stamp=(BANDE_PROJEKT.motiv||'haupt')+':'+BANDE_PROJEKT.version;if(b.dataset.projekt!==stamp){b.dataset.projekt=stamp;b.dataset.bandenformat=BANDE_PROJEKT.einzel?'einzel':'doppel';b.classList.add('bd-entwurf-gespeichert');b.classList.remove('mk','nur');b.innerHTML=bild(BANDE_PROJEKT.vorschau);}});}
+  if(BANDE_PROJEKT&&BANDE_PROJEKT.vorschau){$$('.bande-name').forEach(b=>{const stamp=(BANDE_PROJEKT.motiv||'haupt')+':'+BANDE_PROJEKT.version+':'+(BANDE_PROJEKT.bbFarbe||'');if(b.dataset.projekt!==stamp){b.dataset.projekt=stamp;b.dataset.bandenformat=BANDE_PROJEKT.einzel?'einzel':'doppel';b.classList.add('bd-entwurf-gespeichert');b.classList.remove('mk','nur');b.innerHTML=bild(BANDE_PROJEKT.vorschau);}});}
   else if(MARKE)$$('.bande-name:not(.mk)').forEach(b=>{ b.classList.add('mk'); b.classList.toggle('nur',!MARKE.name); b.innerHTML=bild(MARKE.bande)+(MARKE.name?'<span class="mk-n">'+esc(MARKE.name)+'</span>':''); });
+  const bbFarben=$('#bbFarben');
+  if(bbFarben){
+    bbFarben.hidden=!GERAHMT||!BANDE_PROJEKT?.bbFarbe||!$('#rahmen .sz-bande.an');
+    const hinweis=$('#bbFarbhinweis');
+    hinweis.hidden=!BANDE_PROJEKT?.farbvorschau;
+    if(!hinweis.hidden){
+      const text=BANDE_PROJEKT.bearbeiten?'Farbvorschau. Unter „Bearbeiten“ kannst du die Farbe speichern.':'Farbvorschau für diesen Besuch.';
+      if(hinweis.textContent!==text)hinweis.textContent=text;
+    }
+    if(!bbFarben.hidden)for(const button of bbFarben.querySelectorAll('[data-bb-farbe]')){
+      button.setAttribute('aria-pressed',String(button.dataset.bbFarbe===BANDE_PROJEKT.bbFarbe));
+      button.setAttribute('aria-disabled',String(BANDE_PROJEKT.busy));
+      button.onclick=()=>{if(!BANDE_PROJEKT?.busy)window.parent.postMessage({reise:'bande-farbe-waehlen',farbe:button.dataset.bbFarbe},location.origin);};
+    }
+  }
   $$('.banden-entwurf').forEach(b=>{let btn=b.querySelector('[data-bande-bearbeiten]');if(!btn){btn=document.createElement('button');btn.type='button';btn.className='reise-bande-bearbeiten';btn.dataset.bandeBearbeiten='1';btn.textContent='Bearbeiten';btn.onclick=()=>{if(!GERAHMT||!BANDE_PROJEKT?.bearbeiten)return;clearInterval(szUhr);REISEFILM.sichtbar(false);window.parent.postMessage({reise:'bande-editor-oeffnen'},location.origin);};b.appendChild(btn);}btn.hidden=!GERAHMT||!BANDE_PROJEKT?.bearbeiten;});
   $$('.banden-entwurf').forEach(b=>{let choices=b.parentElement.querySelector('.reise-bande-motive');const list=BANDE_PROJEKT?.motive||[];
     if(!choices&&list.length>1){choices=document.createElement('div');choices.className='reise-bande-motive';choices.setAttribute('role','group');choices.setAttribute('aria-label','Bandenmotiv');b.parentElement.insertBefore(choices,b);}
@@ -2618,7 +2644,8 @@ window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==lo
   if(e.data.reise==='bande-editor-zu'){REISEFILM.sichtbar(true);const b=$('[data-bande-bearbeiten]:not([hidden])');if(b)b.focus({preventScroll:true});return;}
   if(e.data.reise!=='bande-projekt')return;const u=e.data.vorschau;if(u!==null&&(typeof u!=='string'||u.length>690000||!/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(u)))return;
   const motive=Array.isArray(e.data.motive)?e.data.motive.filter(m=>m&&['haupt','moerlens'].includes(m.key)&&typeof m.titel==='string').slice(0,2).map(m=>({key:m.key,titel:m.titel.slice(0,50)})):[];
-  BANDE_PROJEKT={vorschau:u,einzel:e.data.einzel===true,bearbeiten:e.data.bearbeiten===true,version:Math.max(0,+e.data.version||0),motiv:e.data.motiv==='moerlens'?'moerlens':'haupt',motive,busy:e.data.busy===true};passe();
+  const bbFarbe=e.data.motiv==='haupt'&&['orange','rosa'].includes(e.data.bbFarbe)?e.data.bbFarbe:null;
+  BANDE_PROJEKT={vorschau:u,einzel:e.data.einzel===true,bearbeiten:e.data.bearbeiten===true,version:Math.max(0,+e.data.version||0),motiv:e.data.motiv==='moerlens'?'moerlens':'haupt',motive,bbFarbe,farbvorschau:!!bbFarbe&&e.data.farbvorschau===true,busy:e.data.busy===true};passe();
 });
 window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origin!==location.origin||!e.data||e.data.reise!=='name')return; const i=$('#nameIn'), n=String(e.data.name||'').slice(0,40);
   FIRMA=e.data.gebunden?n:null; KONTEXT_BEREIT=!e.data.gebunden||!!n;

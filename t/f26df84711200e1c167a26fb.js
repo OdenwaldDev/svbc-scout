@@ -45,6 +45,7 @@
   const rules={codeOK,previewOK,editorURL,editorMessage,customerPayload,textureLayout};
   if(typeof module!=='undefined'&&module.exports){module.exports=rules;return;}
   let cfg=null,project=null,documentNow=null,preview=null,loading=null,loadingError=null,modal=null,editor=null,nonce='',saving=false,previousFocus=null,bodyOverflow='',loadGeneration=0,reloadRequired=false,motiv='haupt',availableMotifs=[],motifFocus=null;
+  let bbSignet=null,bbOriginal=null,bbVergleich=null;
   const $=s=>document.querySelector(s),C=()=>root.BD_CORE,R=()=>root.BD_RENDER;
   const frame=()=>document.getElementById('reiseRahmen');
   const canEdit=()=>!!(project&&(project.bearbeiten===true||project.kundenbearbeitung===true));
@@ -53,7 +54,8 @@
   function notify(t){if(cfg&&cfg.toast)cfg.toast(t);}
   function resume(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-editor-zu'},location.origin);if(cfg&&cfg.geschlossen)cfg.geschlossen();}
   const motifs=()=>{const list=project&&project.motive||availableMotifs;return Array.isArray(list)?list.filter(m=>m&&['haupt','moerlens'].includes(m.key)&&typeof m.titel==='string').slice(0,2):[];};
-  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,einzel:documentNow?documentNow.width/documentNow.height<4.7:false,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),busy:!!loading||saving},location.origin);controls();}
+  const farbvorschau=()=>!!bbSignet&&bbSignet.farbe!==bbSignet.gespeichert;
+  function context(){const f=frame();if(f&&f.contentWindow)f.contentWindow.postMessage({reise:'bande-projekt',vorschau:preview||null,einzel:documentNow?documentNow.width/documentNow.height<4.7:false,bearbeiten:canEdit(),version:project&&project.version||0,motiv,motive:motifs(),bbFarbe:project&&bbSignet?bbSignet.farbe:null,farbvorschau:farbvorschau(),busy:!!loading||saving},location.origin);controls();}
   function rpc(fn,args){
     const routes={bandenstudio_projekt_laden:'bandenstudio_motiv_laden',bandenstudio_projekt_speichern:'bandenstudio_motiv_speichern',bandenstudio_kunde_speichern:'bandenstudio_motiv_kunde_speichern'};
     return cfg.rpc(motiv!=='haupt'&&routes[fn]?routes[fn]:fn,motiv!=='haupt'&&routes[fn]?{...args,p_motiv:motiv}:args);
@@ -62,7 +64,7 @@
     const b=$('#bdBearbeiten'),g=$('#bdKundeErlauben'),hint=$('#bdProjektHinweis'),count=$('#bdProjektBestand');
     if(b){b.hidden=!canEdit();b.disabled=saving||!!loading;}
     if(g){g.closest('label').hidden=!(project&&project.kundenfreigabe_darf===true);g.checked=!!(project&&project.kundenbearbeitung);}
-    if(hint)hint.textContent=loadingError?'Der gespeicherte Entwurf lässt sich gerade nicht laden. Lade die Seite erneut.':project?'Gespeicherter Entwurf · Version '+project.version+'. Die Druckfreigabe erfolgt separat.':'Euer Entwurf wird geladen …';
+    if(hint)hint.textContent=loadingError?'Der gespeicherte Entwurf lässt sich gerade nicht laden. Lade die Seite erneut.':farbvorschau()?'Farbvorschau'+(canEdit()?' · Unter Bearbeiten kannst du diese Farbe speichern.':'.'):project?'Gespeicherter Entwurf · Version '+project.version+'. Die Druckfreigabe erfolgt separat.':'Euer Entwurf wird geladen …';
     if(count){const s=project&&project.bestand;count.hidden=!(team()&&s);count.textContent=s?'Entwürfe im Bestand: '+s.projekte+' für '+s.aktive_partner+' aktive Präsentationen.':'';}
     for(const id of ['bdLay','bdFmt']){const el=$('#'+id);if(el)el.hidden=!!cfg;}
     const host=$('#bdMotiv')||$('[data-bandenstudio-motive]'),list=motifs();
@@ -70,6 +72,58 @@
       if(host.innerHTML!==content){host.innerHTML=content;host.querySelectorAll?.('[data-bd-motiv]').forEach(b=>b.onclick=()=>{motifFocus=b.dataset.bdMotiv;changeMotif(b.dataset.bdMotiv);});}
       if(motifFocus&&!loading&&!saving){host.querySelector?.('[data-bd-motiv="'+motifFocus+'"]')?.focus({preventScroll:true});motifFocus=null;}
     }
+    const farben=$('[data-bd-bb-farben]');
+    if(farben){
+      farben.hidden=!(project&&bbSignet);
+      if(!farben.hidden&&!farben.childElementCount)farben.innerHTML='<button type="button" data-bb-farbe="orange">Vereinsorange</button><button type="button" data-bb-farbe="rosa">Originalrosa</button>';
+      for(const b of farben.querySelectorAll('[data-bb-farbe]')){
+        b.setAttribute('aria-pressed',String(b.dataset.bbFarbe===bbSignet?.farbe));
+        b.setAttribute('aria-disabled',String(!!loading||saving));
+        b.onclick=()=>changeBBColour(b.dataset.bbFarbe);
+      }
+    }
+  }
+  async function findBBSignet(p,d){
+    const list=p.motive||availableMotifs;
+    if(motiv!=='haupt'||p.generator?.pattern!=='bb'||!Array.isArray(list)||!list.some(m=>m.key==='moerlens'))return null;
+    const images=d.elements.filter(e=>e.type==='image');
+    if(images.length!==1)return null;
+    const key=images[0].asset,vector=d.assets[key]?.vector;
+    if(vector?.paths?.length!==2)return null;
+    // Ein hochgeladenes Ersatzlogo bleibt auch in einer BB-Präsentation sein eigenes Motiv.
+    // Der feste Vergleich liest beide Pfade aus der archivierten Wortbildmarke.
+    if(!bbOriginal)bbOriginal=root.fetch('partner/bb-signet-original.svg').then(async response=>{
+      if(!response.ok)throw Error('BB-Originalzeichen fehlt.');
+      return R().readSVG(await response.text());
+    }).catch(()=>{bbOriginal=null;return null;});
+    const original=await bbOriginal;
+    if(!original||original.width!==vector.width||original.height!==vector.height||
+      !vector.paths.every((path,i)=>path.d===original.paths[i]?.d&&path.stroke==='none'&&path.opacity===1&&path.rule===original.paths[i].rule))return null;
+    const pink=original.paths[0].fill.toLowerCase(),fill=vector.paths[0].fill.toLowerCase();
+    if(!vector.paths.every(path=>path.fill.toLowerCase()===fill)||![pink,C().CI.orange].includes(fill))return null;
+    const farbe=fill===pink?'rosa':'orange';
+    return {key,pink,farbe,gespeichert:farbe};
+  }
+  async function faerbeBB(d,signet,farbe){
+    const asset=d.assets[signet.key],fill=farbe==='rosa'?signet.pink:C().CI.orange;
+    for(const path of asset.vector.paths)path.fill=fill;
+    asset.src=await R().vectorPreview(asset.vector);
+  }
+  async function changeBBColour(farbe){
+    if(!bbSignet||!project||!documentNow||saving||loading||modal||!['orange','rosa'].includes(farbe)||farbe===bbSignet.farbe)return false;
+    const generation=loadGeneration,signet=bbSignet,d=clone(documentNow);
+    const work=(async()=>{
+      await faerbeBB(d,signet,farbe);
+      const next=await makePreview(d);
+      if(generation!==loadGeneration)return false;
+      documentNow=d;preview=next;bbSignet={...signet,farbe};
+      bbVergleich=farbvorschau()?{version:project.version,farbe}:null;
+      return true;
+    })();
+    loading=work;context();
+    try{return await work;}
+    catch(e){if(generation===loadGeneration)notify(errorText(e));return false;}
+    finally{if(loading===work){loading=null;context();if(cfg?.geaendert)cfg.geaendert(project);}}
   }
   async function makeDoc(p){
     if(!C()||!R())throw Error('Das Bandenstudio wird noch geladen. Bitte lade die Seite neu.');
@@ -107,7 +161,16 @@
   }
   async function adopt(p,generation){
     if(!p||p.ok===false||!Number.isInteger(p.version))throw Error(p&&p.fehler||'Der Entwurf konnte nicht geladen werden.');
-    const d=await makeDoc(p),im=await makePreview(d);if(generation!==loadGeneration)return null;
+    const d=await makeDoc(p),signet=await findBBSignet(p,d);
+    if(generation!==loadGeneration)return null;
+    const wahl=bbVergleich;
+    if(signet&&wahl?.version===p.version&&wahl.farbe!==signet.gespeichert){
+      await faerbeBB(d,signet,wahl.farbe);
+      signet.farbe=wahl.farbe;
+    }
+    const im=await makePreview(d);if(generation!==loadGeneration)return null;
+    if(motiv==='haupt'&&(!signet||signet.farbe===signet.gespeichert))bbVergleich=null;
+    bbSignet=signet;
     project=p;availableMotifs=motifs();documentNow=d;preview=im;loadingError=null;reloadRequired=false;context();if(cfg&&cfg.geaendert)cfg.geaendert(p);return p;
   }
   async function load(){
@@ -123,9 +186,9 @@
   async function prepare(o){
     if(!o||!codeOK(o.code)||typeof o.rpc!=='function')throw Error('Der persönliche Präsentationslink fehlt.');
     if(saving)throw Error('Der aktuelle Entwurf wird noch gespeichert.');if(modal)close();
-    ++loadGeneration;cfg=o;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
+    ++loadGeneration;cfg=o;bbSignet=null;bbVergleich=null;motiv=o.motiv==='moerlens'?'moerlens':'haupt';availableMotifs=[];motifFocus=null;project=null;documentNow=null;preview=null;loading=null;loadingError=null;reloadRequired=false;controls();return load();
   }
-  async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project};}
+  async function texture(format){if(loading)await loading;else if(!project)await load();if(!preview||!documentNow)return null;return {L:textureLayout(documentNow,C().FORMATS.find(f=>f[0]===format)),res:{logoBild:await R().image(preview)},projekt:project,farbvorschau:farbvorschau()};}
   async function amSpielfeld(quer=false){
     const generation=loadGeneration;
     if(loading)await loading;else if(!project)await load();
@@ -171,7 +234,7 @@
   }
   function status(t){const e=modal&&modal.querySelector('[data-bd-status]');if(e)e.textContent=t;}
   function post(o){if(editor&&editor.contentWindow)editor.contentWindow.postMessage(Object.assign({nonce},o),location.origin);}
-  function sendDocument(){if(!modal||!documentNow)return;const g=project.generator||{};post({typ:'bd-editor-laden',doc:clone(documentNow),rolle:team()?'team':'kunde',vorgaben:{firma:g.firma||documentNow.title,name:g.name||g.firma||documentNow.title,nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:project.quelle==='generator'&&['klar','logo','kante'].includes(g.template)?g.template:null});status('');}
+  function sendDocument(){if(!modal||!documentNow)return;const g=project.generator||{};post({typ:'bd-editor-laden',doc:clone(documentNow),farbvorschau:farbvorschau(),rolle:team()?'team':'kunde',vorgaben:{firma:g.firma||documentNow.title,name:g.name||g.firma||documentNow.title,nameAn:g.nameAn===true,pattern:g.pattern||'normal',claim:g.claim||'',format:documentNow.width/10+'x'+documentNow.height/10},version:project.version,template:project.quelle==='generator'&&['klar','logo','kante'].includes(g.template)?g.template:null});status('');}
   async function saveFromEditor(data){
     if(!modal||saving||!canEdit())return;saving=true;status('Entwurf wird gespeichert …');const generation=loadGeneration,oldProject=project,oldDoc=documentNow,oldPreview=preview;
     try{
@@ -217,8 +280,9 @@
     if(e.data.reise==='bereit')context();
     if(e.data.reise==='bande-editor-oeffnen'){if(canEdit()&&!loading)open();else resume();}
     if(e.data.reise==='bande-motiv-waehlen'&&typeof e.data.motiv==='string')changeMotif(e.data.motiv);
+    if(e.data.reise==='bande-farbe-waehlen')changeBBColour(e.data.farbe);
   });
-  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,amSpielfeld,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,geladen:()=>!!project,regeln:rules};
+  root.PD_BANDENSTUDIO={vorbereiten:prepare,oeffnen:open,textur:texture,amSpielfeld,rahmenBereit:context,anbinden:bind,kundenfreigabe:grant,motivWaehlen:changeMotif,farbeWaehlen:changeBBColour,geladen:()=>!!project,regeln:rules};
 })(typeof window!=='undefined'?window:globalThis);
 
 /* Explicit one-use same-origin handoff; no private data in URL or browser history. */
@@ -258,13 +322,13 @@
     const chooser=I.querySelector('#bcFirma'),onchange=chooser&&chooser.onchange;
     if(chooser)chooser.onchange=function(e){if(onchange)onchange.call(this,e);bcGestalten(I);};
     if(I.classList)I.classList.toggle('bd-creator-hat-projekt',!!f);
-    const section=document.createElement('section');section.className='pz-tc-block bd-creator-projekt';section.innerHTML=f?'<h3>Gespeicherter Bandenentwurf</h3><div class="bd-motive" role="group" aria-label="Bandenmotiv" data-bandenstudio-motive hidden></div><div class="bd-creator-vorschau"><canvas role="img" aria-label="Gespeicherter Bandenentwurf"></canvas><button type="button" class="bd-bearbeiten" data-bandenstudio hidden>Bearbeiten</button></div><p class="pz-tc-tipp" role="status" data-bandenstudio-status>Entwurf wird geladen …</p><label class="bd-kundenfreigabe" hidden><input type="checkbox" data-bandenstudio-grant>Kunde darf Logo und Anordnung bearbeiten</label><button type="button" class="btn ghost" data-bandenstudio-retry hidden>Erneut laden</button>':'<h3>Freies Bandenstudio</h3><p class="pz-tc-tipp">Logo freistellen, Texte und Flächen gestalten. Dieser Entwurf bleibt auf deinem Gerät. Wähle oben eine Firma, um deren gespeicherten Entwurf zu öffnen.</p><button type="button" class="btn" data-bandenstudio>Lokalen Entwurf öffnen</button>';
+    const section=document.createElement('section');section.className='pz-tc-block bd-creator-projekt';section.innerHTML=f?'<h3>Bandenentwurf</h3><div class="bd-motive" role="group" aria-label="Bandenmotiv" data-bandenstudio-motive hidden></div><div class="bd-motive bd-bb-farben" role="group" aria-label="Farbe des BB-Zeichens" data-bd-bb-farben hidden></div><div class="bd-creator-vorschau"><canvas role="img" aria-label="Bandenentwurf"></canvas><button type="button" class="bd-bearbeiten" data-bandenstudio hidden>Bearbeiten</button></div><p class="pz-tc-tipp" role="status" data-bandenstudio-status>Entwurf wird geladen …</p><label class="bd-kundenfreigabe" hidden><input type="checkbox" data-bandenstudio-grant>Kunde darf Logo und Anordnung bearbeiten</label><button type="button" class="btn ghost" data-bandenstudio-retry hidden>Erneut laden</button>':'<h3>Freies Bandenstudio</h3><p class="pz-tc-tipp">Logo freistellen, Texte und Flächen gestalten. Dieser Entwurf bleibt auf deinem Gerät. Wähle oben eine Firma, um deren gespeicherten Entwurf zu öffnen.</p><button type="button" class="btn" data-bandenstudio>Lokalen Entwurf öffnen</button>';
     (I.querySelector('.pz-tc-links')||I).appendChild(section);
     const button=section.querySelector('[data-bandenstudio]');
     if(!f){button.onclick=()=>{const s=bcSpecVoll(),l=bcLogo();window.BD_STUDIO_START({firma:s.firma||s.name,web:s.web,format:s.format,logo:l?.bild||''});};return result;}
     const hint=section.querySelector('[data-bandenstudio-status]'),retry=section.querySelector('[data-bandenstudio-retry]'),grant=section.querySelector('[data-bandenstudio-grant]');let options=null,shown=null;
     const current=()=>I.isConnected&&section.isConnected&&BC.firmaKey===key&&(BC.sponsor||null)===sponsor;
-    const draw=async p=>{if(!current())return;if(p)shown=p;const texture=await window.PD_BANDENSTUDIO.textur();if(!current()||!texture)return;BANDE.szene(section.querySelector('canvas'),{haupt:{L:texture.L,res:texture.res}});button.hidden=!(shown&&(shown.bearbeiten||shown.kundenbearbeitung));grant.closest('label').hidden=!(shown&&shown.kundenfreigabe_darf);grant.checked=!!(shown&&shown.kundenbearbeitung);hint.textContent='Bei dieser Firma gespeichert · Version '+(shown&&shown.version||'')+'. Die Druckfreigabe erfolgt separat.';};
+    const draw=async p=>{if(!current())return;if(p)shown=p;const texture=await window.PD_BANDENSTUDIO.textur();if(!current()||!texture)return;BANDE.szene(section.querySelector('canvas'),{haupt:{L:texture.L,res:texture.res}});button.hidden=!(shown&&(shown.bearbeiten||shown.kundenbearbeitung));grant.closest('label').hidden=!(shown&&shown.kundenfreigabe_darf);grant.checked=!!(shown&&shown.kundenbearbeitung);hint.textContent=texture.farbvorschau?'Farbvorschau · Unter Bearbeiten kannst du diese Farbe speichern.':'Bei dieser Firma gespeichert · Version '+(shown&&shown.version||'')+'. Die Druckfreigabe erfolgt separat.';};
     const load=async()=>{button.hidden=true;retry.hidden=true;hint.textContent='Entwurf wird geladen …';try{
       if(!window.PD_BANDENSTUDIO)throw Error('Das Bandenstudio lässt sich gerade nicht laden. Bitte lade die App neu.');
       const neben=/^(?:bb\s*berns\s*&\s*baltz\s*[·-]\s*)?m[öo]rlens$/i.test(f.firma.trim());
@@ -474,7 +538,7 @@ function huArtikel(r){const pages=HV.d.seiten.filter(s=>['jugend','soma','rueckb
     await huEingang();}catch(e){m.querySelector('#huErr').textContent=e.message;}finally{busy=false;m.querySelectorAll('button').forEach(b=>b.disabled=false);if(!pages.length)m.querySelector('#huUse').disabled=true;}};
   m.querySelector('#huSave').onclick=()=>save('entwurf',false);m.querySelector('#huLater').onclick=()=>save('zurueckgestellt',false);m.querySelector('#huUse').onclick=()=>save('entwurf',true);}
 
-(function(){var s=document.createElement('style');s.textContent=".bd-buehne{position:relative}.bd-bearbeiten{position:absolute;right:14px;bottom:14px;min-height:44px;padding:10px 16px;border:1px solid #d8deeb;border-radius:12px;background:#fff;color:#1d2760;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 3px 14px #101e3630;cursor:pointer}.bd-bearbeiten:focus-visible,.bd-partner-dialog button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-kundenfreigabe{display:flex;gap:10px;align-items:center;min-height:44px;margin-top:16px;font-size:15px;line-height:1.4}.bd-kundenfreigabe input{width:22px;height:22px;accent-color:#1d2760}.bd-projekt-hinweis{font-size:13px;line-height:1.45;color:#596173;margin:12px 0}.bd-partner-dialog{position:fixed;inset:0;z-index:2147483300;background:#101b35b3;display:grid;place-items:center;padding:16px}.bd-partner-dialog>section{display:flex;flex-direction:column;width:min(1500px,100%);height:calc(100vh - 32px);height:calc(100dvh - 32px);max-height:1100px;overflow:hidden;background:#f5f6f9;border:1px solid #dbe1ee;border-radius:20px;box-shadow:0 24px 90px #050c2660}.bd-partner-dialog header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e4ed}.bd-partner-dialog small{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#62708c}.bd-partner-dialog h2{font:700 22px Barlow,system-ui,sans-serif;margin:3px 0;color:#1d2760}.bd-partner-dialog header button{width:44px;height:44px;border:0;border-radius:12px;background:#edf0f7;color:#1d2760;font-size:28px;cursor:pointer}.bd-partner-dialog [data-bd-status]{margin:0;padding:10px 20px;font:500 14px/1.4 Barlow,system-ui,sans-serif;color:#6b3b20;background:#fff4e6}.bd-partner-dialog [data-bd-status]:empty{display:none}.bd-partner-dialog iframe{flex:1;min-height:0;width:100%;border:0;background:#f5f6f9}.bd-partner-dialog [hidden],.bd-kundenfreigabe[hidden],.bd-bearbeiten[hidden]{display:none!important}@media(max-width:600px){.bd-partner-dialog{padding:0}.bd-partner-dialog>section{height:100vh;height:100dvh;max-height:none;border:0;border-radius:0}.bd-partner-dialog header{padding:10px 14px}.bd-bearbeiten{bottom:10px;right:10px}}\n.bd-creator-vorschau{position:relative;aspect-ratio:16/10;min-height:220px;overflow:hidden;border:1px solid #dbe1ee;border-radius:14px;background:#e9eef4}.bd-creator-vorschau canvas{display:block;position:absolute;inset:0;width:100%;height:100%}.bd-creator-projekt [hidden]{display:none!important}\n\n.bd-creator-hat-projekt .pz-tc-links>:not(.bd-creator-projekt),.bd-creator-hat-projekt .pz-tc-rechts>section:not(:first-child),.bd-creator-hat-projekt .pz-bc-felder,.bd-creator-hat-projekt .pz-bc-schalter{display:none}.bd-creator-hat-projekt .bd-creator-projekt{margin-top:0}\n.bd-motive{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.bd-motive[hidden]{display:none}.bd-motive button{min-height:44px;padding:10px 14px;border:1px solid #9caac0;border-radius:8px;background:#fff;color:#1d2760;font:600 15px/1.2 Barlow,system-ui,sans-serif;cursor:pointer}.bd-motive button[aria-pressed=\"true\"]{border-color:#1d2760;box-shadow:inset 0 -3px #e8741f}.bd-motive button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-motive button:disabled{opacity:.65;cursor:wait}\n";document.head.appendChild(s);})();
+(function(){var s=document.createElement('style');s.textContent=".bd-buehne{position:relative}.bd-bearbeiten{position:absolute;right:14px;bottom:14px;min-height:44px;padding:10px 16px;border:1px solid #d8deeb;border-radius:12px;background:#fff;color:#1d2760;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 3px 14px #101e3630;cursor:pointer}.bd-bearbeiten:focus-visible,.bd-partner-dialog button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-kundenfreigabe{display:flex;gap:10px;align-items:center;min-height:44px;margin-top:16px;font-size:15px;line-height:1.4}.bd-kundenfreigabe input{width:22px;height:22px;accent-color:#1d2760}.bd-projekt-hinweis{font-size:13px;line-height:1.45;color:#596173;margin:12px 0}.bd-partner-dialog{position:fixed;inset:0;z-index:2147483300;background:#101b35b3;display:grid;place-items:center;padding:16px}.bd-partner-dialog>section{display:flex;flex-direction:column;width:min(1500px,100%);height:calc(100vh - 32px);height:calc(100dvh - 32px);max-height:1100px;overflow:hidden;background:#f5f6f9;border:1px solid #dbe1ee;border-radius:20px;box-shadow:0 24px 90px #050c2660}.bd-partner-dialog header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e4ed}.bd-partner-dialog small{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#62708c}.bd-partner-dialog h2{font:700 22px Barlow,system-ui,sans-serif;margin:3px 0;color:#1d2760}.bd-partner-dialog header button{width:44px;height:44px;border:0;border-radius:12px;background:#edf0f7;color:#1d2760;font-size:28px;cursor:pointer}.bd-partner-dialog [data-bd-status]{margin:0;padding:10px 20px;font:500 14px/1.4 Barlow,system-ui,sans-serif;color:#6b3b20;background:#fff4e6}.bd-partner-dialog [data-bd-status]:empty{display:none}.bd-partner-dialog iframe{flex:1;min-height:0;width:100%;border:0;background:#f5f6f9}.bd-partner-dialog [hidden],.bd-kundenfreigabe[hidden],.bd-bearbeiten[hidden]{display:none!important}@media(max-width:600px){.bd-partner-dialog{padding:0}.bd-partner-dialog>section{height:100vh;height:100dvh;max-height:none;border:0;border-radius:0}.bd-partner-dialog header{padding:10px 14px}.bd-bearbeiten{bottom:10px;right:10px}}\n.bd-creator-vorschau{position:relative;aspect-ratio:16/10;min-height:220px;overflow:hidden;border:1px solid #dbe1ee;border-radius:14px;background:#e9eef4}.bd-creator-vorschau canvas{display:block;position:absolute;inset:0;width:100%;height:100%}.bd-creator-projekt [hidden]{display:none!important}\n\n.bd-creator-hat-projekt .pz-tc-links>:not(.bd-creator-projekt),.bd-creator-hat-projekt .pz-tc-rechts>section:not(:first-child),.bd-creator-hat-projekt .pz-bc-felder,.bd-creator-hat-projekt .pz-bc-schalter{display:none}.bd-creator-hat-projekt .bd-creator-projekt{margin-top:0}\n.bd-motive{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.bd-motive[hidden]{display:none}.bd-motive button{min-height:44px;padding:10px 14px;border:1px solid #9caac0;border-radius:8px;background:#fff;color:#1d2760;font:600 15px/1.2 Barlow,system-ui,sans-serif;cursor:pointer}.bd-motive button[aria-pressed=\"true\"]{border-color:#1d2760;box-shadow:inset 0 -3px #e8741f}.bd-motive button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-motive button:disabled{opacity:.65;cursor:wait}\n\n.bd-bb-farben button::before{content:\"\";display:inline-block;width:.75em;height:.75em;margin-inline-end:.5em;border-radius:50%;background:#e8741f;box-shadow:inset 0 0 0 1px #0002}\n.bd-bb-farben [data-bb-farbe=\"rosa\"]::before{background:#ca0f86}\n.bd-bb-farben [aria-disabled=\"true\"]{cursor:wait}\n";document.head.appendChild(s);})();
 /* Personal presentation links, functional snapshots and voluntary later-use statistics.
    No third-party analytics, coordinates, device IDs, automatic mail or guessed probability. */
 (function(root){

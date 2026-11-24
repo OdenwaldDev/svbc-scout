@@ -313,6 +313,15 @@ async function tcBild(teilen, btn){
    ===================================================================== */
 const BANDE = (() => {
   const C = { marine:'#1d2760', orange:'#e8741f', tinte:'#1c1c22', grau:'#3a3a44', himmel:'#8fc9ec', weiss:'#ffffff' };
+  const BB_LOGO = '3dd57b60-89ca-4b6e-b072-5b8464146c28';
+  // Der Datensatz darf ein neues Partnerbild erhalten. Nur dem Original aus SQL228 gehören die Vektoren.
+  const BB_LOGO_HASH = '6c5a77d4b0259da1e9846c896e5014b5910f623e335b47c78394387bd2270ff7';
+  async function bbOriginal(src){
+    if(src === 'partner/bb-signet.svg' || src === 'partner/bb-signet-original.svg') return true;
+    if(typeof src !== 'string' || !src.startsWith('data:image/png;base64,') || !globalThis.crypto?.subtle) return false;
+    const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(src));
+    return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('')===BB_LOGO_HASH;
+  }
   const FORMATE = {
     '250x80':  { w:2500, h:800,  t:'2,50 × 0,80 m', k:'2,5 m', lang:'2,5 m lang, 80 cm hoch', paket:'Einzelbande', hinweis:'Einzelbande: eine Platte, 2,50 × 0,80 m (Pakete Club und Premium)' },
     '300x80':  { w:3000, h:800,  t:'3,00 × 0,80 m', k:'3 m', lang:'3 m lang, 80 cm hoch', std:true },
@@ -420,7 +429,7 @@ const BANDE = (() => {
   // A logo occupies the safe area. Only confirmed symbols get a separate company name.
   function layout(spec, res){
     spec = spec || {}; res = res || {};
-    const F = FORMATE[spec.format] || FORMATE['300x80'], W = F.w, H = F.h, ci = spec.stil !== 'original';
+    const F = FORMATE[spec.format] || FORMATE['300x80'], W = F.w, H = F.h, ci = spec.stil !== 'original' || !!res.bbVektor;
     const ops = [], info = { warn:[], kontrast:[], lesbar:{} }, m = Math.round(Math.min(W, H) * .08), Hu = H - 2 * m, aw = W - 2 * m, x0 = m, cx = W / 2;
     const logo = res.logo && res.logo.w > 0 && res.logo.h > 0 ? res.logo : null, pattern = muster(spec), name = sauber(ohneKontakt(spec.name || spec.firma)), nameAn = spec.nameAn === true && pattern === 'normal';
     const lay = spec.layout === 'mitte' || spec.layout === 'claim' ? 'mitte' : 'links', nF = { fam:'c', w:900 }, cF = { fam:'t', w:600 };
@@ -438,7 +447,21 @@ const BANDE = (() => {
       const fs = Math.min(Hu * .85, sw / (Math.max(mess('EVENT', nF).w, mess('KREATIV', nF).w) / 100));
       const old = spec.left === 'EVENT' && spec.right === 'KREATIV';
       const left = einpassen(old ? 'EVENT' : 'KREATIV', nF, sw, Hu, fs, 1), right = einpassen(old ? 'KREATIV' : 'EVENT', nF, sw, Hu, fs, 1);
-      txt(left, x0 + sw / 2, (H - left.h) / 2, old ? 'event' : 'kreativ'); txt(right, W - m - sw / 2, (H - right.h) / 2, old ? 'kreativ' : 'event');
+      if(old || spec.bbSatz === 1){
+        txt(left, x0 + sw / 2, (H - left.h) / 2, old ? 'event' : 'kreativ');
+        txt(right, W - m - sw / 2, (H - right.h) / 2, old ? 'kreativ' : 'event');
+      }else{
+        // Die Laufweite enthält leeren Raum neben V und E. Nur die sichtbaren Glyphenkanten ausrichten.
+        for(const [wort,links] of [[left,true],[right,false]]){
+          MC.font = font(nF, wort.fs);
+          const ink = MC.measureText(wort.L[0]), l = ink.actualBoundingBoxLeft || 0, r = ink.actualBoundingBoxRight ?? wort.w;
+          const x = links ? cx - b.w / 2 - gap - r : cx + b.w / 2 + gap + l;
+          const op = textOp(wort,x,(H - wort.h) / 2,'l',nameF,links ? 'kreativ' : 'event');
+          op.box.x = x - l;
+          op.box.w = l + r;
+          ops.push(op);
+        }
+      }
     } else if(pattern === 'moerlens'){
       const claim = einpassen('Restobar & Patisserie', cF, aw, Hu * .22, H * .19, 1), gap = H * .05, b = logoBox(aw, Hu - claim.h - gap), y = m + (Hu - b.h - claim.h - gap) / 2;
       img(b, cx - b.w / 2, y); txt(claim, cx, y + b.h + gap, 'claim', claimF);
@@ -493,7 +516,18 @@ const BANDE = (() => {
     o = o || {}; await schriften(o.basis);
     const res = {}, ci = spec.stil !== 'original';
     if(spec.logo && typeof LOGO !== 'undefined'){
-      try{ const a = await LOGO.aufbereiten(spec.logo); const art = ci ? 'farbe:' + (muster(spec)==='bb' ? C.orange : spec.logoFarbe === 'schwarz' ? C.tinte : C.marine) : 'original';
+      try{ const a = await LOGO.aufbereiten(spec.logo);
+        if(muster(spec)==='bb' && spec.logoId===BB_LOGO && await bbOriginal(spec.logo)) res.bbOriginal=spec.logo;
+        if(res.bbOriginal && spec.bbSatz===2){
+          const datei = spec.bbFarbe==='rosa' ? 'bb-signet-original.svg' : 'bb-signet.svg';
+          const vektor = await laden((o.basis || basisJetzt) + datei);
+          res.logoBild = vektor;
+          res.bbVektor = datei;
+          res.logo = { w:vektor.naturalWidth, h:vektor.naturalHeight, hell:false, farben:a.farben };
+          res.analyse = a;
+          return res;
+        }
+        const art = ci ? 'farbe:' + (muster(spec)==='bb' ? C.orange : spec.logoFarbe === 'schwarz' ? C.tinte : C.marine) : 'original';
         const c = await LOGO.variante(spec.logo, art); res.logo = { w:c.width, h:c.height, hell:a.hell, farben:a.farben }; res.logoBild = c; res.analyse = a; }
       catch(e){ res.logoFehler = e.message || 'Logo lässt sich nicht laden'; } }
     return res;
@@ -682,4 +716,161 @@ const BANDE = (() => {
     return new Promise(ok => c.toBlob(b => ok({ blob:b, name:dateiName(L, spec, 'png'), breite:c.width, hoehe:c.height, dpi:Math.round(ppm * 25.4) }), 'image/png'));
   }
   // SVG: Flächen und Schrift als Vektor, Schriften eingebettet, Logo und Doppel-Logo als Bild
-  const fontCache = new Map();
+  const dateiCache = new Map();
+  async function dateiDaten(datei){
+    const url=basisJetzt+datei;
+    if(dateiCache.has(url)) return dateiCache.get(url);
+    const p=fetch(url).then(r=>{ if(!r.ok) throw new Error(); return r.blob(); }).then(b=>new Promise((ok,nein)=>{
+      const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=nein; fr.readAsDataURL(b);
+    })).catch(()=>{ dateiCache.delete(url); return null; });
+    dateiCache.set(url,p); return p;
+  }
+  const xe = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const r2 = v => Math.round(v * 100) / 100;
+  // Farben im SVG nur als #rgb/#rrggbb oder rgb(a)-Zahlen, alles andere wird zu Schwarz
+  const fa = c => /^#[0-9a-fA-F]{3,8}$|^rgba?\([\d.,\s%]+\)$|^none$/.test(String(c || '')) ? c : '#1c1c22';
+  async function svg(L, res, spec){
+    const B = L.B, fonts = await Promise.all(SCHRIFTEN.map(async ([fam, f, w]) => { const u = await dateiDaten(f); return u ? `@font-face{font-family:'${fam}';font-weight:${w};src:url(${u.replace(/^data:[^;]*;/, 'data:font/woff2;')}) format('woff2');}` : ''; }));
+    const bildUrl = im => { if(!im) return null; const c = document.createElement('canvas'); c.width = im.naturalWidth || im.width; c.height = im.naturalHeight || im.height; c.getContext('2d').drawImage(im, 0, 0); return c.toDataURL('image/png'); };
+    const bb = ['bb-signet.svg','bb-signet-original.svg'].includes(res.bbVektor) && await dateiDaten(res.bbVektor);
+    if(res.bbVektor && !bb) throw new Error('Die Vektordatei des BB-Zeichens fehlt. Bitte lade die Bande erneut.');
+    const lu = bb || bildUrl(res.logoBild), wu = bildUrl(res.wappenBild), famName = f => FAM[f.fam].replace(/"/g, "'");
+    const teile = druckOps(L).map(o => {
+      if(o.t === 'rect') return `<rect x="${r2(o.x)}" y="${r2(o.y)}" width="${r2(o.w)}" height="${r2(o.h)}" fill="${fa(o.fill)}"/>`;
+      if(o.t === 'linie') return `<line x1="${r2(o.x1)}" y1="${r2(o.y1)}" x2="${r2(o.x2)}" y2="${r2(o.y2)}" stroke="${fa(o.stroke)}" stroke-width="${r2(+o.w || 0)}" stroke-linecap="round"/>`;
+      if(o.t === 'strich'){ const [a, b, c] = o.pts; return `<path d="M${r2(a[0])} ${r2(a[1])}Q${r2(b[0])} ${r2(b[1])} ${r2(c[0])} ${r2(c[1])}" fill="none" stroke="${fa(o.stroke)}" stroke-width="${r2(o.w)}" stroke-linecap="round"/>`; }
+      if(o.t === 'img'){ const u = o.key === 'logo' ? lu : wu; return u ? `<image x="${r2(o.x)}" y="${r2(o.y)}" width="${r2(o.w)}" height="${r2(o.h)}" preserveAspectRatio="none" href="${u}"/>` : ''; }
+      if(o.t === 'text'){ const anchor = o.align === 'c' ? 'middle' : o.align === 'r' ? 'end' : 'start', rot = o.rot ? ` transform="rotate(${o.rot} ${r2(o.box.x + o.box.w / 2)} ${r2(o.box.y + o.box.h / 2)})"` : '';
+        return `<text font-family="${famName(o.f)}" font-weight="${o.f.w}" font-size="${r2(o.fs)}" fill="${fa(o.fill)}" text-anchor="${anchor}"${o.f.ls ? ` letter-spacing="${r2(o.f.ls * o.fs)}"` : ''}${rot}>` +
+          o.lines.map((z, i) => `<tspan x="${r2(o.x)}" y="${r2(o.y + o.a * o.fs + i * o.lh * o.fs)}">${xe(z)}</tspan>`).join('') + '</text>'; }
+      return ''; }).join('\n');
+    const s = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${L.W + 2 * B}mm" height="${L.H + 2 * B}mm" viewBox="${-B} ${-B} ${L.W + 2 * B} ${L.H + 2 * B}">\n` +
+      `<title>${xe('Bande ' + sauber(spec.firma || spec.name) + ', ' + (FORMATE[L.format] || {}).t + ', mit 2 cm Beschnitt')}</title>\n<style>${fonts.join('')}</style>\n${teile}\n</svg>\n`;
+    return { blob:new Blob([s], { type:'image/svg+xml' }), name:dateiName(L, spec, 'svg'), text:s };
+  }
+
+  /* ---------- Die Reihe, wie sie heute hängt (0.99.25) ----------
+     Albert, 14.11.2026: „Kannst du mir das dreidimensional darstellen, wer jetzt gerade wie wo ist? So originalgetreu wie möglich.“
+     Blick vom Rasen über die Laufbahn auf die Bandenreihe. Jede Tafel in ihrer wirklichen Länge und mit ihrem Foto, Lücken bleiben
+     Lücken, freie Plätze sind gestrichelt. o: { tafeln:[{ id, x0, l, h, img, frei, nr, name, farbe, an, ring }], kamX, abstand, blick }.
+     x in Metern entlang der Reihe. Rückgabe: { boxen:[{ id, x, y, w, h }], pxm } in CSS-Pixeln. */
+  const REIHE_TEX = new Map(), REIHE_H = 192, REIHE_RAND = new Map();
+  // Farbe am Rand eines Fotos (links, rechts, oben, unten): der Mittelwert eines schmalen Streifens knapp innerhalb der Kante
+  function reiheRand(img, seite){ const k = img.src + '|' + seite; if(REIHE_RAND.has(k)) return REIHE_RAND.get(k);
+    let f = '#f7f5ef'; try{ const iw = img.naturalWidth, ih = img.naturalHeight, d = Math.max(1, Math.round(Math.min(iw, ih) * .04)), c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently:true });
+      const quer = seite === 'o' || seite === 'u'; c.width = quer ? 24 : 1; c.height = quer ? 1 : 24;
+      if(seite === 'l') x.drawImage(img, d, 0, d, ih, 0, 0, 1, 24); else if(seite === 'r') x.drawImage(img, iw - 2 * d, 0, d, ih, 0, 0, 1, 24);
+      else if(seite === 'o') x.drawImage(img, 0, d, iw, d, 0, 0, 24, 1); else x.drawImage(img, 0, ih - 2 * d, iw, d, 0, 0, 24, 1);
+      const p = x.getImageData(0, 0, c.width, c.height).data, n = p.length / 4, K = [[], [], []]; for(let i = 0; i < n; i++){ K[0].push(p[i * 4]); K[1].push(p[i * 4 + 1]); K[2].push(p[i * 4 + 2]); }
+      const med = a => { a.sort((u, v) => u - v); return a[Math.floor(a.length / 2)]; };   // Median: ein Buchstabe oder ein Grashalm am Rand färbt die Fläche nicht um
+      f = '#' + K.map(a => med(a).toString(16).padStart(2, '0')).join(''); }catch(e){}
+    REIHE_RAND.set(k, f); return f; }
+  // Eine Tafel der Reihe als Bild. Das Foto wird NIE verzogen (Albert, 14.11.2026: „teilweise zu schlecht, verzogen“): Es behält sein Seitenverhältnis.
+  // Passt es fast (bis 7 %), füllt es die Tafel; sonst steht es ganz in der Mitte, und daneben läuft die Farbe seines Randes weiter (eine ruhige Fläche,
+  // kein gestreckter Bildrand). Hat der Platz eine Grundfarbe (bandenplaetze.farbe), gilt ein sauberes Schild mit dem Namen statt eines Fotos:
+  // so für Tafeln ohne Foto und für Fotos, die nur einen Ausschnitt zeigen.
+  function reiheTex(t){
+    const k = [t.id, t.img ? t.img.src : '', t.name, t.platztext||'', t.frei ? 1 : 0, t.l, t.farbe || '', t.nr].join('|'); if(REIHE_TEX.has(k)) return REIHE_TEX.get(k);
+    const H = REIHE_H, W = Math.max(80, Math.round(t.l / (t.h || .8) * H)), c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    const hell = f => { const m = /^#(..)(..)(..)$/.exec(f || ''); return !m || (parseInt(m[1], 16) * .299 + parseInt(m[2], 16) * .587 + parseInt(m[3], 16) * .114) > 150; };
+    // Schrift auf dem Schild: so groß wie möglich. Ein langer Name bricht an der Leerstelle nahe der Mitte in zwei Zeilen, wenn er dadurch größer wird.
+    const text = (s, farbe, gr) => { const schrift = fs => `800 ${fs}px BandeT,Barlow,sans-serif`, pass = (Z, max) => { x.font = schrift(max); const w = Math.max(...Z.map(z => x.measureText(z).width)); return w > W * .88 ? max * W * .88 / w : max; };
+      const T = String(s).replace(/([a-zäöüß])([A-ZÄÖÜ])/g, '$1 $2').split(/\s+/).filter(Boolean), gross = z => z.toUpperCase();   // Teile: Wörter, dazu die Naht in Namen wie „SparkassenVersicherung“
+      s = gross(String(s)); let Z = [s], fs = pass(Z, H * (gr || .46));
+      if(fs < H * .32 && T.length > 1){ let best = null; for(let i = 1; i < T.length; i++){ const a = gross(T.slice(0, i).join(' ')), b = gross(T.slice(i).join(' ')), d = Math.abs(a.length - b.length); if(!best || d < best.d) best = { d, Z:[a, b] }; }
+        const f2 = pass(best.Z, H * .36); if(f2 > fs * 1.15){ Z = best.Z; fs = f2; } }
+      x.font = schrift(fs); x.fillStyle = farbe; x.textAlign = 'center'; x.textBaseline = 'middle'; Z.forEach((z, i) => x.fillText(z, W / 2, H / 2 + (i - (Z.length - 1) / 2) * fs * 1.12 + fs * .04)); };
+    const foto = !t.frei && !t.farbe && t.img && t.img.naturalWidth > 0;
+    if(t.frei){ const e = H / 96; x.fillStyle = 'rgba(246,243,236,.82)'; x.fillRect(0, 0, W, H); x.strokeStyle = 'rgba(29,39,96,.7)'; x.lineWidth = 4 * e; x.setLineDash([14 * e, 9 * e]); x.strokeRect(5 * e, 5 * e, W - 10 * e, H - 10 * e); x.setLineDash([]); text(t.platztext||'frei', 'rgba(29,39,96,.95)', .42); }
+    else if(foto){ const iw = t.img.naturalWidth, ih = t.img.naturalHeight, ai = iw / ih, ab = W / H;
+      if(Math.abs(ai / ab - 1) <= .07) x.drawImage(t.img, 0, 0, W, H);
+      else { const f = Math.min(W / iw, H / ih), w = Math.round(iw * f), h = Math.round(ih * f), l = Math.round((W - w) / 2), o = Math.round((H - h) / 2);
+        if(l > 0){ x.fillStyle = reiheRand(t.img, 'l'); x.fillRect(0, 0, l + 1, H); x.fillStyle = reiheRand(t.img, 'r'); x.fillRect(l + w - 1, 0, W - l - w + 1, H); }
+        if(o > 0){ x.fillStyle = reiheRand(t.img, 'o'); x.fillRect(0, 0, W, o + 1); x.fillStyle = reiheRand(t.img, 'u'); x.fillRect(0, o + h - 1, W, H - o - h + 1); }
+        x.drawImage(t.img, l, o, w, h); } }
+    else { const bg = t.farbe || '#ffffff'; x.fillStyle = bg; x.fillRect(0, 0, W, H); text(String(t.name || ''), hell(bg) ? C.marine : '#ffffff'); }
+    if(!t.frei && !t.farbe && t.img && !t.img.naturalWidth) return c;   // Foto lädt noch: nicht merken
+    REIHE_TEX.set(k, c); return c;
+  }
+  function reihe(cv, o){
+    const dpr = Math.min(2, window.devicePixelRatio || 1), r = cv.getBoundingClientRect();
+    const Wc = Math.max(10, Math.round(r.width * dpr)), Hc = Math.max(10, Math.round(r.height * dpr)); if(cv.width !== Wc) cv.width = Wc; if(cv.height !== Hc) cv.height = Hc;
+    const x = cv.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+    const T = o.tafeln || [], kx = +o.kamX || 0, d = o.abstand || 15, yaw = o.blick != null ? o.blick : .3, LIFT = .22, RAIL = 1.1, NAH = .3;
+    const P = [kx - Math.sin(yaw) * d, 1.65, -Math.cos(yaw) * d], Z = [kx + .4, .6, 0];
+    const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], norm = a => { const l = Math.hypot(...a); return a.map(v => v / l); };
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const f = norm(sub(Z, P)), ri = norm(cross([0, 1, 0], f)), up = cross(f, ri), cam = Q => { const v = sub(Q, P); return [dot(v, ri), dot(v, up), dot(v, f)]; };
+    const schmal = r.width < 560, breit = schmal ? 6.8 : 12.5,   /* seit 0.99.34 näher dran: am Handy füllt eine Bande von 5 m gut zwei Drittel der Breite */ cx = Wc * .5, cy = Hc * (schmal ? .5 : .5);
+    let foc; { const a = cam([kx - breit / 2, LIFT, 0]), b = cam([kx + breit / 2, LIFT, 0]); foc = Wc * .96 / Math.abs(b[0] / b[2] - a[0] / a[2]); }
+    const pr = Q => { const c = cam(Q); return [cx + foc * c[0] / c[2], cy - foc * c[1] / c[2], c[2]]; };
+    const poly = (pts, fill) => { const Cc = pts.map(cam), out = [];
+      for(let i = 0; i < Cc.length; i++){ const a = Cc[i], b = Cc[(i + 1) % Cc.length], ia = a[2] > NAH, ib = b[2] > NAH; if(ia) out.push(a);
+        if(ia !== ib){ const t = (NAH - a[2]) / (b[2] - a[2]); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, NAH]); } }
+      if(out.length < 3) return; x.beginPath(); out.forEach((c, i) => { const sx = cx + foc * c[0] / c[2], sy = cy - foc * c[1] / c[2]; i ? x.lineTo(sx, sy) : x.moveTo(sx, sy); }); x.closePath(); x.fillStyle = fill; x.fill(); };
+    const linie = (A, B, farbe, dick) => { const a = cam(A), b = cam(B); if(a[2] < NAH && b[2] < NAH) return; let p = a, q = b;
+      if(a[2] < NAH){ const t = (NAH - a[2]) / (b[2] - a[2]); p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, NAH]; } if(b[2] < NAH){ const t = (NAH - b[2]) / (a[2] - b[2]); q = [b[0] + (a[0] - b[0]) * t, b[1] + (a[1] - b[1]) * t, NAH]; }
+      x.strokeStyle = farbe; x.lineWidth = Math.max(1, foc * dick / ((p[2] + q[2]) / 2)); x.beginPath(); x.moveTo(cx + foc * p[0] / p[2], cy - foc * p[1] / p[2]); x.lineTo(cx + foc * q[0] / q[2], cy - foc * q[1] / q[2]); x.stroke(); };
+    const hz = norm([f[0], 0, f[2]]), horizont = cy - foc * dot(hz, up) / dot(hz, f), zuf = i => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    const L0 = kx - 110, L1 = kx + 130;
+    // Himmel und Hügel (der Himmel vom 14.11.: klar und blau)
+    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#86a05e'; x.fillRect(0, 0, Wc, Hc);   // nichts vom letzten Bild darf stehen bleiben
+    let g = x.createLinearGradient(0, 0, 0, horizont); g.addColorStop(0, '#5f9fe0'); g.addColorStop(.75, '#a9cdee'); g.addColorStop(1, '#dfeaf2'); x.fillStyle = g; x.fillRect(0, 0, Wc, horizont + 2);
+    x.fillStyle = '#9fb48f'; x.beginPath(); x.moveTo(0, horizont + 2); for(let i = 0; i <= 60; i++){ const t = i / 60, w = (kx * .012) + t * 4.2; x.lineTo(t * Wc, horizont - Hc * .075 * (.6 + .3 * Math.sin(w * 1.7) + .16 * Math.sin(w * 3.9 + 1))); } x.lineTo(Wc, horizont + 2); x.closePath(); x.fill();
+    // Gelände hinter den Banden, Weg, Bäume in Herbstfarben (Spielplatz und Wiese)
+    poly([[L0, 0, .3], [L1, 0, .3], [L1, 0, 90], [L0, 0, 90]], '#86a05e');
+    poly([[L0, 0, 1.2], [L1, 0, 1.2], [L1, 0, 3.4], [L0, 0, 3.4]], '#cfc6ad');
+    // Zaun und Hecke hinter dem Weg
+    { const A0 = pr([kx - 70, 0, 4]), A1 = pr([kx + 100, 0, 4]), B0 = pr([kx - 70, 1.5, 4]), B1 = pr([kx + 100, 1.5, 4]); if(A0[2] > NAH && A1[2] > NAH){ x.fillStyle = '#6f8a52'; x.beginPath(); x.moveTo(A0[0], A0[1]); x.lineTo(A1[0], A1[1]); x.lineTo(B1[0], B1[1]); x.lineTo(B0[0], B0[1]); x.closePath(); x.fill(); } }
+    const B = []; for(let i = Math.floor((kx - 95) / 2.6); i <= Math.ceil((kx + 125) / 2.6); i++) B.push({ bx:i * 2.6 + zuf(i) * 1.8, bz:38 + zuf(i + 500) * 45, bh:6 + zuf(i + 900) * 5, br:2.6 + zuf(i + 1300) * 1.8, gr:['#7d9d70', '#a3a354', '#c08d3e', '#cfa94c', '#93703f', '#6c8a60', '#b9792f'][Math.floor(zuf(i + 77) * 7)] });
+    B.sort((a, b) => b.bz - a.bz).forEach(t => { const fu = pr([t.bx, 0, t.bz]), ko = pr([t.bx, t.bh, t.bz]); if(fu[2] < NAH) return; const rr = foc * t.br / fu[2]; if(fu[0] < -rr * 2 || fu[0] > Wc + rr * 2) return;
+      x.fillStyle = '#5a4a36'; x.fillRect(fu[0] - rr * .06, ko[1], rr * .12, fu[1] - ko[1]);
+      x.fillStyle = t.gr; [[0, 0, 1, 1.1], [-.55, .4, .7, .72], [.6, .35, .72, .78]].forEach(([dx, dy, a, b]) => { x.beginPath(); x.ellipse(ko[0] + dx * rr, ko[1] + dy * rr, rr * a, rr * b, 0, 0, Math.PI * 2); x.fill(); }); });
+    g = x.createLinearGradient(0, horizont - Hc * .16, 0, horizont + Hc * .02); g.addColorStop(0, 'rgba(226,236,240,0)'); g.addColorStop(1, 'rgba(226,236,240,.35)'); x.fillStyle = g; x.fillRect(0, horizont - Hc * .16, Wc, Hc * .18);
+    // Rasen, Seitenlinie, Laufbahn, Streifen vor den Banden
+    poly([[L0, 0, -70], [L1, 0, -70], [L1, 0, -8.4], [L0, 0, -8.4]], '#5c9443');
+    for(let i = Math.floor(L0 / 5); i < L1 / 5; i += 2) poly([[i * 5, 0, -70], [i * 5 + 5, 0, -70], [i * 5 + 5, 0, -8.4], [i * 5, 0, -8.4]], 'rgba(255,255,255,.05)');
+    poly([[L0, 0, -10.1], [L1, 0, -10.1], [L1, 0, -9.98], [L0, 0, -9.98]], 'rgba(250,250,245,.9)');
+    poly([[L0, 0, -8.4], [L1, 0, -8.4], [L1, 0, -1.1], [L0, 0, -1.1]], '#b56a45');
+    [-6.6, -4.8, -3].forEach(z => poly([[L0, 0, z - .03], [L1, 0, z - .03], [L1, 0, z + .03], [L0, 0, z + .03]], 'rgba(255,235,215,.16)'));
+    poly([[L0, 0, -1.1], [L1, 0, -1.1], [L1, 0, .3], [L0, 0, .3]], '#7f8f4c');
+    // Geländer: Pfosten alle 2,5 m und der Holm, an dem die Tafeln hängen
+    const xa = Math.min(...T.map(t => t.x0), kx) - 12, xb = Math.max(...T.map(t => t.x0 + t.l), kx) + 12;
+    for(let px = Math.ceil(Math.max(xa, kx - 60) / 2.5) * 2.5; px <= Math.min(xb, kx + 80); px += 2.5) linie([px, 0, .04], [px, RAIL, .04], 'rgba(235,235,230,.9)', .05);
+    linie([Math.max(xa, kx - 60), RAIL, .04], [Math.min(xb, kx + 80), RAIL, .04], 'rgba(245,245,240,.95)', .06);
+    // Tafeln von hinten nach vorn
+    const boxen = [];
+    T.slice().sort((a, b) => cam([b.x0 + b.l / 2, 0, 0])[2] - cam([a.x0 + a.l / 2, 0, 0])[2]).forEach(t => {
+      const h = t.h || .8, x0 = t.x0, x1 = t.x0 + t.l, a0 = cam([x0, 0, 0]), a1 = cam([x1, 0, 0]); if(a0[2] < NAH && a1[2] < NAH) return;
+      const ol = pr([x0, LIFT + h, 0]), or = pr([x1, LIFT + h, 0]), ul = pr([x0, LIFT, 0]), ur = pr([x1, LIFT, 0]); if(Math.max(or[0], ur[0]) < -40 || Math.min(ol[0], ul[0]) > Wc + 40) return;
+      if(!t.frei) poly([[x0, 0, -.02], [x1, 0, -.02], [x1 + .2, 0, -.5], [x0 + .1, 0, -.5]], 'rgba(30,40,20,.2)');
+      const tex = reiheTex(t), breitPx = Math.abs(ur[0] - ul[0]), n = Math.max(6, Math.ceil(breitPx / (2 * dpr)));
+      for(let k = 0; k < n; k++){ const u0 = k / n, u1 = (k + 1) / n, p0 = pr([x0 + u0 * t.l, LIFT + h, 0]), p1 = pr([x0 + u1 * t.l, LIFT + h, 0]), q0 = pr([x0 + u0 * t.l, LIFT, 0]); if(p0[2] < NAH || p1[2] < NAH) continue;
+        x.drawImage(tex, u0 * tex.width, 0, Math.max(1, (u1 - u0) * tex.width), tex.height, p0[0], p0[1], p1[0] - p0[0] + .6, q0[1] - p0[1]); }
+      x.strokeStyle = t.an ? C.orange : 'rgba(0,0,0,.22)'; x.lineWidth = t.an ? Math.max(3, dpr * 2.5) : Math.max(1, dpr * .7); x.beginPath(); x.moveTo(ol[0], ol[1]); x.lineTo(or[0], or[1]); x.lineTo(ur[0], ur[1]); x.lineTo(ul[0], ul[1]); x.closePath(); x.stroke();
+      // Nummer über der Tafel
+      const m = pr([x0 + t.l / 2, LIFT + h + .5, 0]); if(m[2] > NAH && t.nr != null){ const rr = Math.max(9 * dpr, Math.min(17 * dpr, foc * .34 / m[2]));
+        x.fillStyle = t.an ? C.orange : (t.frei ? 'rgba(255,255,255,.92)' : C.marine); x.beginPath(); x.arc(m[0], m[1], rr, 0, Math.PI * 2); x.fill(); if(t.frei && !t.an){ x.strokeStyle = C.marine; x.lineWidth = Math.max(1, dpr); x.stroke(); }
+        if(t.ring){ x.strokeStyle = '#fff'; x.lineWidth = rr * .5; x.beginPath(); x.arc(m[0], m[1], rr + rr * .18, 0, Math.PI * 2); x.stroke(); x.strokeStyle = t.ring; x.lineWidth = rr * .3; x.beginPath(); x.arc(m[0], m[1], rr + rr * .18, 0, Math.PI * 2); x.stroke(); }
+        x.fillStyle = t.frei && !t.an ? C.marine : '#fff'; x.font = `800 ${rr * 1.05}px BandeT,Barlow,sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(t.nr), m[0], m[1] + rr * .06); }
+      boxen.push({ id:t.id, x:Math.min(ol[0], ul[0]) / dpr, y:Math.min(ol[1], or[1]) / dpr, w:(Math.max(or[0], ur[0]) - Math.min(ol[0], ul[0])) / dpr, h:(Math.max(ul[1], ur[1]) - Math.min(ol[1], or[1])) / dpr });
+    });
+    const m0 = pr([kx, LIFT, 0]), m1 = pr([kx + 1, LIFT, 0]);
+    return { boxen, pxm:Math.abs(m1[0] - m0[0]) / dpr };
+  }
+
+  return { C, BB_LOGO, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, muster, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, ohneKontakt, laden };
+})();
+
+// Feste, geprüfte Formen für die Planvorschau und den Export.
+// Die Markenfreigabe gehört zur exakten SVG-Fassung (siehe revision).
+(function(root) {
+  'use strict';
+  // BEGINN DRUCKPFADE
+  const katalog = {
+    "basakci": {
+      "width": 674,
+      "height": 105,
+      "formen": [
+        {
