@@ -1,141 +1,315 @@
-  async function fontDaten(datei){ if(fontCache.has(datei)) return fontCache.get(datei);
-    const p = fetch(basisJetzt + datei).then(r => { if(!r.ok) throw new Error(); return r.blob(); }).then(b => new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(b); })).catch(() => null);
-    fontCache.set(datei, p); return p; }
-  const xe = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  const r2 = v => Math.round(v * 100) / 100;
-  // Farben im SVG nur als #rgb/#rrggbb oder rgb(a)-Zahlen, alles andere wird zu Schwarz
-  const fa = c => /^#[0-9a-fA-F]{3,8}$|^rgba?\([\d.,\s%]+\)$|^none$/.test(String(c || '')) ? c : '#1c1c22';
-  async function svg(L, res, spec){
-    const B = L.B, fonts = await Promise.all(SCHRIFTEN.map(async ([fam, f, w]) => { const u = await fontDaten(f); return u ? `@font-face{font-family:'${fam}';font-weight:${w};src:url(${u.replace(/^data:[^;]*;/, 'data:font/woff2;')}) format('woff2');}` : ''; }));
-    const bildUrl = im => { if(!im) return null; const c = document.createElement('canvas'); c.width = im.naturalWidth || im.width; c.height = im.naturalHeight || im.height; c.getContext('2d').drawImage(im, 0, 0); return c.toDataURL('image/png'); };
-    const lu = bildUrl(res.logoBild), wu = bildUrl(res.wappenBild), famName = f => FAM[f.fam].replace(/"/g, "'");
-    const teile = druckOps(L).map(o => {
-      if(o.t === 'rect') return `<rect x="${r2(o.x)}" y="${r2(o.y)}" width="${r2(o.w)}" height="${r2(o.h)}" fill="${fa(o.fill)}"/>`;
-      if(o.t === 'linie') return `<line x1="${r2(o.x1)}" y1="${r2(o.y1)}" x2="${r2(o.x2)}" y2="${r2(o.y2)}" stroke="${fa(o.stroke)}" stroke-width="${r2(+o.w || 0)}" stroke-linecap="round"/>`;
-      if(o.t === 'strich'){ const [a, b, c] = o.pts; return `<path d="M${r2(a[0])} ${r2(a[1])}Q${r2(b[0])} ${r2(b[1])} ${r2(c[0])} ${r2(c[1])}" fill="none" stroke="${fa(o.stroke)}" stroke-width="${r2(o.w)}" stroke-linecap="round"/>`; }
-      if(o.t === 'img'){ const u = o.key === 'logo' ? lu : wu; return u ? `<image x="${r2(o.x)}" y="${r2(o.y)}" width="${r2(o.w)}" height="${r2(o.h)}" preserveAspectRatio="none" href="${u}"/>` : ''; }
-      if(o.t === 'text'){ const anchor = o.align === 'c' ? 'middle' : o.align === 'r' ? 'end' : 'start', rot = o.rot ? ` transform="rotate(${o.rot} ${r2(o.box.x + o.box.w / 2)} ${r2(o.box.y + o.box.h / 2)})"` : '';
-        return `<text font-family="${famName(o.f)}" font-weight="${o.f.w}" font-size="${r2(o.fs)}" fill="${fa(o.fill)}" text-anchor="${anchor}"${o.f.ls ? ` letter-spacing="${r2(o.f.ls * o.fs)}"` : ''}${rot}>` +
-          o.lines.map((z, i) => `<tspan x="${r2(o.x)}" y="${r2(o.y + o.a * o.fs + i * o.lh * o.fs)}">${xe(z)}</tspan>`).join('') + '</text>'; }
-      return ''; }).join('\n');
-    const s = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${L.W + 2 * B}mm" height="${L.H + 2 * B}mm" viewBox="${-B} ${-B} ${L.W + 2 * B} ${L.H + 2 * B}">\n` +
-      `<title>${xe('Bande ' + sauber(spec.firma || spec.name) + ', ' + (FORMATE[L.format] || {}).t + ', mit 2 cm Beschnitt')}</title>\n<style>${fonts.join('')}</style>\n${teile}\n</svg>\n`;
-    return { blob:new Blob([s], { type:'image/svg+xml' }), name:dateiName(L, spec, 'svg'), text:s };
+          "d": "M132 68.7A22.8 22.8 0 1 1 86.4 68.7A22.8 22.8 0 1 1 132 68.7Z",
+          "original": "#FFED00",
+          "ci": "#68B9DF"
+        }
+      ],
+      "hash": {
+        "ci": "b66f9fab61aeab45f48aaae7f957c2691243d445399abb7699abd09132973448",
+        "original": "a0a99253d0d62d7d210bc102f9614501a578c1d960a043713fe382305f3496c7"
+      }
+    }
+  };
+  // ENDE DRUCKPFADE
+
+  function schluessel(name) {
+    const s = String(name || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    if (/^basakci(?:\s|$)/.test(s)) return 'basakci';
+    if (/^keil(?:[\s-]|$)/.test(s)) return 'keil';
+    if (/^(?:paul\s+)?fierek(?:\s|$)/.test(s)) return 'fierek';
+    if (/^fit[\s-]*inn?(?:\s|$)/.test(s)) return 'fitinn';
+    return null;
   }
 
-  /* ---------- Die Reihe, wie sie heute hängt (0.99.25) ----------
-     Albert, 14.11.2026: „Kannst du mir das dreidimensional darstellen, wer jetzt gerade wie wo ist? So originalgetreu wie möglich.“
-     Blick vom Rasen über die Laufbahn auf die Bandenreihe. Jede Tafel in ihrer wirklichen Länge und mit ihrem Foto, Lücken bleiben
-     Lücken, freie Plätze sind gestrichelt. o: { tafeln:[{ id, x0, l, h, img, frei, nr, name, farbe, an, ring }], kamX, abstand, blick }.
-     x in Metern entlang der Reihe. Rückgabe: { boxen:[{ id, x, y, w, h }], pxm } in CSS-Pixeln. */
-  const REIHE_TEX = new Map(), REIHE_H = 192, REIHE_RAND = new Map();
-  // Farbe am Rand eines Fotos (links, rechts, oben, unten): der Mittelwert eines schmalen Streifens knapp innerhalb der Kante
-  function reiheRand(img, seite){ const k = img.src + '|' + seite; if(REIHE_RAND.has(k)) return REIHE_RAND.get(k);
-    let f = '#f7f5ef'; try{ const iw = img.naturalWidth, ih = img.naturalHeight, d = Math.max(1, Math.round(Math.min(iw, ih) * .04)), c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently:true });
-      const quer = seite === 'o' || seite === 'u'; c.width = quer ? 24 : 1; c.height = quer ? 1 : 24;
-      if(seite === 'l') x.drawImage(img, d, 0, d, ih, 0, 0, 1, 24); else if(seite === 'r') x.drawImage(img, iw - 2 * d, 0, d, ih, 0, 0, 1, 24);
-      else if(seite === 'o') x.drawImage(img, 0, d, iw, d, 0, 0, 24, 1); else x.drawImage(img, 0, ih - 2 * d, iw, d, 0, 0, 24, 1);
-      const p = x.getImageData(0, 0, c.width, c.height).data, n = p.length / 4, K = [[], [], []]; for(let i = 0; i < n; i++){ K[0].push(p[i * 4]); K[1].push(p[i * 4 + 1]); K[2].push(p[i * 4 + 2]); }
-      const med = a => { a.sort((u, v) => u - v); return a[Math.floor(a.length / 2)]; };   // Median: ein Buchstabe oder ein Grashalm am Rand färbt die Fläche nicht um
-      f = '#' + K.map(a => med(a).toString(16).padStart(2, '0')).join(''); }catch(e){}
-    REIHE_RAND.set(k, f); return f; }
-  // Eine Tafel der Reihe als Bild. Das Foto wird NIE verzogen (Albert, 14.11.2026: „teilweise zu schlecht, verzogen“): Es behält sein Seitenverhältnis.
-  // Passt es fast (bis 7 %), füllt es die Tafel; sonst steht es ganz in der Mitte, und daneben läuft die Farbe seines Randes weiter (eine ruhige Fläche,
-  // kein gestreckter Bildrand). Hat der Platz eine Grundfarbe (bandenplaetze.farbe), gilt ein sauberes Schild mit dem Namen statt eines Fotos:
-  // so für Tafeln ohne Foto und für Fotos, die nur einen Ausschnitt zeigen.
-  function reiheTex(t){
-    const k = [t.id, t.img ? t.img.src : '', t.name, t.frei ? 1 : 0, t.l, t.farbe || '', t.nr].join('|'); if(REIHE_TEX.has(k)) return REIHE_TEX.get(k);
-    const H = REIHE_H, W = Math.max(80, Math.round(t.l / (t.h || .8) * H)), c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
-    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
-    const hell = f => { const m = /^#(..)(..)(..)$/.exec(f || ''); return !m || (parseInt(m[1], 16) * .299 + parseInt(m[2], 16) * .587 + parseInt(m[3], 16) * .114) > 150; };
-    // Schrift auf dem Schild: so groß wie möglich. Ein langer Name bricht an der Leerstelle nahe der Mitte in zwei Zeilen, wenn er dadurch größer wird.
-    const text = (s, farbe, gr) => { const schrift = fs => `800 ${fs}px BandeT,Barlow,sans-serif`, pass = (Z, max) => { x.font = schrift(max); const w = Math.max(...Z.map(z => x.measureText(z).width)); return w > W * .88 ? max * W * .88 / w : max; };
-      const T = String(s).replace(/([a-zäöüß])([A-ZÄÖÜ])/g, '$1 $2').split(/\s+/).filter(Boolean), gross = z => z.toUpperCase();   // Teile: Wörter, dazu die Naht in Namen wie „SparkassenVersicherung“
-      s = gross(String(s)); let Z = [s], fs = pass(Z, H * (gr || .46));
-      if(fs < H * .32 && T.length > 1){ let best = null; for(let i = 1; i < T.length; i++){ const a = gross(T.slice(0, i).join(' ')), b = gross(T.slice(i).join(' ')), d = Math.abs(a.length - b.length); if(!best || d < best.d) best = { d, Z:[a, b] }; }
-        const f2 = pass(best.Z, H * .36); if(f2 > fs * 1.15){ Z = best.Z; fs = f2; } }
-      x.font = schrift(fs); x.fillStyle = farbe; x.textAlign = 'center'; x.textBaseline = 'middle'; Z.forEach((z, i) => x.fillText(z, W / 2, H / 2 + (i - (Z.length - 1) / 2) * fs * 1.12 + fs * .04)); };
-    const foto = !t.frei && !t.farbe && t.img && t.img.naturalWidth > 0;
-    if(t.frei){ const e = H / 96; x.fillStyle = 'rgba(246,243,236,.82)'; x.fillRect(0, 0, W, H); x.strokeStyle = 'rgba(29,39,96,.7)'; x.lineWidth = 4 * e; x.setLineDash([14 * e, 9 * e]); x.strokeRect(5 * e, 5 * e, W - 10 * e, H - 10 * e); x.setLineDash([]); text('frei', 'rgba(29,39,96,.85)', .42); }
-    else if(foto){ const iw = t.img.naturalWidth, ih = t.img.naturalHeight, ai = iw / ih, ab = W / H;
-      if(Math.abs(ai / ab - 1) <= .07) x.drawImage(t.img, 0, 0, W, H);
-      else { const f = Math.min(W / iw, H / ih), w = Math.round(iw * f), h = Math.round(ih * f), l = Math.round((W - w) / 2), o = Math.round((H - h) / 2);
-        if(l > 0){ x.fillStyle = reiheRand(t.img, 'l'); x.fillRect(0, 0, l + 1, H); x.fillStyle = reiheRand(t.img, 'r'); x.fillRect(l + w - 1, 0, W - l - w + 1, H); }
-        if(o > 0){ x.fillStyle = reiheRand(t.img, 'o'); x.fillRect(0, 0, W, o + 1); x.fillStyle = reiheRand(t.img, 'u'); x.fillRect(0, o + h - 1, W, H - o - h + 1); }
-        x.drawImage(t.img, l, o, w, h); } }
-    else { const bg = t.farbe || '#ffffff'; x.fillStyle = bg; x.fillRect(0, 0, W, H); text(String(t.name || ''), hell(bg) ? C.marine : '#ffffff'); }
-    if(!t.frei && !t.farbe && t.img && !t.img.naturalWidth) return c;   // Foto lädt noch: nicht merken
-    REIHE_TEX.set(k, c); return c;
+  function marke(key, modus) {
+    if (!Object.prototype.hasOwnProperty.call(katalog, key) || !['ci','original'].includes(modus)) return null;
+    return katalog[key];
   }
-  function reihe(cv, o){
-    const dpr = Math.min(2, window.devicePixelRatio || 1), r = cv.getBoundingClientRect();
-    const Wc = Math.max(10, Math.round(r.width * dpr)), Hc = Math.max(10, Math.round(r.height * dpr)); if(cv.width !== Wc) cv.width = Wc; if(cv.height !== Hc) cv.height = Hc;
-    const x = cv.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
-    const T = o.tafeln || [], kx = +o.kamX || 0, d = o.abstand || 15, yaw = o.blick != null ? o.blick : .3, LIFT = .22, RAIL = 1.1, NAH = .3;
-    const P = [kx - Math.sin(yaw) * d, 1.65, -Math.cos(yaw) * d], Z = [kx + .4, .6, 0];
-    const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], norm = a => { const l = Math.hypot(...a); return a.map(v => v / l); };
-    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-    const f = norm(sub(Z, P)), ri = norm(cross([0, 1, 0], f)), up = cross(f, ri), cam = Q => { const v = sub(Q, P); return [dot(v, ri), dot(v, up), dot(v, f)]; };
-    const schmal = r.width < 560, breit = schmal ? 6.8 : 12.5,   /* seit 0.99.34 näher dran: am Handy füllt eine Bande von 5 m gut zwei Drittel der Breite */ cx = Wc * .5, cy = Hc * (schmal ? .5 : .5);
-    let foc; { const a = cam([kx - breit / 2, LIFT, 0]), b = cam([kx + breit / 2, LIFT, 0]); foc = Wc * .96 / Math.abs(b[0] / b[2] - a[0] / a[2]); }
-    const pr = Q => { const c = cam(Q); return [cx + foc * c[0] / c[2], cy - foc * c[1] / c[2], c[2]]; };
-    const poly = (pts, fill) => { const Cc = pts.map(cam), out = [];
-      for(let i = 0; i < Cc.length; i++){ const a = Cc[i], b = Cc[(i + 1) % Cc.length], ia = a[2] > NAH, ib = b[2] > NAH; if(ia) out.push(a);
-        if(ia !== ib){ const t = (NAH - a[2]) / (b[2] - a[2]); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, NAH]); } }
-      if(out.length < 3) return; x.beginPath(); out.forEach((c, i) => { const sx = cx + foc * c[0] / c[2], sy = cy - foc * c[1] / c[2]; i ? x.lineTo(sx, sy) : x.moveTo(sx, sy); }); x.closePath(); x.fillStyle = fill; x.fill(); };
-    const linie = (A, B, farbe, dick) => { const a = cam(A), b = cam(B); if(a[2] < NAH && b[2] < NAH) return; let p = a, q = b;
-      if(a[2] < NAH){ const t = (NAH - a[2]) / (b[2] - a[2]); p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, NAH]; } if(b[2] < NAH){ const t = (NAH - b[2]) / (a[2] - b[2]); q = [b[0] + (a[0] - b[0]) * t, b[1] + (a[1] - b[1]) * t, NAH]; }
-      x.strokeStyle = farbe; x.lineWidth = Math.max(1, foc * dick / ((p[2] + q[2]) / 2)); x.beginPath(); x.moveTo(cx + foc * p[0] / p[2], cy - foc * p[1] / p[2]); x.lineTo(cx + foc * q[0] / q[2], cy - foc * q[1] / q[2]); x.stroke(); };
-    const hz = norm([f[0], 0, f[2]]), horizont = cy - foc * dot(hz, up) / dot(hz, f), zuf = i => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
-    const L0 = kx - 110, L1 = kx + 130;
-    // Himmel und Hügel (der Himmel vom 14.11.: klar und blau)
-    x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = '#86a05e'; x.fillRect(0, 0, Wc, Hc);   // nichts vom letzten Bild darf stehen bleiben
-    let g = x.createLinearGradient(0, 0, 0, horizont); g.addColorStop(0, '#5f9fe0'); g.addColorStop(.75, '#a9cdee'); g.addColorStop(1, '#dfeaf2'); x.fillStyle = g; x.fillRect(0, 0, Wc, horizont + 2);
-    x.fillStyle = '#9fb48f'; x.beginPath(); x.moveTo(0, horizont + 2); for(let i = 0; i <= 60; i++){ const t = i / 60, w = (kx * .012) + t * 4.2; x.lineTo(t * Wc, horizont - Hc * .075 * (.6 + .3 * Math.sin(w * 1.7) + .16 * Math.sin(w * 3.9 + 1))); } x.lineTo(Wc, horizont + 2); x.closePath(); x.fill();
-    // Gelände hinter den Banden, Weg, Bäume in Herbstfarben (Spielplatz und Wiese)
-    poly([[L0, 0, .3], [L1, 0, .3], [L1, 0, 90], [L0, 0, 90]], '#86a05e');
-    poly([[L0, 0, 1.2], [L1, 0, 1.2], [L1, 0, 3.4], [L0, 0, 3.4]], '#cfc6ad');
-    // Zaun und Hecke hinter dem Weg
-    { const A0 = pr([kx - 70, 0, 4]), A1 = pr([kx + 100, 0, 4]), B0 = pr([kx - 70, 1.5, 4]), B1 = pr([kx + 100, 1.5, 4]); if(A0[2] > NAH && A1[2] > NAH){ x.fillStyle = '#6f8a52'; x.beginPath(); x.moveTo(A0[0], A0[1]); x.lineTo(A1[0], A1[1]); x.lineTo(B1[0], B1[1]); x.lineTo(B0[0], B0[1]); x.closePath(); x.fill(); } }
-    const B = []; for(let i = Math.floor((kx - 95) / 2.6); i <= Math.ceil((kx + 125) / 2.6); i++) B.push({ bx:i * 2.6 + zuf(i) * 1.8, bz:38 + zuf(i + 500) * 45, bh:6 + zuf(i + 900) * 5, br:2.6 + zuf(i + 1300) * 1.8, gr:['#7d9d70', '#a3a354', '#c08d3e', '#cfa94c', '#93703f', '#6c8a60', '#b9792f'][Math.floor(zuf(i + 77) * 7)] });
-    B.sort((a, b) => b.bz - a.bz).forEach(t => { const fu = pr([t.bx, 0, t.bz]), ko = pr([t.bx, t.bh, t.bz]); if(fu[2] < NAH) return; const rr = foc * t.br / fu[2]; if(fu[0] < -rr * 2 || fu[0] > Wc + rr * 2) return;
-      x.fillStyle = '#5a4a36'; x.fillRect(fu[0] - rr * .06, ko[1], rr * .12, fu[1] - ko[1]);
-      x.fillStyle = t.gr; [[0, 0, 1, 1.1], [-.55, .4, .7, .72], [.6, .35, .72, .78]].forEach(([dx, dy, a, b]) => { x.beginPath(); x.ellipse(ko[0] + dx * rr, ko[1] + dy * rr, rr * a, rr * b, 0, 0, Math.PI * 2); x.fill(); }); });
-    g = x.createLinearGradient(0, horizont - Hc * .16, 0, horizont + Hc * .02); g.addColorStop(0, 'rgba(226,236,240,0)'); g.addColorStop(1, 'rgba(226,236,240,.35)'); x.fillStyle = g; x.fillRect(0, horizont - Hc * .16, Wc, Hc * .18);
-    // Rasen, Seitenlinie, Laufbahn, Streifen vor den Banden
-    poly([[L0, 0, -70], [L1, 0, -70], [L1, 0, -8.4], [L0, 0, -8.4]], '#5c9443');
-    for(let i = Math.floor(L0 / 5); i < L1 / 5; i += 2) poly([[i * 5, 0, -70], [i * 5 + 5, 0, -70], [i * 5 + 5, 0, -8.4], [i * 5, 0, -8.4]], 'rgba(255,255,255,.05)');
-    poly([[L0, 0, -10.1], [L1, 0, -10.1], [L1, 0, -9.98], [L0, 0, -9.98]], 'rgba(250,250,245,.9)');
-    poly([[L0, 0, -8.4], [L1, 0, -8.4], [L1, 0, -1.1], [L0, 0, -1.1]], '#b56a45');
-    [-6.6, -4.8, -3].forEach(z => poly([[L0, 0, z - .03], [L1, 0, z - .03], [L1, 0, z + .03], [L0, 0, z + .03]], 'rgba(255,235,215,.16)'));
-    poly([[L0, 0, -1.1], [L1, 0, -1.1], [L1, 0, .3], [L0, 0, .3]], '#7f8f4c');
-    // Geländer: Pfosten alle 2,5 m und der Holm, an dem die Tafeln hängen
-    const xa = Math.min(...T.map(t => t.x0), kx) - 12, xb = Math.max(...T.map(t => t.x0 + t.l), kx) + 12;
-    for(let px = Math.ceil(Math.max(xa, kx - 60) / 2.5) * 2.5; px <= Math.min(xb, kx + 80); px += 2.5) linie([px, 0, .04], [px, RAIL, .04], 'rgba(235,235,230,.9)', .05);
-    linie([Math.max(xa, kx - 60), RAIL, .04], [Math.min(xb, kx + 80), RAIL, .04], 'rgba(245,245,240,.95)', .06);
-    // Tafeln von hinten nach vorn
-    const boxen = [];
-    T.slice().sort((a, b) => cam([b.x0 + b.l / 2, 0, 0])[2] - cam([a.x0 + a.l / 2, 0, 0])[2]).forEach(t => {
-      const h = t.h || .8, x0 = t.x0, x1 = t.x0 + t.l, a0 = cam([x0, 0, 0]), a1 = cam([x1, 0, 0]); if(a0[2] < NAH && a1[2] < NAH) return;
-      const ol = pr([x0, LIFT + h, 0]), or = pr([x1, LIFT + h, 0]), ul = pr([x0, LIFT, 0]), ur = pr([x1, LIFT, 0]); if(Math.max(or[0], ur[0]) < -40 || Math.min(ol[0], ul[0]) > Wc + 40) return;
-      if(!t.frei) poly([[x0, 0, -.02], [x1, 0, -.02], [x1 + .2, 0, -.5], [x0 + .1, 0, -.5]], 'rgba(30,40,20,.2)');
-      const tex = reiheTex(t), breitPx = Math.abs(ur[0] - ul[0]), n = Math.max(6, Math.ceil(breitPx / (2 * dpr)));
-      for(let k = 0; k < n; k++){ const u0 = k / n, u1 = (k + 1) / n, p0 = pr([x0 + u0 * t.l, LIFT + h, 0]), p1 = pr([x0 + u1 * t.l, LIFT + h, 0]), q0 = pr([x0 + u0 * t.l, LIFT, 0]); if(p0[2] < NAH || p1[2] < NAH) continue;
-        x.drawImage(tex, u0 * tex.width, 0, Math.max(1, (u1 - u0) * tex.width), tex.height, p0[0], p0[1], p1[0] - p0[0] + .6, q0[1] - p0[1]); }
-      x.strokeStyle = t.an ? C.orange : 'rgba(0,0,0,.22)'; x.lineWidth = t.an ? Math.max(3, dpr * 2.5) : Math.max(1, dpr * .7); x.beginPath(); x.moveTo(ol[0], ol[1]); x.lineTo(or[0], or[1]); x.lineTo(ur[0], ur[1]); x.lineTo(ul[0], ul[1]); x.closePath(); x.stroke();
-      // Nummer über der Tafel
-      const m = pr([x0 + t.l / 2, LIFT + h + .5, 0]); if(m[2] > NAH && t.nr != null){ const rr = Math.max(9 * dpr, Math.min(17 * dpr, foc * .34 / m[2]));
-        x.fillStyle = t.an ? C.orange : (t.frei ? 'rgba(255,255,255,.92)' : C.marine); x.beginPath(); x.arc(m[0], m[1], rr, 0, Math.PI * 2); x.fill(); if(t.frei && !t.an){ x.strokeStyle = C.marine; x.lineWidth = Math.max(1, dpr); x.stroke(); }
-        if(t.ring){ x.strokeStyle = '#fff'; x.lineWidth = rr * .5; x.beginPath(); x.arc(m[0], m[1], rr + rr * .18, 0, Math.PI * 2); x.stroke(); x.strokeStyle = t.ring; x.lineWidth = rr * .3; x.beginPath(); x.arc(m[0], m[1], rr + rr * .18, 0, Math.PI * 2); x.stroke(); }
-        x.fillStyle = t.frei && !t.an ? C.marine : '#fff'; x.font = `800 ${rr * 1.05}px BandeT,Barlow,sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(t.nr), m[0], m[1] + rr * .06); }
-      boxen.push({ id:t.id, x:Math.min(ol[0], ul[0]) / dpr, y:Math.min(ol[1], or[1]) / dpr, w:(Math.max(or[0], ur[0]) - Math.min(ol[0], ul[0])) / dpr, h:(Math.max(ul[1], ur[1]) - Math.min(ol[1], or[1])) / dpr });
+
+  function logo(key, modus = 'ci') {
+    const m = marke(key, modus);
+    if (!m) return null;
+    return {
+      width: m.width,
+      height: m.height,
+      paths: m.formen.map(p => ({
+        d: p.d, fill: p[modus], stroke: 'none', strokeWidth: 0, opacity: 1, rule: 'evenodd'
+      }))
+    };
+  }
+
+  function svg(key, modus = 'ci') {
+    const m = marke(key, modus);
+    if (!m) return null;
+    const kopf = '<svg xmlns="http://www.w3.org/2000/svg" width="' + m.width + '" height="' + m.height +
+      '" viewBox="0 0 ' + m.width + ' ' + m.height + '">';
+    return kopf + m.formen.map(p => '<path fill="' + p[modus] + '" fill-rule="evenodd" d="' + p.d + '"/>').join('') + '</svg>';
+  }
+
+  function revision(key, modus = 'ci') {
+    const m = marke(key, modus);
+    return m ? m.hash[modus] : null;
+  }
+
+  function zeichnen(ctx, key, modus, x, y, w, h) {
+    const m = marke(key, modus);
+    if (!m || !(w > 0 && h > 0)) return false;
+    const s = Math.min(w / m.width, h / m.height);
+    ctx.save();
+    ctx.translate(x + (w - m.width * s) / 2, y + (h - m.height * s) / 2);
+    ctx.scale(s, s);
+    for (const form of m.formen) {
+      ctx.fillStyle = form[modus];
+      ctx.fill(new Path2D(form.d), 'evenodd');
+    }
+    ctx.restore();
+    return true;
+  }
+
+  const api = Object.freeze({schluessel, logo, svg, revision, zeichnen});
+  root.BANDENMARKEN = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window === 'undefined' ? globalThis : window);
+
+// Gemeinsames Motiv für Platzplan, Rundgang und Druck. Maße sind relativ zum Endformat.
+const BANDEN_CI = (() => {
+  const blau = '#174782';
+  const bilder = new Map(), marken = new Map();
+  function titel(s) {
+    if (s.firma) return s.firma;
+    if (s.stand !== 'frei') return ({option:'Angeboten',vorgemerkt:'Vorgemerkt',fest:'Vergeben'})[s.stand] || 'Vergeben';
+    if (s.rolle === 'top') return '1896 Partner';
+    if (s.rolle === 'mitte') return 'Hauptpartner';
+    return s.zone === 'premium' ? 'Premium' : 'Frei';
+  }
+  function feld(w,h) { return {x:w*.045,y:h*.105,w:w*.91,h:h*.79}; }
+  function bild(src) { const im = new Image(); return new Promise((ok,nein) => {
+    im.onload=()=>ok(im);im.onerror=()=>nein(Error('Das Logo lässt sich gerade nicht anzeigen.'));im.src=src;
+  }); }
+  function svgBild(svg) { return bild('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)); }
+  function vektorisiere(c) {
+    const a=c.getContext('2d').getImageData(0,0,c.width,c.height);
+    return new Promise((ok,nein) => {
+      const worker=new Worker('bandenkontur.js');
+      const ende=()=>{clearTimeout(timer);worker.terminate();};
+      const timer=setTimeout(()=>{ende();nein(Error('Für dieses Motiv wird eine Vektorvorlage benötigt.'));},20000);
+      worker.onmessage=e=>{ende();e.data.svg?ok(e.data.svg):nein(Error(e.data.fehler));};
+      worker.onerror=()=>{ende();nein(Error('Die Konturen konnten nicht ermittelt werden.'));};
+      worker.postMessage({bild:a,farbe:blau},[a.data.buffer]);
     });
-    const m0 = pr([kx, LIFT, 0]), m1 = pr([kx + 1, LIFT, 0]);
-    return { boxen, pxm:Math.abs(m1[0] - m0[0]) / dpr };
   }
-
-  return { C, FORMATE, PAKETE, LAYOUTS, BESCHNITT, schriften, vorbereiten, muster, layout, malen, bild, flach, szene, reihe, reiheTex, pdf, png, svg, akzent, kontrast, lum, mess, einpassen, sauber, ohneKontakt, laden };
+  async function originalPfade(src,modus) {
+    if(!/^data:image\/svg\+xml[;,]/i.test(src)||src.length>4000000)return null;
+    if(!window.BD_RENDER&&typeof sxScript==='function'){
+      await Promise.all([sxScript('bandenstudio-core.js',()=>window.BD_CORE),sxScript('vendor/bandenstudio/svgpath.js',()=>window.BD_SVGPATH)]);
+      await sxScript('bandenstudio-render.js',()=>window.BD_RENDER);
+    }
+    if(!window.BD_RENDER)return null;
+    const komma=src.indexOf(','),teil=src.slice(komma+1);
+    const text=/;base64$/i.test(src.slice(0,komma))?new TextDecoder().decode(Uint8Array.from(atob(teil),c=>c.charCodeAt(0))):decodeURIComponent(teil);
+    const v=BD_RENDER.readSVG(text);
+    const hell=c=>c!=='none'&&[1,3,5].every(i=>parseInt(c.slice(i,i+2),16)>=235);
+    const farben=v.paths.filter(p=>p.opacity>0).flatMap(p=>[p.fill,p.stroke]).filter(c=>c!=='none');
+    const nurHell=farben.length>0&&farben.every(hell);
+    if(modus==='ci'){
+      const umfaerben=c=>c==='none'?c:hell(c)&&!nurHell?'#ffffff':blau;
+      for(const p of v.paths){p.fill=umfaerben(p.fill);p.stroke=umfaerben(p.stroke);}
+    }
+    const svg=BD_RENDER.vectorSVG(v);
+    return {svg,img:await svgBild(svg),vektor:true,dunklerGrund:modus==='original'&&nurHell};
+  }
+  async function motiv(key,src,modus='ci') {
+    const signatur=JSON.stringify([key,src,modus]);
+    if(marken.has(signatur))return marken.get(signatur);
+    const laden=(async()=>{
+      if(key) {
+        const svg=BANDENMARKEN.svg(key,modus);
+        if(svg)return {svg,img:await svgBild(svg),vektor:true,nachgezeichnet:true};
+      }
+      if(!src)throw Error('Für diesen Platz fehlt ein Firmenlogo.');
+      const pfade=await originalPfade(src,modus).catch(()=>null);if(pfade)return pfade;
+      if(modus==='original') {
+        const a=await LOGO.aufbereiten(src);
+        return {img:await bild(a.c.toDataURL()),dunklerGrund:a.hell,vektor:false};
+      }
+      const canvas=await LOGO.variante(src,'farbe:'+blau);
+      try {
+        const svg=await vektorisiere(canvas);
+        return {svg,img:await svgBild(svg),vektor:true,nachgezeichnet:true};
+      }catch(e){
+        return {img:await bild(canvas.toDataURL()),vektor:false,hinweis:e.message};
+      }
+    })();
+    marken.set(signatur,laden);try{return await laden;}catch(e){marken.delete(signatur);throw e;}
+  }
+  async function tafel(key,src,modus,doppel) {
+    const k=JSON.stringify([key,src,modus,doppel]);
+    if(bilder.has(k))return bilder.get(k);
+    const laden=(async()=>{
+      const a=await motiv(key,src,modus),c=document.createElement('canvas');
+      c.height=240;c.width=doppel?1500:750;
+      const x=c.getContext('2d'),f=feld(c.width,c.height),im=a.img;
+      x.fillStyle=a.dunklerGrund?'#173e71':'#ffffff';x.fillRect(0,0,c.width,c.height);
+      const mass=Math.min(f.w/im.naturalWidth,f.h/im.naturalHeight);
+      const w=im.naturalWidth*mass,h=im.naturalHeight*mass;
+      x.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h);
+      return bild(c.toDataURL('image/png'));
+    })();
+    bilder.set(k,laden);try{return await laden;}catch(e){bilder.delete(k);throw e;}
+  }
+  async function hash(svg) {
+    const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(svg));
+    return [...new Uint8Array(bytes)].map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+  async function freigabefeld(el,slot,quelle,liste,rpc) {
+    const generation=el._kennung={};
+    const aktiv=()=>el.isConnected&&el._kennung===generation;
+    el.replaceChildren();
+    try{
+      const bestand=await liste(),zeile=bestand.slots?.find(s=>s.platz===slot.id);
+      if(!aktiv()||!bestand.darf||!zeile)return;
+      if(!slot.sponsor||slot.sponsor!==zeile.sponsor||slot.firma!==zeile.firma||
+        !Number.isSafeInteger(slot.ci_revision)||slot.ci_revision!==zeile.revision){
+        el.textContent='Der Bandenplan hat sich geändert. Bitte lade ihn neu.';return;
+      }
+      if(slot.ci_quelle_passt===false){el.textContent='Für die Freigabe öffne das aktuelle Logo im Vereinsplan.';return;}
+      const m=await motiv(slot.markenschluessel,quelle(),'ci');if(!aktiv())return;
+      if(!m.svg){el.textContent=m.hinweis||'Für diese Freigabe fehlt die Vektorvorlage.';return;}
+      const h=await hash(m.svg);if(!aktiv())return;
+      const label=document.createElement('label'),check=document.createElement('input'),info=document.createElement('span');
+      label.className='ci-freigabe';check.type='checkbox';check.checked=zeile.freigabe&&zeile.hash===h;
+      info.setAttribute('role','status');const text=m.nachgezeichnet?'Nachgezeichnetes CI-Logo mit Partner freigegeben':'CI-Logo mit Partner freigegeben';
+      label.append(check,document.createTextNode(text));el.replaceChildren(label,info);
+      if(zeile.freigabe&&zeile.hash!==h)info.textContent='Die aktuelle Fassung braucht eine neue Freigabe.';
+      check.onchange=async()=>{
+        const wert=check.checked,vorher=zeile.freigabe&&zeile.hash===h;check.disabled=true;
+        try{
+          const r=await rpc('banden_ci_setzen',{p_platz:slot.id,p_sponsor:zeile.sponsor,p_hash:h,p_revision:zeile.revision,p_frei:wert});
+          if(!r.ok)throw Error('Der Platz wurde inzwischen geändert. Bitte den Plan neu laden.');
+          Object.assign(zeile,r);slot.ci_revision=r.revision;if(aktiv())info.textContent=wert?'Freigabe gespeichert.':'Freigabe zurückgenommen.';
+        }catch(e){if(aktiv()){check.checked=vorher;info.textContent=e.message;}}
+        finally{if(aktiv())check.disabled=false;}
+      };
+    }catch(e){if(aktiv())el.textContent=e.message||'Die Freigabe konnte nicht geladen werden.';}
+  }
+  return {titel,feld,motiv,tafel,hash,freigabefeld};
 })();
+
+// Exportiert die im Verein dokumentierten, aktuell freigegebenen Motive für genau eine Saison.
+async function b27ExportDialog() {
+  const saison=B27.saison;
+  const modal=svModal(`<div class="mhead"><h2>Freigegebene CI-Logos</h2></div>
+    <p id="b27ExZahl" class="msub" role="status">Die Freigaben werden geladen.</p>
+    <form id="b27ExForm">
+      <label class="pz-tc-dlgf"><span>Dateien im ZIP</span><select name="format">
+        <option value="svg">Vektorlogos (SVG)</option>
+        <option value="rgb">Vektorlogos und Druck-PDFs in RGB</option>
+        <option value="cmyk">Vektorlogos und Druck-PDFs in CMYK</option>
+      </select></label>
+      <div id="b27ExDruck" hidden>
+        <label class="pz-tc-dlgf"><span>Beschnitt je Seite laut Druckerei (mm)</span><input name="beschnitt" type="number" min="0" max="100" step="0.1" placeholder="z. B. 20"></label>
+        <label class="bn-check" id="b27ExRgb"><input type="checkbox" name="rgb"> Die Druckerei nimmt RGB-Dateien an.</label>
+        <label class="pz-tc-dlgf" id="b27ExIcc"><span>CMYK-Ausgabeprofil der Druckerei</span><input name="icc" type="file" accept=".icc,.icm"></label>
+      </div>
+      <p id="b27ExStatus" class="pz-tc-tipp" role="status" aria-live="polite"></p>
+      <div class="pz-tc-dlgk"><button class="btn" type="submit" disabled>ZIP herunterladen</button>
+      <button class="btn ghost" type="button" id="b27ExZu">Schließen</button></div>
+    </form>`);
+  const form=modal.querySelector('#b27ExForm'),felder=form.elements,knopf=form.querySelector('button[type=submit]');
+  const status=modal.querySelector('#b27ExStatus'),zahl=modal.querySelector('#b27ExZahl');
+  const sichtbar=()=>form.isConnected && B27.saison===saison && document.getElementById('overlay')?.classList.contains('open');
+  async function freigaben() {
+    const [plan,ci]=await Promise.all([bcRpc('banden_plan_laden',{p_saison:saison}),bcRpc('banden_ci_liste',{p_saison:saison})]);
+    if(!Array.isArray(plan?.slots)||!Array.isArray(ci?.slots)) throw Error('Die aktuellen Freigaben lassen sich nicht lesen.');
+    const plaetze=new Map(plan.slots.map(s=>[s.id,s]));
+    return ci.slots.filter(f=>f.freigabe).map(f=>{
+      const slot=plaetze.get(f.platz);
+      if(!slot||slot.sponsor!==f.sponsor||slot.firma!==f.firma||slot.stand==='frei'||!['doppel','einzel'].includes(slot.art)||
+          slot.ci_revision!==f.revision||!Number.isInteger(f.revision)||!(/^[0-9a-f]{64}$/.test(f.hash))) throw Error('Eine Freigabe oder Bande hat sich geändert. Starte den Export noch einmal.');
+      return {slot,f};
+    }).sort((a,b)=>a.slot.pos-b.slot.pos);
+  }
+  function anzahl(reihen) {
+    zahl.textContent=reihen.length ? (reihen.length===1?'Ein freigegebenes Logo':reihen.length+' freigegebene Logos')+' für '+saison+'/'+String(saison+1).slice(-2)+'.' :
+      'Noch keine Freigaben. Öffne eine belegte Bande und bestätige dort die CI-Fassung nach Rücksprache mit dem Partner.';
+  }
+  function signatur(reihen) {
+    return JSON.stringify(reihen.map(({slot,f})=>[slot.id,slot.sponsor,slot.firma,slot.kennung,slot.art,slot.markenschluessel,f.revision,f.hash]));
+  }
+  function formatZeigen() {
+    const modus=felder.format.value;
+    modal.querySelector('#b27ExDruck').hidden=modus==='svg';felder.beschnitt.required=modus!=='svg';felder.beschnitt.disabled=modus==='svg';
+    modal.querySelector('#b27ExRgb').hidden=modus!=='rgb';felder.rgb.required=modus==='rgb';felder.rgb.disabled=modus!=='rgb';
+    modal.querySelector('#b27ExIcc').hidden=modus!=='cmyk';felder.icc.required=modus==='cmyk';felder.icc.disabled=modus!=='cmyk';
+  }
+  felder.format.onchange=formatZeigen;formatZeigen();
+  modal.querySelector('#b27ExZu').onclick=()=>closeOverlay();
+  let aktiv=false;
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    if(aktiv||!form.reportValidity())return;
+    aktiv=true;knopf.disabled=true;
+    const modus=felder.format.value,beschnitt=felder.beschnitt.valueAsNumber,rgb=felder.rgb.checked,datei=felder.icc.files[0];
+    const eingaben=[felder.format,felder.beschnitt,felder.rgb,felder.icc];eingaben.forEach(el=>el.disabled=true);
+    let druckrahmen=null;
+    try{
+      const reihen=await freigaben();if(!sichtbar())return;anzahl(reihen);
+      if(!reihen.length)throw Error('Es gibt aktuell keine freigegebenen CI-Logos.');
+      const Zip=await simpZip(),archiv=new Zip();
+      await Promise.all([sxScript('bandenstudio-core.js',()=>window.BD_CORE),sxScript('vendor/bandenstudio/svgpath.js',()=>window.BD_SVGPATH)]);
+      await sxScript('bandenstudio-render.js',()=>window.BD_RENDER);
+      let profil=null,renderer=BD_RENDER;
+      if(modus!=='svg'){
+        if(!Number.isFinite(beschnitt)||beschnitt<0||beschnitt>100||modus==='rgb'&&!rgb)throw Error('Bitte die Druckvorgaben prüfen.');
+        if(modus==='cmyk'){
+          if(!datei||datei.size>8*1024*1024)throw Error('Bitte das CMYK-Profil der Druckerei auswählen (maximal 8 MB).');
+          const data=await new Promise((ok,nein)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=()=>nein(Error('Das Profil ist nicht lesbar.'));r.readAsDataURL(datei);});
+          profil={name:datei.name,data};
+          // Nur die lokale Druckseite darf das Farbmodul (WebAssembly) starten.
+          druckrahmen=document.createElement('iframe');druckrahmen.hidden=true;druckrahmen.title='CMYK-Druck';
+          druckrahmen.src='banden-ci-druck.html?v='+encodeURIComponent(window.SVBC_CFG?.build||'');
+          renderer=await new Promise((ok,nein)=>{
+            const fehlend=()=>nein(Error('Die Druckseite lässt sich nicht laden. Bitte öffne den Export erneut.'));
+            const timer=setTimeout(fehlend,20000);
+            druckrahmen.onload=()=>{clearTimeout(timer);try{const r=druckrahmen.contentWindow.BD_RENDER;r?ok(r):fehlend();}catch(_){fehlend();}};
+            druckrahmen.onerror=()=>{clearTimeout(timer);fehlend();};
+            form.appendChild(druckrahmen);
+          });
+          const cms=await renderer.colourEngine(profil);cms.close();
+        }else{
+          await Promise.all([sxScript('vendor/bandenstudio/pdf-lib.min.js',()=>window.PDFLib),sxScript('vendor/bandenstudio/opentype.min.js',()=>window.opentype)]);
+        }
+      }
+      for(const {slot,f} of reihen){
+        if(!sichtbar())return;
+        const ort=slot.kennung+' · '+slot.firma;status.textContent=ort+' wird geprüft.';
+        const marke=await BANDEN_CI.motiv(slot.markenschluessel,b27Quelle(slot),'ci');
+        if(!marke.vektor||!marke.svg||await BANDEN_CI.hash(marke.svg)!==f.hash)throw Error('Für '+ort+' fehlt die Freigabe der aktuellen Vektorfassung. Bitte öffne die Bande.');
+        const v=BD_RENDER.readSVG(marke.svg);
+        const name=(slot.kennung+'-'+slot.firma).replace(/[^\p{L}\p{N}._-]+/gu,'-').slice(0,110);
+        const pfad=String(slot.pos).padStart(2,'0')+'-'+name;
+        archiv.file(pfad+'-CI.svg',marke.svg);
+        if(modus==='svg')continue;
+        const w=slot.art==='doppel'?5000:2500,h=800;
+        const doc={schema:'svbsc.bande',version:1,id:slot.id,title:ort,width:w,height:h,bleed:beschnitt,safe:0,scale:1,
+          background:'#ffffff',mode:modus,rgbAccepted:rgb,profile:profil,assets:{logo:{name:slot.firma,
+            src:await renderer.vectorPreview(v),width:v.width,height:v.height,kind:'vector',vector:v}},
+          elements:[{id:'logo',type:'image',asset:'logo',...BANDEN_CI.feld(w,h)}]};
+        const pdf=await renderer.pdf(doc);
+        archiv.file(pfad+'-'+w/10+'x80cm-'+modus.toUpperCase()+'.pdf',new Uint8Array(pdf.bytes));
+      }
+      status.textContent='ZIP wird gepackt.';
+      const blob=await archiv.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:5}});
+      if(!sichtbar())return;
+      if(signatur(reihen)!==signatur(await freigaben()))throw Error('Eine Freigabe oder Bande hat sich geändert. Starte den Export noch einmal.');
+      if(!sichtbar())return;
+      bcLaden2(blob,'SV-Moerlenbach-CI-Banden-'+saison+'.zip');
+      status.textContent='Das ZIP mit '+(reihen.length===1?'einer freigegebenen Gestaltung':reihen.length+' freigegebenen Gestaltungen')+' wurde zum Download bereitgestellt.';
+    }catch(err){if(sichtbar())status.textContent=err.message||'Der Export ist fehlgeschlagen. Bitte versuche es erneut.';}
+    finally{druckrahmen?.remove();aktiv=false;felder.format.disabled=false;formatZeigen();knopf.disabled=false;}
+  };
+  try{const reihen=await freigaben();if(!sichtbar())return;anzahl(reihen);knopf.disabled=!reihen.length;}
+  catch(err){if(sichtbar())status.textContent=err.message||'Die Freigaben sind nicht erreichbar. Bitte öffne den Export erneut.';}
+}
 
 /* =====================================================================
    Beta 0.80 · Bandencreator im Partner-Bereich (Reiter „Bandencreator“)

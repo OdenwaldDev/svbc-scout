@@ -737,10 +737,10 @@ window.BANDENRAUM=(()=>{
       x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.fillStyle=t.farbe||'#f5f3ec';x.fillRect(0,0,w,h);
       const im=t.img,iw=im&&(im.naturalWidth||im.width),ih=im&&(im.naturalHeight||im.height);
       if(iw&&ih&&!t.frei){const k=Math.min((w-12)/iw,(h-12)/ih);x.drawImage(im,(w-iw*k)/2,(h-ih*k)/2,iw*k,ih*k);}
-      else {const name=String(t.frei?'FREI':t.name||'').trim().slice(0,140),bg=t.farbe||'#f5f3ec',hell=/^#[a-f0-9]{6}$/i.test(bg)&&parseInt(bg.slice(1,3),16)*.299+parseInt(bg.slice(3,5),16)*.587+parseInt(bg.slice(5,7),16)*.114>140;
+      else {const name=String(t.frei?t.platztext||'FREI':t.name||'').trim().slice(0,140),bg=t.farbe||'#f5f3ec',hell=/^#[a-f0-9]{6}$/i.test(bg)&&parseInt(bg.slice(1,3),16)*.299+parseInt(bg.slice(3,5),16)*.587+parseInt(bg.slice(5,7),16)*.114>140;
         x.fillStyle=hell?'#1d2760':'#ffffff';x.textAlign='center';x.textBaseline='middle';let gr=140;x.font=`800 ${gr}px BarlowC,Barlow,sans-serif`;
         const breite=x.measureText(name).width;if(breite>w*.88)gr*=w*.88/breite;x.font=`800 ${gr}px BarlowC,Barlow,sans-serif`;x.fillText(name,w/2,h/2);
-        if(t.frei){x.strokeStyle='#737e8d';x.lineWidth=4;x.setLineDash([20,14]);x.strokeRect(12,12,w-24,h-24);}}
+        if(t.frei){x.strokeStyle='#619aca';x.lineWidth=4;x.setLineDash([20,14]);x.strokeRect(12,12,w-24,h-24);}}
       const textur=tex(new T.CanvasTexture(c));textur.encoding=T.sRGBEncoding;textur.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return textur;
     }
     function tafelBauen(t){const g=new T.Group(),P=tafelLage(t,ansichtBereich),w=P.w*Math.PI/180,cx=-P.x,cz=-P.y-50,h=t.h,nx=Math.sin(w),nz=-Math.cos(w);
@@ -750,7 +750,7 @@ window.BANDENRAUM=(()=>{
       const ringM=mat(new T.MeshBasicMaterial({color:0xeb752b,toneMapped:false})),ring=new T.Mesh(geo(new T.BoxGeometry(t.l,.035,.018)),ringM);ring.position.set(cx+nx*.04,.22+h+.045,cz+nz*.04);ring.rotation.y=-w;ring.visible=!!t.an;g.add(ring);
       szene.add(g);treffer.push(bild);return {g,bild,ring,t};
     }
-    function gleich(a,b){const x=tafelLage(a,ansichtBereich),y=tafelLage(b,ansichtBereich);return x.x===y.x&&x.y===y.y&&x.w===y.w&&a.l===b.l&&a.h===b.h&&a.img===b.img&&a.name===b.name&&a.farbe===b.farbe&&a.frei===b.frei;}
+    function gleich(a,b){const x=tafelLage(a,ansichtBereich),y=tafelLage(b,ansichtBereich);return x.x===y.x&&x.y===y.y&&x.w===y.w&&a.l===b.l&&a.h===b.h&&a.img===b.img&&a.name===b.name&&a.farbe===b.farbe&&a.frei===b.frei&&a.platztext===b.platztext;}
     function tafelnSetzen(ta,neu){if(!lebt)return;const art=neu?.bereich?bereich(neu.bereich):ansichtBereich;
       if(art!==ansichtBereich){for(const b of belege.values())entsorgen(b.g);belege.clear();treffer.length=0;ansichtBereich=art;}
       tafeln=gueltigeTafeln(ta);G=grenzen(tafeln);if(!szene)return;

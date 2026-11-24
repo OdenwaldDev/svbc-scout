@@ -231,7 +231,8 @@
     angebotEinstiegAktualisieren();
     paketfassungSenden();
     const einstieg=new URLSearchParams(location.search);
-    if(einstieg.get('angebot')==='1')angebotAnzeigen();
+    if(einstieg.get('stadion')==='1')platzwahlOeffnen(direktAngebotQuelle()?.wert?.paket);
+    else if(einstieg.get('angebot')==='1')angebotAnzeigen();
     else if(einstieg.get('entwurf')==='1'&&TV()&&D.vertrag_darf===true)direktEntwurfBearbeiten();
     if(S.nennOffen&&S.ergebnis&&!demo())nennungSenden();
     partnerWand(); zieleStation();
@@ -576,7 +577,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     else bandeAufbauen(); }
   function platzwahlOeffnen(paket){ if(!D||typeof BANDENWAHL==='undefined')return;
     const pk=S.korb.find(e=>/^(club|premium|p1896)$/.test(e.key));
-    return BANDENWAHL.oeffnen({rpc,code,build:C.build,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,logo:marke().logo||D.deck.logo||null,name:marke().name||null,entwurfTextur:window.PD_BANDENSTUDIO&&!demo()?fmt=>window.PD_BANDENSTUDIO.textur(fmt):null,
+    return BANDENWAHL.oeffnen({rpc,code,intern:T&&!demo(),build:C.build,saison:2027,paket:paket||pk?.key||'club',firma:D.deck.kurzname||D.deck.firma,originalLogo:D.deck.logo||null,logo:marke().logo||D.deck.logo||null,name:marke().name||null,entwurfTextur:window.PD_BANDENSTUDIO&&!demo()?fmt=>window.PD_BANDENSTUDIO.textur(fmt):null,
       onSaved:w=>{ const el=$('#bdWunsch'); if(el)el.textContent=w?'Platzwunsch '+w.kennung+' ist gemerkt. Noch nicht reserviert.':'Der Platzwunsch ist zurückgenommen.'; },
       onClose:()=>{ const f=$('#reiseRahmen'); f?.contentWindow?.postMessage({reise:'creator-zu'},location.origin); }}); }
   // Beim Öffnen aktuellen Bestand und Kapazitäten einlesen, auch bei einem alten Partnerlink.
