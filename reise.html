@@ -1292,6 +1292,8 @@ html.zeiger .spot{opacity:1}
 .kurzpaket #rahmen .anzug-buehne {overflow:hidden}
 .kurzpaket #rahmen .anzug-buehne img {transform:scale(1.4);transform-origin:6% 43%}
 .kurzpaket #rahmen .anzug-buehne[data-seite="aermel_l"] img {transform-origin:94% 43%}
+
+.sz-bild .motiv-credit{position:absolute;right:8px;bottom:6px;z-index:2;background:#101b2bcc;color:white;padding:3px 6px;font:500 11px/1.15 var(--t)}
 </style></head><body><div id="film" data-s="start" data-licht="1">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an" data-reise-medium data-reise-szenen="start" data-reise-video="partner/r-stadionclip.mp4"><img class="zoom" src="partner/stadion-original-nordost.jpg" alt=""></div>
@@ -1334,7 +1336,7 @@ html.zeiger .spot{opacity:1}
 
   <!-- 1 Worum es geht -->
   <section class="szene" data-s="worum" data-hg="nacht" data-dicht="1">
-    <img class="sz-bild" data-fuer="0" src="partner/stadion-clubhaus-original.jpg" alt=""><img class="sz-bild" data-fuer="1" src="partner/r-jugend.webp" alt=""><img class="sz-bild" data-fuer="2" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="3" src="partner/r-zeltlager.webp" alt=""><div class="sz-bild" data-fuer="4" data-reise-medium data-reise-szenen="worum" data-reise-teil="4" data-reise-video="partner/r-rasen.mp4"><img src="partner/r-rasen.webp" alt=""></div><img class="sz-bild" data-fuer="5" src="partner/r-ferienspiele.webp" alt="">
+    <img class="sz-bild" data-fuer="0" src="partner/stadion-clubhaus-original.jpg" alt=""><div class="sz-bild" data-fuer="1" data-reise-medium data-reise-szenen="worum" data-reise-teil="1" data-reise-video="partner/jugendtraining-am-platz.mp4"><img src="partner/jugendtraining-am-platz.webp" alt="Inszenierte Trainingsszene im Vereinstrikot"><small class="motiv-credit">KI-inszenierte Vereinsszene</small></div><img class="sz-bild" data-fuer="2" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="3" src="partner/r-zeltlager.webp" alt=""><div class="sz-bild" data-fuer="4" data-reise-medium data-reise-szenen="worum" data-reise-teil="4" data-reise-video="partner/r-rasen.mp4"><img src="partner/r-rasen.webp" alt=""></div><img class="sz-bild" data-fuer="5" src="partner/r-ferienspiele.webp" alt="">
     <div class="in">
       <div class="streifen" id="worum">
         <p class="fz">Seit <em>1896</em> gehört Sport hier zum Ort.</p>
@@ -1375,7 +1377,7 @@ html.zeiger .spot{opacity:1}
       <p class="eyebrow auf">Das Wichtigste zuerst</p>
       <h2 class="auf" style="--v:1">Was wäre euch dabei <em>wichtig?</em></h2>
       <div class="karten auf" style="--v:2" data-frage="antrieb">
-        <button class="bk" type="button" data-w="kinder" aria-pressed="false"><img src="partner/r-jugend.webp" alt=""><span class="st"></span><b>Kindern etwas ermöglichen<small>Dass hier jedes Kind kicken kann.</small></b></button>
+        <button class="bk" type="button" data-w="kinder" aria-pressed="false"><img src="partner/jugendtraining-am-platz.webp" alt="Inszenierte Trainingsszene in Vereinskleidung"><span class="st"></span><b>Kindern etwas ermöglichen<small>Dass hier jedes Kind kicken kann.</small></b></button>
         <button class="bk" type="button" data-w="sehen" aria-pressed="false"><img src="partner/r-bande.webp" alt=""><span class="st"></span><b>Im Ort gesehen werden<small>Kunden von hier sollen an uns denken.</small></b></button>
         <button class="bk" type="button" data-w="leute" aria-pressed="false"><img src="partner/r-hero.webp" alt=""><span class="st"></span><b>Gute Leute finden<small>Azubis und Mitarbeiter von hier.</small></b></button>
         <button class="bk" type="button" data-w="netz" aria-pressed="false"><img src="partner/r-zeltlager.webp" alt=""><span class="st"></span><b>Andere Betriebe treffen<small>Kontakte, die im Ort bleiben.</small></b></button>
@@ -1545,7 +1547,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.147';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.148';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);

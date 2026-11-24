@@ -862,6 +862,11 @@ body.ed-aktiv{--ed-dunkel:#101b2b;--ed-hell:#f4efe4;--ed-akzent:#e99952;display:
 
 .ed-motiv .ed-bande-original img{inset:4% 16%;width:68%;height:92%}
 .ed-abbildung:has(.ed-bande-original) .ed-motiv{width:150%;margin-inline:-25%}
+
+.ed-filmpause{margin-left:auto;padding:4px 9px;border:1px solid #838c99;border-radius:3px;font:600 13px/1.15 var(--t)}
+.ed-filmpause:not([hidden])+.ed-controls{margin-left:0}
+@media screen and (max-width:420px){.ed-nav:has(.ed-filmpause:not([hidden])) .ed-partner{display:none}}
+@media print{.ed-motiv video{display:none!important}}
 </style></head><body><div id="film" data-s="start" data-licht="1" class="anlass">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture></div>
@@ -1038,6 +1043,133 @@ const LOGO = (() => {
   return { laden, aufbereiten, variante, alsDataUrl, dateiLesen, lum, hex };
 })();
 
+/* Optionale Hintergrundfilme der Partnerreise. Standbilder und Inhalt bleiben immer im DOM.
+   Vor reise_logik.js einhängen:
+     const medien=REISE_MEDIEN.starten({wurzel:F,knopf:document.getElementById('bewegungB'),szene:'start'});
+     medien.zeigen(id); // nach dem tatsächlichen Szenenwechsel in geh()
+   Slot: <div data-reise-medium data-reise-szenen="start worum" data-reise-video="partner/r-nacht.mp4"><picture>...</picture></div>
+   Optional data-reise-teil="0", dann zeigen('worum','0'). Ohne Video bleibt der Slot ein Standbild.
+   pausieren()/fortsetzen() merken nur die bewusste Wahl während dieser Reise. sichtbar(false/true)
+   unterbricht zusätzlich beim Öffnen/Schließen eines überdeckenden Creators, ohne die Wahl zu ändern.
+   Keine Dienste, Speicherzugriffe, Beobachter oder Timer. Fehlende oder fehlerhafte Filme bleiben aus. */
+(function(g){
+  'use strict';
+  const SZENE=/^[a-z][a-z0-9_-]{0,39}$/;
+  // Nur flache, mitgelieferte Dateien. Kein fremder Host, Protokoll, Query, Fragment oder Pfadwechsel.
+  const FILM=/^(?:img|partner)\/[a-zA-Z0-9][a-zA-Z0-9_-]*\.(?:mp4|webm)$/;
+  const holen=(el,n)=>el.getAttribute(n);
+  function starten(optionen){
+    const o=optionen||{},wurzel=o.wurzel||g.document.getElementById('film'),doc=wurzel&&wurzel.ownerDocument||g.document;
+    if(!wurzel||typeof wurzel.querySelectorAll!=='function')throw new TypeError('Wurzel der Partnerreise fehlt');
+    const bewegung=typeof g.matchMedia==='function'?g.matchMedia('(prefers-reduced-motion: reduce)'):null,
+      verbindung=g.navigator&&g.navigator.connection,knopf=o.knopf||null,aufraeumen=[];
+    let ende=false,pausiert=false,verdeckt=false,weg=false,szene='',teil='';
+    const felder=Array.from(wurzel.querySelectorAll('[data-reise-medium]')).map(el=>({
+      el,szenen:(holen(el,'data-reise-szenen')||'').split(/\s+/).filter(s=>SZENE.test(s)),
+      teil:holen(el,'data-reise-teil')||'',quelle:holen(el,'data-reise-video')||'',film:null,putzen:null,fehler:false,
+      status:holen(el,'data-reise-status'),position:el.style.getPropertyValue('position'),prioritaet:el.style.getPropertyPriority('position'),positionGesetzt:false
+    }));
+    const knopfAlt=knopf?{kinder:Array.from(knopf.childNodes),hidden:knopf.hidden,attribute:['aria-label','aria-pressed','title','type'].map(n=>[n,holen(knopf,n)]),
+      breite:knopf.style.getPropertyValue('min-width'),hoehe:knopf.style.getPropertyValue('min-height'),breiteP:knopf.style.getPropertyPriority('min-width'),hoeheP:knopf.style.getPropertyPriority('min-height')}:null;
+    function hoeren(ziel,name,fn){
+      if(!ziel||typeof ziel.addEventListener!=='function')return;
+      ziel.addEventListener(name,fn);aufraeumen.push(()=>ziel.removeEventListener(name,fn));
+    }
+    function passt(f){return f.szenen.includes(szene)&&(!f.teil||f.teil===teil)&&FILM.test(f.quelle)&&!f.fehler;}
+    function weniger(){return !!(bewegung&&bewegung.matches);}
+    function sparen(){return !!(verbindung&&verbindung.saveData);}
+    function gesperrt(){return ende||pausiert||verdeckt||weg||!!doc.hidden||weniger()||sparen();}
+    function status(f,s){f.el.setAttribute('data-reise-status',s);}
+    function positionZurueck(f){
+      if(!f.positionGesetzt)return;
+      if(f.el.style.getPropertyValue('position')==='relative'){
+        if(f.position)f.el.style.setProperty('position',f.position,f.prioritaet);else f.el.style.removeProperty('position');
+      }
+      f.positionGesetzt=false;
+    }
+    function stoppen(f){
+      const v=f.film;f.film=null;
+      if(f.putzen){f.putzen();f.putzen=null;}
+      if(v){
+        v.style.opacity='0';
+        try{v.pause();}catch(_){}
+        // Entfernt auch den laufenden Abruf. Ein verspätetes play()-Promise darf nichts neu starten.
+        v.removeAttribute('src');try{v.load();}catch(_){}
+        v.remove();
+      }
+      positionZurueck(f);status(f,f.fehler?'fehler':'standbild');
+    }
+    function fehlgeschlagen(f,v){
+      if(ende||f.film!==v)return;
+      f.fehler=true;stoppen(f);knopfZeigen();
+    }
+    function spielen(f){
+      if(f.film||gesperrt()||!passt(f))return;
+      const v=doc.createElement('video');f.film=v;
+      v.className='reise-medium-film';v.muted=true;v.defaultMuted=true;v.volume=0;v.loop=true;v.playsInline=true;v.controls=false;v.preload='none';v.tabIndex=-1;
+      v.setAttribute('aria-hidden','true');v.setAttribute('muted','');v.setAttribute('playsinline','');v.setAttribute('disablepictureinpicture','');
+      Object.assign(v.style,{position:'absolute',inset:'0',width:'100%',height:'100%',objectFit:'cover',pointerEvents:'none',opacity:'0'});
+      const lief=()=>{
+        if(f.film!==v||gesperrt()||!passt(f)){try{v.pause();}catch(_){}return;}
+        v.style.opacity='1';status(f,'laeuft');
+      },fehler=()=>fehlgeschlagen(f,v),stumm=()=>{if(!v.muted)v.muted=true;if(v.volume!==0)v.volume=0;};
+      v.addEventListener('playing',lief);v.addEventListener('error',fehler);v.addEventListener('volumechange',stumm);
+      f.putzen=()=>{v.removeEventListener('playing',lief);v.removeEventListener('error',fehler);v.removeEventListener('volumechange',stumm);};
+      const p=typeof g.getComputedStyle==='function'?g.getComputedStyle(f.el).position:f.el.style.position;
+      if(!p||p==='static'){f.el.style.setProperty('position','relative');f.positionGesetzt=true;}
+      status(f,'laden');f.el.appendChild(v);v.src=f.quelle;
+      try{
+        const gestartet=v.play();
+        if(gestartet&&typeof gestartet.then==='function')gestartet.then(()=>{
+          if(ende||f.film!==v||gesperrt()||!passt(f)){try{v.pause();}catch(_){}}
+        },fehler);
+      }catch(_){fehler();}
+    }
+    function knopfZeigen(){
+      if(!knopf||ende)return;
+      knopf.hidden=weniger()||sparen()||!felder.some(passt);
+      const text=pausiert?'Video fortsetzen':'Video pausieren';
+      knopf.textContent=text;knopf.setAttribute('aria-label',text);knopf.setAttribute('title',text);knopf.setAttribute('aria-pressed',String(pausiert));
+    }
+    function abgleichen(){
+      if(ende)return;
+      const halt=gesperrt();
+      felder.forEach(f=>{if(halt||!passt(f))stoppen(f);else spielen(f);});knopfZeigen();
+    }
+    const api=Object.freeze({
+      zeigen(id,abschnitt){
+        if(ende)return;
+        szene=typeof id==='string'&&SZENE.test(id)?id:'';teil=abschnitt==null?'':String(abschnitt);abgleichen();
+      },
+      pausieren(){if(!ende){pausiert=true;abgleichen();}},
+      fortsetzen(){if(!ende){pausiert=false;abgleichen();}},
+      sichtbar(an){if(!ende){verdeckt=an===false;abgleichen();}},
+      zerstoeren(){
+        if(ende)return;ende=true;aufraeumen.splice(0).forEach(fn=>fn());
+        felder.forEach(f=>{stoppen(f);if(f.status==null)f.el.removeAttribute('data-reise-status');else f.el.setAttribute('data-reise-status',f.status);});
+        if(knopf){
+          knopf.replaceChildren(...knopfAlt.kinder);knopf.hidden=knopfAlt.hidden;
+          knopfAlt.attribute.forEach(([n,v])=>{if(v==null)knopf.removeAttribute(n);else knopf.setAttribute(n,v);});
+          [['min-width',knopfAlt.breite,knopfAlt.breiteP],['min-height',knopfAlt.hoehe,knopfAlt.hoeheP]].forEach(([n,v,p])=>{if(v)knopf.style.setProperty(n,v,p);else knopf.style.removeProperty(n);});
+        }
+      }
+    });
+    hoeren(doc,'visibilitychange',abgleichen);hoeren(g,'pagehide',()=>{weg=true;abgleichen();});hoeren(g,'pageshow',()=>{weg=false;abgleichen();});
+    if(bewegung&&typeof bewegung.addEventListener==='function')hoeren(bewegung,'change',abgleichen);
+    else if(bewegung&&typeof bewegung.addListener==='function'){bewegung.addListener(abgleichen);aufraeumen.push(()=>bewegung.removeListener(abgleichen));}
+    hoeren(verbindung,'change',abgleichen);
+    if(knopf){
+      knopf.setAttribute('type','button');
+      const stil=typeof g.getComputedStyle==='function'?g.getComputedStyle(knopf):{};
+      if(!(parseFloat(stil.minWidth)>=44))knopf.style.setProperty('min-width','44px');
+      if(!(parseFloat(stil.minHeight)>=44))knopf.style.setProperty('min-height','44px');
+      hoeren(knopf,'click',()=>{if(pausiert)api.fortsetzen();else api.pausieren();});
+    }
+    api.zeigen(o.szene||wurzel.dataset.s||'start',o.teil);return api;
+  }
+  g.REISE_MEDIEN=Object.freeze({starten});
+})(window);
+
 /* =====================================================================
    Beta 0.99.89 · Präsentation zu einem Anlass (anlass.html)
    Albert, 18.11.2026: eine eigene Präsentation für eine Firma, die kein Paket bucht, sondern Partner einer Aktion wird
@@ -1182,7 +1314,9 @@ function redaktion(daten){
     const bande=f.typ==='bande'&&logo;
     const schriftzug=bande&&typeof f.schriftzug==='string'?f.schriftzug.trim().slice(0,32):'';
     const marke=bande?'<div class="ed-bande'+(schriftzug?' ed-bande-breit':f.logoGross===true?' ed-bande-original':'')+'"><img src="'+esc(logo)+'" alt="'+esc(A.firma)+'">'+(schriftzug?'<strong'+(schriftzug.length>7?' style="font-size:'+Math.min(17,58/schriftzug.length)+'cqw"':'')+'>'+esc(schriftzug)+'</strong>':'')+'</div>':'';
-    const foto=bild?'<figure class="ed-abbildung"><div class="ed-motiv"><img class="ed-bild" src="'+esc(bild)+'" alt="'+esc(f.alt||'')+'">'+marke+'</div>'+(f.credit?'<figcaption>'+esc(f.credit)+'</figcaption>':'')+'</figure>':'';
+    const slot=bild && !bande && /^partner\/[a-z0-9-]+\.mp4$/.test(f.film||'')?
+      ' data-reise-medium data-reise-szenen="kapitel'+i+'" data-reise-video="'+esc(f.film)+'"':'';
+    const foto=bild?'<figure class="ed-abbildung"><div class="ed-motiv"'+slot+'><img class="ed-bild" src="'+esc(bild)+'" alt="'+esc(f.alt||'')+'">'+marke+'</div>'+(f.credit?'<figcaption>'+esc(f.credit)+'</figcaption>':'')+'</figure>':'';
     const rows=Array.isArray(f.zeilen)?f.zeilen.filter(z=>z&&(z.wert||z.label||z.text)):[];
     const zeilen=rows.length?'<ul class="ed-zeilen">'+rows.map(z=>'<li>'+(z.wert?'<b>'+esc(z.wert)+'</b>':'')+'<div>'+(z.label?'<strong>'+esc(z.label)+'</strong>':'')+(z.text?'<p>'+esc(z.text)+'</p>':'')+'</div></li>').join('')+'</ul>':'';
     const hinweis=[f.notiz?esc(f.notiz):'',quelle(f.quelle)].filter(Boolean).join(' · ');
@@ -1201,14 +1335,20 @@ function redaktion(daten){
   nav.className='ed-nav';
   nav.setAttribute('aria-label','Präsentation durchblättern');
   nav.innerHTML='<img src="partner/r-svbsc.png" alt="SV/BSC Mörlenbach"><span class="ed-partner">'+esc(A.firma)+'</span><div class="ed-controls"><button type="button" aria-label="Vorherige Folie">←</button><span class="ed-stand" aria-live="polite" aria-atomic="true"></span><button type="button" aria-label="Nächste Folie">→</button></div>';
+  const pause=document.createElement('button');
+  pause.className='ed-filmpause';
+  pause.hidden=true;
+  nav.insertBefore(pause,nav.querySelector('.ed-controls'));
   film.replaceWith(deck,nav);
-  const slides=$$('.ed-slide',deck), [vor,zur]= $$('button',nav);
+  const medien=REISE_MEDIEN.starten({wurzel:deck,knopf:pause});
+  const slides=$$('.ed-slide',deck), [vor,zur]= $$('.ed-controls button',nav);
   let aktuell=0;
   function zeige(index){
     aktuell=Math.max(0,Math.min(slides.length-1,index));
     slides.forEach((s,i)=>{s.hidden=i!==aktuell;});
     nav.style.setProperty('--fortschritt',((aktuell+1)/slides.length*100)+'%');
     deck.scrollTop=0;
+    medien.zeigen('kapitel'+aktuell);
     vor.disabled=aktuell===0; zur.disabled=aktuell===slides.length-1;
     $('.ed-stand',nav).textContent=(aktuell+1)+' / '+slides.length;
   }
