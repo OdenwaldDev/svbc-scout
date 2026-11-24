@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.149', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.150', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18721,6 +18721,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.150',v:'0.99.150',datum:'2026-11-24',titel:'Fotos im Partnerflow',kurz:'Beim Durchklicken bleiben die Fotos an ihrem Platz.',punkte:[{ic:'i',t:'Kapitel ansehen',d:'Das nächste Motiv erscheint beim Weiterblättern.',r:'admin'}]},
   {id:'0.99.149',v:'0.99.149',datum:'2026-11-24',titel:'Ruhigere Bildstrecken',kurz:'Die Trainingsmotive im Partnerflow laufen mit fester Bildmitte.',punkte:[{ic:'i',t:'Filmübergang',d:'Der Bildausschnitt bleibt beim Anlaufen des Films stabil.',r:'admin'}]},
   {id:'0.99.148',v:'0.99.148',datum:'2026-11-24',titel:'Bewegte Bilder im Partnerflow',kurz:'Partnergeschichten können jetzt kurze Filme vom Platz zeigen.',punkte:[{ic:'i',t:'Bilder aus dem Vereinsalltag',d:'Die neue Bildstrecke nutzt unsere Trikots und Trainingsanzüge als Vorlage.',r:'admin'}]},
   {id:'0.99.147',v:'0.99.147',datum:'2026-11-24',titel:'Originalzeichen auf der Bande',kurz:'Partner können ihre Bande mit einem großen, mittigen Logo ansehen.',punkte:[{ic:'i',t:'Nahansicht',d:'Das Originalzeichen nutzt die Höhe der Bande.',r:'admin'}]},

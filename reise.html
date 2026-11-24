@@ -1336,7 +1336,7 @@ html.zeiger .spot{opacity:1}
 
   <!-- 1 Worum es geht -->
   <section class="szene" data-s="worum" data-hg="nacht" data-dicht="1">
-    <img class="sz-bild" data-fuer="0" src="partner/stadion-clubhaus-original.jpg" alt=""><div class="sz-bild" data-fuer="1" data-reise-medium data-reise-szenen="worum" data-reise-teil="1" data-reise-video="partner/jugendtraining-am-platz.mp4"><img src="partner/jugendtraining-am-platz.webp" alt="Inszenierte Trainingsszene im Vereinstrikot"><small class="motiv-credit">KI-inszenierte Vereinsszene</small></div><img class="sz-bild" data-fuer="2" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="3" src="partner/r-zeltlager.webp" alt=""><div class="sz-bild" data-fuer="4" data-reise-medium data-reise-szenen="worum" data-reise-teil="4" data-reise-video="partner/r-rasen.mp4"><img src="partner/r-rasen.webp" alt=""></div><img class="sz-bild" data-fuer="5" src="partner/r-ferienspiele.webp" alt="">
+    <img class="sz-bild" data-fuer="0" src="partner/stadion-clubhaus-original.jpg" alt=""><div class="sz-bild" data-fuer="1"><img src="partner/jugendtraining-am-platz.webp" alt="Inszenierte Trainingsszene im Vereinstrikot"><small class="motiv-credit">KI-inszenierte Vereinsszene</small></div><img class="sz-bild" data-fuer="2" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="3" src="partner/r-zeltlager.webp" alt=""><div class="sz-bild" data-fuer="4" data-reise-medium data-reise-szenen="worum" data-reise-teil="4" data-reise-video="partner/r-rasen.mp4"><img src="partner/r-rasen.webp" alt=""></div><img class="sz-bild" data-fuer="5" src="partner/r-ferienspiele.webp" alt="">
     <div class="in">
       <div class="streifen" id="worum">
         <p class="fz">Seit <em>1896</em> gehört Sport hier zum Ort.</p>
@@ -1547,7 +1547,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.149';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.150';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
