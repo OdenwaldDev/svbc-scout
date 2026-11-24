@@ -852,7 +852,7 @@ body.ed-aktiv{--ed-dunkel:#101b2b;--ed-hell:#f4efe4;--ed-akzent:#e99952;display:
   .ed-geschichte .ed-slide:not([hidden]) .ed-inhalt{animation:kapitel-auf .64s cubic-bezier(.16,.8,.28,1) both}
   .ed-geschichte .ed-slide:not([hidden]) .ed-rubrik::before{transform-origin:left;animation:kapitel-linie .48s ease-out both}
   .ed-geschichte .ed-slide:not([hidden]) .ed-lead,.ed-geschichte .ed-slide:not([hidden]) .ed-zeilen{animation:kapitel-auf .68s .12s both}
-  .ed-geschichte .ed-slide:not([hidden]):not(.ed-bande) .ed-bild{animation:kapitel-foto 5s ease-out both}
+  .ed-geschichte .ed-slide:not([hidden]):not(.ed-bande) .ed-motiv:not([data-reise-medium]) .ed-bild{animation:kapitel-foto 5s ease-out both}
   .ed-geschichte .ed-slide.ed-bande:not([hidden]) .ed-abbildung{animation:kapitel-auf .8s both}
   .ed-geschichte+.ed-nav::before{transition:width .45s ease}
   @keyframes kapitel-auf{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}

@@ -578,6 +578,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.149',v:'0.99.149',datum:'2026-11-24',titel:'Ruhigere Bildstrecken',kurz:'Die Trainingsmotive im Partnerflow laufen mit fester Bildmitte.',punkte:[{ic:'i',t:'Filmübergang',d:'Der Bildausschnitt bleibt beim Anlaufen des Films stabil.',r:'admin'}]},
   {id:'0.99.148',v:'0.99.148',datum:'2026-11-24',titel:'Bewegte Bilder im Partnerflow',kurz:'Partnergeschichten können jetzt kurze Filme vom Platz zeigen.',punkte:[{ic:'i',t:'Bilder aus dem Vereinsalltag',d:'Die neue Bildstrecke nutzt unsere Trikots und Trainingsanzüge als Vorlage.',r:'admin'}]},
   {id:'0.99.147',v:'0.99.147',datum:'2026-11-24',titel:'Originalzeichen auf der Bande',kurz:'Partner können ihre Bande mit einem großen, mittigen Logo ansehen.',punkte:[{ic:'i',t:'Nahansicht',d:'Das Originalzeichen nutzt die Höhe der Bande.',r:'admin'}]},
   {id:'0.99.146',v:'0.99.146',datum:'2026-11-24',titel:'Geschichten im Partnerflow',kurz:'Persönliche Partnergeschichten zeigen Bilder und Bandenentwürfe beim Durchblättern.',punkte:[{ic:'i',t:'Bandenentwurf',d:'Ein großer Schriftzug kann das Partnerlogo auf der Bande ergänzen.',r:'admin'}]},
