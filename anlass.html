@@ -855,6 +855,27 @@ body.ed-aktiv{--ed-dunkel:#101b2b;--ed-hell:#f4efe4;--ed-akzent:#e99952;display:
 .ed-filmpause:not([hidden])+.ed-controls{margin-left:0}
 @media screen and (max-width:420px){.ed-nav:has(.ed-filmpause:not([hidden])) .ed-partner{display:none}}
 @media print{.ed-motiv video{display:none!important}}
+
+/* Partnerreise: dieselben Vereinsfarben und Schriften wie am Einstieg in reise.html. */
+.ed-vereinsreise .ed-slide{background:#07132a;color:#faf7ef}
+.ed-vereinsreise .ed-rubrik{color:#8fc5eb}
+.ed-vereinsreise .ed-rubrik::before,.ed-vereinsreise .ed-folio{display:none}
+.ed-vereinsreise .ed-inhalt h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-style:italic;text-transform:uppercase;line-height:.91;letter-spacing:-.014em;max-width:16ch}
+.ed-vereinsreise .ed-inhalt h2 em{color:#ff913a;font-style:inherit}
+.ed-vereinsreise .ed-lead{max-width:40ch;line-height:1.38}
+.ed-vereinsreise .ed-foto .ed-abbildung{margin:5cqw 4cqw 5cqw 0;min-height:0;border:clamp(5px,.6cqw,11px) solid #f5f1e9;box-shadow:6px 8px 0 #254668;transform:rotate(1deg)}
+.ed-vereinsreise .ed-titel .ed-abbildung::after{background:linear-gradient(90deg,#041127ed,#0411279e 52%,#0411270d)}
+.ed-vereinsreise .ed-titel .ed-inhalt{padding-bottom:7cqw}
+.ed-wege{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:1.2em}
+.ed-wege button{min-height:44px;color:#fff;border-bottom:2px solid #eb822e;font:800 1.1em/1 'Barlow Condensed',sans-serif;text-transform:uppercase}
+.ed-wege button span{color:#ff913a}
+.ed-vereinsreise+.ed-nav .ed-controls button:last-child:enabled{background:#ff913a;border-color:#ff913a;color:#07132a}
+@media screen and (max-width:760px){
+ .ed-vereinsreise .ed-foto .ed-abbildung{width:calc(100% - 40px);margin:20px 20px 0;height:clamp(170px,30vh,285px)}
+ .ed-vereinsreise .ed-titel .ed-abbildung::after{background:linear-gradient(0deg,#041127 3%,#041127e6 33%,#0411271a 85%)}
+ .ed-vereinsreise .ed-titel .ed-inhalt{padding-bottom:32px}
+}
+@media print{.ed-wege{display:none}.ed-vereinsreise .ed-foto .ed-abbildung{margin:12mm 10mm 12mm 0}}
 </style></head><body><div id="film" data-s="start" data-licht="1" class="anlass">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture></div>
@@ -1296,6 +1317,7 @@ function redaktion(daten){
     }catch{}
     return '';
   }
+  const vereinsreise=daten.vereinsreise===true;
   const logo=bildpfad(daten.logo);
   function seite(f,i){
     const bild=bildpfad(f.bild)||(f.typ==='bande'?'partner/r-bande.webp':'');
@@ -1308,11 +1330,16 @@ function redaktion(daten){
     const rows=Array.isArray(f.zeilen)?f.zeilen.filter(z=>z&&(z.wert||z.label||z.text)):[];
     const zeilen=rows.length?'<ul class="ed-zeilen">'+rows.map(z=>'<li>'+(z.wert?'<b>'+esc(z.wert)+'</b>':'')+'<div>'+(z.label?'<strong>'+esc(z.label)+'</strong>':'')+(z.text?'<p>'+esc(z.text)+'</p>':'')+'</div></li>').join('')+'</ul>':'';
     const hinweis=[f.notiz?esc(f.notiz):'',quelle(f.quelle)].filter(Boolean).join(' · ');
-    return '<section class="ed-slide ed-'+f.typ+(bild?' ed-mitbild':'')+'" aria-labelledby="ed-h-'+i+'"'+(i?' hidden':'')+'>'+foto+'<div class="ed-inhalt"><div class="ed-rubrik">'+esc(f.rubrik||A.firma)+'</div><h2 id="ed-h-'+i+'">'+esc(f.titel)+'</h2>'+(f.text?'<p class="ed-lead">'+esc(f.text)+'</p>':'')+zeilen+(hinweis?'<p class="ed-notiz">'+hinweis+'</p>':'')+'</div><span class="ed-folio" aria-hidden="true">'+String(i+1).padStart(2,'0')+'</span></section>';
+    const ende=vereinsreise && typeof f.akzent==='string' && f.akzent && typeof f.titel==='string' && f.titel.endsWith(f.akzent)?f.akzent:'';
+    const titel=ende?esc(f.titel.slice(0,-ende.length))+'<em>'+esc(ende)+'</em>':esc(f.titel);
+    const wege=vereinsreise && Array.isArray(f.wege)?f.wege.filter(w=>w && Number.isInteger(w.ziel) && w.ziel>=0 && w.ziel<folien.length && w.ziel!==i && typeof w.text==='string' && w.text.trim()):[];
+    const wahl=wege.length?'<div class="ed-wege">'+wege.map(w=>'<button type="button" data-kapitel="'+w.ziel+'">'+esc(w.text)+' <span aria-hidden="true">↗</span></button>').join('')+'</div>':'';
+    return '<section class="ed-slide ed-'+f.typ+(bild?' ed-mitbild':'')+'" aria-labelledby="ed-h-'+i+'"'+(i?' hidden':'')+'>'+foto+'<div class="ed-inhalt"><div class="ed-rubrik">'+esc(f.rubrik||A.firma)+'</div><h2 id="ed-h-'+i+'">'+titel+'</h2>'+(f.text?'<p class="ed-lead">'+esc(f.text)+'</p>':'')+zeilen+wahl+(hinweis?'<p class="ed-notiz">'+hinweis+'</p>':'')+'</div><span class="ed-folio" aria-hidden="true">'+String(i+1).padStart(2,'0')+'</span></section>';
   }
   document.body.classList.add('ed-aktiv');
   const deck=document.createElement('main');
   deck.className=daten.geschichte===true?'ed-deck ed-geschichte':'ed-deck';
+  if(vereinsreise)deck.classList.add('ed-vereinsreise');
   deck.setAttribute('aria-label',A.titel||'Partnerpräsentation');
   deck.innerHTML=folien.map(seite).join('');
   const originale=$$('.ed-bande-original img',deck);
@@ -1337,14 +1364,24 @@ function redaktion(daten){
     nav.style.setProperty('--fortschritt',((aktuell+1)/slides.length*100)+'%');
     deck.scrollTop=0;
     medien.zeigen('kapitel'+aktuell);
-    vor.disabled=aktuell===0; zur.disabled=aktuell===slides.length-1;
+    vor.disabled=aktuell===0 && !verlauf.length; zur.disabled=aktuell===slides.length-1;
     $('.ed-stand',nav).textContent=(aktuell+1)+' / '+slides.length;
   }
-  vor.onclick=()=>zeige(aktuell-1); zur.onclick=()=>zeige(aktuell+1);
+  const verlauf=[];
+  function weiter(index){
+    if(index===aktuell || index<0 || index>=slides.length)return;
+    verlauf.push(aktuell);zeige(index);
+  }
+  function zurueck(){if(verlauf.length)zeige(verlauf.pop());else zeige(aktuell-1);}
+  deck.addEventListener('click',e=>{
+    const ziel=e.target.closest('[data-kapitel]');
+    if(ziel){weiter(Number(ziel.dataset.kapitel));(zur.disabled?vor:zur).focus({preventScroll:true});}
+  });
+  vor.onclick=zurueck; zur.onclick=()=>weiter(aktuell+1);
   document.addEventListener('keydown',e=>{
     if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
     const z={ArrowLeft:aktuell-1,ArrowRight:aktuell+1,Home:0,End:slides.length-1};
-    if(Object.prototype.hasOwnProperty.call(z,e.key)){e.preventDefault();zeige(z[e.key]);}
+    if(Object.prototype.hasOwnProperty.call(z,e.key)){e.preventDefault();if(e.key==='ArrowLeft')zurueck();else if(e.key==='Home'){verlauf.length=0;zeige(0);}else weiter(z[e.key]);}
   });
   zeige(0);
   return true;

@@ -578,6 +578,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.151',v:'0.99.151',datum:'2026-11-24',titel:'Partnerreise mit freier Kapitelwahl',kurz:'Im persönlichen Partnergespräch könnt ihr das Thema auswählen, das euch interessiert.',punkte:[{ic:'i',t:'Direkt ins Thema',d:'Die Auswahl führt zum passenden Kapitel. Zurück bringt euch wieder zur Auswahl.',r:'admin'}]},
   {id:'0.99.150',v:'0.99.150',datum:'2026-11-24',titel:'Fotos im Partnerflow',kurz:'Beim Durchklicken bleiben die Fotos an ihrem Platz.',punkte:[{ic:'i',t:'Kapitel ansehen',d:'Das nächste Motiv erscheint beim Weiterblättern.',r:'admin'}]},
   {id:'0.99.149',v:'0.99.149',datum:'2026-11-24',titel:'Ruhigere Bildstrecken',kurz:'Die Trainingsmotive im Partnerflow laufen mit fester Bildmitte.',punkte:[{ic:'i',t:'Filmübergang',d:'Der Bildausschnitt bleibt beim Anlaufen des Films stabil.',r:'admin'}]},
   {id:'0.99.148',v:'0.99.148',datum:'2026-11-24',titel:'Bewegte Bilder im Partnerflow',kurz:'Partnergeschichten können jetzt kurze Filme vom Platz zeigen.',punkte:[{ic:'i',t:'Bilder aus dem Vereinsalltag',d:'Die neue Bildstrecke nutzt unsere Trikots und Trainingsanzüge als Vorlage.',r:'admin'}]},
