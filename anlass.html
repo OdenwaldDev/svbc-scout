@@ -839,6 +839,26 @@ body.ed-aktiv{--ed-dunkel:#101b2b;--ed-hell:#f4efe4;--ed-akzent:#e99952;display:
   .ed-slide:last-child{break-after:auto}
   .ed-nav{display:none}
 }
+
+/* Die Schrift der Bande bleibt im selben Koordinatensystem wie das Foto. */
+.ed-motiv .ed-bande-breit{display:flex;align-items:center;justify-content:center;gap:4%;container-type:inline-size;overflow:hidden}
+.ed-motiv .ed-bande-breit img{position:static;inset:auto;width:20%;height:100%;object-fit:contain;flex:none}
+.ed-bande-breit strong{font:900 17cqw/.9 var(--d);letter-spacing:.015em;white-space:nowrap;color:#064e83;transform:scaleX(1.15);transform-origin:left center;margin-right:7%}
+@media screen{
+  .ed-geschichte+.ed-nav{position:relative}
+  .ed-geschichte+.ed-nav::before{content:'';position:absolute;top:-2px;left:0;height:2px;width:var(--fortschritt);background:var(--ed-akzent)}
+}
+@media screen and (prefers-reduced-motion:no-preference){
+  .ed-geschichte .ed-slide:not([hidden]) .ed-inhalt{animation:kapitel-auf .64s cubic-bezier(.16,.8,.28,1) both}
+  .ed-geschichte .ed-slide:not([hidden]) .ed-rubrik::before{transform-origin:left;animation:kapitel-linie .48s ease-out both}
+  .ed-geschichte .ed-slide:not([hidden]) .ed-lead,.ed-geschichte .ed-slide:not([hidden]) .ed-zeilen{animation:kapitel-auf .68s .12s both}
+  .ed-geschichte .ed-slide:not([hidden]):not(.ed-bande) .ed-bild{animation:kapitel-foto 5s ease-out both}
+  .ed-geschichte .ed-slide.ed-bande:not([hidden]) .ed-abbildung{animation:kapitel-auf .8s both}
+  .ed-geschichte+.ed-nav::before{transition:width .45s ease}
+  @keyframes kapitel-auf{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes kapitel-foto{from{transform:scale(1.055)}to{transform:scale(1)}}
+  @keyframes kapitel-linie{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+}
 </style></head><body><div id="film" data-s="start" data-licht="1" class="anlass">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture></div>
@@ -1157,7 +1177,9 @@ function redaktion(daten){
   function seite(f,i){
     const bild=bildpfad(f.bild)||(f.typ==='bande'?'partner/r-bande.webp':'');
     const bande=f.typ==='bande'&&logo;
-    const foto=bild?'<figure class="ed-abbildung"><div class="ed-motiv"><img class="ed-bild" src="'+esc(bild)+'" alt="'+esc(f.alt||'')+'">'+(bande?'<div class="ed-bande"><img src="'+esc(logo)+'" alt="'+esc(A.firma)+'"></div>':'')+'</div>'+(f.credit?'<figcaption>'+esc(f.credit)+'</figcaption>':'')+'</figure>':'';
+    const schriftzug=bande&&typeof f.schriftzug==='string'?f.schriftzug.trim().slice(0,32):'';
+    const marke=bande?'<div class="ed-bande'+(schriftzug?' ed-bande-breit':'')+'"><img src="'+esc(logo)+'" alt="'+esc(A.firma)+'">'+(schriftzug?'<strong'+(schriftzug.length>7?' style="font-size:'+Math.min(17,58/schriftzug.length)+'cqw"':'')+'>'+esc(schriftzug)+'</strong>':'')+'</div>':'';
+    const foto=bild?'<figure class="ed-abbildung"><div class="ed-motiv"><img class="ed-bild" src="'+esc(bild)+'" alt="'+esc(f.alt||'')+'">'+marke+'</div>'+(f.credit?'<figcaption>'+esc(f.credit)+'</figcaption>':'')+'</figure>':'';
     const rows=Array.isArray(f.zeilen)?f.zeilen.filter(z=>z&&(z.wert||z.label||z.text)):[];
     const zeilen=rows.length?'<ul class="ed-zeilen">'+rows.map(z=>'<li>'+(z.wert?'<b>'+esc(z.wert)+'</b>':'')+'<div>'+(z.label?'<strong>'+esc(z.label)+'</strong>':'')+(z.text?'<p>'+esc(z.text)+'</p>':'')+'</div></li>').join('')+'</ul>':'';
     const hinweis=[f.notiz?esc(f.notiz):'',quelle(f.quelle)].filter(Boolean).join(' · ');
@@ -1165,7 +1187,7 @@ function redaktion(daten){
   }
   document.body.classList.add('ed-aktiv');
   const deck=document.createElement('main');
-  deck.className='ed-deck';
+  deck.className=daten.geschichte===true?'ed-deck ed-geschichte':'ed-deck';
   deck.setAttribute('aria-label',A.titel||'Partnerpräsentation');
   deck.innerHTML=folien.map(seite).join('');
   const nav=document.createElement('nav');
@@ -1178,6 +1200,7 @@ function redaktion(daten){
   function zeige(index){
     aktuell=Math.max(0,Math.min(slides.length-1,index));
     slides.forEach((s,i)=>{s.hidden=i!==aktuell;});
+    nav.style.setProperty('--fortschritt',((aktuell+1)/slides.length*100)+'%');
     deck.scrollTop=0;
     vor.disabled=aktuell===0; zur.disabled=aktuell===slides.length-1;
     $('.ed-stand',nav).textContent=(aktuell+1)+' / '+slides.length;
