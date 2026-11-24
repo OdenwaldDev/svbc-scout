@@ -13,7 +13,7 @@
     raw=raw&&typeof raw==='object'?raw:{};const st=raw.stand&&typeof raw.stand==='object'?raw.stand:{},w=raw.wahl&&typeof raw.wahl==='object'?raw.wahl:{},f=raw.felder&&typeof raw.felder==='object'?raw.felder:{};
     const stand={};
     for(const k of ['name','verb','platz','jahr','ja','weg','wann','paket','aermel','eigen'])if(typeof st[k]==='string')stand[k]=str(st[k],k==='name'?120:90);
-    if(['trikot','anzug'].includes(st.kleidung))stand.kleidung=st.kleidung;
+    if(['trikot','auswaerts','anzug'].includes(st.kleidung))stand.kleidung=st.kleidung;
     if(['aermel_l','aermel_r'].includes(st.anzug_seite))stand.anzug_seite=st.anzug_seite;
     if(['b','c1','c2','d1','d2','d3','e1','e2','f','g'].includes(st.anzug_team))stand.anzug_team=st.anzug_team;
     for(const k of ['i','groesse','pi','laufzeit'])if(Number.isFinite(+st[k])&&st[k]!==null)stand[k]=Math.max(-1,Math.min(20,+st[k]));

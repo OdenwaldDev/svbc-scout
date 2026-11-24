@@ -2696,14 +2696,18 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     felder.aermel.disabled=felder.paket.value==='nur_aermel';
     const pruefen=()=>{send.disabled=schreibt||!felder.paket.value||(felder.aermel.checked&&(laden||!platz||!satz.querySelector('input:checked')));};
     function auswahl(p){
+      const gleicherPlatz=platz&&p&&platz.team===p.team&&platz.seite===p.seite;
+      const vorher=Array.from(satz.querySelectorAll('input:checked'),i=>i.value);
+      const fruehereAuswahl=erster&&kleidung.length?((p?.team===alt.team&&p?.seite===alt.seite)?kleidung:[]):gleicherPlatz?vorher:null;
+      const wahl=root.PARTNER_AERMEL.kleidungswahl(frei,p,fruehereAuswahl);
       platz=p;satz.replaceChildren();satz.hidden=!p;
       if(erster&&kleidung.length&&(!p||alt.team!==p.team||alt.seite!==p.seite||kleidung.some(a=>!frei.some(x=>x.team===alt.team&&x.seite===alt.seite&&x.art===a))))
         status.textContent='Die frühere Auswahl ist teilweise vergeben. Bitte die freien Kleidungsstücke vor dem Speichern prüfen.';
       if(p){
         const legend=document.createElement('legend');legend.textContent='Kleidungsstücke an diesem Ärmel';satz.append(legend);
-        for(const a of new Set(frei.filter(x=>x.team===p.team&&x.seite===p.seite).map(x=>x.art))){
+        for(const a of wahl.arten){
           const l=document.createElement('label'),i=document.createElement('input');i.type='checkbox';i.value=a;
-          i.checked=erster&&kleidung.length>0?alt.team===p.team&&alt.seite===p.seite&&kleidung.includes(a):a===p.art;
+          i.checked=wahl.gewaehlt.includes(a);
           l.append(i,document.createTextNode(' '+root.PARTNER_ANGEBOT.namen[a]));satz.append(l);
         }
       }
@@ -2711,7 +2715,7 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     }
     function zeigen(){
       wahl.hidden=!felder.aermel.checked;satz.hidden=true;
-      if(felder.aermel.checked&&!laden)root.PARTNER_AERMEL.wahl(wahl,frei,{team:alt.team,seite:alt.seite,art:kleidung[0]},auswahl);
+      if(felder.aermel.checked&&!laden)root.PARTNER_AERMEL.wahl(wahl,frei,platz||{team:alt.team,seite:alt.seite,art:kleidung[0]},auswahl);
       pruefen();
     }
     form.onchange=pruefen;felder.aermel.onchange=zeigen;
@@ -2795,6 +2799,10 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     }
     return {platz:treffer[0]||null,optionen};
   }
+  function kleidungswahl(plaetze,platz,bisher){
+    const arten=platz?Object.keys(ARTEN).filter(art=>plaetze.some(p=>p.team===platz.team&&p.seite===platz.seite&&p.art===art)):[];
+    return {arten,gewaehlt:bisher==null?arten.slice():arten.filter(art=>bisher.includes(art))};
+  }
   function wahl(container,plaetze,bevorzugt,onChange){
     const doc=container.ownerDocument;
     const teamNamen=new Map(plaetze.map(p=>[p.team,p.name]));
@@ -2827,7 +2835,7 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     modus.onclick=()=>{folge=folge[0]==='team'?['seite','art','team']:['team','art','seite'];zeigen(folge[0]);};
     zeigen();
   }
-  const api={freie,filtern,wahl,ARTEN,SEITEN};
+  const api={freie,filtern,kleidungswahl,wahl,ARTEN,SEITEN};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PARTNER_AERMEL=api;
 })(typeof window==='undefined'?globalThis:window);
 

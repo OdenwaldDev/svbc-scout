@@ -670,7 +670,7 @@ html.zeiger .spot{opacity:1}
 .reise-bande-motive{position:absolute;z-index:3;top:12px;left:16px;right:16px;display:flex;justify-content:center;gap:8px;margin:0}.reise-bande-motive[hidden]{display:none}.reise-bande-motive button{min-height:44px;max-width:220px;flex:1;border:1px solid #9babc3;border-radius:6px;padding:8px 12px;background:#12213c;color:#fff;font:700 15px/1.2 var(--b);cursor:pointer}.reise-bande-motive button[aria-pressed="true"]{border-color:#e8741f;box-shadow:inset 0 -3px #e8741f}.reise-bande-motive button:focus-visible{outline:3px solid #fff;outline-offset:3px}.reise-bande-motive button:disabled{opacity:.65;cursor:wait}
 
 /* Trainingsanzug: schwarzer Aufdruck auf dem weißen Ärmeleinsatz. */
-.kleidung-wahl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.kleidung-wahl button{min-height:44px;padding:10px 12px;border:1px solid #8393ad;border-radius:6px;background:#12213c;color:#fff;font:700 15px/1.2 var(--t)}.kleidung-wahl button[aria-pressed="true"]{border-color:#e8741f;box-shadow:inset 0 -3px #e8741f}.kleidung-wahl button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.kleidung-wahl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,95px),1fr));gap:8px;margin-bottom:10px}.kleidung-wahl button{min-height:44px;padding:10px 12px;border:1px solid #8393ad;border-radius:6px;background:#12213c;color:#fff;font:700 15px/1.2 var(--t)}.kleidung-wahl button[aria-pressed="true"]{border-color:#e8741f;box-shadow:inset 0 -3px #e8741f}.kleidung-wahl button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .anzug-buehne{position:absolute;inset:0;display:none;background:#d3d3d1}.anzug-buehne img{width:100%;height:100%;object-fit:cover}.anzug-buehne .trikot-seite{position:absolute;bottom:0;color:#fff}.sz-trikot[data-kleidung="anzug"] .anzug-buehne{display:block}.sz-trikot[data-kleidung="anzug"] .trikot-gesamt,.sz-trikot[data-kleidung="anzug"] .trikot-name{display:none!important}.sz-trikot[data-kleidung="anzug"]::before,.sz-trikot[data-kleidung="anzug"]::after{display:none}
 .zt .bild.anzug-nah{aspect-ratio:3/2;background:#d3d3d1}.zt .bild.anzug-nah img{object-fit:cover}.zt .bild.anzug-nah .trikot-seite{position:absolute;font-size:11px;padding:5px 8px}.zt.anzug-angebot{cursor:default}.zt.anzug-angebot label{font:600 13px/1.4 var(--t);margin:5px 0}.zt.anzug-angebot select{display:block;width:100%;min-height:44px;margin-top:5px;border:1px solid #8791a6;border-radius:5px;padding:8px;background:#fff;color:#1d2760;font:500 16px var(--t)}.zt.anzug-angebot .anzug-dazu{min-height:44px;width:100%;margin-top:8px;padding:10px;background:#1d2760;color:#fff;border:0;border-radius:5px;font:700 15px var(--t)}.zt.anzug-angebot .anzug-dazu:disabled{opacity:.5}.zt.anzug-angebot .anzug-status{font:500 12px/1.4 var(--t)}
 
@@ -1409,7 +1409,7 @@ html.zeiger .spot{opacity:1}
         <h2 class="auf" style="--v:1">Euer Name. <em>Am Platz.</em></h2>
       </div>
       <div class="bue-r auf" style="--v:2">
-        <div class="kleidung-wahl" id="kleidungWahl" role="group" aria-label="Kleidungsstück" hidden><button type="button" data-kleidung="trikot" aria-pressed="true">Trikot</button><button type="button" data-kleidung="anzug" aria-pressed="false">Trainingsanzug</button></div>
+        <div class="kleidung-wahl" id="kleidungWahl" role="group" aria-label="Kleidungsstück" hidden><button type="button" data-kleidung="trikot" aria-pressed="true">Heimtrikot</button><button type="button" data-kleidung="auswaerts" aria-pressed="false" hidden>Auswärtstrikot</button><button type="button" data-kleidung="anzug" aria-pressed="false">Trainingsanzug</button></div>
         <div class="rahmen" id="rahmen">
           <div class="sz sz-bande an" data-sz="bande"><div class="banden-entwurf"><img src="partner/r-bande.webp" alt="Bande am Spielfeldrand mit eurem Namen"><div class="bande-name"><span class="passt" data-name-gross>EUER NAME</span></div></div></div>
           <div class="sz sz-trikot" data-sz="trikot" data-ansicht="detail"><div class="anzug-buehne" data-anzug-vorschau><img hidden alt="Euer schwarzes Logo auf dem Trainingsanzug"><span class="trikot-platzhalter">Anzugvorschau wird geladen.</span><small class="trikot-seite">Trainingsanzug · Gestaltungsvorschau</small></div><div class="trikot-gesamt" data-trikot-gesamt><img hidden alt="Das ganze Trikot mit eurem Logo auf dem Ärmel"><span class="trikot-platzhalter">Trikotvorschau wird geladen.</span></div><div class="trikot-name trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem rechten Ärmel"><span class="trikot-platzhalter" data-name-gross>EUER NAME</span><small class="trikot-seite">Rechter Ärmel · Gestaltungsvorschau</small></div></div>
@@ -1559,7 +1559,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.156';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.157';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -1575,7 +1575,7 @@ window.REISE_TRIKOT=(()=>{
       v=TRIKOT3D.buehne(host,{three:'vendor/three.min.js',kit:'kit/',schrift:'BarlowC',marken:false,rahmen:false});
       await v.bereit; const bilder={};
       // Die zwei Seiten zeigen alternative Platzierungen desselben Zeichens.
-      const belegung=seite=>({art:'heim',grund:'#2f5fd0',akzent:'#ffffff',belegung:{
+      const belegung=seite=>({art,grund:art==='auswaerts'?'#f47a20':'#2f5fd0',akzent:'#ffffff',belegung:{
         [seite]:{status:'belegt',vorschau:true,firma,bild:logo||null,variante:'weiss',groesse:1}
       }});
       for(const seite of ['aermel_r','aermel_l']){
@@ -1955,6 +1955,7 @@ window.addEventListener('message',e=>{if(e.source===window.parent&&e.origin===lo
 var MARKE=null, BANDE_PROJEKT=null;
 let AERMEL_SEITE='aermel_r', TRIKOT_ANSICHT='detail', TRIKOT_BILDER=null, TRIKOT_ANFRAGE=null, TRIKOT_FEHLER=false;
 let AERMEL_TEAM_FREI=null;
+function kleidungswahl(art){return ['auswaerts','anzug'].includes(art)?art:'trikot';}
 let KLEIDUNG='trikot',ANZUG_STAND=null,ANZUG_BILDER=null,ANZUG_ANFRAGE=null,ANZUG_FEHLER=false;
 function trikotHtml(){ return '<div class="bild trikot-nah" data-trikot-vorschau><img hidden alt="Euer Logo auf dem Ärmel"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Ärmel · Gestaltungsvorschau</small></div>'; }
 function anzugHtml(angebot=false){return '<div class="bild anzug-nah" data-anzug-vorschau data-anzug-angebot="'+(angebot?'1':'0')+'"><img hidden alt="Euer schwarzes Logo auf dem Trainingsanzug"><span class="trikot-platzhalter">'+esc(S.name||'Euer Name')+'</span><small class="trikot-seite">Trainingsanzug · Gestaltungsvorschau</small></div>';}
@@ -1973,10 +1974,10 @@ function trikotSetz(){
     $$('button[data-kleidung]').forEach(b=>b.hidden=!AERMEL_TEAM_FREI.some(p=>p.kleidung===b.dataset.kleidung));
   }
   $$('[data-sz="trikot"]').forEach(e=>{e.classList.toggle('keine-aermel',!erlaubt);});
-  const logo=MARKE?.trikot||null, key=JSON.stringify([S.name,logo]);
+  const logo=MARKE?.trikot||null, art=KLEIDUNG==='auswaerts'?'auswaerts':'heim', key=JSON.stringify([S.name,logo,art]);
   if(TRIKOT_ANFRAGE!==key){
     TRIKOT_ANFRAGE=key; TRIKOT_BILDER=null; TRIKOT_FEHLER=false;
-    REISE_TRIKOT.bilder(S.name||'Euer Name',logo,true).then(b=>{if(TRIKOT_ANFRAGE===key){TRIKOT_BILDER=b;trikotSetz();}})
+    REISE_TRIKOT.bilder(S.name||'Euer Name',logo,true,art).then(b=>{if(TRIKOT_ANFRAGE===key){TRIKOT_BILDER=b;trikotSetz();}})
       .catch(()=>{if(TRIKOT_ANFRAGE===key){TRIKOT_FEHLER=true;trikotSetz();}});
   }
   const seite=AERMEL_SEITE==='aermel_l'?'Linker':'Rechter';
@@ -1985,7 +1986,7 @@ function trikotSetz(){
     e.dataset.seite=AERMEL_SEITE; e.classList.toggle('mk',!!logo); im.hidden=!bild;
     if(bild&&im.getAttribute('src')!==bild)im.src=bild;
     if(!bild)im.removeAttribute('src');
-    im.alt=(logo?'Euer Logo':'Euer Firmenname')+' auf dem '+(AERMEL_SEITE==='aermel_l'?'linken':'rechten')+' Ärmel';
+    im.alt=(art==='auswaerts'?'Auswärtstrikot':'Heimtrikot')+' · '+(logo?'Euer Logo':'Euer Firmenname')+' auf dem '+(AERMEL_SEITE==='aermel_l'?'linken':'rechten')+' Ärmel';
     platz.hidden=!!bild; platz.textContent=S.name||'Euer Name';
     text.textContent=TRIKOT_FEHLER?'Vorschau konnte nicht geladen werden.':seite+' Ärmel · '+(logo?(S.name||'Gestaltungsvorschau'):'Firmenname als Vorschau');
   });
@@ -2008,17 +2009,21 @@ function anzugSetz(){
   if(ANZUG_ANFRAGE!==key){ANZUG_ANFRAGE=key;ANZUG_BILDER=null;ANZUG_FEHLER=false;REISE_TRIKOT.bilder(S.name||'Euer Name',logo,false,'anzug').then(b=>{if(ANZUG_ANFRAGE===key){ANZUG_BILDER=b;anzugSetz();}}).catch(()=>{if(ANZUG_ANFRAGE===key){ANZUG_FEHLER=true;anzugSetz();}});}
   alle.forEach(e=>{const im=$('img',e),p=$('.trikot-platzhalter',e),t=$('.trikot-seite',e),seite=e.dataset.anzugAngebot==='1'?(S.anzugSeite||AERMEL_SEITE):AERMEL_SEITE,u=ANZUG_BILDER?.[seite];e.dataset.seite=seite;im.hidden=!u;if(u&&im.getAttribute('src')!==u)im.src=u;if(!u)im.removeAttribute('src');im.alt=(logo?'Euer schwarzes Logo':'Euer Firmenname')+' auf dem '+(seite==='aermel_l'?'linken':'rechten')+' Anzugärmel';p.hidden=!!u;p.textContent=ANZUG_FEHLER?'Die Vorschau konnte nicht geladen werden. Öffnet die Ärmelansicht erneut.':'Anzugvorschau wird geladen.';t.textContent='Trainingsanzug · '+(seite==='aermel_l'?'linker':'rechter')+' Ärmel · Gestaltungsvorschau';});
 }
-$$('button[data-kleidung]').forEach(b=>b.onclick=()=>{KLEIDUNG=b.dataset.kleidung==='anzug'?'anzug':'trikot';if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
+$$('button[data-kleidung]').forEach(b=>b.onclick=()=>{KLEIDUNG=kleidungswahl(b.dataset.kleidung);if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
 $$('[data-trikot-ansicht]').forEach(b=>b.onclick=()=>{TRIKOT_ANSICHT=b.dataset.trikotAnsicht;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;trikotSetz();});
 $$('[data-trikot-seite]').forEach(b=>b.onclick=()=>{AERMEL_SEITE=b.dataset.trikotSeite;if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
 window.addEventListener('message',e=>{
   if(e.source!==window.parent||e.origin!==location.origin||e.data?.reise!=='aermel-team'||!Array.isArray(e.data.kombinationen))return;
-  AERMEL_TEAM_FREI=e.data.kombinationen.filter(p=>p&&['trikot','anzug'].includes(p.kleidung)&&['aermel_l','aermel_r'].includes(p.seite));
+  const team=e.data.team==='h2'?'Zweiten':e.data.team==='h1'?'Ersten':null;
+  const trikotWahl=$('[data-frage="platz"] [data-w="trikot"]');
+  if(trikotWahl)trikotWahl.textContent=ZITAT.trikot=team?'Auf den Ärmeln der '+team:'Auf einem Jugendtrikot';
+  LOB.platz.trikot=team?'So sieht euer Logo auf dem Ärmel der '+team+' aus.':'Aufs Trikot geht es bei uns über die Jugend.';
+  AERMEL_TEAM_FREI=e.data.kombinationen.filter(p=>p&&['trikot','auswaerts','anzug'].includes(p.kleidung)&&['aermel_l','aermel_r'].includes(p.seite));
   if(AERMEL_TEAM_FREI.some(p=>p.seite===e.data.seite))AERMEL_SEITE=e.data.seite;
   trikotSetz();
 });
 window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==location.origin||e.data?.reise!=='aermel-seite'||!['aermel_r','aermel_l'].includes(e.data.seite))return;
-  AERMEL_SEITE=e.data.seite;if(e.data.kleidung)KLEIDUNG=e.data.kleidung==='anzug'?'anzug':'trikot';if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
+  AERMEL_SEITE=e.data.seite;if(e.data.kleidung)KLEIDUNG=kleidungswahl(e.data.kleidung);if(TRIKOT_FEHLER)TRIKOT_ANFRAGE=null;if(ANZUG_FEHLER)ANZUG_ANFRAGE=null;trikotSetz();});
 let MOTIV_FOKUS=null,MOTIV_URSPRUNG=null;
 function markeSetz(){ const bild=u=>'<img src="'+u+'" alt="">';
   if(BANDE_PROJEKT&&BANDE_PROJEKT.vorschau){$$('.bande-name').forEach(b=>{const stamp=(BANDE_PROJEKT.motiv||'haupt')+':'+BANDE_PROJEKT.version;if(b.dataset.projekt!==stamp){b.dataset.projekt=stamp;b.dataset.bandenformat=BANDE_PROJEKT.einzel?'einzel':'doppel';b.classList.add('bd-entwurf-gespeichert');b.classList.remove('mk','nur');b.innerHTML=bild(BANDE_PROJEKT.vorschau);}});}
@@ -2346,6 +2351,16 @@ const INFO={
     t:['Über Tore reden die Leute. Zum Tor des Monats gibt es ein Video und einen Beitrag auf Instagram und Facebook, mit eurem Logo. Diesen Platz gibt es nur einmal.'],
     d:['Video und Beitrag zum Tor des Monats, jeden Monat.','Euer Logo im Beitrag.','Nur ein Partner je Saison.']}
 };
+// Der bisherige Flyer bleibt auch für bereits vorgestellte Firmen lesbar.
+const imDoppelpass='Wir stellen euren Betrieb im Stadionheft „Doppelpass“ vor.';
+const inDerHalbzeit='Bei eurem Partnerspiel stellen wir euch in einem kurzen Halbzeitinterview vor. Den Ablauf stimmen wir mit euch und dem Spielbetrieb ab.';
+for(const key of ST){
+  INFO[key].d.push(imDoppelpass);
+  PAK[key].auch.push(imDoppelpass);
+}
+INFO.p1896.d.push(inDerHalbzeit);
+INFO.sotd.d.push(inDerHalbzeit);
+
 // Die gewählte Fassung kommt ausschließlich vom Deck. Alte Einladungen behalten ihren Flyer.
 function paketfassungUebernehmen(daten){
   if(daten.fassung!==2||paketfassung===2||!Array.isArray(daten.leistungen))return;
@@ -2577,7 +2592,7 @@ F.addEventListener('pointerdown',e=>{ if(!MERKT||NEUES_TEILEN||klZahl>=400)retur
 F.addEventListener('click',e=>{if(!GERAHMT||!e.isTrusted||e.target.closest('#reiseTeilen,#regie'))return;const b=e.target.closest('button,input,select,summary,[role="button"]');if(!b)return;const id=ORD[S.i],aktion=b.closest('[data-trikot-vorschau],#reiseBande,#reiseAermel')?'3d':['groesse','bon'].includes(id)?'preis':b.matches('[data-k],[data-w],[data-ja]')?'auswahl':b.matches('.ib,.br')?'info':b.id==='zurB'?'zurueck':'weiter';window.parent.postMessage({reise:'teilen-stat',szene:id,aktion,vertraut:true},location.origin);},{passive:true});
 // Stand aus dem Speicher in die Reise legen: Antworten, Auswahl und alle gedrückten Knöpfe
 function standSetz(st){ const n=neu(); S=n; S.name=String(FIRMA!==null?FIRMA:(st.name||'')); ['verb','platz','jahr','wann'].forEach(k=>{ if(st[k])S[k]=st[k]; });
-  if(['aermel_r','aermel_l'].includes(st.aermel))AERMEL_SEITE=st.aermel;KLEIDUNG=st.kleidung==='anzug'?'anzug':'trikot';S.anzugTeam=typeof st.anzug_team==='string'?st.anzug_team:null;S.anzugSeite=['aermel_l','aermel_r'].includes(st.anzug_seite)?st.anzug_seite:AERMEL_SEITE;S.eigen=String(st.eigen||'').slice(0,90);const eigen=$('#rEigen');if(eigen)eigen.value=S.eigen;
+  if(['aermel_r','aermel_l'].includes(st.aermel))AERMEL_SEITE=st.aermel;KLEIDUNG=kleidungswahl(st.kleidung);S.anzugTeam=typeof st.anzug_team==='string'?st.anzug_team:null;S.anzugSeite=['aermel_l','aermel_r'].includes(st.anzug_seite)?st.anzug_seite:AERMEL_SEITE;S.eigen=String(st.eigen||'').slice(0,90);const eigen=$('#rEigen');if(eigen)eigen.value=S.eigen;
   S.antrieb=(st.antrieb||[]).filter(a=>HAUPT[a]); S.skeptisch=!!st.skeptisch&&!S.antrieb.length; S.auto=!!st.auto; if(st.groesse!=null&&!S.auto)S.groesse=+st.groesse; if(st.pi!=null)S.pi=+st.pi;
   S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins'; konditionenInStand();anzugWahlPruefen(false);
   $('#nameIn').value=S.name; setzName(S.name);

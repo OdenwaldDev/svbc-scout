@@ -676,6 +676,10 @@ const PD_LOGOWERK = (() => {
     }
     return {platz:treffer[0]||null,optionen};
   }
+  function kleidungswahl(plaetze,platz,bisher){
+    const arten=platz?Object.keys(ARTEN).filter(art=>plaetze.some(p=>p.team===platz.team&&p.seite===platz.seite&&p.art===art)):[];
+    return {arten,gewaehlt:bisher==null?arten.slice():arten.filter(art=>bisher.includes(art))};
+  }
   function wahl(container,plaetze,bevorzugt,onChange){
     const doc=container.ownerDocument;
     const teamNamen=new Map(plaetze.map(p=>[p.team,p.name]));
@@ -708,7 +712,7 @@ const PD_LOGOWERK = (() => {
     modus.onclick=()=>{folge=folge[0]==='team'?['seite','art','team']:['team','art','seite'];zeigen(folge[0]);};
     zeigen();
   }
-  const api={freie,filtern,wahl,ARTEN,SEITEN};
+  const api={freie,filtern,kleidungswahl,wahl,ARTEN,SEITEN};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PARTNER_AERMEL=api;
 })(typeof window==='undefined'?globalThis:window);
 
@@ -957,18 +961,20 @@ const PD_LOGOWERK = (() => {
       q('[data-details]').hidden=!p;q('[data-details] p').textContent=p?
         (p.preis!=null?preis(p.preis)+' netto '+(p.einheit==='saison'?'je Saison. ':''): '')+(p.text||''):'';
     }
-    function arme(wunsch={},bisher=[]){
+    function arme(wunsch={},bisher=null){
       filter.hidden=!aermel.checked;teile.hidden=true;
       if(!aermel.checked){gewaehlt=null;kleidung=[];vorschau();sperren();return;}
       let initial=true;
       root.PARTNER_AERMEL.wahl(filter,daten.frei,wunsch,p=>{
         const start=initial;initial=false;
+        const gleicherPlatz=gewaehlt&&p&&gewaehlt.team===p.team&&gewaehlt.seite===p.seite;
         gewaehlt=p;teile.hidden=!p;teile.querySelectorAll('label').forEach(l=>l.remove());
-        const artListe=p?[...new Set(daten.frei.filter(x=>x.team===p.team&&x.seite===p.seite).map(x=>x.art))]:[];
         const passt=p&&p.team===wunsch.team&&p.seite===wunsch.seite;
-        kleidung=start&&bisher.length?(passt?bisher.filter(a=>artListe.includes(a)):[]):p?[p.art]:[];
-        if(start&&bisher.some(a=>!kleidung.includes(a)))text('Ein bisheriger Ärmel ist vergeben. Bitte die Auswahl vor dem Speichern prüfen.');
-        for(const art of artListe){
+        const vorher=start?(bisher===null?null:passt?bisher:[]):gleicherPlatz?kleidung:null;
+        const auswahl=root.PARTNER_AERMEL.kleidungswahl(daten.frei,p,vorher);
+        kleidung=auswahl.gewaehlt;
+        if(start&&bisher?.some(a=>!kleidung.includes(a)))text('Ein bisheriger Ärmel ist vergeben. Bitte die Auswahl vor dem Speichern prüfen.');
+        for(const art of auswahl.arten){
           const label=document.createElement('label'),el=document.createElement('input');
           el.type='checkbox';el.value=art;el.checked=kleidung.includes(art);
           label.append(el,document.createTextNode(' '+root.PARTNER_AERMEL.ARTEN[art]));teile.append(label);
@@ -985,7 +991,7 @@ const PD_LOGOWERK = (() => {
       paket.add(new Option('Nur Ärmel','nur_aermel'));paket.value=v.paket||'';
       notiz.value=v.notiz||'';gestaltung={quer:v.gestaltung?.quer===true};
       aermel.checked=paket.value==='nur_aermel'||!!v.kleidung?.length;aermel.disabled=paket.value==='nur_aermel';
-      details();arme({team:v.team,seite:v.seite,art:v.kleidung?.[0]},v.kleidung||[]);zeichnet=false;
+      details();arme({team:v.team,seite:v.seite,art:v.kleidung?.[0]},v.team&&v.seite?(v.kleidung||[]):null);zeichnet=false;
     }
     async function laden(behalten){
       if(busy)return;

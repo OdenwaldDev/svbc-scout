@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.156', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.157', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18731,6 +18731,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.157',v:'0.99.157',datum:'2026-11-24',titel:'Doppelpass und Ärmelpartnerschaft',kurz:'Die Paketübersicht zeigt das Stadionheft. Bei einer neuen Ärmelwahl sind alle freien Kleidungsstücke dieser Seite vorausgewählt.',punkte:[{ic:'i',t:'Spieltagspartner',d:'Am eigenen Heimspiel ist eine kurze Vorstellung in der Halbzeit nach Absprache mit dem Spielbetrieb vorgesehen.',r:'admin'}]},
   {id:'0.99.156',v:'0.99.156',datum:'2026-11-24',titel:'Neue Leistungen für Partnergespräche',kurz:'Das Vereinsteam kann Firmenangebote vorbereiten und direkt im Termin zeigen.',punkte:[{ic:'i',t:'Angebot öffnen',d:'In der Firmenakte lassen sich ein Paket und freie Ärmel für die persönliche Präsentation zusammenstellen.',r:'admin'},{ic:'i',t:'Partnerpakete und Bausteine',d:'Für neue Gespräche gibt es die überarbeiteten Paketleistungen und eine gemeinsame Liste für Zusatzprojekte.',r:'admin'}]},
   {id:'0.99.155',v:'0.99.155',datum:'2026-11-24',titel:'Termine in der Firmenakte vorbereiten',kurz:'Das Partnerteam kann pro Firma einen internen Entwurf mit Paket, Bandenmotiv und freien Ärmeln speichern.',punkte:[{ic:'i',t:'Mannschaft oder Seite zuerst',d:'In der Firmenakte findet ihr freie Ärmel und seht das Firmenlogo auf Trikot und Trainingsanzug.',r:'admin'}]},
   {id:'0.99.154',v:'0.99.154',datum:'2026-11-24',titel:'Direkt zum Partnerangebot',kurz:'Persönliche Angebote lassen sich direkt mit Paket, Bande und Ärmel öffnen.',punkte:[{ic:'i',t:'Ärmel auswählen',d:'Im Gespräch könnt ihr nach Mannschaft oder Ärmelseite suchen und die freien Plätze auf Trikot und Trainingsanzug ansehen.',r:'admin'}]},
@@ -39817,6 +39818,10 @@ const PD_LOGOWERK = (() => {
     }
     return {platz:treffer[0]||null,optionen};
   }
+  function kleidungswahl(plaetze,platz,bisher){
+    const arten=platz?Object.keys(ARTEN).filter(art=>plaetze.some(p=>p.team===platz.team&&p.seite===platz.seite&&p.art===art)):[];
+    return {arten,gewaehlt:bisher==null?arten.slice():arten.filter(art=>bisher.includes(art))};
+  }
   function wahl(container,plaetze,bevorzugt,onChange){
     const doc=container.ownerDocument;
     const teamNamen=new Map(plaetze.map(p=>[p.team,p.name]));
@@ -39849,7 +39854,7 @@ const PD_LOGOWERK = (() => {
     modus.onclick=()=>{folge=folge[0]==='team'?['seite','art','team']:['team','art','seite'];zeigen(folge[0]);};
     zeigen();
   }
-  const api={freie,filtern,wahl,ARTEN,SEITEN};
+  const api={freie,filtern,kleidungswahl,wahl,ARTEN,SEITEN};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PARTNER_AERMEL=api;
 })(typeof window==='undefined'?globalThis:window);
 
@@ -40098,18 +40103,20 @@ const PD_LOGOWERK = (() => {
       q('[data-details]').hidden=!p;q('[data-details] p').textContent=p?
         (p.preis!=null?preis(p.preis)+' netto '+(p.einheit==='saison'?'je Saison. ':''): '')+(p.text||''):'';
     }
-    function arme(wunsch={},bisher=[]){
+    function arme(wunsch={},bisher=null){
       filter.hidden=!aermel.checked;teile.hidden=true;
       if(!aermel.checked){gewaehlt=null;kleidung=[];vorschau();sperren();return;}
       let initial=true;
       root.PARTNER_AERMEL.wahl(filter,daten.frei,wunsch,p=>{
         const start=initial;initial=false;
+        const gleicherPlatz=gewaehlt&&p&&gewaehlt.team===p.team&&gewaehlt.seite===p.seite;
         gewaehlt=p;teile.hidden=!p;teile.querySelectorAll('label').forEach(l=>l.remove());
-        const artListe=p?[...new Set(daten.frei.filter(x=>x.team===p.team&&x.seite===p.seite).map(x=>x.art))]:[];
         const passt=p&&p.team===wunsch.team&&p.seite===wunsch.seite;
-        kleidung=start&&bisher.length?(passt?bisher.filter(a=>artListe.includes(a)):[]):p?[p.art]:[];
-        if(start&&bisher.some(a=>!kleidung.includes(a)))text('Ein bisheriger Ärmel ist vergeben. Bitte die Auswahl vor dem Speichern prüfen.');
-        for(const art of artListe){
+        const vorher=start?(bisher===null?null:passt?bisher:[]):gleicherPlatz?kleidung:null;
+        const auswahl=root.PARTNER_AERMEL.kleidungswahl(daten.frei,p,vorher);
+        kleidung=auswahl.gewaehlt;
+        if(start&&bisher?.some(a=>!kleidung.includes(a)))text('Ein bisheriger Ärmel ist vergeben. Bitte die Auswahl vor dem Speichern prüfen.');
+        for(const art of auswahl.arten){
           const label=document.createElement('label'),el=document.createElement('input');
           el.type='checkbox';el.value=art;el.checked=kleidung.includes(art);
           label.append(el,document.createTextNode(' '+root.PARTNER_AERMEL.ARTEN[art]));teile.append(label);
@@ -40126,7 +40133,7 @@ const PD_LOGOWERK = (() => {
       paket.add(new Option('Nur Ärmel','nur_aermel'));paket.value=v.paket||'';
       notiz.value=v.notiz||'';gestaltung={quer:v.gestaltung?.quer===true};
       aermel.checked=paket.value==='nur_aermel'||!!v.kleidung?.length;aermel.disabled=paket.value==='nur_aermel';
-      details();arme({team:v.team,seite:v.seite,art:v.kleidung?.[0]},v.kleidung||[]);zeichnet=false;
+      details();arme({team:v.team,seite:v.seite,art:v.kleidung?.[0]},v.team&&v.seite?(v.kleidung||[]):null);zeichnet=false;
     }
     async function laden(behalten){
       if(busy)return;
@@ -41260,7 +41267,7 @@ function huArtikel(r){const pages=HV.d.seiten.filter(s=>['jugend','soma','rueckb
     raw=raw&&typeof raw==='object'?raw:{};const st=raw.stand&&typeof raw.stand==='object'?raw.stand:{},w=raw.wahl&&typeof raw.wahl==='object'?raw.wahl:{},f=raw.felder&&typeof raw.felder==='object'?raw.felder:{};
     const stand={};
     for(const k of ['name','verb','platz','jahr','ja','weg','wann','paket','aermel','eigen'])if(typeof st[k]==='string')stand[k]=str(st[k],k==='name'?120:90);
-    if(['trikot','anzug'].includes(st.kleidung))stand.kleidung=st.kleidung;
+    if(['trikot','auswaerts','anzug'].includes(st.kleidung))stand.kleidung=st.kleidung;
     if(['aermel_l','aermel_r'].includes(st.anzug_seite))stand.anzug_seite=st.anzug_seite;
     if(['b','c1','c2','d1','d2','d3','e1','e2','f','g'].includes(st.anzug_team))stand.anzug_team=st.anzug_team;
     for(const k of ['i','groesse','pi','laufzeit'])if(Number.isFinite(+st[k])&&st[k]!==null)stand[k]=Math.max(-1,Math.min(20,+st[k]));

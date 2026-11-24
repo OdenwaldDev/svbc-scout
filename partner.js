@@ -593,9 +593,9 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     return aermelAbruf;
   }
   function aermelTeamSenden(plaetze,wunsch){
-    const kombinationen=plaetze.filter(p=>p.team===wunsch.team&&p.art!=='auswaerts'&&(!wunsch.kleidung||wunsch.kleidung.includes(p.art)))
-      .map(p=>({kleidung:p.art==='anzug'?'anzug':'trikot',seite:p.seite}));
-    $('#reiseRahmen')?.contentWindow?.postMessage({reise:'aermel-team',kombinationen,seite:wunsch.seite},location.origin);
+    const kombinationen=plaetze.filter(p=>p.team===wunsch.team&&(!wunsch.kleidung||p.seite===wunsch.seite&&wunsch.kleidung.includes(p.art)))
+      .map(p=>({kleidung:p.art==='heim'?'trikot':p.art,seite:p.seite}));
+    $('#reiseRahmen')?.contentWindow?.postMessage({reise:'aermel-team',team:wunsch.team,kombinationen,seite:wunsch.seite},location.origin);
   }
   async function aermelVorschau(startSeite,startArt,startTeam){
     if(!D||document.querySelector('.av'))return;
@@ -619,7 +619,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       letzterAermel=platz;
       im.parentElement.hidden=false;meldung.textContent='Die Nahansicht wird geladen.';
       aermelTeamSenden(freiePlaetze,platz);
-      if(platz.art!=='auswaerts')$('#reiseRahmen')?.contentWindow?.postMessage({reise:'aermel-seite',seite:platz.seite,kleidung:platz.art==='anzug'?'anzug':'trikot'},location.origin);
+      $('#reiseRahmen')?.contentWindow?.postMessage({reise:'aermel-seite',seite:platz.seite,kleidung:platz.art==='heim'?'trikot':platz.art},location.origin);
       try{
         const druck={firma:D.deck.kurzname||D.deck.firma,logo:aermelLogo(),seite:platz.seite,breite:1200};
         const cv=platz.art==='anzug'?await TRAININGSANZUG.zeichnen(druck):await TRAININGSANZUG.trikotDetail({...druck,art:platz.art,variante:'weiss'});
