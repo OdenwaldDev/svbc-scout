@@ -876,6 +876,104 @@ body.ed-aktiv{--ed-dunkel:#101b2b;--ed-hell:#f4efe4;--ed-akzent:#e99952;display:
  .ed-vereinsreise .ed-titel .ed-inhalt{padding-bottom:32px}
 }
 @media print{.ed-wege{display:none}.ed-vereinsreise .ed-foto .ed-abbildung{margin:12mm 10mm 12mm 0}}
+
+/* Vereinsheft. Die Doppelseiten haben im Browser und im Druck denselben Bildaufbau. */
+.ed-vereinsheft{--papier:#f5f2ea;--druck:#10283a;--blau:#123f81;--linie:#b3bcbb;--rand:clamp(25px,4.75cqw,84px);background:var(--papier)}
+.ed-vereinsheft .ed-slide{color:var(--druck);background:var(--papier);color-scheme:light}
+.ed-vereinsheft .ed-slide.ed-mitbild{grid-template-columns:minmax(0,1fr) minmax(0,1.22fr)}
+.ed-vereinsheft .ed-inhalt{padding:var(--rand);max-width:none}
+.ed-vereinsheft .ed-rubrik{font:700 clamp(12px,1cqw,17px)/1.25 var(--t);text-transform:uppercase;letter-spacing:.12em}
+.ed-vereinsheft .ed-rubrik::before,.ed-vereinsheft .ed-folio{display:none}
+.ed-vereinsheft .ed-inhalt h2{font:800 clamp(50px,6.7cqw,130px)/.94 var(--d);letter-spacing:-.038em;text-transform:none;margin:.34em 0 .29em;max-width:15ch}
+.ed-vereinsheft .ed-lead{max-width:39ch;font:400 clamp(18px,1.55cqw,28px)/1.48 var(--t);text-wrap:pretty}
+.ed-vereinsheft .ed-wege{gap:8px 22px;margin-top:1.2em}
+.ed-vereinsheft .ed-wege button{border-bottom:1px solid currentColor;color:var(--blau);text-transform:none;font:600 clamp(16px,1.16cqw,21px)/1.25 var(--t)}
+.ed-vereinsheft .ed-wege button span{color:inherit}
+.ed-vereinsheft :focus-visible{outline-color:#da692e}
+.ed-vereinsheft+.ed-nav{color:#192d3b;background:#f5f2ea;border-top:1px solid #bdc3c2;gap:.7rem}
+.ed-vereinsheft+.ed-nav::before{height:2px;background:#c35d24}
+.ed-vereinsheft+.ed-nav .ed-controls button{border-color:#75838c;border-radius:50%}
+.ed-vereinsheft+.ed-nav .ed-controls button:last-child:enabled{background:#153651;border-color:#153651;color:#fff}
+.ed-vereinsheft .heft-auftakt.ed-mitbild{grid-template: auto minmax(260px,1fr) / minmax(0,1fr)}
+.heft-auftakt .ed-inhalt{grid-area:1/1;display:grid;grid-template-columns:1.6fr 1fr;align-items:end;gap:0 5cqw;padding:clamp(22px,3.3cqw,55px) var(--rand)}
+.heft-auftakt .ed-rubrik{grid-area:1/1}
+.ed-vereinsheft .heft-auftakt h2{grid-area:2/1;max-width:16ch;font-size:clamp(52px,7.8cqw,146px);margin:.18em 0 .02em}
+.heft-auftakt .heft-untertitel{grid-area:1/2;font-weight:600;font-size:clamp(13px,1.1cqw,18px);color:#405568}
+.heft-auftakt .ed-lead{grid-area:2/2;align-self:center}
+.heft-auftakt .ed-abbildung{grid-area:2/1;display:grid;grid-template-columns:1.75fr 1fr;gap:5px;background:var(--papier)}
+.heft-auftakt .ed-motiv{position:relative;min-width:0}
+.heft-auftakt .ed-bild{position:absolute;inset:0;object-position:50% 49%}
+.heft-bildort{position:absolute;bottom:0;left:0;padding:7px 13px;background:var(--papier);color:var(--druck);font:600 clamp(12px,1cqw,18px)/1.2 var(--t)}
+.ed-vereinsheft .heft-verein{background:#dfebf1}
+.heft-verein .ed-abbildung{margin:var(--rand) var(--rand) var(--rand) 0;min-height:0}
+.heft-verein .ed-bild{object-position:46% 50%}
+.heft-verein .ed-zeilen{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:1.7em 0 0}
+.heft-verein .ed-zeilen li{display:block;border-top:1px solid #657783;padding:.6em 0}
+.heft-verein .ed-zeilen b{font:800 clamp(29px,3.5cqw,62px)/1 var(--d);letter-spacing:-.025em;color:var(--blau)}
+.heft-verein .ed-zeilen strong{font:500 clamp(14px,1.2cqw,22px)/1.35 var(--t)}
+.ed-vereinsheft .heft-studio.ed-mitbild{grid-template-columns:1.3fr 1fr;background:#10283a;color:#faf8f3}
+.heft-studio .ed-abbildung{grid-column:1}.heft-studio .ed-inhalt{grid-column:2}
+.heft-studio .ed-bild{object-position:55% 50%}
+.ed-vereinsheft .heft-bande.ed-mitbild{grid-template:auto minmax(250px,1fr)/1fr;background:#f5f2ea}
+.heft-bande .ed-inhalt{grid-area:1/1;display:grid;grid-template-columns:1.28fr 1fr;gap:8px 6%;align-items:end;padding:clamp(22px,3cqw,48px) var(--rand)}
+.heft-bande .ed-rubrik{grid-column:1/-1}
+.ed-vereinsheft .heft-bande h2{margin:0;max-width:none}
+.heft-bande .ed-lead{max-width:38ch}
+.heft-bande .ed-abbildung{display:block;grid-area:2/1;min-height:0;background:#22352d}
+.heft-bande .ed-abbildung .ed-motiv{position:absolute;inset:0;width:100%;height:100%;margin:0}
+.heft-bande .ed-bild{object-position:center 49%}
+.ed-vereinsheft .heft-spieltag.ed-mitbild{grid-template-columns:1.18fr 1fr}
+.heft-spieltag .ed-inhalt{grid-column:2}.heft-spieltag .ed-abbildung{grid-column:1;margin:var(--rand) 0 var(--rand) var(--rand);min-height:0}
+.heft-spieltag .ed-bild,.heft-verein .ed-bild{object-fit:contain}
+.heft-spieltag .ed-abbildung,.heft-verein .ed-abbildung{align-self:center;aspect-ratio:4/3;width:calc(100% - var(--rand));background:transparent}
+.ed-vereinsheft .heft-serie{background:#cddfed}
+.heft-serie .ed-abbildung{background:#163e72;display:grid;place-items:center}
+.heft-serie .ed-motiv{position:relative;width:min(72%,52vh);aspect-ratio:4/5;display:grid;grid-template-rows:minmax(0,1fr) auto;background:#f5f2ea;color:#193246}
+.heft-serie .ed-bild{min-height:0;object-position:49% 45%}
+.heft-serientitel{padding:5% 7%;border-top:4px solid #e67e3a}
+.heft-serientitel b{display:block;font:800 clamp(28px,3.4cqw,65px)/.98 var(--d);letter-spacing:-.035em}
+.heft-serientitel small{display:block;font:600 clamp(11px,.96cqw,16px)/1.25 var(--t);margin-top:.5em}
+.ed-vereinsheft .heft-brief.ed-mitbild{grid-template-columns:.83fr 1.17fr;background:#f1ece2}
+.heft-brief .ed-abbildung{grid-column:1;align-self:center;justify-self:center;width:64%;min-height:0;aspect-ratio:4/5;background:transparent}
+.heft-brief .ed-inhalt{grid-column:2;padding-left:0}
+.ed-vereinsheft .heft-brief h2{font:400 clamp(52px,6.2cqw,118px)/1.05 Georgia,serif;letter-spacing:-.055em}
+.heft-brief .ed-lead{font:400 clamp(20px,2cqw,34px)/1.47 Georgia,serif;max-width:30ch}
+.heft-signatur{margin-top:.65em;font:700 clamp(30px,3.2cqw,54px)/1.1 var(--h);color:var(--blau)}
+@media screen and (max-width:760px){
+ .ed-vereinsheft .ed-slide.ed-mitbild{display:flex;min-height:100%;flex-direction:column;justify-content:flex-start}
+ .ed-vereinsheft .ed-inhalt{padding:24px;align-self:stretch}
+ .ed-vereinsheft .ed-slide h2{font-size:clamp(43px,11vw,76px);margin:.22em 0 .25em}
+ .ed-vereinsheft .ed-lead{font-size:17px;line-height:1.42;max-width:49ch}
+ .ed-vereinsheft .ed-abbildung{min-height:0;flex:none}
+ .heft-auftakt .ed-inhalt,.heft-bande .ed-inhalt{order:-1;display:block}
+ .ed-vereinsheft .heft-auftakt h2{font-size:clamp(53px,14vw,88px);max-width:12ch}
+ .heft-auftakt .heft-untertitel{font-size:13px;margin-bottom:9px}
+ .ed-vereinsheft .heft-auftakt .ed-abbildung{height:auto;min-height:clamp(210px,33svh,350px);flex:1;grid-template-columns:1.42fr 1fr;gap:3px}
+ .heft-bildort{font-size:11px;padding:5px 8px}
+ .heft-verein .ed-abbildung,.heft-spieltag .ed-abbildung{margin:0;width:100%;height:clamp(156px,28svh,295px);aspect-ratio:auto}
+ .heft-verein .ed-bild,.heft-spieltag .ed-bild{object-fit:cover}
+ .heft-spieltag .ed-bild{object-position:50% 62%}
+ .heft-verein .ed-zeilen{margin-top:14px}
+ .heft-verein .ed-wege{margin-top:0}
+ .ed-vereinsheft .heft-bande .ed-abbildung{min-height:clamp(220px,41svh,360px);flex:1}
+ .ed-vereinsheft .heft-serie .ed-abbildung{height:auto;padding:20px;min-height:0}
+ .heft-serie .ed-motiv{width:min(68%,33svh)}
+ .heft-serientitel{border-width:2px}.heft-serientitel b{font-size:clamp(19px,5vw,29px)}
+ .ed-vereinsheft .heft-brief{justify-content:center;padding:25px 0}
+ .heft-brief .ed-abbildung{margin-left:24px;align-self:flex-start;width:78px;height:86px}
+ .ed-vereinsheft .heft-brief .ed-lead{font-size:21px;max-width:36ch}
+}
+@media print{
+ .ed-vereinsheft .heft-serie .ed-motiv{width:64%}
+}
+/* Der Fotograf hat beide Trainierenden über die Breite des Raums verteilt. */
+.heft-studio .ed-abbildung{align-self:center;margin:var(--rand) 0 var(--rand) var(--rand);width:calc(100% - var(--rand));min-height:0;aspect-ratio:1200/630}
+.heft-serie .ed-bild{object-position:62% 50%}
+@media screen and (max-width:760px){
+ .heft-studio .ed-abbildung{width:100%;margin:0}
+ .ed-vereinsheft .heft-spieltag .ed-abbildung,.ed-vereinsheft .heft-studio .ed-abbildung{height:clamp(195px,37svh,380px);aspect-ratio:auto}
+ .heft-studio .ed-bild{object-fit:contain;background:#19252b}
+}
 </style></head><body><div id="film" data-s="start" data-licht="1" class="anlass">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an"><picture><source media="(min-aspect-ratio:1/1)" srcset="partner/r-nacht.webp"><img class="zoom" src="partner/r-nachthoch.webp" alt=""></picture></div>
@@ -1318,6 +1416,8 @@ function redaktion(daten){
     return '';
   }
   const vereinsreise=daten.vereinsreise===true;
+  const heft=vereinsreise && daten.gestaltung==='vereinsheft';
+  const layouts=new Set(['auftakt','verein','studio','bande','spieltag','serie','brief']);
   const logo=bildpfad(daten.logo);
   function seite(f,i){
     const bild=bildpfad(f.bild)||(f.typ==='bande'?'partner/r-bande.webp':'');
@@ -1326,7 +1426,12 @@ function redaktion(daten){
     const marke=bande?'<div class="ed-bande'+(schriftzug?' ed-bande-breit':f.logoGross===true?' ed-bande-original':'')+'"><img src="'+esc(logo)+'" alt="'+esc(A.firma)+'">'+(schriftzug?'<strong'+(schriftzug.length>7?' style="font-size:'+Math.min(17,58/schriftzug.length)+'cqw"':'')+'>'+esc(schriftzug)+'</strong>':'')+'</div>':'';
     const slot=bild && !bande && /^partner\/[a-z0-9-]+\.mp4$/.test(f.film||'')?
       ' data-reise-medium data-reise-szenen="kapitel'+i+'" data-reise-video="'+esc(f.film)+'"':'';
-    const foto=bild?'<figure class="ed-abbildung"><div class="ed-motiv"'+slot+'><img class="ed-bild" src="'+esc(bild)+'" alt="'+esc(f.alt||'')+'">'+marke+'</div>'+(f.credit?'<figcaption>'+esc(f.credit)+'</figcaption>':'')+'</figure>':'';
+    const layout=heft && layouts.has(f.layout)?f.layout:'';
+    const zweites=layout==='auftakt'?bildpfad(f.zweitbild):'';
+    const ort=text=>text?'<span class="heft-bildort">'+esc(text)+'</span>':'';
+    const paar=zweites?'<div class="ed-motiv heft-zweitmotiv"><img class="ed-bild" src="'+esc(zweites)+'" alt="'+esc(f.zweitalt||'')+'">'+ort(f.zweittitel)+'</div>':'';
+    const serienkopf=layout==='serie' && f.coverzeile?'<div class="heft-serientitel"><b>'+esc(f.coverzeile)+'</b><small>'+esc(f.coverfuss||'')+'</small></div>':'';
+    const foto=bild?'<figure class="ed-abbildung"><div class="ed-motiv"'+slot+'><img class="ed-bild" src="'+esc(bild)+'" alt="'+esc(f.alt||'')+'">'+marke+(zweites?ort(f.bildtitel):'')+serienkopf+'</div>'+paar+(f.credit?'<figcaption>'+esc(f.credit)+'</figcaption>':'')+'</figure>':'';
     const rows=Array.isArray(f.zeilen)?f.zeilen.filter(z=>z&&(z.wert||z.label||z.text)):[];
     const zeilen=rows.length?'<ul class="ed-zeilen">'+rows.map(z=>'<li>'+(z.wert?'<b>'+esc(z.wert)+'</b>':'')+'<div>'+(z.label?'<strong>'+esc(z.label)+'</strong>':'')+(z.text?'<p>'+esc(z.text)+'</p>':'')+'</div></li>').join('')+'</ul>':'';
     const hinweis=[f.notiz?esc(f.notiz):'',quelle(f.quelle)].filter(Boolean).join(' · ');
@@ -1334,12 +1439,14 @@ function redaktion(daten){
     const titel=ende?esc(f.titel.slice(0,-ende.length))+'<em>'+esc(ende)+'</em>':esc(f.titel);
     const wege=vereinsreise && Array.isArray(f.wege)?f.wege.filter(w=>w && Number.isInteger(w.ziel) && w.ziel>=0 && w.ziel<folien.length && w.ziel!==i && typeof w.text==='string' && w.text.trim()):[];
     const wahl=wege.length?'<div class="ed-wege">'+wege.map(w=>'<button type="button" data-kapitel="'+w.ziel+'">'+esc(w.text)+' <span aria-hidden="true">↗</span></button>').join('')+'</div>':'';
-    return '<section class="ed-slide ed-'+f.typ+(bild?' ed-mitbild':'')+'" aria-labelledby="ed-h-'+i+'"'+(i?' hidden':'')+'>'+foto+'<div class="ed-inhalt"><div class="ed-rubrik">'+esc(f.rubrik||A.firma)+'</div><h2 id="ed-h-'+i+'">'+titel+'</h2>'+(f.text?'<p class="ed-lead">'+esc(f.text)+'</p>':'')+zeilen+wahl+(hinweis?'<p class="ed-notiz">'+hinweis+'</p>':'')+'</div><span class="ed-folio" aria-hidden="true">'+String(i+1).padStart(2,'0')+'</span></section>';
+    const untertitel=layout==='auftakt' && f.untertitel?'<p class="heft-untertitel">'+esc(f.untertitel)+'</p>':'';
+    const signatur=layout==='brief' && f.signatur?'<p class="heft-signatur">'+esc(f.signatur)+'</p>':'';
+    return '<section class="ed-slide ed-'+f.typ+(layout?' heft-'+layout:'')+(bild?' ed-mitbild':'')+'" aria-labelledby="ed-h-'+i+'"'+(i?' hidden':'')+'>'+foto+'<div class="ed-inhalt"><div class="ed-rubrik">'+esc(f.rubrik||A.firma)+'</div><h2 id="ed-h-'+i+'">'+titel+'</h2>'+untertitel+(f.text?'<p class="ed-lead">'+esc(f.text)+'</p>':'')+zeilen+wahl+signatur+(hinweis?'<p class="ed-notiz">'+hinweis+'</p>':'')+'</div><span class="ed-folio" aria-hidden="true">'+String(i+1).padStart(2,'0')+'</span></section>';
   }
   document.body.classList.add('ed-aktiv');
   const deck=document.createElement('main');
   deck.className=daten.geschichte===true?'ed-deck ed-geschichte':'ed-deck';
-  if(vereinsreise)deck.classList.add('ed-vereinsreise');
+  if(vereinsreise)deck.classList.add(heft?'ed-vereinsheft':'ed-vereinsreise');
   deck.setAttribute('aria-label',A.titel||'Partnerpräsentation');
   deck.innerHTML=folien.map(seite).join('');
   const originale=$$('.ed-bande-original img',deck);
