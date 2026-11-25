@@ -643,6 +643,224 @@ function hrHome(){ const k = document.getElementById('shHome'), x = typeof SH !=
 if(typeof shHomeKarte === 'function'){ const _k = shHomeKarte; shHomeKarte = async function(){ const r = await _k.apply(this, arguments); try{ hrHome(); }catch(e){} return r; }; }
 
 (function(){var s=document.createElement('style');s.textContent="/* Stadionheft: KI-Redaktion prüfen (svm134.js) */\n.hr-karte{border-left:4px solid var(--warn);}\n.hr-karte .hr-hot{margin:0 0 4px;font-size:15px;line-height:1.45;color:var(--ink);}\n.hr-karte .hr-st{margin:0 0 10px;}\n.hr-karte .sh-akt{margin-top:10px;}\n.hr-home{margin-top:8px!important;}\n.hr{display:flex;flex-direction:column;gap:12px;}\n.hr-kopf{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-right:44px;}\n.hr-wo{font-size:14px;font-weight:650;color:var(--ink2);}\n.hr-ab{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.45;color:var(--ink2);}\n.hr-ab b{color:var(--ink);}\n.hr-ab p{margin:4px 0 0;}\n.hr-ab ol{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;}\n.hr-ab details{margin-top:6px;}\n.hr-ab summary{cursor:pointer;min-height:32px;display:flex;align-items:center;font-weight:650;color:var(--ink);}\n.hr-orig{white-space:pre-wrap;max-height:240px;overflow:auto;}\n.hr-f{display:flex;flex-direction:column;gap:5px;margin:0;}\n.hr-f > span{font-size:13px;font-weight:650;color:var(--ink2);}\n.hr-f input,.hr-f textarea{width:100%;box-sizing:border-box;font:inherit;font-size:16px;line-height:1.5;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);}\n.hr-f textarea{resize:vertical;}\n.hr-kn{display:flex;gap:8px;flex-wrap:wrap;}\n.hr-kn .btn{min-height:44px;}\n.hr-kn .hr-raus{margin-left:auto;}\n@media (max-width:560px){ .hr-kn .btn{flex:1 1 100%;} .hr-kn .hr-raus{margin-left:0;} }\n";document.head.appendChild(s);})();
+/* =====================================================================
+   Sportzentrale Beta 0.99.167 · Zusagen für die neue Saison (Reiter „Zusagen“ im Partner-Bereich)
+   Albert, 25.11.2026: Zwei Firmen haben für 2027/28 fest zugesagt und wollen die Rechnung noch dieses Jahr. Gebraucht wird ein Ort,
+   an dem man sieht, wer fest zugesagt hat (nach Wichtigkeit, mit Kennung und Zähler wie „3 von 8“), die Rechnung vorbereitet, als PDF
+   herausgibt oder per WhatsApp teilt, und bei jeder Firma den Stand sieht: Rechnung angelegt, verschickt, von der Firma unterschrieben,
+   vom Verein unterschrieben, bezahlt. Dazu Hinweise, wo etwas hängt. Alles liegt in der Datenbank (264), diese Datei ist die Oberfläche.
+   Verschickt wird nie von selbst: Teilen, Mail und Druck tippt immer jemand selbst an.
+   ===================================================================== */
+const ZU = { d:null, laden:null, saison:null, filter:'alle', fehler:'' };
+const zuE = s => svEsc(s == null ? '' : String(s));
+function zuTag(iso){ if(!iso) return ''; const m = String(iso).slice(0, 10).split('-'); return m.length === 3 ? `${m[2]}.${m[1]}.${m[0]}` : ''; }
+function zuEur(v){ return (Math.round((+v || 0) * 100) / 100).toLocaleString('de-DE', { minimumFractionDigits:2, maximumFractionDigits:2 }) + '\u00a0€'; }
+function zuLaden(neu){
+  if(neu) ZU.laden = null;
+  if(!ZU.laden) ZU.laden = svtRpc('partner_zusagen_laden', { p_saison: ZU.saison }).then(d => { ZU.d = d; ZU.saison = d.saison; ZU.fehler = ''; return d; })
+    .catch(e => { ZU.laden = null; ZU.fehler = String((e && e.message) || e); throw e; });
+  return ZU.laden;
+}
+const ZU_STUFEN = [['haupt', 'Hauptpartner'], ['p1896', '1896 Partner'], ['premium', 'Premium Partner'], ['club', 'Club Partner'], ['supporter', 'Supporter'], ['einzel', 'Einzelne Leistung']];
+const zuStufe = k => (ZU_STUFEN.find(x => x[0] === k) || ZU_STUFEN[5])[1];
+const zuHat = (z, code) => (z.hinweise || []).some(h => h.code === code);
+const zuProbleme = z => (z.hinweise || []).filter(h => h.ernst >= 2);
+const ZU_FILTER = [
+  ['alle', 'Alle', () => true],
+  ['probleme', 'Hier hängt etwas', z => zuProbleme(z).length > 0],
+  ['ohnere', 'Noch keine Rechnung', z => !z.rechnung],
+  ['nichtraus', 'Nicht verschickt', z => z.rechnung && !z.raus_am && z.rechnung.status === 'offen'],
+  ['nichtunter', 'Nicht unterschrieben zurück', z => z.rechnung && z.rechnung.status === 'offen' && !!z.raus_am && !z.firma_am],
+  ['nichtbez', 'Nicht bezahlt', z => z.rechnung && z.rechnung.status === 'offen' && !!z.raus_am],
+  ['fertig', 'Alles erledigt', z => z.fertig]
+];
+
+// Der Zähler je Stufe: „3 von 8“, wenn der Katalog Plätze nennt
+function zuZaehler(){
+  const D = ZU.d, Z = D.zaehler || {}, ziele = D.ziele || {};
+  return ZU_STUFEN.filter(s => Z[s[0]] || +ziele[s[0]] > 0 && s[0] !== 'haupt').map(s => { const n = (Z[s[0]] && Z[s[0]].n) || 0, ziel = +ziele[s[0]] > 0 ? +ziele[s[0]] : 0;
+    return `<span class="zu-zaehl"><b>${n}${ziel ? ' von ' + ziel : ''}</b> ${zuE(s[1])}</span>`; }).join('');
+}
+
+// Fünf Schritte je Firma, mit Haken
+function zuSchritte(z){
+  const r = z.rechnung, geld = ZU.d.geld, S = [];
+  S.push({ k:'angelegt', t:'Rechnung angelegt', ok:!!r, sub:r ? `${zuE(r.nr)} vom ${zuTag(r.datum)}` : '', btn:null });
+  S.push({ k:'raus', t:'Rechnung verschickt', ok:!!z.raus_am, sub:z.raus_am ? zuTag(z.raus_am) : '', off:!r });
+  S.push({ k:'firma', t:'Von der Firma unterschrieben', ok:!!z.firma_am, sub:z.firma_am ? zuTag(z.firma_am) : '', off:!r });
+  S.push({ k:'verein', t:'Vom Verein unterschrieben', ok:!!z.verein_am, sub:z.verein_am ? zuTag(z.verein_am) : '', off:!r });
+  S.push({ k:'bezahlt', t:'Bezahlt', ok:!!(r && r.status === 'bezahlt'), sub:r && r.status === 'bezahlt' ? zuTag(r.bezahlt_am) : (r && r.faellig ? 'fällig ' + zuTag(r.faellig) : ''), off:!r });
+  return S.map(s => `<li class="${s.ok ? 'ok' : ''}"><span class="zu-hk" aria-hidden="true">${s.ok ? SVI('check') : ''}</span><span class="zu-st"><b>${s.t}</b>${s.sub ? `<small>${s.sub}</small>` : ''}</span>
+    ${geld && s.k !== 'angelegt' && !s.off ? `<button type="button" class="zu-link" data-zuschritt="${zuE(z.id)}:${s.k}:${s.ok ? 0 : 1}">${s.ok ? 'zurücknehmen' : 'Abhaken'}</button>` : ''}</li>`).join('');
+}
+
+function zuKarte(z){
+  const r = z.rechnung, D = ZU.d, hin = z.hinweise || [];
+  const doks = (z.dok || []).map(d => `<span class="zu-dok"><button type="button" class="vt-pdf" data-zudok="${zuE(d.id)}">${SVI('file')}<span><b>${zuE(d.name)}</b><small>${zuE(ZU_DOKART[d.art] || '')}${d.am ? ' · ' + zuTag(d.am) : ''}</small></span></button>${D.geld ? `<button type="button" class="zu-link" data-zudokweg="${zuE(d.id)}" aria-label="Dokument entfernen">entfernen</button>` : ''}</span>`).join('');
+  const vpdf = z.vertrag && (z.vertrag.pdfs || []).map(d => `<button type="button" class="vt-pdf" data-zuvpdf="${zuE(d.id)}">${SVI('file')}<span><b>${d.art === 'beide' ? 'Vertrag mit beiden Unterschriften' : d.art === 'partner' ? 'Vertrag wie die Firma unterschrieben hat' : zuE(d.name)}</b><small>${zuTag(d.am)}</small></span></button>`).join('') || '';
+  return `<article class="zu-k${hin.some(h => h.ernst >= 3) ? ' zu-rot' : ''}${z.fertig ? ' zu-fertig' : ''}" data-zu="${zuE(z.id)}">
+    <header><div><h4>${zuE(z.firma)}</h4><p>${zuE(z.kennung || zuStufe(z.stufe))}</p></div>
+      <div class="zu-r"><b>${z.betrag_netto != null ? zuEur(z.betrag_netto) : 'Betrag fehlt'}</b><small>netto${z.rechnung_bis ? ', Rechnung bis ' + zuTag(z.rechnung_bis) : ''}</small></div></header>
+    ${hin.length ? `<ul class="zu-hin">${hin.map(h => `<li class="e${h.ernst}">${zuE(h.text)}</li>`).join('')}</ul>` : ''}
+    <ol class="zu-schritte">${zuSchritte(z)}</ol>
+    ${z.notiz ? `<p class="vt-notiz">${zuE(z.notiz)}</p>` : ''}
+    <div class="zu-akt">
+      ${!r && D.geld ? `<button type="button" class="btn" data-zure="${zuE(z.id)}">Rechnung vorbereiten</button>` : ''}
+      ${r ? `<button type="button" class="btn" data-zusend="${zuE(z.id)}">Rechnung teilen oder drucken</button>` : ''}
+      ${!(z.adresse_ok && z.mail_ok) && D.pflegen ? `<button type="button" class="btn ghost" data-zufirma="${zuE(z.sponsor)}">Anschrift und Mail der Firma ergänzen</button>` : ''}
+      ${r && r.status === 'offen' && D.geld ? `<button type="button" class="btn ghost" data-zubez="${zuE(r.id)}:1">Als bezahlt abhaken</button>` : ''}
+      ${r && r.status === 'bezahlt' && D.geld ? `<button type="button" class="zu-link" data-zubez="${zuE(r.id)}:0">Zahlung zurücknehmen</button>` : ''}
+    </div>
+    <footer>${doks || vpdf ? `<div class="vt-pdfs">${doks}${vpdf}</div>` : ''}
+      <div class="vt-zus">${r && D.geld ? `<button type="button" class="vt-link" data-zuhoch="${zuE(z.id)}">Scan oder PDF ablegen</button>` : ''}${D.pflegen ? `<button type="button" class="vt-link" data-zuedit="${zuE(z.id)}">Bearbeiten</button>` : ''}</div></footer></article>`;
+}
+const ZU_DOKART = { rechnung:'Rechnung', rechnung_firma:'Von der Firma unterschrieben', rechnung_beide:'Mit beiden Unterschriften', angebot:'Angebot', sonst:'Sonstiges' };
+
+function zuZeigen(B){
+  if(!B) return;
+  if(!ZU.d){ B.innerHTML = `<div class="card"><div class="empty">${ZU.fehler ? zuE(ZU.fehler) : 'Lade Zusagen …'}</div></div>`;
+    if(!ZU.fehler) zuLaden().then(() => { if(B.isConnected && SPO.view === 'zusagen') zuZeigen(B); }).catch(() => { if(B.isConnected && SPO.view === 'zusagen') zuZeigen(B); }); return; }
+  const D = ZU.d, L = D.zusagen || [], f = ZU_FILTER.find(x => x[0] === ZU.filter) || ZU_FILTER[0], zeig = L.filter(f[2]);
+  const gruppen = ZU_STUFEN.map(s => [s, zeig.filter(z => z.stufe === s[0])]).filter(g => g[1].length);
+  const top = (D.hinweise || []).filter(h => h.ernst >= 2).slice(0, 4);
+  B.innerHTML = `<div class="card zu"><div class="vt-kopf"><div><h3 class="trh">Zusagen für ${zuE(D.saison_text)}</h3>
+      <p class="note">Wer hat für die neue Saison fest zugesagt, was ist mit der Rechnung, und wo hängt etwas. Nichts davon geht von selbst raus: Teilen, Mail und Druck tippst du selbst an.</p>
+      <div class="vt-chips zu-saison" role="group" aria-label="Saison">${(D.saisons || []).map(s => `<button type="button" data-zusais="${s}" class="${s === D.saison ? 'on' : ''}" aria-pressed="${s === D.saison}">${s}/${String((s + 1) % 100).padStart(2, '0')}</button>`).join('')}</div>
+      ${D.pflegen ? '<button type="button" class="btn" id="zuNeu">Zusage eintragen</button>' : ''}</div></div>
+    <div class="zu-zeile"><span class="zu-zaehl zu-sum"><b>${L.length}</b> ${L.length === 1 ? 'Zusage' : 'Zusagen'}, ${zuEur(D.summe_netto)} netto</span>${zuZaehler()}</div>
+    ${top.length ? `<div class="zu-top"><b>Das steht an</b><ul>${top.map(h => `<li class="e${h.ernst}"><button type="button" class="zu-lk" data-zuspring="${zuE(h.zusage)}"><b>${zuE(h.firma)}</b> ${zuE(h.text)}</button></li>`).join('')}</ul></div>` : ''}
+    <div class="vt-chips" role="group" aria-label="Auswahl">${ZU_FILTER.map(x => `<button type="button" data-zuf="${x[0]}" class="${x[0] === ZU.filter ? 'on' : ''}" aria-pressed="${x[0] === ZU.filter}">${x[1]} (${L.filter(x[2]).length})</button>`).join('')}</div>
+    ${gruppen.length ? gruppen.map(g => `<h4 class="zu-gr">${zuE(g[0][1])} <small>${(() => { const n = (D.zaehler[g[0][0]] || {}).n || 0, ziel = +(D.ziele || {})[g[0][0]] || 0; return ziel ? n + ' von ' + ziel : n; })()}</small></h4><div class="vt-liste">${g[1].map(zuKarte).join('')}</div>`).join('')
+      : `<div class="empty">${L.length ? 'In dieser Auswahl steht gerade nichts.' : 'Für diese Saison ist noch keine feste Zusage eingetragen.' + (D.pflegen ? ' Mit „Zusage eintragen“ legst du die erste an.' : '')}</div>`}</div>`;
+  const neu = async () => { await zuLaden(true).catch(svtErr); if(B.isConnected && SPO.view === 'zusagen') zuZeigen(B); };
+  const find = id => L.find(x => x.id === id);
+  B.querySelectorAll('[data-zusais]').forEach(b => b.onclick = async () => { ZU.saison = +b.dataset.zusais; ZU.d = null; ZU.laden = null; zuZeigen(B); });
+  B.querySelectorAll('[data-zuf]').forEach(b => b.onclick = () => { ZU.filter = b.dataset.zuf; zuZeigen(B); });
+  B.querySelectorAll('[data-zuspring]').forEach(b => b.onclick = () => { ZU.filter = 'alle'; zuZeigen(B); const k = B.querySelector(`[data-zu="${b.dataset.zuspring}"]`); if(k) k.scrollIntoView({ behavior:'smooth', block:'start' }); });
+  const nz = B.querySelector('#zuNeu'); if(nz) nz.onclick = () => zuForm(null, neu);
+  B.querySelectorAll('[data-zuedit]').forEach(b => b.onclick = () => zuForm(find(b.dataset.zuedit), neu));
+  B.querySelectorAll('[data-zure]').forEach(b => b.onclick = () => zuRechnung(find(b.dataset.zure), neu));
+  B.querySelectorAll('[data-zufirma]').forEach(b => b.onclick = () => { const x = (SPO.S || []).find(s => s.id === b.dataset.zufirma); if(x && typeof spoForm === 'function') spoForm(x); });
+  B.querySelectorAll('[data-zusend]').forEach(b => b.onclick = () => zuSenden(find(b.dataset.zusend), neu));
+  B.querySelectorAll('[data-zuhoch]').forEach(b => b.onclick = () => zuHoch(find(b.dataset.zuhoch), neu));
+  B.querySelectorAll('[data-zudok]').forEach(b => b.onclick = () => zuDok(b.dataset.zudok, b));
+  B.querySelectorAll('[data-zuvpdf]').forEach(b => b.onclick = () => vtPdf(b.dataset.zuvpdf, b));
+  B.querySelectorAll('[data-zudokweg]').forEach(b => b.onclick = async () => { if(b.dataset.sicher !== '1'){ b.dataset.sicher = '1'; b.textContent = 'Wirklich entfernen?'; return; } b.disabled = true;
+    try{ await svtRpc('partner_zusage_dok_weg', { p_id:b.dataset.zudokweg }); kToast('Dokument entfernt'); await neu(); }catch(e){ b.disabled = false; svtErr(e); } });
+  B.querySelectorAll('[data-zuschritt]').forEach(b => b.onclick = async () => { const [id, k, ja] = b.dataset.zuschritt.split(':'); b.disabled = true;
+    try{ if(k === 'bezahlt'){ const z = find(id); await svtRpc('vertrag_bezahlt', { p:{ rechnung:z.rechnung.id, bezahlt:ja === '1' } }); if(typeof PE !== 'undefined') PE.d = null; }
+      else await svtRpc('partner_zusage_schritt', { p_id:id, p_schritt:k, p_ja:ja === '1' });
+      kToast(ja === '1' ? '✓ Abgehakt' : 'Haken zurückgenommen'); await neu(); }catch(e){ b.disabled = false; svtErr(e); } });
+  B.querySelectorAll('[data-zubez]').forEach(b => b.onclick = async () => { const [id, ja] = b.dataset.zubez.split(':'); b.disabled = true;
+    try{ await svtRpc('vertrag_bezahlt', { p:{ rechnung:id, bezahlt:ja === '1' } }); kToast(ja === '1' ? '✓ Als bezahlt abgehakt' : 'Zahlung zurückgenommen'); if(typeof PE !== 'undefined') PE.d = null; await neu(); }catch(e){ b.disabled = false; svtErr(e); } });
+}
+
+// ---------- Zusage eintragen oder ändern ----------
+function zuForm(z, fertig){
+  const neu = !z, D = ZU.d, F = (SPO.S || []).slice().sort((a, b) => String(a.firma).localeCompare(String(b.firma), 'de')); z = z || {};
+  const M = svModal(`<div class="vt-sheet"><h2>${neu ? 'Zusage eintragen' : 'Zusage ändern'}</h2><p class="msub">Saison ${zuE(D.saison_text)}. Hat eine Firma fest zugesagt, trägst du sie hier ein, auch wenn der Vertrag noch nicht unterschrieben ist.</p>
+    <div class="svt-form vt-form">
+      ${neu ? `<label class="vt-breit">Firma aus der Firmenliste<select id="zfS"><option value="">Neue Firma, Name unten eintragen</option>${F.map(x => `<option value="${zuE(x.id)}">${zuE(x.firma)}</option>`).join('')}</select></label>
+        <label class="vt-breit" id="zfNL">Name der neuen Firma<input id="zfN" maxlength="120" placeholder="Name der Firma"></label>` : `<p class="vt-breit vt-firma">${zuE(z.firma)}</p>`}
+      <label>Was wurde zugesagt?<select id="zfT">${ZU_STUFEN.map(s => `<option value="${s[0]}" ${(z.stufe || 'club') === s[0] ? 'selected' : ''}>${s[1]}</option>`).join('')}</select></label>
+      <label>Betrag netto in €<input id="zfB" inputmode="decimal" value="${z.betrag_netto != null ? String(z.betrag_netto).replace('.', ',') : ''}" placeholder="z. B. 496"></label>
+      <label class="vt-breit">Kennung, was genau<input id="zfK" maxlength="120" value="${zuE(z.kennung || '')}" placeholder="z. B. Bande am Spielfeld"></label>
+      <label>Zugesagt am<input type="date" id="zfD" value="${zuE(z.zugesagt_am || '')}"></label>
+      <label>Rechnung gewünscht bis<input type="date" id="zfR" value="${zuE(z.rechnung_bis || '')}"></label>
+      <label class="vt-breit">Notiz<input id="zfNo" maxlength="1000" value="${zuE(z.notiz || '')}"></label></div>
+    <p class="vt-hin" id="zfH"></p><div class="btnrow"><button type="button" class="btn" id="zfOk">Speichern</button>${!neu && !z.rechnung ? '<button type="button" class="btn ghost" id="zfWeg">Zusage löschen</button>' : ''}</div></div>`);
+  const g = id => M.querySelector(id), H = g('#zfH'), ok = g('#zfOk');
+  if(neu){ const s = g('#zfS'), l = g('#zfNL'); s.onchange = () => { l.style.display = s.value ? 'none' : ''; }; }
+  const wg = g('#zfWeg'); if(wg) wg.onclick = async () => { if(wg.dataset.sicher !== '1'){ wg.dataset.sicher = '1'; wg.textContent = 'Wirklich löschen?'; return; }
+    try{ await svtRpc('partner_zusage_weg', { p_id:z.id }); closeOverlay(); kToast('Zusage gelöscht'); fertig && fertig(); }catch(e){ H.textContent = String((e && e.message) || e); } };
+  ok.onclick = async () => { H.textContent = ''; const bt = g('#zfB').value.trim().replace(/\s|€/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
+    if(bt && !/^\d+(\.\d{1,2})?$/.test(bt)){ H.textContent = 'Bitte den Betrag als Zahl eintragen, zum Beispiel 496 oder 496,50.'; return; }
+    ok.disabled = true;
+    try{ await svtRpc('partner_zusage_setzen', { p:{ id:z.id || null, saison:D.saison, sponsor:neu ? (g('#zfS').value || null) : null, firma_neu:neu && !g('#zfS').value ? g('#zfN').value : null,
+        stufe:g('#zfT').value, kennung:g('#zfK').value, betrag_netto:bt, zugesagt_am:g('#zfD').value || null, rechnung_bis:g('#zfR').value || null, notiz:g('#zfNo').value } });
+      closeOverlay(); kToast('✓ Zusage gespeichert'); if(typeof spoLoad === 'function'){ try{ spoLoad(true); }catch(e){} } fertig && fertig(); }
+    catch(e){ ok.disabled = false; H.textContent = String((e && e.message) || e); } };
+}
+
+// ---------- Rechnung vorbereiten ----------
+function zuRechnung(z, fertig){
+  if(!z) return; const D = ZU.d, fehlt = [];
+  if(!(+z.betrag_netto > 0)) fehlt.push('der Betrag');
+  if(!z.adresse_ok) fehlt.push('Straße, PLZ und Ort der Firma (in der Akte der Firma eintragen)');
+  const ust = 19, netto = +z.betrag_netto || 0;
+  const M = svModal(`<div class="vt-sheet"><h2>Rechnung vorbereiten</h2><p class="msub">${zuE(z.firma)}, Saison ${zuE(D.saison_text)}</p>
+    <p>Die App legt die Rechnung als Vorab-Rechnung an: ${zuE(zuStufe(z.stufe))}${z.kennung && z.stufe !== 'einzel' ? ', ' + zuE(z.kennung) : ''}, ${netto ? zuEur(netto) + ' netto' : 'Betrag fehlt'}. Sie wird <b>nicht verschickt</b>. Danach kannst du sie als PDF laden oder teilen.</p>
+    <p class="note">Gibt es später den Vertrag, hängt sich die Rechnung von selbst daran, und die erste Rechnung des Vertrags entsteht nicht noch einmal. Wortlaut und Steuersatz bitte vom Vorstand prüfen lassen.</p>
+    ${fehlt.length ? `<p class="vt-hin" style="min-height:0">Dafür fehlt noch: ${fehlt.map(zuE).join(' und ')}.</p>` : ''}
+    <label class="svt-form"><span>Zahlbar bis</span><input type="date" id="zrF"></label>
+    <p class="vt-hin" id="zrH"></p><div class="btnrow"><button type="button" class="btn" id="zrOk" ${fehlt.length ? 'disabled' : ''}>Rechnung anlegen</button></div></div>`);
+  const t = new Date(); t.setDate(t.getDate() + 14); const p = n => String(n).padStart(2, '0'); M.querySelector('#zrF').value = `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`;
+  const ok = M.querySelector('#zrOk'), H = M.querySelector('#zrH');
+  ok.onclick = async () => { ok.disabled = true; H.textContent = '';
+    try{ const r = await svtRpc('partner_vorab_rechnung', { p_zusage:z.id, p_faellig:M.querySelector('#zrF').value || null }); closeOverlay(); kToast('✓ Rechnung ' + r.nr + ' ist angelegt');
+      if(typeof PE !== 'undefined') PE.d = null; if(fertig) await fertig(); const n = (ZU.d.zusagen || []).find(x => x.id === z.id); if(n && n.rechnung) zuSenden(n, fertig); }
+    catch(e){ ok.disabled = false; H.textContent = String((e && e.message) || e); } };
+}
+
+// ---------- Rechnung als PDF, WhatsApp, Mail ----------
+function zuRechnungDaten(z){ const r = z.rechnung;
+  return { id:r.id, nr:r.nr, datum:r.datum, art:'rechnung', empfaenger:r.empfaenger || {}, positionen:r.positionen || [], netto:r.netto, ust_satz:r.ust_satz, brutto:r.brutto, faellig:r.faellig, zweck:r.zweck, zeit_von:null, zeit_bis:null, vertrag:null }; }
+async function zuPdfBlob(z){ await sxScript('vendor/jspdf.umd.min.js', () => window.jspdf && window.jspdf.jsPDF);
+  const doc = PLIB.rechnungPdf(window.jspdf.jsPDF, zuRechnungDaten(z), ZU.d.verein || {}, null); return doc.output('blob'); }
+function zuText(z){ const r = z.rechnung, vn = (ZU.d.verein && ZU.d.verein.name) || 'SV/BSC Mörlenbach';
+  return `Guten Tag${z.ansprech ? ' ' + z.ansprech : ''},\n\nvielen Dank für die Zusage zur Partnerschaft in der Saison ${ZU.d.saison_text}. Anbei die Rechnung ${r.nr} über ${zuEur(r.brutto)} (${zuEur(r.netto)} netto)${r.faellig ? ', zahlbar bis ' + zuTag(r.faellig) : ''}.\n\nHerzliche Grüße\n${vn}`; }
+function zuSenden(z, fertig){
+  if(!z || !z.rechnung) return; const r = z.rechnung, D = ZU.d, mail = z.rechnung.empfaenger && z.rechnung.empfaenger.email;
+  const M = svModal(`<div class="vt-sheet"><h2>Rechnung ${zuE(r.nr)}</h2><p class="msub">${zuE(z.firma)} · ${zuEur(r.brutto)} brutto · ${zuEur(r.netto)} netto</p>
+    <p>Hier gibst du die Rechnung heraus. Die App verschickt nichts selbst: Du wählst, wohin sie geht, und hakst danach ab.</p>
+    <div class="zu-wege">
+      <button type="button" class="btn" id="zsWa">Per WhatsApp teilen</button>
+      <button type="button" class="btn ghost" id="zsPdf">PDF laden oder drucken</button>
+      ${mail ? '<button type="button" class="btn ghost" id="zsMail">E-Mail vorbereiten</button>' : ''}
+    </div>
+    <p class="note">${mail ? 'Bei der E-Mail öffnet sich dein Mailprogramm. Das geladene PDF hängst du dort selbst an.' : 'Für die Firma ist keine E-Mail-Adresse hinterlegt.'} Bei WhatsApp öffnet sich das Teilen-Menü deines Geräts mit der PDF-Datei. Am Computer wird die Datei geladen und WhatsApp Web geöffnet.</p>
+    <p class="vt-hin" id="zsH"></p>
+    <div class="zu-raus">${z.raus_am ? `<span class="vt-ok">${SVI('check')} Als verschickt vermerkt am ${zuTag(z.raus_am)}</span>` : D.geld ? '<button type="button" class="btn ghost" id="zsRaus">Ist raus, als verschickt abhaken</button>' : ''}</div></div>`);
+  const H = M.querySelector('#zsH'), b = id => M.querySelector(id);
+  const lauf = async (fn, btn) => { btn.disabled = true; H.textContent = ''; try{ await fn(); }catch(e){ if(!(e && e.name === 'AbortError')) H.textContent = String((e && e.message) || e); } finally { btn.disabled = false; } };
+  b('#zsPdf').onclick = ev => lauf(async () => { spoDownload(await zuPdfBlob(z), r.nr + '.pdf'); }, ev.currentTarget);
+  b('#zsWa').onclick = ev => lauf(async () => { const blob = await zuPdfBlob(z), file = new File([blob], r.nr + '.pdf', { type:'application/pdf' }), text = zuText(z);
+    if(navigator.canShare && navigator.canShare({ files:[file] })){ await navigator.share({ files:[file], title:'Rechnung ' + r.nr, text }); }
+    else { spoDownload(blob, r.nr + '.pdf'); window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); H.textContent = 'Die PDF-Datei ist geladen. Hänge sie in WhatsApp an die Nachricht.'; } }, ev.currentTarget);
+  const ml = b('#zsMail'); if(ml) ml.onclick = () => { window.location.href = 'mailto:' + encodeURIComponent(mail).replace(/%40/g, '@') + '?subject=' + encodeURIComponent('Rechnung ' + r.nr + ' Partnerschaft ' + D.saison_text) + '&body=' + encodeURIComponent(zuText(z)); };
+  const rs = b('#zsRaus'); if(rs) rs.onclick = () => lauf(async () => { await svtRpc('partner_zusage_schritt', { p_id:z.id, p_schritt:'raus', p_ja:true }); closeOverlay(); kToast('✓ Als verschickt vermerkt'); fertig && fertig(); }, rs);
+}
+
+// ---------- Scan oder PDF zur Rechnung ablegen ----------
+function zuHoch(z, fertig){
+  if(!z) return;
+  const M = svModal(`<div class="vt-sheet"><h2>Dokument ablegen</h2><p class="msub">${zuE(z.firma)}, Saison ${zuE(ZU.d.saison_text)}. Zum Beispiel die unterschriebene Rechnung als Scan. Die Datei bleibt danach unverändert in der Ablage.</p>
+    <div class="svt-form"><label>Was ist es?<select id="zhA"><option value="rechnung_firma">Rechnung, von der Firma unterschrieben</option><option value="rechnung_beide">Rechnung mit beiden Unterschriften</option><option value="rechnung">Rechnung ohne Unterschrift</option><option value="angebot">Angebot</option><option value="sonst">Sonstiges</option></select></label>
+      <label>Datei (PDF, höchstens 6 MB)<input type="file" id="zhF" accept="application/pdf,.pdf"></label>
+      <label>Bezeichnung<input id="zhN" maxlength="160" placeholder="z. B. Rechnung unterschrieben, Scan"></label></div>
+    <p class="note">Bei einer unterschriebenen Rechnung setzt die App den passenden Haken von selbst.</p>
+    <p class="vt-hin" id="zhH"></p><div class="btnrow"><button type="button" class="btn" id="zhOk">Ablegen</button></div></div>`);
+  const F = M.querySelector('#zhF'), N = M.querySelector('#zhN'), H = M.querySelector('#zhH'), ok = M.querySelector('#zhOk');
+  F.onchange = () => { const f = F.files[0]; if(f && !N.value.trim()) N.value = f.name.replace(/\.pdf$/i, ''); };
+  ok.onclick = async () => { const f = F.files[0]; H.textContent = '';
+    if(!f){ H.textContent = 'Bitte eine Datei wählen.'; return; } if(f.size > 6e6){ H.textContent = 'Die Datei ist zu groß (höchstens 6 MB).'; return; } if(!N.value.trim()){ H.textContent = 'Bitte eine Bezeichnung eintragen.'; return; }
+    ok.disabled = true;
+    try{ const u = new Uint8Array(await f.arrayBuffer()); let s = ''; for(let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+      await svtRpc('partner_zusage_dok_hoch', { p:{ zusage:z.id, art:M.querySelector('#zhA').value, name:N.value.trim(), b64:btoa(s) } }); closeOverlay(); kToast('✓ Liegt in der Ablage'); fertig && fertig(); }
+    catch(e){ ok.disabled = false; H.textContent = String((e && e.message) || e); } };
+}
+async function zuDok(id, b){
+  if(b) b.disabled = true;
+  try{ const d = await svtRpc('partner_zusage_dok_pdf', { p_id:id }); const s = atob(d.data), u = new Uint8Array(s.length); for(let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); spoDownload(new Blob([u], { type:'application/pdf' }), d.name); }
+  catch(e){ svtErr(e); } finally { if(b) b.disabled = false; }
+}
+
+// Reiter einhängen: hinter der Zentrale, nur für alle, die Zusagen sehen dürfen (der Server prüft es noch einmal)
+if(typeof SPO_REITER !== 'undefined' && !SPO_REITER.some(r => r[0] === 'zusagen')){ const i = SPO_REITER.findIndex(r => r[0] === 'zentrale'); SPO_REITER.splice(i < 0 ? SPO_REITER.length : i + 1, 0, ['zusagen', 'Zusagen']); }
+if(typeof S120_GRUPPEN !== 'undefined'){ const g = S120_GRUPPEN.find(x => x[0] === 'start'); if(g && !g[2].includes('zusagen')) g[2].splice(1, 0, 'zusagen'); }
+if(typeof spoBody === 'function'){ const _b = spoBody; spoBody = function(){ if(SPO.view === 'zusagen'){ const B = document.getElementById('spoB'); if(B){ ZU.laden = null; ZU.d = null; zuZeigen(B); } return; } return _b.apply(this, arguments); }; }
+
+(function(){var s=document.createElement('style');s.textContent="/* Beta 0.99.167 · Zusagen für die neue Saison */\n.zu-zeile{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;}\n.zu-zaehl{display:inline-flex;gap:5px;align-items:baseline;font-size:12.5px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);color:var(--ink2);}\n.zu-zaehl b{font-size:13.5px;color:inherit;font-variant-numeric:tabular-nums;}\n.zu-sum{border-color:#e8741f;}\n.zu-top{border-radius:12px;padding:12px 14px;margin:0 0 14px;background:color-mix(in srgb,#e8741f 9%,transparent);font-size:14px;line-height:1.45;}\n.zu-top ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:4px;}\n.zu-top li.e3 b{color:#c2300c;}\n.zu-lk{font:inherit;text-align:left;background:none;border:0;padding:4px 0;color:inherit;cursor:pointer;min-height:34px;}\n.zu-lk b{font-weight:800;}\n.zu-gr{margin:18px 0 8px;font-size:15px;display:flex;gap:10px;align-items:baseline;}\n.zu-gr small{font-size:13px;font-weight:700;color:var(--ink3);font-variant-numeric:tabular-nums;}\n.zu-k{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px;min-width:0;}\n.zu-k.zu-rot{border-color:#c2300c;box-shadow:inset 3px 0 0 #c2300c;}\n.zu-k.zu-fertig{border-color:#1f8a4c;box-shadow:inset 3px 0 0 #1f8a4c;}\n.zu-k header{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;}\n.zu-k header>div{min-width:0;}\n.zu-k h4{margin:0;font-size:16.5px;line-height:1.25;overflow-wrap:anywhere;}\n.zu-k header p{margin:2px 0 0;font-size:13px;color:var(--ink3);overflow-wrap:anywhere;}\n.zu-r{text-align:right;flex:none;display:grid;}\n.zu-r b{font-size:15px;font-variant-numeric:tabular-nums;}\n.zu-r small{font-size:12px;color:var(--ink3);}\n.zu-hin{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px;}\n.zu-hin li{padding-left:14px;position:relative;}\n.zu-hin li::before{content:\"\";position:absolute;left:0;top:.55em;width:7px;height:7px;border-radius:50%;background:var(--ink3);}\n.zu-hin li.e3{color:#c2300c;font-weight:700;}\n.zu-hin li.e3::before{background:#c2300c;}\n.zu-hin li.e2{color:#c2570c;}\n.zu-hin li.e2::before{background:#e8741f;}\n.zu-schritte{margin:0;padding:0;list-style:none;display:grid;gap:2px;}\n.zu-schritte li{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px dashed var(--line);font-size:14px;}\n.zu-schritte li:first-child{border-top:0;}\n.zu-hk{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:#fff;}\n.zu-hk svg{width:13px;height:13px;}\n.zu-schritte li.ok .zu-hk{background:#1f8a4c;border-color:#1f8a4c;}\n.zu-st{display:grid;min-width:0;flex:1;}\n.zu-st small{font-size:12px;color:var(--ink3);}\n.zu-schritte li:not(.ok) .zu-st b{color:var(--ink2);font-weight:600;}\n.zu-link{font:inherit;font-size:13px;font-weight:600;padding:6px 4px;border:0;background:none;color:var(--ink3);text-decoration:underline;cursor:pointer;min-height:34px;flex:none;}\n.zu-akt{display:flex;flex-wrap:wrap;gap:8px;}\n.zu-dok{display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap;}\n.zu-wege{display:grid;gap:8px;margin:10px 0;}\n.zu-raus{margin-top:6px;}\n";document.head.appendChild(s);})();
 (function(){var s=document.createElement('style');s.textContent=".bd-buehne{position:relative}.bd-bearbeiten{position:absolute;right:14px;bottom:14px;min-height:44px;padding:10px 16px;border:1px solid #d8deeb;border-radius:12px;background:#fff;color:#1d2760;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 3px 14px #101e3630;cursor:pointer}.bd-bearbeiten:focus-visible,.bd-partner-dialog button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-kundenfreigabe{display:flex;gap:10px;align-items:center;min-height:44px;margin-top:16px;font-size:15px;line-height:1.4}.bd-kundenfreigabe input{width:22px;height:22px;accent-color:#1d2760}.bd-projekt-hinweis{font-size:13px;line-height:1.45;color:#596173;margin:12px 0}.bd-partner-dialog{position:fixed;inset:0;z-index:2147483300;background:#101b35b3;display:grid;place-items:center;padding:16px}.bd-partner-dialog>section{display:flex;flex-direction:column;width:min(1500px,100%);height:calc(100vh - 32px);height:calc(100dvh - 32px);max-height:1100px;overflow:hidden;background:#f5f6f9;border:1px solid #dbe1ee;border-radius:20px;box-shadow:0 24px 90px #050c2660}.bd-partner-dialog header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e4ed}.bd-partner-dialog small{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#62708c}.bd-partner-dialog h2{font:700 22px Barlow,system-ui,sans-serif;margin:3px 0;color:#1d2760}.bd-partner-dialog header button{width:44px;height:44px;border:0;border-radius:12px;background:#edf0f7;color:#1d2760;font-size:28px;cursor:pointer}.bd-partner-dialog [data-bd-status]{margin:0;padding:10px 20px;font:500 14px/1.4 Barlow,system-ui,sans-serif;color:#6b3b20;background:#fff4e6}.bd-partner-dialog [data-bd-status]:empty{display:none}.bd-partner-dialog iframe{flex:1;min-height:0;width:100%;border:0;background:#f5f6f9}.bd-partner-dialog [hidden],.bd-kundenfreigabe[hidden],.bd-bearbeiten[hidden]{display:none!important}@media(max-width:600px){.bd-partner-dialog{padding:0}.bd-partner-dialog>section{height:100vh;height:100dvh;max-height:none;border:0;border-radius:0}.bd-partner-dialog header{padding:10px 14px}.bd-bearbeiten{bottom:10px;right:10px}}\n.bd-creator-vorschau{position:relative;aspect-ratio:16/10;min-height:220px;overflow:hidden;border:1px solid #dbe1ee;border-radius:14px;background:#e9eef4}.bd-creator-vorschau canvas{display:block;position:absolute;inset:0;width:100%;height:100%}.bd-creator-projekt [hidden]{display:none!important}\n\n.bd-creator-hat-projekt .pz-tc-links>:not(.bd-creator-projekt),.bd-creator-hat-projekt .pz-tc-rechts>section:not(:first-child),.bd-creator-hat-projekt .pz-bc-felder,.bd-creator-hat-projekt .pz-bc-schalter{display:none}.bd-creator-hat-projekt .bd-creator-projekt{margin-top:0}\n.bd-motive{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.bd-motive[hidden]{display:none}.bd-motive button{min-height:44px;padding:10px 14px;border:1px solid #9caac0;border-radius:8px;background:#fff;color:#1d2760;font:600 15px/1.2 Barlow,system-ui,sans-serif;cursor:pointer}.bd-motive button[aria-pressed=\"true\"]{border-color:#1d2760;box-shadow:inset 0 -3px #e8741f}.bd-motive button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-motive button:disabled{opacity:.65;cursor:wait}\n\n.bd-bb-farben button::before{content:\"\";display:inline-block;width:.75em;height:.75em;margin-inline-end:.5em;border-radius:50%;background:#e8741f;box-shadow:inset 0 0 0 1px #0002}\n.bd-bb-farben [data-bb-farbe=\"rosa\"]::before{background:#ca0f86}\n.bd-bb-farben [aria-disabled=\"true\"]{cursor:wait}\n";document.head.appendChild(s);})();
 /* Personal presentation links, functional snapshots and voluntary later-use statistics.
    No third-party analytics, coordinates, device IDs, automatic mail or guessed probability. */
