@@ -538,6 +538,111 @@ function huArtikel(r){const pages=HV.d.seiten.filter(s=>['jugend','soma','rueckb
     await huEingang();}catch(e){m.querySelector('#huErr').textContent=e.message;}finally{busy=false;m.querySelectorAll('button').forEach(b=>b.disabled=false);if(!pages.length)m.querySelector('#huUse').disabled=true;}};
   m.querySelector('#huSave').onclick=()=>save('entwurf',false);m.querySelector('#huLater').onclick=()=>save('zurueckgestellt',false);m.querySelector('#huUse').onclick=()=>save('entwurf',true);}
 
+/* =====================================================================
+   SV/BSC Sportzentrale · Beta 0.99.166 · Stadionheft: Texte der KI-Redaktion in einem Durchgang prüfen
+   Albert, 25.11.2026: „sodass die Redaktion nur noch freigeben muss“. Seit 0.99.165 schreibt die tägliche KI-Redaktion
+   Spielberichte, Vorschau und Artikel als ungeprüfte Vorschläge ins Heft (daten.ki = 'offen').
+   Hier: eine Karte oben im Heft und auf der Startseite der Redaktion („8 Texte warten“), ein Durchgang mit einem Text je Bild
+   (lesen, ändern, abhaken oder verwerfen) und am Ende die Freigabe. Zum Abgleich stehen bei einem Spielbericht Ergebnis,
+   Halbzeit und Torfolge aus der App daneben, bei einem Artikel die Quelle mit dem Original.
+   Gespeichert wird über stadionheft_seite_inhalt (ki = 'ok'), verworfen über stadionheft_ki_verwerfen (263).
+   Hängt sich an hvHinweise (svm106.js) und shHomeKarte (svm103.js). Steht im Bündel hinter heft_upgrade.js.
+   ===================================================================== */
+const HR = { L:[], i:0, aktiv:false, start:false, stand:null, standHeft:null, quellen:null, ok:0, weg:0 };
+function hrOffen(){ return ((typeof HV !== 'undefined' && HV.d && HV.d.seiten) || []).map((s, i) => ({ s, i })).filter(x => x.s.daten && x.s.daten.ki === 'offen' && x.s.daten.text); }
+function hrSorte(s){ const d = s.daten || {}, T = (SHP_TYP[s.typ] || SHP_TYP.frei)[0]; return T + (d.art === 'bericht' ? ', Spielbericht' : d.art === 'vorschau' ? ', Vorschau' : ', Artikel'); }
+// Nach einer Freigabe lädt die Liste der Hefte neu, das offene Heft nicht: den Stand von dort nehmen
+function hrStatus(h){ try{ const x = ((typeof SH !== 'undefined' && SH.d && SH.d.hefte) || []).find(y => y.id === h.id); if(x && x.status) h.status = x.status; }catch(e){} return h.status; }
+function hrZeit(t){ const x = t ? new Date(t) : null; return x && !isNaN(x) ? x.toLocaleString('de-DE', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) + ' Uhr' : ''; }
+
+/* ---------- Karte oben im Heft ---------- */
+function hrKarte(B){ const hv = B && B.querySelector('#hv'); if(!hv || !HV.d) return; let k = hv.querySelector('#hrKarte'); const L = hrOffen(), h = HV.d.heft, kopf = hv.querySelector('.hv-kopf');
+  const kiDa = HV.d.seiten.some(s => s.daten && s.daten.ki);
+  if(!HV.d.planen || !kopf || (!L.length && !kiDa)){ if(k) k.remove(); return; }
+  if(HR.standHeft !== HV.heft){ HR.standHeft = HV.heft; HR.stand = null; const heft = HV.heft;
+    shRpc('stadionheft_auto_stand', {}).then(r => { if(HV.heft !== heft) return; HR.stand = r || {}; const b = shOrt(); if(b) hrKarte(b); }).catch(() => { HR.stand = {}; }); }
+  if(!k){ k = document.createElement('section'); k.id = 'hrKarte'; k.className = 'card hr-karte'; k.setAttribute('aria-label', 'KI-Redaktion'); kopf.after(k); }
+  const st = HR.stand || {}, status = hrStatus(h), frei = !!st.freigeben && ['entwurf', 'freigabe'].includes(status), wartet = (st.postfach || 0) - (st.andere || 0);
+  const zeile = (st.lauf ? 'Zuletzt geschrieben: ' + hvE(hrZeit(st.lauf)) + '.' : '') + (wartet > 0 ? ' Im Postfach ' + (wartet === 1 ? 'wartet ein Artikel' : 'warten ' + wartet + ' Artikel') + ' auf eine freie Seite.' : '')
+    + (st.andere > 0 ? ' ' + (st.andere === 1 ? 'Ein Beitrag gehört' : st.andere + ' Beiträge gehören') + ' nicht zur Fußballabteilung und ' + (st.andere === 1 ? 'bleibt' : 'bleiben') + ' im Postfach.' : '');
+  k.innerHTML = `<h3 class="sh-k">KI-Redaktion</h3>` + (L.length
+    ? `<p class="hr-hot"><b>${L.length === 1 ? 'Ein Text wartet' : L.length + ' Texte warten'}</b> auf deine Prüfung. Du liest jeden einmal, änderst, was nicht stimmt, und hakst ab.</p>`
+    : `<p class="hr-hot"><b>Alle Texte sind geprüft.</b>${frei ? ' Jetzt fehlt nur noch deine Freigabe.' : status === 'freigegeben' ? ' Das Heft ist freigegeben.' : ''}</p>`)
+    + (zeile.trim() ? `<p class="sh-sub hr-st">${zeile.trim()}</p>` : '')
+    + `<div class="sh-akt">${L.length ? '<button type="button" class="btn" id="hrLos">Texte prüfen</button>' : frei ? '<button type="button" class="btn" id="hrFrei">Heft freigeben</button>' : ''}${typeof huEingang === 'function' && (st.postfach || 0) > 0 ? '<button type="button" class="btn ghost" id="hrPost">Postfach</button>' : ''}</div>`;
+  const los = k.querySelector('#hrLos'); if(los) los.onclick = () => hrStart();
+  const fr = k.querySelector('#hrFrei'); if(fr) fr.onclick = () => shFreigabeDialog({ id:h.id, titel:h.titel, abgabe:h.abgabe }, true);
+  const po = k.querySelector('#hrPost'); if(po) po.onclick = () => huEingang();
+  if(HR.start){ HR.start = false; if(L.length) hrStart(); } }
+if(typeof hvHinweise === 'function'){ const _h = hvHinweise; hvHinweise = function(B){ const r = _h.apply(this, arguments); try{ hrKarte(B); }catch(e){} return r; }; }
+
+/* ---------- Der Durchgang ---------- */
+async function hrStart(){ if(typeof hvVerlassen === 'function' && !(await hvVerlassen())) return; try{ hvEdZu(); }catch(e){}
+  HR.L = hrOffen().map(x => x.i); HR.i = 0; HR.ok = 0; HR.weg = 0; if(!HR.L.length) return; HR.aktiv = true;
+  if(HR.quellen === null){ try{ HR.quellen = await shRpc('heft_redaktion_laden', {}); }catch(e){ HR.quellen = []; } }
+  hrZeigen(); hrWache(); }
+// Schließt jemand das Fenster mit dem Kreuz, zeichnet sich das Heft mit dem neuen Stand
+function hrWache(){ const O = document.getElementById('overlay'); if(!O || HR.wache) return;
+  HR.wache = new MutationObserver(() => { if(!O.classList.contains('open') && HR.aktiv){ HR.aktiv = false; hrFrisch(); } }); HR.wache.observe(O, { attributes:true, attributeFilter:['class'] }); }
+function hrFrisch(){ try{ const B = shOrt(); if(!B || !HV.d || !B.querySelector('#hvBuch')) return; hvSetzen(); hvBuch(B); hvLeiste(B); hvHinweise(B); }catch(e){} }
+// Was die App zum Text weiß: beim Spielbericht Ergebnis, Halbzeit und Tore, bei der Vorschau die nächsten Spiele, beim Artikel die Quelle
+function hrAbgleich(s){ const d = s.daten || {}, A = HV.auto || {}, sub = s.typ === 'zweite' ? 'D2' : 'A';
+  if(d.art === 'bericht'){ const g = ((A.spiele || {})[sub] || []).find(x => x.id === d.spiel); if(!g) return '<p class="note">Zu diesem Spiel liegen in der App keine Angaben mehr vor. Bitte besonders genau lesen.</p>';
+    let h = 0, a = 0, hh = 0, ha = 0; const T = [];
+    (g.v || []).forEach(e => { if(!['tor', 'elf', 'et'].includes(e.t)) return; if(e.s === 'h') h++; else a++; if(e.m <= 45){ hh = h; ha = a; }
+      T.push(`<li><b>${h}:${a}</b> ${hvE(e.m + (e.x ? '+' + e.x : ''))}. Minute, ${e.t === 'et' ? 'Eigentor' : hvE(e.n || 'Torschütze nicht bekannt')}${e.t === 'elf' ? ', Elfmeter' : ''}</li>`); });
+    const passt = h === g.th && a === g.tg;
+    return `<div class="hr-ab"><b>Zum Abgleich aus der App</b><p>${hvE(hsTagKurz(g.d))} · ${hvE(g.heim)} - ${hvE(g.gast)} · Endstand ${g.th}:${g.tg}${passt ? ' · Halbzeit ' + hh + ':' + ha : ''}</p>${passt && T.length ? '<ol>' + T.join('') + '</ol>' : g.th + g.tg > 0 ? '<p>Die Torfolge ist in der App nicht vollständig.</p>' : ''}</div>`; }
+  if(d.art === 'vorschau'){ const N = (A.naechste || []).filter(g => g.sub === sub).slice(0, 3);
+    return `<div class="hr-ab"><b>Zum Abgleich aus der App</b>${N.length ? '<ol>' + N.map(g => `<li>${hvE(hsTagKurz(g.d))}${g.z ? ', ' + hvE(String(g.z).slice(0, 5)) + ' Uhr' : ''} · ${hvE(g.heim)} - ${hvE(g.gast)}</li>`).join('') + '</ol>' : '<p>Es sind keine weiteren Spiele angesetzt.</p>'}</div>`; }
+  const q = (HR.quellen || []).find(r => r.seite === s.id); if(!q) return '';
+  const kanal = { website:'Vereinswebsite', instagram:'Instagram', facebook:'Facebook', story:'Story' }[q.kanal] || 'Quelle', sicher = /^https:\/\/[^\s"'<>]+$/.test(q.quelle || '');
+  return `<div class="hr-ab"><b>Quelle</b><p>${hvE(kanal)}${q.erschienen ? ' vom ' + hvE(shDatum(q.erschienen)) : ''}${sicher ? ` · <a href="${hvE(q.quelle)}" target="_blank" rel="noopener">Beitrag öffnen</a>` : ''}</p>${q.hinweis ? `<p>Hinweis der KI: ${hvE(q.hinweis)}</p>` : ''}<details><summary>Original lesen</summary><p class="hr-orig">${hvE(q.original || '')}</p></details></div>`; }
+function hrZeigen(){ const n = HR.L.length;
+  if(HR.i >= n) return hrEnde();
+  const i = HR.L[HR.i], s = HV.d.seiten[i], d = s.daten || {};
+  if(d.ki !== 'offen' || !d.text){ HR.i++; return hrZeigen(); }
+  const M = svModal(`<div class="hr" id="hr"><div class="hr-kopf"><span class="sh-pill warn">Text ${HR.i + 1} von ${n}</span><span class="hr-wo">Seite ${i + 1} · ${hvE(hrSorte(s))}</span></div>
+    ${hrAbgleich(s)}
+    <label class="hr-f"><span>Überschrift</span><input type="text" id="hrKopf" maxlength="200" autocomplete="off"></label>
+    <label class="hr-f"><span>Vorspann</span><textarea id="hrVor" rows="2" maxlength="1000"></textarea></label>
+    <label class="hr-f"><span>Text</span><textarea id="hrText" rows="12" maxlength="12000"></textarea></label>
+    <p class="note" id="hrF" role="alert" hidden></p>
+    <div class="hr-kn"><button type="button" class="btn" id="hrOk">Stimmt so, weiter</button><button type="button" class="btn ghost" id="hrSp">Später</button><button type="button" class="btn ghost hr-raus" id="hrWeg">Raus aus dem Heft</button></div>
+    <p class="note">Was du hier änderst, steht so im Heft. Fotos und alles Weitere setzt du auf der Seite selbst.</p></div>`);
+  M.querySelector('#hrKopf').value = d.kopf || ''; M.querySelector('#hrVor').value = d.vorspann || ''; M.querySelector('#hrText').value = d.text || '';
+  const fehler = t => { const f = M.querySelector('#hrF'); f.textContent = t; f.hidden = false; };
+  M.querySelector('#hrOk').onclick = () => paEinmal(M.querySelector('#hrOk'), async () => {
+    const neu = Object.assign({}, d, { kopf:M.querySelector('#hrKopf').value.trim(), vorspann:M.querySelector('#hrVor').value.trim(), text:M.querySelector('#hrText').value.trim(), ki:'ok' });
+    if(!neu.text){ fehler('Der Text ist leer. Soll er nicht ins Heft, nimm „Raus aus dem Heft“.'); return; }
+    const sauber = hvSauber(neu);
+    try{ await shRpc('stadionheft_seite_inhalt', { p_id:s.id, p_daten:sauber }); s.daten = sauber; HR.ok++; HR.i++; hrZeigen(); }catch(e){ fehler(e.message); } }, 'Speichert …');
+  M.querySelector('#hrSp').onclick = () => { HR.i++; hrZeigen(); };
+  const weg = M.querySelector('#hrWeg'); weg.onclick = () => { if(weg.dataset.sicher !== '1'){ weg.dataset.sicher = '1'; weg.textContent = 'Wirklich raus? Noch einmal tippen'; return; }
+    paEinmal(weg, async () => { try{ const r = await shRpc('stadionheft_ki_verwerfen', { p_seite:s.id }); s.daten = (r && r.daten) || {}; HR.weg++; HR.i++; hrZeigen(); }catch(e){ fehler(e.message); } }, 'Nimmt heraus …'); }; }
+function hrEnde(){ const rest = hrOffen().length, h = HV.d.heft, st = HR.stand || {}, frei = !!st.freigeben && ['entwurf', 'freigabe'].includes(hrStatus(h)); hrFrisch();
+  const punkte = (typeof hvHinweisListe === 'function' ? hvHinweisListe().length : 0), getan = [HR.ok ? (HR.ok === 1 ? 'Ein Text ist' : HR.ok + ' Texte sind') + ' geprüft' : '', HR.weg ? (HR.weg === 1 ? 'einer ist' : HR.weg + ' sind') + ' raus' : ''].filter(Boolean).join(', ');
+  const M = svModal(`<div class="hr" id="hrEnde"><div class="mhead"><div><h2 style="margin:0">${rest ? 'Für jetzt fertig' : 'Alle Texte sind geprüft'}</h2><div class="msub">${hvE(h.titel)}</div></div></div>
+    <p>${getan ? hvE(getan) + '. ' : ''}${rest ? (rest === 1 ? 'Ein Text wartet' : rest + ' Texte warten') + ' noch auf dich.' : frei ? 'Jetzt fehlt nur noch deine Freigabe.' : 'Das Heft kann weiter in die Freigabe.'}</p>
+    ${!rest && punkte ? `<p class="note">Unter „Vor dem Druck“ ${punkte === 1 ? 'ist noch ein Punkt' : 'sind noch ' + punkte + ' Punkte'} offen, zum Beispiel fehlende Druckvorlagen. Sieh dort einmal nach, bevor du freigibst.</p>` : ''}
+    <div class="hr-kn">${rest ? '<button type="button" class="btn" id="hrNoch">Die offenen noch einmal</button>' : frei ? '<button type="button" class="btn" id="hrFreiE">Heft freigeben</button>' : ''}<button type="button" class="btn ghost" id="hrZu">${rest || frei ? 'Später' : 'Fertig'}</button></div></div>`);
+  const noch = M.querySelector('#hrNoch'); if(noch) noch.onclick = () => hrStart();
+  const fr = M.querySelector('#hrFreiE'); if(fr) fr.onclick = () => { HR.aktiv = false; shFreigabeDialog({ id:h.id, titel:h.titel, abgabe:h.abgabe }, true); };
+  M.querySelector('#hrZu').onclick = () => { HR.aktiv = false; closeOverlay(); }; }
+
+/* ---------- Startseite der Redaktion ---------- */
+function hrHome(){ const k = document.getElementById('shHome'), x = typeof SH !== 'undefined' ? SH.hin : null; if(!k) return;
+  const hot = k.querySelector('.sh-hot'); if(hot && /\.\.\s*$/.test(hot.innerHTML)) hot.innerHTML = hot.innerHTML.replace(/\.\.(\s*)$/, '.$1');   // „am Fr., 27.11..“: das Datum bringt seinen Punkt mit
+  if(!x || !x.redaktion || !(x.ki_offen > 0) || k.querySelector('#hrHome')) return;
+  const akt = k.querySelector('.sh-akt'); if(!akt) return; const n = x.ki_offen;
+  const p = document.createElement('p'); p.className = 'sh-hot hr-home'; p.innerHTML = `Die KI-Redaktion hat <b>${n === 1 ? 'einen Text' : n + ' Texte'}</b> vorbereitet. Lies ${n === 1 ? 'ihn' : 'sie'} einmal durch und hake ab.`; akt.before(p);
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.id = 'hrHome'; b.textContent = 'Texte prüfen'; akt.prepend(b);
+  // Solange Texte ungeprüft sind, ist „Texte prüfen“ der eine deutliche Knopf
+  k.querySelectorAll('#shHomeHeft, [data-sh-hf="ja"]').forEach(e => e.classList.add('ghost'));
+  b.onclick = () => { HR.start = true; shVoll(typeof hvOeffnen === 'function' ? () => hvOeffnen(x.id) : null); }; }
+if(typeof shHomeKarte === 'function'){ const _k = shHomeKarte; shHomeKarte = async function(){ const r = await _k.apply(this, arguments); try{ hrHome(); }catch(e){} return r; }; }
+
+(function(){var s=document.createElement('style');s.textContent="/* Stadionheft: KI-Redaktion prüfen (svm134.js) */\n.hr-karte{border-left:4px solid var(--warn);}\n.hr-karte .hr-hot{margin:0 0 4px;font-size:15px;line-height:1.45;color:var(--ink);}\n.hr-karte .hr-st{margin:0 0 10px;}\n.hr-karte .sh-akt{margin-top:10px;}\n.hr-home{margin-top:8px!important;}\n.hr{display:flex;flex-direction:column;gap:12px;}\n.hr-kopf{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-right:44px;}\n.hr-wo{font-size:14px;font-weight:650;color:var(--ink2);}\n.hr-ab{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.45;color:var(--ink2);}\n.hr-ab b{color:var(--ink);}\n.hr-ab p{margin:4px 0 0;}\n.hr-ab ol{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;}\n.hr-ab details{margin-top:6px;}\n.hr-ab summary{cursor:pointer;min-height:32px;display:flex;align-items:center;font-weight:650;color:var(--ink);}\n.hr-orig{white-space:pre-wrap;max-height:240px;overflow:auto;}\n.hr-f{display:flex;flex-direction:column;gap:5px;margin:0;}\n.hr-f > span{font-size:13px;font-weight:650;color:var(--ink2);}\n.hr-f input,.hr-f textarea{width:100%;box-sizing:border-box;font:inherit;font-size:16px;line-height:1.5;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);}\n.hr-f textarea{resize:vertical;}\n.hr-kn{display:flex;gap:8px;flex-wrap:wrap;}\n.hr-kn .btn{min-height:44px;}\n.hr-kn .hr-raus{margin-left:auto;}\n@media (max-width:560px){ .hr-kn .btn{flex:1 1 100%;} .hr-kn .hr-raus{margin-left:0;} }\n";document.head.appendChild(s);})();
 (function(){var s=document.createElement('style');s.textContent=".bd-buehne{position:relative}.bd-bearbeiten{position:absolute;right:14px;bottom:14px;min-height:44px;padding:10px 16px;border:1px solid #d8deeb;border-radius:12px;background:#fff;color:#1d2760;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 3px 14px #101e3630;cursor:pointer}.bd-bearbeiten:focus-visible,.bd-partner-dialog button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-kundenfreigabe{display:flex;gap:10px;align-items:center;min-height:44px;margin-top:16px;font-size:15px;line-height:1.4}.bd-kundenfreigabe input{width:22px;height:22px;accent-color:#1d2760}.bd-projekt-hinweis{font-size:13px;line-height:1.45;color:#596173;margin:12px 0}.bd-partner-dialog{position:fixed;inset:0;z-index:2147483300;background:#101b35b3;display:grid;place-items:center;padding:16px}.bd-partner-dialog>section{display:flex;flex-direction:column;width:min(1500px,100%);height:calc(100vh - 32px);height:calc(100dvh - 32px);max-height:1100px;overflow:hidden;background:#f5f6f9;border:1px solid #dbe1ee;border-radius:20px;box-shadow:0 24px 90px #050c2660}.bd-partner-dialog header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e4ed}.bd-partner-dialog small{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#62708c}.bd-partner-dialog h2{font:700 22px Barlow,system-ui,sans-serif;margin:3px 0;color:#1d2760}.bd-partner-dialog header button{width:44px;height:44px;border:0;border-radius:12px;background:#edf0f7;color:#1d2760;font-size:28px;cursor:pointer}.bd-partner-dialog [data-bd-status]{margin:0;padding:10px 20px;font:500 14px/1.4 Barlow,system-ui,sans-serif;color:#6b3b20;background:#fff4e6}.bd-partner-dialog [data-bd-status]:empty{display:none}.bd-partner-dialog iframe{flex:1;min-height:0;width:100%;border:0;background:#f5f6f9}.bd-partner-dialog [hidden],.bd-kundenfreigabe[hidden],.bd-bearbeiten[hidden]{display:none!important}@media(max-width:600px){.bd-partner-dialog{padding:0}.bd-partner-dialog>section{height:100vh;height:100dvh;max-height:none;border:0;border-radius:0}.bd-partner-dialog header{padding:10px 14px}.bd-bearbeiten{bottom:10px;right:10px}}\n.bd-creator-vorschau{position:relative;aspect-ratio:16/10;min-height:220px;overflow:hidden;border:1px solid #dbe1ee;border-radius:14px;background:#e9eef4}.bd-creator-vorschau canvas{display:block;position:absolute;inset:0;width:100%;height:100%}.bd-creator-projekt [hidden]{display:none!important}\n\n.bd-creator-hat-projekt .pz-tc-links>:not(.bd-creator-projekt),.bd-creator-hat-projekt .pz-tc-rechts>section:not(:first-child),.bd-creator-hat-projekt .pz-bc-felder,.bd-creator-hat-projekt .pz-bc-schalter{display:none}.bd-creator-hat-projekt .bd-creator-projekt{margin-top:0}\n.bd-motive{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.bd-motive[hidden]{display:none}.bd-motive button{min-height:44px;padding:10px 14px;border:1px solid #9caac0;border-radius:8px;background:#fff;color:#1d2760;font:600 15px/1.2 Barlow,system-ui,sans-serif;cursor:pointer}.bd-motive button[aria-pressed=\"true\"]{border-color:#1d2760;box-shadow:inset 0 -3px #e8741f}.bd-motive button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-motive button:disabled{opacity:.65;cursor:wait}\n\n.bd-bb-farben button::before{content:\"\";display:inline-block;width:.75em;height:.75em;margin-inline-end:.5em;border-radius:50%;background:#e8741f;box-shadow:inset 0 0 0 1px #0002}\n.bd-bb-farben [data-bb-farbe=\"rosa\"]::before{background:#ca0f86}\n.bd-bb-farben [aria-disabled=\"true\"]{cursor:wait}\n";document.head.appendChild(s);})();
 /* Personal presentation links, functional snapshots and voluntary later-use statistics.
    No third-party analytics, coordinates, device IDs, automatic mail or guessed probability. */
