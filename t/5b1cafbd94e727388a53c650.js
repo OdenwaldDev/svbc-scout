@@ -13,11 +13,11 @@ const PS_DATEI='Partnersheet-2027-28.pdf', PS_SAISON='2027/28';
 const psUrl=()=>{ try{ return new URL('formulare/'+PS_DATEI,location.href).href; }catch(e){ return 'formulare/'+PS_DATEI; } };
 function psKarte(){
   const admin=typeof isAdmin==='function'&&isAdmin(), drive=typeof OG!=='undefined'&&OG.ue&&OG.ue.drive;
-  const stufen=Object.values(SPO_STUFE).map(s=>`<span><b>${svEsc(s.t)}</b>${spoEur(s.p)}${s.max?` · max. ${s.max}`:''}</span>`).join('');
+  const stufen=Object.entries(SPO_STUFE).map(([k,s])=>`<span><b>${svEsc(k==='supporter'?'Club Supporter':s.t)}</b>${spoEur(s.p)}${s.max?` · max. ${s.max}`:''}</span>`).join('');
   return `<div class="card ps-karte" id="psKarte">
     <a class="ps-bild" href="formulare/${PS_DATEI}" target="_blank" rel="noopener" aria-label="Partnerblatt ansehen"><img src="formulare/Partnersheet-2027-28-vorschau.jpg" alt="Partnerblatt ${PS_SAISON}, Seite 1" loading="lazy"></a>
     <div class="ps-txt"><h3>Partnerblatt ${PS_SAISON}</h3>
-      <p>Stufen, Leistungen und Preise auf zwei Seiten, zum Weitergeben an Firmen. Partner des Tages: Supporter 189 €, Club 169 €, Premium 149 €, beim 1896 Partner ist ein Heimspiel inklusive.</p>
+      <p>Die vier Pakete mit Saisonbeiträgen, Bandenformaten und dem Auftritt im Stadionheft „Doppelpass“. Auf Seite drei stehen die Möglichkeiten für Heimspiele und Ärmel.</p>
       <div class="ps-stufen">${stufen}</div>
       <div class="ps-btns"><a class="btn" href="formulare/${PS_DATEI}" target="_blank" rel="noopener">${SVI('file')} Ansehen</a>
         <button type="button" class="btn ghost" id="psTeilen">${SVI('share')} Weitergeben</button>
@@ -579,6 +579,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.164',v:'0.99.164',datum:'2026-11-25',titel:'Partnerpräsentation und Spieltagsstudio',kurz:'Der persönliche Link führt wieder zur Vorschau. Das Partnerblatt zeigt die Pakete für 2027/28.',punkte:[{ic:'i',t:'Präsentation erneut öffnen',d:'Vom Paketbereich kommt ihr zurück in die Vereinspräsentation. Die gespeicherte Auswahl bleibt verfügbar.',r:'team'},{ic:'i',t:'Heimspiel und Ergebnis',d:'Die Motive folgen der Vereinsvorlage. Beim Abruf der Aufstellung übernimmt das Studio die veröffentlichten Rückennummern aus dem Spielbericht.',r:'team'}]},
   {id:'0.99.163',v:'0.99.163',datum:'2026-11-24',titel:'Deine Mannschaft unter Heute',kurz:'Haupt- und Co-Trainer der Ersten und Zweiten sehen die nächste Einheit und das nächste Spiel ihrer Mannschaft unter Heute.',punkte:[{ic:'i',t:'Wer kommt zum Training?',d:'Öffne die Rückmeldungen zur Einheit oder schau nach, wer in den nächsten Wochen fehlt.',r:'team'},{ic:'i',t:'Reicht der Kader?',d:'In einer Spielabstimmung kannst du dich erinnern lassen, wenn kurz vor Anstoß weniger als elf Spieler fest zugesagt haben.',r:'team'}]},
   {id:'0.99.162',v:'0.99.162',datum:'2026-11-24',titel:'BB-Bande in Originalrosa',kurz:'Auf der BB-Bande kannst du zwischen Vereinsorange und dem Rosa von BB wechseln.',punkte:[{ic:'i',t:'Vorschau am Bandenmotiv',d:'KREATIV und EVENT sitzen jetzt auf beiden Seiten im gleichen Abstand zum Zeichen.',r:'team'}]},
   {id:'0.99.161',v:'0.99.161',datum:'2026-11-24',titel:'Die Bande von BB Berns&Baltz',kurz:'Auf der BB-Bande steht links KREATIV und rechts EVENT. Das BB-Signet sitzt in der Mitte.',punkte:[{ic:'i',t:'Vorschau im Partnerlink',d:'Im persönlichen Link lässt sich die BB-Bande neben dem eigenen Motiv für Mörlens auswählen.',r:'team'}]},

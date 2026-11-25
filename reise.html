@@ -1361,7 +1361,7 @@ html.zeiger .spot{opacity:1}
     <img class="sz-bild" data-fuer="0" src="partner/stadion-clubhaus-original.jpg" alt=""><div class="sz-bild" data-fuer="1"><img src="partner/jugendtraining-am-platz.webp" alt="Inszenierte Trainingsszene im Vereinstrikot"><small class="motiv-credit">KI-inszenierte Vereinsszene</small></div><img class="sz-bild" data-fuer="2" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="3" src="partner/r-zeltlager.webp" alt=""><div class="sz-bild" data-fuer="4" data-reise-medium data-reise-szenen="worum" data-reise-teil="4" data-reise-video="partner/r-rasen.mp4"><img src="partner/r-rasen.webp" alt=""></div><img class="sz-bild" data-fuer="5" src="partner/r-ferienspiele.webp" alt="">
     <div class="in">
       <div class="streifen" id="worum">
-        <p class="fz">Seit <em>1896</em> gehört Sport hier zum Ort.</p>
+        <p class="fz"><em>1896</em> fing es mit Turnen an.</p>
         <p class="fz">Heute spielen hier fast <em>300 Kinder</em> Fußball.</p>
         <p class="fz">Am Rand stehen Eltern, Nachbarn, <em>Kollegen.</em></p>
         <p class="fz">Im Sommer geht es zusammen ins <em>Zeltlager.</em></p>
@@ -1570,7 +1570,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.163';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.164';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -2593,7 +2593,7 @@ if(navigator.webdriver)window.REISE_PRUEF={notiz:()=>reiseNotiz(),stand:()=>S,ze
 let notizAlt='';
 function reiseMelden(){ try{ const n=reiseNotiz(); if(!n||n===notizAlt||window.parent===window)return; notizAlt=n; window.parent.postMessage({reise:'notiz',notiz:n},location.origin); }catch(e){} }
 // Die Wahl geht nur mit, wenn die Firma Ja gesagt hat. Vorher ist das Paket nur ein Vorschlag und darf nicht in den Vertrag rutschen.
-function reiseFertig(){ try{ window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz(),
+function reiseFertig(){ try{ merken(); window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz(),
   wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],anzug_team:S.anzugTeam||null,anzug_seite:S.anzugSeite||AERMEL_SEITE,saisons:S.laufzeit,auto:!!S.verl,beginn:KONDITIONEN?KONDITIONEN.beginn:'2027-07-01'}:null},location.origin); }catch(e){} }
 /* ---------- Speichern, Spur und Wiederkommen (0.99.76, R12, R15, R17) ----------
    Der Rahmen in partner.html kennt den persönlichen Link und spricht mit dem Server (partner_reise_stand, partner_reise_merken).

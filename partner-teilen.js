@@ -52,7 +52,7 @@
     if(internal)localWrite('pd-vorschau:'+cfg.code,String(Date.now()));
     const snap=loaded?.snapshot||null;
     const kurz=!!snap&&new URLSearchParams(location.search).get('kurz')==='1'&&snap.stand?.paket==='club'&&snap.wahl?.positionen?.some(p=>['aermel_anzug_r','aermel_anzug_l'].includes(p.key));
-    post({reise:'teilen-kontext',kurz,termin:!!cfg.intern(),merken:true,stand:snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
+    post({reise:'teilen-kontext',kurz,termin:!!cfg.intern(),merken:true,stand:latestStand||snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
   }
   function rahmenBereit(f){if(f&&f===frame())frameReady=f;if(cfg)context();}
   function focusables(d){return [...d.querySelectorAll('button,a[href],input,select,textarea,[tabindex]')].filter(x=>!x.disabled&&x.tabIndex>=0&&x.getClientRects().length);}

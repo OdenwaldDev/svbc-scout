@@ -228,6 +228,14 @@
     auftrittStart();
     direktBereit=true;
     $('#pdDirektAngebot').onclick=angebotAnzeigen;
+    const reiseLink=$('#heroVerein');
+    reiseLink.onclick=e=>{
+      if(!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey&&typeof window.partnerReiseOeffnen==='function'){
+        e.preventDefault();
+        history.replaceState(history.state,'',reiseLink.href);
+        window.partnerReiseOeffnen();
+      }
+    };
     angebotEinstiegAktualisieren();
     paketfassungSenden();
     const einstieg=new URLSearchParams(location.search);
@@ -346,7 +354,9 @@
   function heroText(){ const P=((D||{}).deck||{}).passung||{};
     const da=dabeiArt(); if(da==='spende')return 'Danke für deine Spende. Die Angaben zum Überweisen stehen weiter unten.';
     if(da)return dabeiFest()?'Euer Betrieb ist Partner des SV/BSC. Was ihr gebucht habt und die Rechnung stehen weiter unten.':'Deine Unterschrift ist bei uns. Was ihr gebucht habt und die Vertragsbedingungen stehen weiter unten.';
-    return P.hero?esc(P.hero):'Bei uns lernen Kinder aus dem Ort Fußball. Vielleicht kennst du manche schon, aus der Nachbarschaft oder weil ihre Eltern bei euch arbeiten.'; }
+    const h=String(P.hero||'').trim();
+    const veraltet=/sap.{0,12}daten.*klare prozesse/i.test(h)&&/260 kinder/i.test(h)&&/arbeit im hintergrund/i.test(h);
+    return h&&!veraltet?esc(h):'Fast 300 Kinder spielen bei uns Fußball. Hier könnt ihr euch die Banden am Platz und die Partnerpakete für die nächste Saison ansehen.'; }
   const STUFEN=()=>L.filter(l=>l.art==='paket'&&l.preis!=null).sort((a,b)=>(STUFE.indexOf(a.key)+1||9)-(STUFE.indexOf(b.key)+1||9)||+a.preis-+b.preis);
   const bausteinListe=w=>L.filter(l=>(l.key!=='bande_erste'||bandenzusatzErlaubt())&&(D.paketfassung!==2||l.key!=='jobpost')&&l.bereich===w&&l.art!=='paket'&&!['spende','sonstiges'].includes(l.art)&&l.preis!=null&&(!['aermel_anzug_l','aermel_anzug_r'].includes(l.key)||M.some(m=>frei(l,m.id)>0)));
   const hatPaket=()=>S.korb.some(e=>(lk(e.key)||{}).art==='paket');
@@ -373,6 +383,11 @@
   function geruest(){
     const dk=D.deck, P=dk.passung||{}, kurz=dk.kurzname||dk.firma, nJ=M.length, hatPassung=P.titel||P.text||(P.punkte||[]).length, V=D.verein||{};
     const st=STUFEN();
+    const vergleich=Array.isArray(D.saisonvergleich)?D.saisonvergleich:[];
+    const saisonkarte=l=>`<details class="pk-vergleich-karte"><summary><b>${esc(l.titel)}</b><span>${l.preis!=null?eur(l.preis):'Vergeben'}</span></summary><ul>${(l.punkte||[]).map(t=>`<li>${esc(t)}</li>`).join('')}</ul></details>`;
+    const reiseUrl=new URL(location.href);
+    for(const k of ['angebot','entwurf','stadion','kurz'])reiseUrl.searchParams.delete(k);
+    reiseUrl.searchParams.set('reise','1');
     app.innerHTML=`
 <header class="top"><div class="top-in">
   <a class="top-w" href="#start" data-zu="start"><img src="${WAPPEN}" width="320" height="182" alt=""><b>SV/BSC Mörlenbach</b></a>
@@ -386,7 +401,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     <div class="hero-f">${dk.logo?`<img class="hero-w" src="${WAPPEN}" width="320" height="182" alt="SV/BSC Mörlenbach"><span class="und">und</span><span class="top-p${dk.logo_hell===false?' dk':''}">${logoImg()}</span>`:`<span>Für ${esc(dk.firma||kurz)}</span>`}</div>
     <h1 id="heroH">${heroTitel()}</h1>
     <p id="heroP">${heroText()}</p>
-    <div class="runter-z"><button class="runter" type="button" id="pdDirektAngebot" hidden>Zum Angebot</button><button class="runter" type="button" data-zu="auftritt">Euren Auftritt ansehen</button><button class="textknopf" type="button" data-zu="verein" id="heroVerein">Erst den Verein kennenlernen</button></div></div>
+    <div class="runter-z"><button class="runter" type="button" id="pdDirektAngebot" hidden>Zum Angebot</button><button class="runter" type="button" id="heroAuftritt" data-zu="auftritt">Euren Auftritt ansehen</button><a class="textknopf" id="heroVerein" href="${esc(reiseUrl.href)}">Vereinspräsentation öffnen</a></div></div>
   </div></section>
 <section class="sec grau" id="auftritt"><div class="ww">
   <div class="sk"><h2 class="g">Euer Auftritt</h2><p class="lead" id="aufLead">So sieht ${esc(kurz)} bei uns aus.</p></div>
@@ -433,7 +448,8 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   <div class="zl rv" id="zlL"></div>
   <p class="zl-f" id="zlF" hidden></p></div></section>
 <section class="sec" id="pakete"><div class="ww">
-  <div class="sk"><h2 class="g" id="pkH">${st.length===4?'Die vier Pakete':'Die Pakete'}</h2><p class="lead" id="pkLead">Jedes Paket gilt für eine Saison und kommt dem ganzen Verein zugute. Die Preise stehen auf den Karten, alle netto.</p></div>
+   ${vergleich.length?`<div class="pk-vergleich"><h2 class="g">Partnerpakete 2027/28</h2><p>Die Beiträge gelten netto pro Saison. Tippt auf ein Paket, um die Leistungen zu sehen.</p>${vergleich.map(saisonkarte).join('')}${D.saisonhauptpartner?saisonkarte(D.saisonhauptpartner):''}</div>`:''}
+  <div class="sk"><h2 class="g" id="pkH">${st.length===4?'Die vier Pakete':'Die Pakete'}</h2><p class="lead" id="pkLead">Jedes Paket gilt für eine Saison und kommt dem ganzen Verein zugute. Die Preise stehen auf den Karten, alle netto.</p>${D.paketfassung===1?'<p>Für die Auswahl über diesen Link gilt der frühere Paketstand.</p>':''}<a class="textknopf" href="https://svbsc.kaderwerk.pro/formulare/Partnersheet-2027-28.pdf" target="_blank" rel="noopener">Aktuelles Partnerblatt 2027/28 (PDF)</a></div>
   <div class="pk-liste" id="pkListe" role="list" aria-label="Pakete"></div><div class="punkte" id="pkDots" aria-hidden="true"></div>
   <div class="pk-nach" id="pkNach" aria-live="polite"></div>
   <div class="fr-box" id="wunsch"${(D.deck||{}).empfehlung?' hidden':''}><button type="button" class="fr-auf" id="frAuf" aria-expanded="false" aria-controls="frIn"><b>Unsicher, welches passt?</b><span>Drei kurze Fragen, freiwillig. Danach markieren wir das passende Paket.</span></button>
@@ -677,7 +693,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     if(bd)bd.hidden=w!=='bande'||!AUF.bd;
     if(tk)tk.hidden=w!=='trikot'||!AUF.tkDa;
     document.querySelectorAll('[data-auf]').forEach(b=>{ const an=b.dataset.auf===w; b.classList.toggle('on',an); b.setAttribute('aria-pressed',String(an)); });
-    if(w==='trikot'&&!AUF.tk){ AUF.tk=true; tkAufbauen().then(()=>{ if(tk&&tk.hidden&&AUF.an==='trikot'){ AUF.tkDa=false; AUF.tkAus=true; const b=document.querySelector('[data-auf="trikot"]'); if(b)b.hidden=true; aufSeg(); aufZeigen('bande'); stationenNeu(); } }); }
+    if(w==='trikot'&&!AUF.tk){ AUF.tk=true; tkAufbauen().then(()=>{ if(tk&&tk.hidden&&AUF.an==='trikot'){ AUF.tkDa=false; AUF.tkAus=true; const b=document.querySelector('[data-auf="trikot"]'); if(b)b.hidden=true; aufSeg(); aufText(); $('#auftritt').hidden=!AUF.bd; aufZeigen('bande'); stationenNeu(); } }); }
     if(w==='bande')bandeStart();
     if(tippen)tipp(); }
   function aufSeg(){ const seg=$('#aufSeg'); if(!seg)return; seg.hidden=!(AUF.bd&&AUF.tkDa); }
@@ -838,10 +854,9 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // Ein Knopf im Einstieg: vorher zu den Paketen, nach der Unterschrift zu dem, was gebucht ist
   // 0.99.55 Trichter: Oben keine Paketwahl. Erst der eigene Auftritt, dann die Gründe, dann der Verein, erst danach die Pakete.
   function heroZiel(){ const a=$('#auftritt'), w=$('#wirkung'); if(a&&!a.hidden)return ['Euren Auftritt ansehen','auftritt']; if(w&&!w.hidden&&$('#passung'))return ['Warum wir an euch gedacht haben','wirkung']; return ['Den Verein kennenlernen','verein']; }
-  function heroKnoepfe(){ const a=$('.runter'); if(!a)return; const da=dabeiArt(), set=(t,z)=>{ if(a.textContent!==t)a.textContent=t; a.dataset.zu=z; };
-    const v=$('#heroVerein'); if(v)v.hidden=!!da;
+  function heroKnoepfe(){ const a=$('#heroAuftritt'); if(!a)return; const da=dabeiArt(), set=(t,z)=>{ if(a.textContent!==t)a.textContent=t; a.dataset.zu=z; };
     if(da)return set(da==='spende'?'Zur Spende':dabeiFest()?'Paket und Bankdaten':'Paket und Vertrag','abschluss');
-    const hz=heroZiel(); set(hz[0],hz[1]); if(v)v.hidden=hz[1]==='verein'; }
+    const hz=heroZiel(); set(hz[0],hz[1]); }
   function fragenFertig(){ const wu=$('#wunsch'); if(wu)wu.hidden=fertig()||!!(D.deck||{}).empfehlung; const pa=$('#passung'); if(pa)pa.hidden=fertig(); const wi=$('#wirkung'), bw=$('#bewegtW'); if(wi)wi.hidden=fertig()||(!(bw&&bw.innerHTML.trim())&&!(pa&&!pa.hidden));
     heroKnoepfe(); const F=$('#fragen'); if(F){ F.inert=fertig(); F.classList.toggle('eingefroren',fertig()); } frNeu(); stationenNeu(); }
   function fragen(){
@@ -929,14 +944,14 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       <h3 class="pk-n">${esc(l.titel)}</h3>${zeigW?`<p class="pk-wid">${esc(wd.titel)}</p>${wd.text?`<p class="pk-widt">${esc(wd.text)}</p>`:''}`:''}${l.kurz?`<p class="pk-h">${esc(l.kurz)}</p>`:''}
       <div class="pk-p"><b>${eur(l.preis)}</b><span>${esc(PLIB.EINHEIT[l.einheit]||'')}, netto</span></div>
       <ul class="pk-l">${punkte.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
-      ${marke||l.key==='p1896'?`<div class="pk-v">${marke}${l.key==='p1896'?'<span class="stp">Branchenexklusiv</span>':''}</div>`:''}
+      ${marke||(l.key==='p1896'&&D.paketfassung!==2)?`<div class="pk-v">${marke}${l.key==='p1896'&&D.paketfassung!==2?'<span class="stp">Branchenexklusiv</span>':''}</div>`:''}
       ${knopfHtml(l,null,'pk-b'+(orange?' p':''),['Dieses Paket nehmen','✓ Gewählt','nehmen'])}</article>`; }
   function pakete(){ const S0=$('#pakete'), Lp=$('#pkListe'); if(!S0||!Lp)return; const st=STUFEN();
     S0.hidden=!st.length||(fertig()&&!S.alleAuf); if(S0.hidden){ stationenNeu(); return; }
     const emp=fertig()?null:paketEmpfehlung(), sl=Lp.scrollLeft, erst=!Lp.firstElementChild;
     const reihe=emp?st.slice().sort((a,b)=>(b.key===emp.key)-(a.key===emp.key)):st;   // 0.99.55: die Empfehlung steht vorn
     { const kz=(D.deck||{}).kurzname||(D.deck||{}).firma||'euch', h=$('#pkH'), ld=$('#pkLead');
-      if(h)h.textContent=emp?'Unser Vorschlag für euch':(st.length===4&&D.paketfassung!==2?'Die vier Pakete':'Die Pakete');
+      if(h)h.textContent=D.paketfassung===1?'Pakete aus der bisherigen Präsentation':emp?'Unser Vorschlag für euch':'Die Pakete';
       if(ld)ld.textContent=emp?`Dieses Paket passt zu ${kz} am besten, es steht deshalb vorn. Die anderen Stufen seht ihr daneben. Jedes Paket gilt für eine Saison, alle Preise netto.`:'Jedes Paket gilt für eine Saison und kommt dem ganzen Verein zugute. Die Preise stehen auf den Karten, alle netto.'; }
     const haupt=D.paketfassung===2&&D.hauptpartner;
     Lp.innerHTML=reihe.map(l=>paketKarte(l,emp)).join('')+(haupt?`<article class="pk-k" role="listitem"><span class="pk-tag">Vergeben</span><h3 class="pk-n">${esc(haupt.titel)}</h3><ul class="pk-l">${haupt.punkte.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></article>`:''); Lp.scrollLeft=sl;

@@ -4,7 +4,7 @@
     toreNeu:Array.isArray(N.tore) && sgQuelleNeu(N.toreQ,Q.tore,N.toreQV,alt.tore) && Q.tore.length > 0,
     elfNeu:Array.isArray(N.start) && sgQuelleNeu(N.elfQ,[Q.start,Q.bank],N.elfQV,[alt.start,alt.bank]) && Q.start.length > 0 };
   D.tore = (Array.isArray(N.tore) ? N.tore : Q.tore).map(t => { const p = t.wir ? person(t) : {}, v = t.wir && t.vorlage && t.vorlage !== '-' ? person({fupa:t.vfupa}) : {};
-    return { key:t.key || '', fupa:t.fupa || '', vfupa:t.vfupa || '', m:+t.m || 0, x:+t.x || 0, wir:!!t.wir, art:['elf','et'].includes(t.art) ? t.art : '', name:t.name || '', vorlage:t.vorlage || '', nr:p.nr, bild:p.bild || '', vnr:v.nr, vbild:v.bild || '' }; })
+    return { key:t.key || '', fupa:t.fupa || '', vfupa:t.vfupa || '', m:+t.m || 0, x:+t.x || 0, wir:!!t.wir, art:['elf','et'].includes(t.art) ? t.art : '', name:t.name || '', vorlage:t.vorlage || '', nr:t.wir?tornummer(t):null, bild:p.bild || '', vnr:v.fupa?tornummer({fupa:v.fupa}):null, vbild:v.bild || '' }; })
     .sort((a, b) => a.m - b.m || a.x - b.x);
   const mit = (p, bank) => { const k = person(p); return { key:p.key || '', fupa:p.fupa || '', name:p.name || '', nr:nummer(p), nrHand:Object.prototype.hasOwnProperty.call(p,'nr')&&p.nrHand!==false, bild:k.bild, tw:p.tw != null ? !!p.tw : k.tw, c:!!p.c, ein:bank ? p.ein || '' : '' }; };
   D.start = (Array.isArray(N.start) ? N.start : Q.start).map(p => mit(p, false)).sort(nachNr);
@@ -26,7 +26,7 @@ async function sgAssets(D){ const S = SG.satz, A = { portrait:new Map(), echtH:f
     pkBild(pkWappenQuelle(VEREIN && VEREIN.texte ? VEREIN.texte.name : 'SV/BSC Mörlenbach') || 'plakat/wappen/svbsc-moerlenbach.webp').then(i => i || pkBild('plakat/wappen/svbsc-moerlenbach.webp')),
     (async () => { if(/^bib:/.test(D.wappen || '')){ const u = await sbUrl(D.wappen.slice(4)); const im = u ? await pkBild(u) : null; if(im) return im; } return pkBild(pkWappenQuelle(D.gegner)); })(), pkBild(uH), pkBild(uE)]);
   await Promise.all(bilder.map(async b => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(b) : null; if(u){ const im = await pkBild(u); if(im) A.portrait.set(b, im); } }));
-  return Object.assign(A, { wWir, wGeg, fotoH, fotoE, eigene, bibliothek:bib, fotoWahlH:quelleH, fotoWahlE:quelleE }); }
+  return Object.assign(A, { wWir, wGeg, fotoH:sgArchivFoto(fotoH,quelleH), fotoE:sgArchivFoto(fotoE,quelleE), eigene, bibliothek:bib, fotoWahlH:quelleH, fotoWahlE:quelleE }); }
 
 /* ---------- Prüfen (Spezifikation 7.3 und 9.1): was fehlt, sagt die Karte in einem Satz ---------- */
 function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[], notizen:[] }, U = ueber || {};
@@ -180,7 +180,7 @@ function sgPortraitStand(b,A){
 /* Prüfsumme des Stands, den eine Freigabe meint: alles, was im Motiv zu sehen ist */
 function sgStandHash(m, D){ const k = [SG_VERSION[m], D.wettbewerb, D.saison, D.nr, D.datum, D.heim, D.gast, D.wappen];
   k.push('Texte 1.0', D.ort, sgTexte(m, D));
-  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 3 · Farblook 1',w.art==='auto'?sgFotoAuto(D,feld).id:w,D.bildausschnitt?.[m]||{});}
+  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 4',w.art==='auto'?(sgVereinsmotiv(D,feld)?.url||sgFotoAuto(D,feld).id):w,D.bildausschnitt?.[m]||{});}
   const automatisch = SG.A?.fotoWahlE;
   if (m === 'E' && sgFotoWahl(D.fotoE).art === 'auto' && automatisch?.pfad &&
       automatisch.spiel === D.spiel && automatisch.datum === D.datum) k.push(automatisch.pfad);
@@ -377,7 +377,7 @@ function sgSpielerSetzen(p, id, vorlage){ const vorher=sgPerson(SG.d.sub)(p).fup
   else { p.key = ''; p.fupa = k ? String(k.id) : ''; if(k){ p.name = sgKaderName(k); if('nr' in p&&p.nrHand===false)p.nr=k.nr===''||k.nr==null?null:+k.nr;if('tw'in p&&vorher!==String(k.id))p.tw=k.pos==='TW'; } }
 }
 function sgNummerSetzen(p,wert){p.nr=wert===''?null:Math.max(0,Math.round(+wert));p.nrHand=true;}
-function sgListenHtml(){ return '<p class="sg-hin">' + (sgKaderListe(SG.d.sub).some(p=>sgKaderId(SG.d.sub,p.id)) ? 'Foto und Nummer werden nur bei eindeutiger Zuordnung ergänzt. Fehlt sie, wähle den Spieler im Kader. Eine Namensänderung löst die Zuordnung. Fehlende Fotos pflegst du im Live-Ticker unter Kader.' : 'Der Kader ist leer, konnte nicht geladen werden oder enthält keine eindeutigen Kennungen. Öffne im Live-Ticker den Bereich Kader und prüfe die Spieler dieser Mannschaft. Lade danach den Spieltag erneut. Namen und Nummern kannst du bis dahin von Hand eintragen.') + '</p>'; }
+function sgListenHtml(){ return '<p class="sg-hin">Die Rückennummer kommt aus der amtlichen Aufstellung für dieses Spiel. Fehlt sie dort, verwenden wir die Nummer aus dem Vereinskader. Deine Eingabe hat Vorrang. ' + (sgKaderListe(SG.d.sub).some(p=>sgKaderId(SG.d.sub,p.id)) ? 'Fehlt ein Foto, prüfe die Spielerzuordnung und das Bild im Live-Ticker unter Kader.' : 'Der Kader ist leer oder konnte nicht eindeutig zugeordnet werden. Prüfe den Kader im Live-Ticker und lade den Spieltag erneut.') + '</p>'; }
 function sgToreEditorHtml(D){ return `${D.toreNeu ? `<div class="sg-quelle"><b>Der Spielbericht meldet jetzt andere Tore.</b><span>Deine Fassung bleibt, bis du entscheidest.</span><button type="button" class="btn sm ghost" data-sgq="tore-quelle">Spielbericht übernehmen</button><button type="button" class="btn sm ghost" data-sgq="tore-meins">Meine behalten</button></div>` : ''}
     <p class="sg-l">Tore</p><div class="sg-tore">${D.tore.map((t, i) => `<div class="sg-tor" data-i="${i}" data-wir="${t.wir ? 1 : 0}">
       <input type="number" data-sgt="m" value="${t.m || ''}" min="1" max="130" inputmode="numeric" aria-label="Minute"><input type="number" data-sgt="x" value="${t.x || ''}" min="0" max="20" inputmode="numeric" placeholder="+" aria-label="Nachspielzeit">
@@ -386,7 +386,7 @@ function sgToreEditorHtml(D){ return `${D.toreNeu ? `<div class="sg-quelle"><b>D
       ${t.wir ? `<input type="text" data-sgt="vorlage" value="${sgE(t.vorlage === '-' ? '' : t.vorlage)}" placeholder="Vorlage" maxlength="40" aria-label="Vorlage">${sgSpielerHtml({fupa:t.vfupa},'data-sgt="vfupa"','Vorlagengeber im Kader')}<label class="sg-ohne"><input type="checkbox" data-sgt="ohne"${t.vorlage === '-' ? ' checked' : ''}> ohne Vorlage</label>` : ''}
       <button type="button" class="sg-weg" data-sgt="weg" aria-label="Tor entfernen">${SVI('x')}</button></div>`).join('')}</div>
     <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgq="tor-neu">Tor hinzufügen</button>${D.toreHand ? '<button type="button" class="btn sm ghost" data-sgq="tore-quelle">Zurück zum Spielbericht</button>' : ''}</div>
-    <p class="sg-hin">Vorlagen stehen nicht im Spielbericht. Trag sie ein oder hake „ohne Vorlage“ an, sonst bleibt ein Strich und die Karte fragt nach.</p>
+    <p class="sg-hin">Trag den vom Verein bestätigten Vorlagengeber beim passenden Tor ein. Setz „ohne Vorlage“ nur, wenn das geklärt ist. Ein leeres Feld bleibt unbestätigt.</p>
 `; }
 function sgFormular(m){ const D = SG.d, f = SG.neu.f || {};
   const kopf = `<details class="sg-mehr"><summary>Kopfzeile und Namen</summary>${sgFeld('wettbewerb', 'Wettbewerb', D.wettbewerb, { max:40 })}${sgFeld('nr', 'Saisonspiel Nummer', D.nr == null ? '' : D.nr, { typ:'number', attr:'min="0" max="60" inputmode="numeric"' })}

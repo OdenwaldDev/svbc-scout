@@ -127,6 +127,7 @@ h3{font-family:var(--c);font-weight:700;font-size:22px;line-height:1.15;color:va
 .demo{background:var(--zart);color:var(--navy);text-align:center;font-size:14.5px;font-weight:600;padding:8px 16px;line-height:1.4;}
 .demo button{margin-left:6px;border:0;background:none;color:var(--navy);font-weight:700;text-decoration:underline;cursor:pointer;min-height:44px;font-size:14px;}
 
+.pk-vergleich{max-width:810px;margin:0 auto 32px}.pk-vergleich>p{margin:12px 0 20px}.pk-vergleich-karte{border-bottom:1px solid var(--linie,#cdd3df)}.pk-vergleich-karte summary{min-height:48px;padding:12px 4px;cursor:pointer}.pk-vergleich-karte summary span{float:right;color:var(--navy);font-weight:700}.pk-vergleich-karte ul{margin:0 0 16px;padding-left:24px}.pk-vergleich-karte li{margin:6px 0}
 /* Einstieg: das Jugendfoto groß, darunter worum es geht und der Weg zu den Paketen */
 .hero{background:#fff;}
 .hero-b{margin:0;background:var(--flaeche);}
@@ -863,20 +864,18 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
   <p class="start-t">Eure Übersicht wird geladen …</p>
   <div class="start-b" aria-hidden="true"><i></i><i></i><i></i></div>
 </div></div>
-<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.163", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
-<script src="partner-lib.js?v=beta-0.99.163"></script>
-<script src="partner-teilen.js?v=beta-0.99.163"></script><script src="partner.js?v=beta-0.99.163"></script>
+<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.164", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
+<script src="partner-lib.js?v=beta-0.99.164"></script>
+<script src="partner-teilen.js?v=beta-0.99.164"></script><script src="partner.js?v=beta-0.99.164"></script>
 <script>(function(){ try{
   var q=new URLSearchParams(location.search), hp=new URLSearchParams(location.hash.slice(1));
-  if(q.get('reise')==='0'||q.get('angebot')==='1')return;
-  if(/^#([a-z0-9]+-)*[a-hjkmnp-z2-9]{8}$/.test(location.hash))return;   // kurzer Link: Die Seite holt erst den Code und lädt neu (partner.js)
-  if(navigator.webdriver&&!window.REISE_TEST&&q.get('reise')!=='1')return;
   var code=(hp.get('d')||'').toLowerCase(), key='reise-'+code, st=null;
-  try{ st=window.localStorage; if(st.getItem(key)==='1'&&q.get('reise')!=='1')return; }catch(e){ st=null; }
-  try{ var alt=JSON.parse((st&&st.getItem('pd-'+code))||(window.sessionStorage&&sessionStorage.getItem('pd-'+code))||'null'); if(alt&&((alt.korb||[]).length||alt.ergebnis)&&q.get('reise')!=='1')return; }catch(e){}
+  try{ st=window.localStorage; }catch(e){}
+  function oeffnen(){
+  if(document.getElementById('reiseRahmen'))return;
   var f=document.createElement('iframe'); f.id='reiseRahmen'; f.title='Partner werden beim SV/BSC Mörlenbach'; f.src='reise.html'; f.setAttribute('allow','autoplay; fullscreen');
   f.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#0a1020';
-  var zu=function(erledigt){ try{ if(erledigt!==false)st&&st.setItem(key,'1'); }catch(e){} if(f.parentNode)f.parentNode.removeChild(f); document.documentElement.style.overflow=''; try{ var p=document.getElementById('pakete'); if(p&&!p.hidden)p.scrollIntoView(); }catch(e){} };
+  var zu=function(erledigt){ window.removeEventListener('message',nachricht); try{ if(erledigt!==false)st&&st.setItem(key,'1'); }catch(e){} if(f.parentNode)f.parentNode.removeChild(f); document.documentElement.style.overflow=''; try{ var p=document.getElementById('pakete'); if(p&&!p.hidden)p.scrollIntoView(); }catch(e){} };
   // 0.99.70: Kam der Termin über den Partner-Start (partnerstart.html), steht dort schon ein Eintrag im Verlauf der Firma. Die Antworten der Reise kommen als Notiz dazu.
   var merk=function(n){ try{ var k=JSON.parse(sessionStorage.getItem('ps-kontakt')||'null'); if(!n||!k||k.code!==code||!k.id)return;
     var tk=null; for(var i=0;i<localStorage.length;i++){ var sk=localStorage.key(i); if(sk!=='svbc-auth'&&!/^sb-.+-auth-token$/.test(sk))continue; var j=JSON.parse(localStorage.getItem(sk)||'null'), s=j&&(j.currentSession||j); if(s&&s.access_token)tk=s.access_token; }
@@ -890,7 +889,7 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
   // Abgelaufene Anmeldung auf dem Gerät: dann ohne Anmeldung noch einmal, damit trotzdem gespeichert wird
   var rpc=function(fn,body){ var t=tok(); return ruf(fn,body,t).then(function(r){ return (r.status===401||r.status===403)&&t?ruf(fn,body,null):r; }); };
   var codeOk=/^[a-f0-9]{32}$/.test(code), standP=codeOk&&!(window.PD_TEILEN&&window.PD_TEILEN.aktiv)?rpc('partner_reise_stand',{p_code:code}).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }):Promise.resolve(null);
-  window.addEventListener('message',function(e){ if(e.source!==f.contentWindow||e.origin!==location.origin||!e.data)return;
+  var nachricht=function(e){ if(e.source!==f.contentWindow||e.origin!==location.origin||!e.data)return;
     if(e.data.notiz)merk(e.data.notiz);
     if(e.data.reise==='fertig')zu();
     if(e.data.reise==='merken'&&!(window.PD_TEILEN&&window.PD_TEILEN.aktiv)&&codeOk&&/^[0-9a-f-]{36}$/.test(String(e.data.sitzung||''))&&e.data.daten){ try{ rpc('partner_reise_merken',{p_code:code,p_sitzung:e.data.sitzung,p:e.data.daten}).catch(function(){}); }catch(x){} }
@@ -901,7 +900,21 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
         Promise.all([LOGO.alsDataUrl(dr,'farbe:#1d2760',900),LOGO.alsDataUrl(ar,'weiss',700),(/^data:image\/(png|jpeg|webp);base64,/.test(mk.logo)?Promise.resolve(mk.logo):LOGO.alsDataUrl(mk.logo,'original',500)),LOGO.alsDataUrl(ar,'schwarz',700)]).then(function(a){   // Partnerwand behält das Original, beide Ärmelvarianten nutzen dieselbe vorbereitete Quelle.
           if(f.contentWindow)f.contentWindow.postMessage({reise:'marke',bande:a[0],trikot:a[1],original:a[2],anzug:a[3],name:mk.name||''},location.origin); }).catch(function(){}); } }catch(z){}
       if(window.PD_TEILEN&&window.PD_TEILEN.aktiv){window.PD_TEILEN.rahmenBereit(f);return;}
-      standP.then(function(st){ if(f.contentWindow)f.contentWindow.postMessage({reise:'name',name:x||'',gebunden:codeOk,merken:codeOk&&!!st,termin:!!(st&&st.termin),stand:st&&st.stand||null,am:st&&st.am||null,widmung:st&&st.widmung||null},location.origin); }); },250); } });
+      standP.then(function(st){ if(f.contentWindow)f.contentWindow.postMessage({reise:'name',name:x||'',gebunden:codeOk,merken:codeOk&&!!st,termin:!!(st&&st.termin),stand:st&&st.stand||null,am:st&&st.am||null,widmung:st&&st.widmung||null},location.origin); }); },250); } };
+  window.addEventListener('message',nachricht);
   var rein=function(){ document.documentElement.style.overflow='hidden'; document.body.appendChild(f); };
   if(document.body)rein(); else document.addEventListener('DOMContentLoaded',rein);
+  }
+  window.partnerReiseOeffnen=oeffnen;
+  if(q.get('reise')==='0'||q.get('angebot')==='1')return;
+  if(/^#([a-z0-9]+-)*[a-hjkmnp-z2-9]{8}$/.test(location.hash))return;
+  if(navigator.webdriver&&!window.REISE_TEST&&q.get('reise')!=='1')return;
+  try{
+    if(q.get('reise')!=='1'){
+      if(st&&st.getItem(key)==='1')return;
+      var alt=JSON.parse((st&&st.getItem('pd-'+code))||sessionStorage.getItem('pd-'+code)||'null');
+      if(alt&&((alt.korb||[]).length||alt.ergebnis))return;
+    }
+  }catch(e){}
+  oeffnen();
 }catch(e){} })();</script></body></html>

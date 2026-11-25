@@ -155,7 +155,7 @@ function pdForm(d,vor){
     <p class="note small">Steht in der Präsentation am empfohlenen Paket und im Vertrag unter dem Paket. Leer lassen, wenn es keine Widmung gibt.</p>
     <h3 class="pd-h">Warum es passt</h3>
     <label class="og-fl">Überschrift<input id="pdTi" maxlength="80" value="${svEsc(P.titel||'')}" placeholder="z.B. Handwerk mit Heimat."></label>
-    <label class="og-fl">Einstieg oben (leer = Standardtext über die 260 Kinder)<textarea id="pdHe" rows="2" maxlength="300">${svEsc(P.hero||'')}</textarea></label>
+    <label class="og-fl">Einstieg für die Firma (leer lassen für den Vereinstext)<textarea id="pdHe" rows="2" maxlength="300">${svEsc(P.hero||'')}</textarea></label>
     <label class="jutog"><input type="checkbox" id="pdOJ"${(P.ohne||[]).includes('trikot')?' checked':''}> Ohne Jugend-Trikotpatenschaft (z.B. bei Glücksspiel oder Alkohol)</label>
     <label class="og-fl">Text<textarea id="pdTx" rows="4" maxlength="700">${svEsc(P.text||'')}</textarea></label>
     <label class="og-fl">Punkte (eine Zeile je Punkt)<textarea id="pdPu" rows="4" maxlength="900">${svEsc((P.punkte||[]).join('\n'))}</textarea></label>

@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.163', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.164', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18344,11 +18344,11 @@ const PS_DATEI='Partnersheet-2027-28.pdf', PS_SAISON='2027/28';
 const psUrl=()=>{ try{ return new URL('formulare/'+PS_DATEI,location.href).href; }catch(e){ return 'formulare/'+PS_DATEI; } };
 function psKarte(){
   const admin=typeof isAdmin==='function'&&isAdmin(), drive=typeof OG!=='undefined'&&OG.ue&&OG.ue.drive;
-  const stufen=Object.values(SPO_STUFE).map(s=>`<span><b>${svEsc(s.t)}</b>${spoEur(s.p)}${s.max?` · max. ${s.max}`:''}</span>`).join('');
+  const stufen=Object.entries(SPO_STUFE).map(([k,s])=>`<span><b>${svEsc(k==='supporter'?'Club Supporter':s.t)}</b>${spoEur(s.p)}${s.max?` · max. ${s.max}`:''}</span>`).join('');
   return `<div class="card ps-karte" id="psKarte">
     <a class="ps-bild" href="formulare/${PS_DATEI}" target="_blank" rel="noopener" aria-label="Partnerblatt ansehen"><img src="formulare/Partnersheet-2027-28-vorschau.jpg" alt="Partnerblatt ${PS_SAISON}, Seite 1" loading="lazy"></a>
     <div class="ps-txt"><h3>Partnerblatt ${PS_SAISON}</h3>
-      <p>Stufen, Leistungen und Preise auf zwei Seiten, zum Weitergeben an Firmen. Partner des Tages: Supporter 189 €, Club 169 €, Premium 149 €, beim 1896 Partner ist ein Heimspiel inklusive.</p>
+      <p>Die vier Pakete mit Saisonbeiträgen, Bandenformaten und dem Auftritt im Stadionheft „Doppelpass“. Auf Seite drei stehen die Möglichkeiten für Heimspiele und Ärmel.</p>
       <div class="ps-stufen">${stufen}</div>
       <div class="ps-btns"><a class="btn" href="formulare/${PS_DATEI}" target="_blank" rel="noopener">${SVI('file')} Ansehen</a>
         <button type="button" class="btn ghost" id="psTeilen">${SVI('share')} Weitergeben</button>
@@ -18910,6 +18910,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.164',v:'0.99.164',datum:'2026-11-25',titel:'Partnerpräsentation und Spieltagsstudio',kurz:'Der persönliche Link führt wieder zur Vorschau. Das Partnerblatt zeigt die Pakete für 2027/28.',punkte:[{ic:'i',t:'Präsentation erneut öffnen',d:'Vom Paketbereich kommt ihr zurück in die Vereinspräsentation. Die gespeicherte Auswahl bleibt verfügbar.',r:'team'},{ic:'i',t:'Heimspiel und Ergebnis',d:'Die Motive folgen der Vereinsvorlage. Beim Abruf der Aufstellung übernimmt das Studio die veröffentlichten Rückennummern aus dem Spielbericht.',r:'team'}]},
   {id:'0.99.163',v:'0.99.163',datum:'2026-11-24',titel:'Deine Mannschaft unter Heute',kurz:'Haupt- und Co-Trainer der Ersten und Zweiten sehen die nächste Einheit und das nächste Spiel ihrer Mannschaft unter Heute.',punkte:[{ic:'i',t:'Wer kommt zum Training?',d:'Öffne die Rückmeldungen zur Einheit oder schau nach, wer in den nächsten Wochen fehlt.',r:'team'},{ic:'i',t:'Reicht der Kader?',d:'In einer Spielabstimmung kannst du dich erinnern lassen, wenn kurz vor Anstoß weniger als elf Spieler fest zugesagt haben.',r:'team'}]},
   {id:'0.99.162',v:'0.99.162',datum:'2026-11-24',titel:'BB-Bande in Originalrosa',kurz:'Auf der BB-Bande kannst du zwischen Vereinsorange und dem Rosa von BB wechseln.',punkte:[{ic:'i',t:'Vorschau am Bandenmotiv',d:'KREATIV und EVENT sitzen jetzt auf beiden Seiten im gleichen Abstand zum Zeichen.',r:'team'}]},
   {id:'0.99.161',v:'0.99.161',datum:'2026-11-24',titel:'Die Bande von BB Berns&Baltz',kurz:'Auf der BB-Bande steht links KREATIV und rechts EVENT. Das BB-Signet sitzt in der Mitte.',punkte:[{ic:'i',t:'Vorschau im Partnerlink',d:'Im persönlichen Link lässt sich die BB-Bande neben dem eigenen Motiv für Mörlens auswählen.',r:'team'}]},
@@ -24542,7 +24543,7 @@ function pdForm(d,vor){
     <p class="note small">Steht in der Präsentation am empfohlenen Paket und im Vertrag unter dem Paket. Leer lassen, wenn es keine Widmung gibt.</p>
     <h3 class="pd-h">Warum es passt</h3>
     <label class="og-fl">Überschrift<input id="pdTi" maxlength="80" value="${svEsc(P.titel||'')}" placeholder="z.B. Handwerk mit Heimat."></label>
-    <label class="og-fl">Einstieg oben (leer = Standardtext über die 260 Kinder)<textarea id="pdHe" rows="2" maxlength="300">${svEsc(P.hero||'')}</textarea></label>
+    <label class="og-fl">Einstieg für die Firma (leer lassen für den Vereinstext)<textarea id="pdHe" rows="2" maxlength="300">${svEsc(P.hero||'')}</textarea></label>
     <label class="jutog"><input type="checkbox" id="pdOJ"${(P.ohne||[]).includes('trikot')?' checked':''}> Ohne Jugend-Trikotpatenschaft (z.B. bei Glücksspiel oder Alkohol)</label>
     <label class="og-fl">Text<textarea id="pdTx" rows="4" maxlength="700">${svEsc(P.text||'')}</textarea></label>
     <label class="og-fl">Punkte (eine Zeile je Punkt)<textarea id="pdPu" rows="4" maxlength="900">${svEsc((P.punkte||[]).join('\n'))}</textarea></label>
@@ -39166,9 +39167,10 @@ function sgFotoMalen(ctx,img,x,y,w,h,D,m,standard){
   } else sgCover(ctx,img,x,y,w,h,standard);
   sgFotoFarblook(ctx,x,y,w,h,D,m);
 }
+function sgAnkuendigungsFotoHoehe(D,oy){return D.wirHeim ? SG_H+2*oy : 940+oy;}
 function sgAusschnittGeometrie(D=SG.d,A=SG.A,m=SG.motiv,fmt=sgFormat(m)){
   if(!['H','E'].includes(m)||fmt==='quer')return null;const im=A?.[m==='H'?'fotoH':'fotoE'];if(!im)return null;
-  const oy=fmt==='story'?285:0,h=m==='H'?(D.wirHeim?1000:940)+oy:D.zeigeTore===true?1350+oy*2:646;
+  const oy=fmt==='story'?285:0,h=m==='H'?sgAnkuendigungsFotoHoehe(D,oy):D.zeigeTore===true?1350+oy*2:646;
   return sgFotoGeometrie(im.naturalWidth||im.width,im.naturalHeight||im.height,1080,h,sgAusschnitt(D,m,fmt));
 }
 function sgAusschnittHtml(m,fmt){if(!['H','E'].includes(m)||fmt==='quer')return'';const c=sgAusschnittGeometrie(SG.d,SG.A,m,fmt);if(!c)return'';
@@ -39341,6 +39343,27 @@ async function sgSpielbildAusDrive(D){
   } catch (_) {}
   return null;
 }
+function sgVereinsmotiv(D,feld){
+  if(D?.sub!=='A'||feld==='fotoE'&&!D.gespielt)return null;
+  const termin=sgFotoTermin(D,feld);
+  if(!termin.datum||pkLicht(termin.datum,termin.zeit,'auto').nacht)return null;
+  const ausgang=sgFotoErgebnis(D,feld);
+  const motiv=feld==='fotoH'||ausgang==='Niederlage'?'teamkreis':ausgang==='Sieg'?'jubel':'zweikampf';
+  const titel={teamkreis:'Mannschaftskreis',jubel:'Torjubel',zweikampf:'Zweikampf'}[motiv];
+  return {art:'vereinsarchiv',motiv,echt:true,url:'partner/vereinsfoto-'+motiv+'.webp',titel:'Vereinsarchiv · '+titel};
+}
+// Die Ausschnitte der beiden Archivfotos beginnen unter der oberen Werbebande.
+// Auch bei Zoom oder Querformat lässt sich nur der gewählte Bildbereich verschieben.
+function sgArchivFoto(img,quelle){
+  if(!img||quelle?.art!=='vereinsarchiv')return img;
+  const rahmen={teamkreis:[.168,.169,.664,.831],jubel:[.374,.198,.334,.766]}[quelle.motiv];
+  if(!rahmen)return img;
+  const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+  const [x,y,w,h]=rahmen.map((v,i)=>Math.round(v*(i%2?ih:iw)));
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  cv.getContext('2d').drawImage(img,x,y,w,h,0,0,w,h);
+  return cv;
+}
 async function sgFotoQuelle(wahl, D, feld){
   const w = sgFotoWahl(wahl);
   if (feld === 'fotoE' && w.art === 'auto') {
@@ -39359,6 +39382,8 @@ async function sgFotoQuelle(wahl, D, feld){
     } }catch(e){ /* Die ausdrückliche Bildwahl bleibt bestehen und wird als fehlend geprüft. */ }
     return {url:null,titel:'Eigenes Foto nicht erreichbar',art:'bibliothek',echt:true};
   }
+  const archiv = w.art === 'auto' && sgVereinsmotiv(D,feld);
+  if(archiv)return archiv;
   const f = w.art === 'fundus' ? sgFotoFundus(w.id) : sgFotoAuto(D || {}, feld);
   return {url:'plakat/foto/' + f.id + '.webp',titel:f.titel,art:'fundus',echt:false};
 }
@@ -39379,7 +39404,7 @@ function sgFotoGalerieHtml(feld, wahl, A, D){
   }).join('');
   return `<div class="sg-foto sg-fotowahl" data-sgfoto="${feld}"><p class="sg-l">${feld === 'fotoE' ? 'Ergebnis-Hintergrund' : 'Ankündigungs-Hintergrund'}</p>
     <p class="sg-fotohin">${esc(emp.text)} ${ergebnis ? 'Bildvorschläge für '+({Sieg:'den Sieg',Niederlage:'die Niederlage',Remis:'das Remis'}[ergebnis])+'.' : 'Passende Motive stehen zuerst.'} Du kannst jedes Motiv selbst wählen.</p>
-    <div class="sg-fotoreihe" role="group" tabindex="0" aria-label="Fußballmotive, seitlich blättern"><button type="button" class="sg-fotoauto" data-sgfotoauto aria-pressed="${w.art === 'auto'}"><b>Auto</b><span>${feld === 'fotoE' ? (A?.fotoWahlE?.pfad ? 'Spielbild · Gabi' : 'Spielbild oder Lichtstimmung') : 'Lichtstimmung zum Anstoß'}</span></button>${motive.map(knopf).join('')}</div>
+    <div class="sg-fotoreihe" role="group" tabindex="0" aria-label="Fußballmotive, seitlich blättern"><button type="button" class="sg-fotoauto" data-sgfotoauto aria-pressed="${w.art === 'auto'}"><b>Auto</b><span>${esc((feld === 'fotoE' ? A?.fotoWahlE : A?.fotoWahlH)?.titel || 'Passend zum Spiel')}</span></button>${motive.map(knopf).join('')}</div>
     <div class="sg-fotoscroll"><button type="button" data-sgfoto-vor="-1" aria-label="Vorherige Motive">Zurück</button><label><span>Galerie durchsehen</span><input type="range" data-sgfoto-scroll min="0" max="0" step="1" value="0" aria-label="Position in der Motivgalerie"></label><button type="button" data-sgfoto-vor="1" aria-label="Weitere Motive">Weiter</button></div>
     <details class="sg-fotobibliothek"${w.art === 'bibliothek' ? ' open' : ''}><summary>Eigene Bibliothek (${L.length})</summary>${L.length ? `<div class="sg-bib">${eigene}</div>` : '<p class="sg-fotohin">Noch keine eigenen Hintergrundfotos in der Bibliothek.</p>'}</details>
     <label class="sg-up sg-fotoupload" role="button" tabindex="0" data-sgfotohoch aria-label="Eigenes Foto hochladen"><span data-sbt>Eigenes Foto hochladen</span><input type="file" accept="image/*" data-sgup="${feld}" hidden></label></div>`;
@@ -39487,7 +39512,7 @@ function sgErgebnisOriginalMalen(ctx,D,A){
   sgFotoMalen(ctx,A.fotoE,0,197,SG_W,646,D,'E',.3);
   const g=ctx.createLinearGradient(0,430,0,843);g.addColorStop(0,'rgba(4,17,39,0)');g.addColorStop(.7,'rgba(4,17,39,.74)');g.addColorStop(1,'rgba(4,17,39,.94)');ctx.fillStyle=g;ctx.fillRect(0,430,SG_W,413);
   sgKopf(ctx,D,true);sgWappen(ctx,A);
-  if(D.h2){sgT(ctx,D.h1.toUpperCase(),SG_X,664,{fam:'Anton',w:400,cap:69,c:CI.weiss,max:936,min:.7,k:'h1'});sgT(ctx,D.h2.toUpperCase(),SG_X,787,{fam:'Anton',w:400,cap:108,c:CI.orange,max:936,min:.6,k:'h2'});}
+  if(D.h2){sgT(ctx,D.h1.toUpperCase(),SG_X,669,{fam:'Anton',w:400,cap:74,c:CI.weiss,max:936,min:.7,k:'h1'});sgT(ctx,D.h2.toUpperCase(),SG_X,787,{fam:'Anton',w:400,cap:108,c:CI.orange,max:936,min:.6,k:'h2'});}
   else sgT(ctx,D.h1.toUpperCase(),SG_X,787,{fam:'Anton',w:400,cap:108,c:CI.orange,max:936,min:.6,k:'h1'});
   sgLinie(ctx,SG_X,842,SG_R,'rgba(170,181,200,.32)',2);sgLinie(ctx,SG_X,841,158,CI.orange,4);
   const cap=272,mitte=540,a=String(D.toreH),b=String(D.toreG);ctx.font=`400 ${cap/sgCapR(ctx,'Anton',400)}px Anton`;
@@ -39581,7 +39606,7 @@ const SG_W = 1080, SG_H = 1350, SG_X = 72, SG_R = 1008;
 /* Story 9:16: dasselbe Motiv, 285 Pixel tiefer gesetzt, damit oben und unten frei bleibt, was Instagram mit Bedienung überdeckt; der Grund läuft weiter */
 const SG_STORY_H = 1920, SG_OY = 285;
 const SG_QUER_W = 1920, SG_QUER_H = 1080;
-const SG_VERSION = { H:'H 1.2', A:'A 1.0', E:'E 3.0', S:'S 1.0' };
+const SG_VERSION = { H:'H 1.3', A:'A 1.0', E:'E 3.1', S:'S 1.0' };
 const SG_LIGA = { A:'Kreisliga A', D2:'Kreisliga D', POKAL:'Kreispokal' };
 const SG_MONAT = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 const SG_TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
@@ -39674,26 +39699,26 @@ function sgZweiZeilen(name){ const t = String(name || '').toUpperCase().trim(); 
 /* ---------- Motiv H: Heimspiel (Schwester: Auswärtsspiel) ---------- */
 function sgH(ctx, D, A){
   ctx.fillStyle = CI.navy; ctx.fillRect(0, 0, SG_W, SG_H);
-  const oy = SG.oy || 0; sgFotoMalen(ctx, A.fotoH, 0, -oy, SG_W, (D.wirHeim ? 1000 : 940) + oy, D, 'H', .3);
-  let g = ctx.createLinearGradient(0, -oy, 0, 260); g.addColorStop(0, 'rgba(4,17,39,.82)'); g.addColorStop(1, 'rgba(4,17,39,0)'); ctx.fillStyle = g; ctx.fillRect(0, -oy, SG_W, 260 + oy);
-  const oben = D.wirHeim ? 560 : 470;
-  g = ctx.createLinearGradient(0, oben, 0, oben + 440); g.addColorStop(0, 'rgba(4,17,39,0)'); g.addColorStop(.5, 'rgba(4,17,39,.72)'); g.addColorStop(1, 'rgba(4,17,39,1)'); ctx.fillStyle = g; ctx.fillRect(0, oben, SG_W, SG_H - oben);
+  const oy = SG.oy || 0; sgFotoMalen(ctx, A.fotoH, 0, -oy, SG_W, sgAnkuendigungsFotoHoehe(D, oy), D, 'H', .3);
+  let g = ctx.createLinearGradient(0, 0, 0, 340); g.addColorStop(0, 'rgba(4,17,39,.9)'); g.addColorStop(.45, 'rgba(4,17,39,.67)'); g.addColorStop(1, 'rgba(4,17,39,0)'); ctx.fillStyle = g; ctx.fillRect(0, -oy, SG_W, 340 + oy);
+  const oben = D.wirHeim ? 570 : 470;
+  g = ctx.createLinearGradient(0, oben, 0, D.wirHeim ? 1318 : oben + 440); g.addColorStop(0, 'rgba(4,17,39,0)'); g.addColorStop(.5, D.wirHeim ? 'rgba(4,17,39,.58)' : 'rgba(4,17,39,.72)'); g.addColorStop(1, 'rgba(4,17,39,1)'); ctx.fillStyle = g; ctx.fillRect(0, oben, SG_W, SG_H + oy - oben);
   sgKopf(ctx, D, true); sgWappen(ctx, A);
-  const x = 84;
-  if(D.wirHeim){ sgTeile(ctx, [['HEIM', CI.weiss], ['SPIEL', CI.blau]], x, 950, { fam:'Anton', w:400, cap:172 }); }
+  const x = 78;
+  if(D.wirHeim){ sgTeile(ctx, [['HEIM', CI.weiss], ['SPIEL', CI.blau]], x, 952, { fam:'Anton', w:400, cap:174 }); }
   else { sgT(ctx, 'AUSWÄRTS', x, 800, { fam:'Anton', w:400, cap:150, c:CI.weiss }); sgT(ctx, 'SPIEL', x, 968, { fam:'Anton', w:400, cap:150, c:CI.blau }); }
-  if(D.teaser){ const t = D.teaser.trim(), punkt = /[.!?]$/.test(t), o = { fam:'SGB', w:700, cap:55 };
-    ctx.font = `700 ${55 / sgCapR(ctx, 'SGB', 700)}px SGB`; const w = ctx.measureText(t).width, f = w > 924 ? Math.max(.6, 924 / w) : 1; if(w * f > 925) SG.ueber.teaser = true;
-    const oo = Object.assign({}, o, { cap:55 * f, k:'teaser' }), w1 = sgT(ctx, punkt ? t.slice(0, -1) : t, x, 1046, Object.assign({}, oo, { c:CI.orange })); if(punkt) sgT(ctx, t.slice(-1), x + w1, 1046, Object.assign({}, oo, { c:CI.weiss, k:null })); }
+  if(D.teaser){ const t = D.teaser.trim(), punkt = /[.!?]$/.test(t), cap = D.wirHeim ? 64 : 55, o = { fam:'SGB', w:700, cap };
+    ctx.font = `700 ${cap / sgCapR(ctx, 'SGB', 700)}px SGB`; const w = ctx.measureText(t).width, f = w > 924 ? Math.max(.6, 924 / w) : 1; if(w * f > 925) SG.ueber.teaser = true;
+    const oo = Object.assign({}, o, { cap:cap * f, k:'teaser' }), w1 = sgT(ctx, punkt ? t.slice(0, -1) : t, x, 1047, Object.assign({}, oo, { c:CI.orange })); if(punkt) sgT(ctx, t.slice(-1), x + w1, 1047, Object.assign({}, oo, { c:CI.weiss, k:null })); }
   sgT(ctx, D.ort ? 'SPIELORT: ' + D.ort : 'SPIELORT BITTE ERGÄNZEN', x, 1095, { fam:'SGB', w:600, s:28, c:CI.weiss, max:924, min:.75, k:'ort' });
-  { const teile = [[D.heim.toUpperCase(), CI.weiss], ['   vs.   ', CI.orange], [D.gast.toUpperCase(), CI.weiss]], o = { fam:'SGC', w:800, cap:34 };
-    const w = sgTeileBreite(ctx, teile, o), f = w > 924 ? Math.max(.74, 924 / w) : 1; if(w * f > 926) SG.ueber.paarung = true;
-    let cx = x; teile.forEach(([t, c], i) => { cx += sgT(ctx, t, cx, 1150, { fam:'SGC', w:i === 1 ? 700 : 800, cap:(i === 1 ? 24 : 34) * f, c, k:i === 0 ? (D.wirHeim ? 'wir' : 'gegner') : i === 2 ? (D.wirHeim ? 'gegner' : 'wir') : null }); }); }
+  { const teile = [[D.heim.toUpperCase(), CI.weiss], ['   vs.   ', CI.orange], [D.gast.toUpperCase(), CI.weiss]], o = i => ({ fam:'SGC', w:i === 1 ? 700 : 800, cap:i === 1 ? 25 : 36.5 });
+    const w = teile.reduce((sum,teil,i)=>sum+sgTeileBreite(ctx,[teil],o(i)),0), f = w > 950 ? Math.max(.74, 950 / w) : 1; if(w * f > 952) SG.ueber.paarung = true;
+    let cx = x; teile.forEach(([t, c], i) => { cx += sgT(ctx, t, cx, 1152, { fam:'SGC', w:i === 1 ? 700 : 800, cap:(i === 1 ? 25 : 36.5) * f, c, k:i === 0 ? (D.wirHeim ? 'wir' : 'gegner') : i === 2 ? (D.wirHeim ? 'gegner' : 'wir') : null }); }); }
   sgLinie(ctx, x, 1189, SG_R, 'rgba(246,246,242,.7)', 2);
   const dt = sgDatumTeile(D.datum) || { tag:'', kurz:'' };
-  sgT(ctx, dt.tag.toUpperCase(), x, 1238, { fam:'SGB', w:500, s:21.5, c:CI.weiss, sp:3 }); sgT(ctx, dt.kurz, x, 1311, { fam:'Anton', w:400, cap:50, c:CI.weiss });
+  sgT(ctx, dt.tag.toUpperCase(), x, 1238, { fam:'SGB', w:500, s:21.5, c:CI.weiss, sp:3 }); sgT(ctx, dt.kurz, x, 1314, { fam:'Anton', w:400, cap:53, c:CI.weiss });
   ctx.fillStyle = 'rgba(246,246,242,.7)'; ctx.fillRect(538, 1222, 2, 96);
-  sgT(ctx, 'ANSTOSS', 588, 1238, { fam:'SGB', w:500, s:21.5, c:CI.weiss, sp:3 }); sgT(ctx, D.zeit ? `${D.zeit} UHR` : '', 588, 1311, { fam:'Anton', w:400, cap:50, c:CI.weiss, k:'zeit' }); }
+  sgT(ctx, 'ANSTOSS', 588, 1238, { fam:'SGB', w:500, s:21.5, c:CI.weiss, sp:3 }); sgT(ctx, D.zeit ? `${D.zeit} UHR` : '', 588, 1314, { fam:'Anton', w:400, cap:53, c:CI.weiss, k:'zeit' }); }
 
 const sgQuerNorm = (v, standard, min, max) => v == null || v === '' || !Number.isFinite(Number(v)) ? standard : Math.max(min, Math.min(max, Number(v)));
 /* Ein gemeinsamer Quellausschnitt für Vorschau, Regler, Ziehen und Export.
@@ -39816,7 +39841,10 @@ function sgQuelle(S){ const nm = k => sgName((S.namen || {})[k] || ''), wirS = S
   const ein = new Map(); V.filter(e => e.t === 'wechsel' && e.s === wirS).forEach(e => { if(e.p) ein.set(e.p, e.m + (e.x ? '+' + e.x : '')); });
   const A = S.aufstellung || {}, start = (A.start || []).map(k => Object.assign({ key:k, name:nm(k), c:k === A.c }, A.tw ? { tw:k === A.tw } : {}));
   const bank = (A.bank || []).map(k => ({ key:k, name:nm(k), ein:ein.get(k) || '' }));
-  return { tore, start, bank }; }
+  const nummern = Object.fromEntries([...start,...bank].filter(p => {
+    const nr = A.nummern?.[p.key]; return Number.isInteger(nr) && nr >= 1 && nr <= 99;
+  }).map(p => [p.key,A.nummern[p.key]]));
+  return { tore, start, bank, nummern }; }
 /* Nur historische Prüfsummen vergleichen, niemals über Namen Personen zuordnen. */
 function sgQuelleAlt(S,Q){ const ein=new Map();
   (S.verlauf||[]).filter(e=>e.t==='wechsel'&&e.s===(S.wir_heim?'h':'g')).forEach(e=>{const n=sgName((S.namen||{})[e.p]||'');if(n)ein.set(n,e.m+(e.x?'+'+e.x:''));});
@@ -39834,7 +39862,18 @@ function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S
   const ohne = n => String(n || '').replace(/\s*\((FB|H|FB, ?H)[^)]*\)\s*$/i, '').trim();
   const wir = f.wir || ohne(S.wir_heim ? S.heim : S.gast), gegner = f.gegner || ohne(S.wir_heim ? S.gast : S.heim);
   /* Von Hand geführte Listen stehen in derselben Reihenfolge wie die Anzeige, damit Zeile i im Formular Eintrag i ist */
-  const nummer=p=>Object.prototype.hasOwnProperty.call(p,'nr')&&p.nrHand!==false?(p.nr==null||p.nr===''?null:+p.nr):person(p).nr;
+  const spielnummer=p=>{
+    if(p.key)return Q.nummern[p.key] ?? person(p).nr;
+    const keys=p.fupa?Object.keys(Q.nummern).filter(k=>S.personen?.[k]===String(p.fupa)):[];
+    return keys.length===1?Q.nummern[keys[0]]:person(p).nr;
+  };
+  const nummer=p=>Object.prototype.hasOwnProperty.call(p,'nr')&&p.nrHand!==false?(p.nr==null||p.nr===''?null:+p.nr):spielnummer(p);
+  const tornummer=p=>{
+    const id=p.fupa || S.personen?.[p.key];
+    const zeilen=Array.isArray(N.start)?[...N.start,...(N.bank||[])].filter(z=>
+      p.key && z.key===p.key || id && (z.fupa || S.personen?.[z.key])===id):[];
+    return zeilen.length===1?nummer(zeilen[0]):spielnummer(p);
+  };
   const nachNr=(a,b)=>(nummer(a)??999)-(nummer(b)??999);
   if(Array.isArray(N.tore))N.tore.sort((a,b)=>(+a.m||0)-(+b.m||0)||(+a.x||0)-(+b.x||0));
   if(Array.isArray(N.start)){if(!Array.isArray(N.bank))N.bank=[];[N.start,N.bank].forEach(L=>L.sort(nachNr));}
@@ -39850,7 +39889,7 @@ function sgDaten(){ const S = SG.satz, N = SG.neu, f = N.f || {}, Q = sgQuelle(S
     toreNeu:Array.isArray(N.tore) && sgQuelleNeu(N.toreQ,Q.tore,N.toreQV,alt.tore) && Q.tore.length > 0,
     elfNeu:Array.isArray(N.start) && sgQuelleNeu(N.elfQ,[Q.start,Q.bank],N.elfQV,[alt.start,alt.bank]) && Q.start.length > 0 };
   D.tore = (Array.isArray(N.tore) ? N.tore : Q.tore).map(t => { const p = t.wir ? person(t) : {}, v = t.wir && t.vorlage && t.vorlage !== '-' ? person({fupa:t.vfupa}) : {};
-    return { key:t.key || '', fupa:t.fupa || '', vfupa:t.vfupa || '', m:+t.m || 0, x:+t.x || 0, wir:!!t.wir, art:['elf','et'].includes(t.art) ? t.art : '', name:t.name || '', vorlage:t.vorlage || '', nr:p.nr, bild:p.bild || '', vnr:v.nr, vbild:v.bild || '' }; })
+    return { key:t.key || '', fupa:t.fupa || '', vfupa:t.vfupa || '', m:+t.m || 0, x:+t.x || 0, wir:!!t.wir, art:['elf','et'].includes(t.art) ? t.art : '', name:t.name || '', vorlage:t.vorlage || '', nr:t.wir?tornummer(t):null, bild:p.bild || '', vnr:v.fupa?tornummer({fupa:v.fupa}):null, vbild:v.bild || '' }; })
     .sort((a, b) => a.m - b.m || a.x - b.x);
   const mit = (p, bank) => { const k = person(p); return { key:p.key || '', fupa:p.fupa || '', name:p.name || '', nr:nummer(p), nrHand:Object.prototype.hasOwnProperty.call(p,'nr')&&p.nrHand!==false, bild:k.bild, tw:p.tw != null ? !!p.tw : k.tw, c:!!p.c, ein:bank ? p.ein || '' : '' }; };
   D.start = (Array.isArray(N.start) ? N.start : Q.start).map(p => mit(p, false)).sort(nachNr);
@@ -39872,7 +39911,7 @@ async function sgAssets(D){ const S = SG.satz, A = { portrait:new Map(), echtH:f
     pkBild(pkWappenQuelle(VEREIN && VEREIN.texte ? VEREIN.texte.name : 'SV/BSC Mörlenbach') || 'plakat/wappen/svbsc-moerlenbach.webp').then(i => i || pkBild('plakat/wappen/svbsc-moerlenbach.webp')),
     (async () => { if(/^bib:/.test(D.wappen || '')){ const u = await sbUrl(D.wappen.slice(4)); const im = u ? await pkBild(u) : null; if(im) return im; } return pkBild(pkWappenQuelle(D.gegner)); })(), pkBild(uH), pkBild(uE)]);
   await Promise.all(bilder.map(async b => { const u = typeof tkFotoUrl === 'function' ? tkFotoUrl(b) : null; if(u){ const im = await pkBild(u); if(im) A.portrait.set(b, im); } }));
-  return Object.assign(A, { wWir, wGeg, fotoH, fotoE, eigene, bibliothek:bib, fotoWahlH:quelleH, fotoWahlE:quelleE }); }
+  return Object.assign(A, { wWir, wGeg, fotoH:sgArchivFoto(fotoH,quelleH), fotoE:sgArchivFoto(fotoE,quelleE), eigene, bibliothek:bib, fotoWahlH:quelleH, fotoWahlE:quelleE }); }
 
 /* ---------- Prüfen (Spezifikation 7.3 und 9.1): was fehlt, sagt die Karte in einem Satz ---------- */
 function sgPruefen(m, D, A, ueber){ const R = { wartet:'', fehler:[], hinweise:[], notizen:[] }, U = ueber || {};
@@ -40026,7 +40065,7 @@ function sgPortraitStand(b,A){
 /* Prüfsumme des Stands, den eine Freigabe meint: alles, was im Motiv zu sehen ist */
 function sgStandHash(m, D){ const k = [SG_VERSION[m], D.wettbewerb, D.saison, D.nr, D.datum, D.heim, D.gast, D.wappen];
   k.push('Texte 1.0', D.ort, sgTexte(m, D));
-  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 3 · Farblook 1',w.art==='auto'?sgFotoAuto(D,feld).id:w,D.bildausschnitt?.[m]||{});}
+  if(m==='H'||m==='E'){const feld=m==='H'?'fotoH':'fotoE',w=sgFotoWahl(D[feld]);k.push('Fotoauswahl 4',w.art==='auto'?(sgVereinsmotiv(D,feld)?.url||sgFotoAuto(D,feld).id):w,D.bildausschnitt?.[m]||{});}
   const automatisch = SG.A?.fotoWahlE;
   if (m === 'E' && sgFotoWahl(D.fotoE).art === 'auto' && automatisch?.pfad &&
       automatisch.spiel === D.spiel && automatisch.datum === D.datum) k.push(automatisch.pfad);
@@ -40223,7 +40262,7 @@ function sgSpielerSetzen(p, id, vorlage){ const vorher=sgPerson(SG.d.sub)(p).fup
   else { p.key = ''; p.fupa = k ? String(k.id) : ''; if(k){ p.name = sgKaderName(k); if('nr' in p&&p.nrHand===false)p.nr=k.nr===''||k.nr==null?null:+k.nr;if('tw'in p&&vorher!==String(k.id))p.tw=k.pos==='TW'; } }
 }
 function sgNummerSetzen(p,wert){p.nr=wert===''?null:Math.max(0,Math.round(+wert));p.nrHand=true;}
-function sgListenHtml(){ return '<p class="sg-hin">' + (sgKaderListe(SG.d.sub).some(p=>sgKaderId(SG.d.sub,p.id)) ? 'Foto und Nummer werden nur bei eindeutiger Zuordnung ergänzt. Fehlt sie, wähle den Spieler im Kader. Eine Namensänderung löst die Zuordnung. Fehlende Fotos pflegst du im Live-Ticker unter Kader.' : 'Der Kader ist leer, konnte nicht geladen werden oder enthält keine eindeutigen Kennungen. Öffne im Live-Ticker den Bereich Kader und prüfe die Spieler dieser Mannschaft. Lade danach den Spieltag erneut. Namen und Nummern kannst du bis dahin von Hand eintragen.') + '</p>'; }
+function sgListenHtml(){ return '<p class="sg-hin">Die Rückennummer kommt aus der amtlichen Aufstellung für dieses Spiel. Fehlt sie dort, verwenden wir die Nummer aus dem Vereinskader. Deine Eingabe hat Vorrang. ' + (sgKaderListe(SG.d.sub).some(p=>sgKaderId(SG.d.sub,p.id)) ? 'Fehlt ein Foto, prüfe die Spielerzuordnung und das Bild im Live-Ticker unter Kader.' : 'Der Kader ist leer oder konnte nicht eindeutig zugeordnet werden. Prüfe den Kader im Live-Ticker und lade den Spieltag erneut.') + '</p>'; }
 function sgToreEditorHtml(D){ return `${D.toreNeu ? `<div class="sg-quelle"><b>Der Spielbericht meldet jetzt andere Tore.</b><span>Deine Fassung bleibt, bis du entscheidest.</span><button type="button" class="btn sm ghost" data-sgq="tore-quelle">Spielbericht übernehmen</button><button type="button" class="btn sm ghost" data-sgq="tore-meins">Meine behalten</button></div>` : ''}
     <p class="sg-l">Tore</p><div class="sg-tore">${D.tore.map((t, i) => `<div class="sg-tor" data-i="${i}" data-wir="${t.wir ? 1 : 0}">
       <input type="number" data-sgt="m" value="${t.m || ''}" min="1" max="130" inputmode="numeric" aria-label="Minute"><input type="number" data-sgt="x" value="${t.x || ''}" min="0" max="20" inputmode="numeric" placeholder="+" aria-label="Nachspielzeit">
@@ -40232,7 +40271,7 @@ function sgToreEditorHtml(D){ return `${D.toreNeu ? `<div class="sg-quelle"><b>D
       ${t.wir ? `<input type="text" data-sgt="vorlage" value="${sgE(t.vorlage === '-' ? '' : t.vorlage)}" placeholder="Vorlage" maxlength="40" aria-label="Vorlage">${sgSpielerHtml({fupa:t.vfupa},'data-sgt="vfupa"','Vorlagengeber im Kader')}<label class="sg-ohne"><input type="checkbox" data-sgt="ohne"${t.vorlage === '-' ? ' checked' : ''}> ohne Vorlage</label>` : ''}
       <button type="button" class="sg-weg" data-sgt="weg" aria-label="Tor entfernen">${SVI('x')}</button></div>`).join('')}</div>
     <div class="sg-zeile"><button type="button" class="btn sm ghost" data-sgq="tor-neu">Tor hinzufügen</button>${D.toreHand ? '<button type="button" class="btn sm ghost" data-sgq="tore-quelle">Zurück zum Spielbericht</button>' : ''}</div>
-    <p class="sg-hin">Vorlagen stehen nicht im Spielbericht. Trag sie ein oder hake „ohne Vorlage“ an, sonst bleibt ein Strich und die Karte fragt nach.</p>
+    <p class="sg-hin">Trag den vom Verein bestätigten Vorlagengeber beim passenden Tor ein. Setz „ohne Vorlage“ nur, wenn das geklärt ist. Ein leeres Feld bleibt unbestätigt.</p>
 `; }
 function sgFormular(m){ const D = SG.d, f = SG.neu.f || {};
   const kopf = `<details class="sg-mehr"><summary>Kopfzeile und Namen</summary>${sgFeld('wettbewerb', 'Wettbewerb', D.wettbewerb, { max:40 })}${sgFeld('nr', 'Saisonspiel Nummer', D.nr == null ? '' : D.nr, { typ:'number', attr:'min="0" max="60" inputmode="numeric"' })}
@@ -42590,7 +42629,7 @@ function huArtikel(r){const pages=HV.d.seiten.filter(s=>['jugend','soma','rueckb
     if(internal)localWrite('pd-vorschau:'+cfg.code,String(Date.now()));
     const snap=loaded?.snapshot||null;
     const kurz=!!snap&&new URLSearchParams(location.search).get('kurz')==='1'&&snap.stand?.paket==='club'&&snap.wahl?.positionen?.some(p=>['aermel_anzug_r','aermel_anzug_l'].includes(p.key));
-    post({reise:'teilen-kontext',kurz,termin:!!cfg.intern(),merken:true,stand:snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
+    post({reise:'teilen-kontext',kurz,termin:!!cfg.intern(),merken:true,stand:latestStand||snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
   }
   function rahmenBereit(f){if(f&&f===frame())frameReady=f;if(cfg)context();}
   function focusables(d){return [...d.querySelectorAll('button,a[href],input,select,textarea,[tabindex]')].filter(x=>!x.disabled&&x.tabIndex>=0&&x.getClientRects().length);}
@@ -46000,7 +46039,7 @@ async function peRechnungPdf(R){ if(!R)return;
 // ---------- Katalog ----------
 function peKatalog(H,zusatz=false){
   const D=PE.d, liste=zusatz?D.leistungen.filter(l=>l.art!=='paket'):D.leistungen, vs=liste.filter(l=>l.vorschlag&&l.aktiv).length, darf=!!D.darf_team;
-  H.innerHTML=`<div class="btnrow" style="margin-bottom:12px">${darf?`<button type="button" class="btn" id="peKneu">${SVI('plus')} Neue Leistung</button>${vs?`<span class="note">${vs} Preise sind noch Vorschläge. Antippen, prüfen, freigeben.</span>`:''}`:'<span class="note">Preise ändert die Abteilungsleitung. Antippen zeigt die Einzelheiten.</span>'}</div>
+  H.innerHTML=`${zusatz?'':'<p><a class="btn ghost" href="formulare/Partnersheet-2027-28.pdf" target="_blank" rel="noopener">Aktuelle Partnerpakete 2027/28 (PDF)</a></p><p class="note">Die Paketbeschreibungen in der folgenden Liste gehören zur früheren Fassung. Die Beiträge werden hier gepflegt.</p>'}<div class="btnrow" style="margin-bottom:12px">${darf?`<button type="button" class="btn" id="peKneu">${SVI('plus')} Neue Leistung</button>${vs?`<span class="note">${vs} Preise sind noch Vorschläge. Antippen, prüfen, freigeben.</span>`:''}`:'<span class="note">Preise ändert die Abteilungsleitung. Antippen zeigt die Einzelheiten.</span>'}</div>
     ${Object.entries(PLIB.BEREICHE).map(([k,t])=>{ const X=liste.filter(l=>l.bereich===k); return X.length?`<h3 class="pe-h">${peE(t)}</h3><div class="pe-liste">${X.map(l=>`<button type="button" class="pe-bz${l.aktiv?'':' aus'}" data-pek="${peE(l.key)}"><div><b>${peE(l.titel)}</b><small>${peE(l.kurz||'')}</small></div>
       <div class="pe-bz-r"><strong>${l.preis!=null?peEur(l.preis):'frei'}</strong><small>${peE(PLIB.EINHEIT[l.einheit]||'')}${l.plaetze!=null?' · '+l.plaetze+' Plätze'+(l.je_mannschaft?' je Mannschaft':''):''}</small>${l.vorschlag?'<em class="pe-vs">Vorschlag</em>':''}${l.aktiv?'':'<em>aus</em>'}</div></button>`).join('')}</div>`:''; }).join('')}`;
   const kn=H.querySelector('#peKneu'); if(kn)kn.onclick=()=>peLeistungForm(null,zusatz);
