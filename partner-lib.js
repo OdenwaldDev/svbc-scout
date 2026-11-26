@@ -2610,8 +2610,8 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
       if(x<1){zeigen(Math.round(betrag*weich));requestAnimationFrame(schritt);}
       else{el.textContent=endtext;el.classList.add('da-fertig');}
     };
-    // Erst zählen, wenn die Bühne aufgegangen ist.
-    setTimeout(()=>requestAnimationFrame(schritt),420);
+    // Erst zählen, wenn die Bühne aufgegangen ist. Kommt das Angebot direkt aus dem Ladebild, geht es etwas später auf.
+    setTimeout(()=>requestAnimationFrame(schritt),document.documentElement.classList.contains('start-oeffnet')?820:420);
   }
   function oeffnen(o){
     if(document.getElementById('pdDirektangebot'))return;

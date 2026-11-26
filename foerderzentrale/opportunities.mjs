@@ -1,5 +1,5 @@
-import { isDay, sourceUrl } from './domain.mjs?v=beta-0.99.171';
-import { bindings } from './opportunity-sources.mjs?v=beta-0.99.171';
+import { isDay, sourceUrl } from './domain.mjs?v=beta-0.99.172';
+import { bindings } from './opportunity-sources.mjs?v=beta-0.99.172';
 
 // Redaktionelle Vorschläge zu bestehenden Akten. Keine neuen Vereinsbedarfe oder Zusagen.
 export const departments = {football:'Abteilung Fußball',youth:'Jugendfußball',club:'Gesamtverein'};

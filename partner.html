@@ -62,16 +62,28 @@ h3{font-family:var(--c);font-weight:700;font-size:22px;line-height:1.15;color:va
 .dunkel .lead{color:#d9e2f0;}
 .k{font-size:14px;font-weight:600;color:var(--grau);margin-bottom:6px;}
 .dunkel .k{color:var(--hb2);}
-.start{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px var(--rand);text-align:center;background:var(--navy);color:#fff;}
-.start img{border-radius:12px;}
+/* 0.99.172 (Albert, 26.11.2026): Ladebild wie in der App, zwei Ringe laufen ums Doppelwappen. Ist die Seite da, geht das Ladebild auf. */
+.start{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:60px var(--rand);text-align:center;color:#fff;
+  background:radial-gradient(70% 45% at 50% 38%,rgba(64,130,255,.3),transparent 70%),#0a1630;}
+.start-logo{position:relative;display:grid;place-items:center;width:196px;height:196px;margin-bottom:6px;}
+.start-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(143,201,236,.14);border-top-color:#8fc9ec;border-right-color:rgba(143,201,236,.45);animation:startdreh 1.6s cubic-bezier(.5,.2,.5,.8) infinite;}
+.start-ring.b{inset:12px;border-top-color:transparent;border-right-color:transparent;border-bottom-color:rgba(238,136,58,.8);border-left-color:rgba(238,136,58,.28);animation-duration:2.4s;animation-direction:reverse;}
+.start img{width:134px;height:auto;filter:drop-shadow(0 16px 40px rgba(47,107,255,.5));animation:startpuls 2.2s ease-in-out infinite;}   /* Doppelwappen 320 × 182, nicht quadratisch */
 .start-k{margin:8px 0 0;font-family:var(--c);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--hb);}
 .start h1{margin:0;font-family:var(--c);font-weight:800;font-size:clamp(34px,9vw,52px);line-height:1;color:#fff;}
 .start-t{margin:2px 0 0;font-size:16px;color:var(--hb2);}
-.start-b{display:flex;gap:7px;margin-top:18px;}
-.start-b i{width:9px;height:9px;border-radius:50%;background:var(--hb);opacity:.45;animation:startp 1.1s ease-in-out infinite;}
-.start-b i:nth-child(2){animation-delay:.15s;} .start-b i:nth-child(3){animation-delay:.3s;}
-@keyframes startp{0%,100%{opacity:.3;transform:translateY(0);}50%{opacity:1;transform:translateY(-4px);}}
-@media (prefers-reduced-motion:reduce){.start-b i{animation:none;}}
+.start-bar{width:200px;height:4px;border-radius:9px;background:rgba(148,163,196,.18);overflow:hidden;margin-top:18px;}
+.start-bar i{display:block;height:100%;width:35%;border-radius:9px;background:#8fc9ec;animation:startlauf 1.1s ease-in-out infinite;}
+@keyframes startdreh{to{transform:rotate(360deg);}}
+@keyframes startpuls{50%{transform:scale(1.04);}}
+@keyframes startlauf{from{transform:translateX(-100%);}to{transform:translateX(320%);}}
+.start.start-auf{position:fixed;inset:0;z-index:2147483647;min-height:0;pointer-events:none;animation:startweg .8s cubic-bezier(.6,0,.3,1) forwards;}
+.start-auf .start-logo{animation:startlogoauf .8s cubic-bezier(.5,0,.2,1) forwards;}
+.start-auf .start-k,.start-auf h1,.start-auf .start-t,.start-auf .start-bar{animation:starttextweg .35s ease forwards;}
+@keyframes startweg{0%,30%{opacity:1;}100%{opacity:0;}}
+@keyframes startlogoauf{to{transform:scale(3.2);opacity:0;}}
+@keyframes starttextweg{to{opacity:0;transform:translateY(10px);}}
+@media (prefers-reduced-motion:reduce){.start-ring,.start img,.start-bar i{animation:none;}}
 .leer-hinweis{padding:120px 20px;text-align:center;max-width:560px;margin:0 auto;}
 .leer-hinweis p{color:var(--ink2);}
 
@@ -787,11 +799,19 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
 .da-vergleich b{font:800 clamp(38px,10vw,54px)/1 system-ui,sans-serif;color:#ee883a;font-variant-numeric:tabular-nums}
 .da-vergleich span{color:#dbe3ee;line-height:1.45}
 .da-wege{display:flex;flex-wrap:wrap;gap:10px}
+/* 0.99.172: Das Angebot geht auf. Kommt es direkt aus dem Ladebild (start-oeffnet), wartet es kurz, bis sich die Ringe geweitet haben. */
+.da-dialog[open]{animation:da-oeffnen .6s cubic-bezier(.2,.8,.2,1) both}
+.da-dialog[open]::backdrop{animation:da-hinten .5s ease both}
+.start-oeffnet .da-dialog[open]{animation-delay:.32s}.start-oeffnet .da-dialog[open]::backdrop{animation-delay:.2s}
+.da-buehne::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.16) 50%,transparent 62%);transform:translateX(-120%);animation:da-glanz 1.1s 1.7s ease-out both}
+@keyframes da-oeffnen{from{opacity:0;transform:translateY(26px) scale(.94);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes da-hinten{from{opacity:0}to{opacity:1}}
+@keyframes da-glanz{to{transform:translateX(120%)}}
 @keyframes da-auf{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes da-linie{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes da-rein{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
 @keyframes da-puls{0%{transform:scale(1)}45%{transform:scale(1.035)}100%{transform:scale(1)}}
-@media(prefers-reduced-motion:reduce){.da-buehne,.da-buehne::before,.da-punkte li,.da-zahl.da-fertig{animation:none}}
+@media(prefers-reduced-motion:reduce){.da-buehne,.da-buehne::before,.da-buehne::after,.da-punkte li,.da-zahl.da-fertig,.da-dialog[open],.da-dialog[open]::backdrop{animation:none}}
 @media(max-width:600px){.da-dialog{max-height:100dvh;border-radius:0}.da-inhalt h1{font-size:36px}.da-kopf{padding-top:max(10px,env(safe-area-inset-top))}.da-fuss{padding-bottom:max(20px,env(safe-area-inset-bottom))}.da-aermel{grid-template-columns:1fr}}
 .pd-share-icon{position:fixed;z-index:2147483100;right:max(16px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));display:grid;place-items:center;width:44px;height:44px;border:1px solid #d2d5df;border-radius:8px;background:#fff;color:#1d2760;cursor:pointer}.pd-share-icon svg{width:22px;height:22px}.pd-share-icon[hidden]{display:none!important}
 .pd-share-backdrop{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(4,17,39,.68);font:16px/1.5 Barlow,Arial,sans-serif;color:#182444;box-sizing:border-box}.pd-share-backdrop *{box-sizing:border-box}.pd-share-dialog{width:min(100%,620px);max-height:calc(100vh - 36px);max-height:calc(100dvh - 36px);overflow:auto;overscroll-behavior:contain;background:#fff;border:1px solid #d8dbe2;border-radius:12px;padding:24px}.pd-share-dialog>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.pd-share-dialog h2{font:800 30px/1.1 'Barlow Condensed',Barlow,Arial,sans-serif;margin:0;color:#1d2760}.pd-share-kicker{margin:0 0 5px!important;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#49566d}.pd-share-x{flex:none;width:44px;height:44px;border:1px solid #c9ceda;border-radius:7px;background:#fff;color:#1d2760;font-size:26px}.pd-share-dialog p{margin:16px 0}.pd-share-firma{font-weight:700;font-size:18px}.pd-share-qr{width:min(100%,360px);margin:16px auto;padding:8px;background:#fff;color:#182444}.pd-share-qr svg{display:block;width:100%;height:auto}.pd-share-explain{font-size:15px}.pd-share-small{font-size:13px;color:#49566d}.pd-share-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pd-share-dialog button,.pd-share-dialog a,.pd-share-consent button{font:600 16px/1.25 Barlow,Arial,sans-serif;min-height:44px;border:1px solid #bec6d5;border-radius:7px;background:#fff;color:#1d2760;cursor:pointer;padding:11px 14px;text-decoration:none;text-align:center}.pd-share-dialog a{display:flex;align-items:center;justify-content:center}.pd-share-dialog .pd-share-x{padding:0;font-size:26px}.pd-share-dialog button:disabled{opacity:.65;cursor:default}.pd-share-link-label{display:grid;gap:5px;font-size:13px;margin-top:18px}.pd-share-link{width:100%;min-height:44px;border:1px solid #b6bfce;border-radius:5px;background:#f6f7f9;padding:10px;font:16px/1.3 Barlow,Arial,sans-serif;color:#182444}.pd-share-follow{padding-top:20px;border-top:1px solid #dce0e7;margin-top:24px}.pd-share-follow h3,.pd-share-report h3{margin:0;font-size:19px}.pd-share-follow p{font-size:14px}.pd-share-check{display:flex;align-items:flex-start;gap:10px;font-size:14px;margin:16px 0}.pd-share-check input{flex:none;min-width:22px;min-height:22px;margin:0;accent-color:#1d2760}.pd-share-days{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:16px}.pd-share-days input{width:70px;min-height:44px;border:1px solid #b6bfce;border-radius:5px;padding:8px;font:16px Barlow,Arial,sans-serif}.pd-share-follow .pd-share-primary{display:block;background:#1d2760;color:#fff;border-color:#1d2760;width:100%;margin-bottom:10px}.pd-share-feedback{font-size:14px;color:#1d2760}.pd-share-report{padding:20px 0;border-top:1px solid #dce0e7}.pd-share-report dl{display:grid;gap:8px;font-size:14px;margin:16px 0}.pd-share-report dl>div{display:flex;justify-content:space-between;gap:14px}.pd-share-report dt{color:#49566d}.pd-share-report dd{margin:0;text-align:right;font-weight:600}.pd-share-report h4{margin:20px 0 6px;font-size:17px}.pd-share-report ul{padding-left:22px}.pd-share-report li{margin:6px 0}.pd-share-consent{position:fixed;bottom:12px;right:12px;left:12px;z-index:2147483400;max-width:650px;margin-left:auto;background:#fff;border:1px solid #c1c9d7;border-radius:10px;padding:18px;color:#182444;font:15px/1.45 Barlow,Arial,sans-serif;box-shadow:0 4px 24px #04112726}.pd-share-consent p{margin:0 0 14px}.pd-share-consent strong,.pd-share-consent span{display:block}.pd-share-consent span{margin-top:6px;font-size:14px}.pd-share-consent>div{display:flex;flex-wrap:wrap;gap:8px}.pd-share-consent [data-consent="ja"]{background:#1d2760;color:#fff;border-color:#1d2760}.pd-share-consent .pd-share-plain{border-color:transparent;text-align:left;font-size:13px;padding:8px 0}.pd-stat-toggle{position:fixed;bottom:10px;left:10px;z-index:2147483100;min-height:44px;padding:10px;border:1px solid #c1c9d7;border-radius:6px;background:#fff;color:#1d2760;font:13px/1.3 Barlow,Arial,sans-serif;cursor:pointer}.pd-share-status{position:fixed;bottom:10px;left:12px;right:12px;z-index:2147483700;max-width:600px;margin:0 auto;padding:12px 16px;background:#fff;color:#182444;border:1px solid #c1c9d7;border-radius:6px;font:14px/1.4 Barlow,Arial,sans-serif}.pd-share-dialog :focus-visible,.pd-share-icon:focus-visible,.pd-share-consent :focus-visible{outline:3px solid #2f6bff;outline-offset:3px}
@@ -882,15 +902,31 @@ footer a{color:#fff;display:inline-block;padding:11px 0;margin:-11px 0;}
 </head>
 <body>
 <div id="app"><div class="start" id="startHuelle">
-  <img src="partner/wappen.png" width="76" height="76" alt="" fetchpriority="high">
+  <div class="start-logo"><i class="start-ring" aria-hidden="true"></i><i class="start-ring b" aria-hidden="true"></i><img src="partner/wappen.png" width="134" height="76" alt="" fetchpriority="high"></div>
   <p class="start-k">SV/BSC Mörlenbach</p>
   <h1>Partner werden</h1>
   <p class="start-t">Eure Übersicht wird geladen …</p>
-  <div class="start-b" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="start-bar" aria-hidden="true"><i></i></div>
 </div></div>
-<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.171", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
-<script src="partner-lib.js?v=beta-0.99.171"></script>
-<script src="partner-teilen.js?v=beta-0.99.171"></script><script src="partner.js?v=beta-0.99.171"></script>
+<script>
+// Ladebild: beim Angebotslink passender Text. Sobald die Seite steht, geht das Ladebild auf (Ringe weiten sich, Bild blendet aus).
+(function(){
+  var app=document.getElementById('app'),h=document.getElementById('startHuelle');if(!app||!h)return;
+  if(/[?&]angebot=1(&|$)/.test(location.search)){h.querySelector('h1').textContent='Euer Angebot';h.querySelector('.start-t').textContent='Euer Angebot wird geladen …';}
+  if(!window.MutationObserver||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;
+  var mo=new MutationObserver(function(){
+    if(document.getElementById('startHuelle'))return;
+    mo.disconnect();
+    var b=h.cloneNode(true),w=document.documentElement;b.id='startBlende';b.setAttribute('aria-hidden','true');b.classList.add('start-auf');
+    document.body.appendChild(b);w.classList.add('start-oeffnet');
+    setTimeout(function(){b.remove();w.classList.remove('start-oeffnet');},950);
+  });
+  mo.observe(app,{childList:true});
+})();
+</script>
+<script>window.PD_CFG={"url": "https://lvaukuzgcwgqipxwzabo.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2YXVrdXpnY3dncWlweHd6YWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxNTYwMTcsImV4cCI6MjEwNTczMjAxN30.jYZF8q8-SyCaWykM0wwcK58EzfTbO2VASKz1NIv1xbo", "build": "beta-0.99.172", "kontakt": {"personen": [{"name": "Sven Schill", "funktion": "Partnerschaften", "bild": "partner/ansprech-sven.jpg"}, {"name": "Tobias J\u00e4ger", "funktion": "Partnerschaften", "bild": "partner/ansprech-tobias.jpg"}, {"name": "Albert Klee", "funktion": "Abteilungsleitung Fu\u00dfball", "bild": "partner/ansprech-albert.jpg"}], "telefon": "06209 5290", "mail": "fussball@sv-moerlenbach.de"}, "wirkung": [{"titel": "Trainingsb\u00e4lle f\u00fcr die Jugend", "eins": "Trainingsball f\u00fcr die Jugend", "preis": 28}, {"titel": "Trikots\u00e4tze f\u00fcr eine Jugendmannschaft", "eins": "Trikotsatz f\u00fcr eine Jugendmannschaft", "preis": 450}, {"titel": "Jahresbeitr\u00e4ge eines Kindes", "eins": "Jahresbeitrag eines Kindes", "preis": 72}]};</script>
+<script src="partner-lib.js?v=beta-0.99.172"></script>
+<script src="partner-teilen.js?v=beta-0.99.172"></script><script src="partner.js?v=beta-0.99.172"></script>
 <script>(function(){ try{
   var q=new URLSearchParams(location.search), hp=new URLSearchParams(location.hash.slice(1));
   var code=(hp.get('d')||'').toLowerCase(), key='reise-'+code, st=null;

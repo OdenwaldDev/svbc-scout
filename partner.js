@@ -157,7 +157,7 @@
     // 0.99.86: kurzer Link (…/#firma-k7m2xq9d). Der Server nennt den Code der Präsentation, dann lädt die Seite mit ihm neu.
     { let kz=''; try{ kz=decodeURIComponent(location.hash.slice(1)).toLowerCase(); }catch(e){}
       if(!/^[a-f0-9]{32}$/.test(code)&&/^([a-z0-9]+-)*[a-hjkmnp-z2-9]{8}$/.test(kz)&&kz.length<=40){
-        app.innerHTML='<div class="leer-hinweis">Einen Moment …</div>';
+        if(!$('#startHuelle'))app.innerHTML='<div class="leer-hinweis">Einen Moment …</div>';   // 0.99.172: das Ladebild bleibt stehen, bis der Link aufgelöst ist
         try{ const k=await rpc('partner_link',{p_kurz:kz}); if(k==='anlass'){ location.replace('anlass.html#'+kz); return; }   // 0.99.89: Präsentation zu einem Anlass hat ihre eigene Seite
         if(typeof k==='string'&&/^[a-f0-9]{32}$/.test(k)){ history.replaceState(null,'',location.pathname+location.search+'#d='+k); location.reload(); return; } }
         catch(e){ if(e.netz){ app.innerHTML=`<div class="leer-hinweis"><h2 class="g">Gerade keine Verbindung</h2><p>Dein persönlicher Link gilt weiter. Prüf bitte die Verbindung und versuch es noch einmal.</p><button type="button" class="knopf-w" id="nochmal" style="max-width:320px;margin-top:22px">Noch einmal versuchen</button></div>`; $('#nochmal').onclick=laden; return; } }
