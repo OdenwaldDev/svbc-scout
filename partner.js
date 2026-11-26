@@ -237,7 +237,7 @@
       }
     };
     angebotEinstiegAktualisieren();
-    paketfassungSenden();
+    paketfassungSenden();bausteineSenden();
     const einstieg=new URLSearchParams(location.search);
     if(einstieg.get('stadion')==='1')platzwahlOeffnen(direktAngebotQuelle()?.wert?.paket);
     else if(einstieg.get('angebot')==='1')angebotAnzeigen();
@@ -317,10 +317,16 @@
     $('#reiseRahmen')?.contentWindow?.postMessage({reise:'paketfassung',fassung:2,leistungen,hauptpartner:D.hauptpartner},location.origin);
     heimspielStandSenden();
   }
+  // 0.99.169: Das Schwarze Brett der Präsentation zeigt alle Bausteine aus dem Katalog, mit Preis, freien Plätzen und freien Mannschaften.
+  function bausteineSenden(){ const f=$('#reiseRahmen'); if(!f?.contentWindow||!D)return;
+    const liste=(D.leistungen||[]).filter(l=>l.art!=='paket'&&!['spende','sonstiges'].includes(l.art)&&l.key!=='jobpost'&&l.preis!=null).map(l=>{ const je=!!l.je_mannschaft, map=l.frei_je_naechste||l.frei_je||{};
+      return {key:l.key,titel:l.titel,kurz:l.kurz||'',preis:+l.preis,einheit:l.einheit,bereich:l.bereich,je,ca:CA_KEYS.includes(l.key),frei:je?null:(l.frei_naechste!=null?l.frei_naechste:l.frei!=null?l.frei:null),
+        teams:je?M.filter(m=>map[m.id]==null||+map[m.id]>0).map(m=>({id:m.id,name:m.name})):null}; });
+    f.contentWindow.postMessage({reise:'bausteine',liste},location.origin); }
   function bandenzusatzErlaubt(){return D?.paketfassung!==2||S.korb.some(e=>['club','premium','p1896'].includes(e.key));}
   function anzugStandSenden(){const f=$('#reiseRahmen');if(!f?.contentWindow||!D)return;const keys=['aermel_anzug_l','aermel_anzug_r'],plaetze=(D.anzug_aermel?.plaetze||[]).map(t=>{const l=lk(t.key),map=l?.frei_je_naechste||l?.frei_je||{},frei=l&&+map[t.team]===1?1:0;return {id:t.id,team:t.team,seite:t.seite,key:t.key,name:t.name,kurz:t.kurz,frei,status:frei?'frei':t.status==='frei'?'vergeben':t.status,ab_jahr:t.ab_jahr};});f.contentWindow.postMessage({reise:'anzug-stand',plaetze,preise:Object.fromEntries(keys.map(k=>[k,lk(k)?.preis??600])),erlaubt:keys.some(k=>!!lk(k))},location.origin);}
   window.addEventListener('message',e=>{const f=$('#reiseRahmen');if(f&&e.source===f.contentWindow&&e.origin===location.origin&&e.data?.reise==='bereit'){
-    paketfassungSenden();anzugStandSenden();
+    paketfassungSenden();anzugStandSenden();bausteineSenden();
     const w=D?.deck.passung?.angebotsentwurf;
     if(w?.team){
       aermelTeamSenden([],w);
@@ -1018,15 +1024,17 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
   // Sagt die Firma in der Präsentation Ja, steht ihre Wahl hier schon in der Auswahl. Überschrieben wird nie etwas: Liegt schon etwas
   // in der Auswahl oder ist abgeschlossen, bleibt es. Was vergeben ist, kommt nicht hinein. Bausteine für eine Mannschaft werden nicht
   // geraten, die wählt man hier mit der Mannschaft dazu.
-  function ausReise(w){ if(!w||S.ergebnis||S.korb.length)return null; let n=0; const offen=[];
+  function ausReise(w){ if(!w||S.ergebnis)return null; let n=0; const offen=[], schon=S.korb.length>0;
     // Die Präsentation wirbt ausdrücklich für 2027/28. Nicht stillschweigend die laufende Saison berechnen.
     if(w.beginn!==String(D.naechste_saison).slice(0,10)){ toast('Die Saison aus der Präsentation ist nicht mehr aktuell. Bitte wählt Paket und Start hier neu.'); return null; }
     const vorher={start:S.start,startWahl:S.startWahl,saisons:S.saisons,auto:S.auto};
     S.start='naechste'; S.startWahl=true;
     if([1,2,3].includes(+w.saisons))S.saisons=+w.saisons; if(typeof w.auto==='boolean')S.auto=w.auto;
-    const rein=k=>{ const l=lk(k); if(!l)return; if(l.je_mannschaft){if(['aermel_anzug_l','aermel_anzug_r'].includes(k)&&M.some(m=>m.id===w.anzug_team)&&frei(l,w.anzug_team)>0){dazu(k,w.anzug_team,true);n++;return;} offen.push(l.titel); return; } if(frei(l,null)===0)return; dazu(k,null,true); n++; };
+    const rein=k=>{ const l=lk(k); if(!l)return; if(l.art==='paket'&&hatPaket())return; if(S.korb.some(e=>e.key===k))return;
+      if(l.je_mannschaft){ const t=['aermel_anzug_l','aermel_anzug_r'].includes(k)?w.anzug_team:(w.teams&&typeof w.teams==='object'?w.teams[k]:null); if(t&&M.some(m=>m.id===t)&&frei(l,t)>0){dazu(k,t,true);n++;return;} offen.push(l.titel); return; } if(frei(l,null)===0)return; dazu(k,null,true); n++; };
     if(w.paket&&w.paket!=='keins')rein(w.paket); (Array.isArray(w.extras)?w.extras:[]).slice(0,12).forEach(k=>rein(String(k)));
     if(!n&&!offen.length){ Object.assign(S,vorher); return null; }
+    if(schon&&!n){ return {n,offen}; }
     nachKorb(true);
     return {n,offen}; }
   window.addEventListener('message',e=>{ try{ if(e.origin!==location.origin||!e.data||e.data.reise!=='fertig'||!e.data.wahl)return; const r=ausReiseMitKonditionen(e.data.wahl); if(!r)return;

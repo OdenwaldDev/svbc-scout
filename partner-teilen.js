@@ -19,6 +19,8 @@
     for(const k of ['i','groesse','pi','laufzeit'])if(Number.isFinite(+st[k])&&st[k]!==null)stand[k]=Math.max(-1,Math.min(20,+st[k]));
     for(const k of ['skeptisch','auto','verl'])if(typeof st[k]==='boolean')stand[k]=st[k];
     for(const k of ['antrieb','extras','info'])if(Array.isArray(st[k]))stand[k]=st[k].filter(x=>typeof x==='string'&&/^[a-z0-9_-]{1,60}$/.test(x)).slice(0,24);
+    // 0.99.169: Mannschaft je Baustein vom Schwarzen Brett
+    if(st.teams&&typeof st.teams==='object'&&!Array.isArray(st.teams)){const t={};for(const k of Object.keys(st.teams).slice(0,16))if(/^[a-z0-9_]{2,40}$/.test(k)&&typeof st.teams[k]==='string'&&/^[a-z0-9]{1,12}$/.test(st.teams[k]))t[k]=st.teams[k];stand.teams=t;}
     const positionen=(Array.isArray(w.positionen)?w.positionen:[]).slice(0,30).filter(x=>x&&typeof x.key==='string'&&/^[a-z0-9_-]{1,60}$/.test(x.key)).map(x=>({key:x.key,menge:Number.isFinite(+x.menge)?Math.max(1,Math.min(1000,+x.menge)):1,...(typeof x.mannschaft==='string'?{mannschaft:str(x.mannschaft,80)}:{})}));
     const wahl={positionen,saisons:[1,2,3,4,5].includes(+w.saisons)?+w.saisons:1,auto_verlaengerung:!!w.auto_verlaengerung};
     if(/^\d{4}-\d{2}-\d{2}$/.test(w.beginn||''))wahl.beginn=w.beginn;
@@ -47,12 +49,16 @@
   function internMarker(){if(!cfg)return false;const t=+localRead('pd-vorschau:'+cfg.code);return Number.isFinite(t)&&t>Date.now()-30*864e5;}
   function freshInternal(){return !!(cfg?.intern&&cfg.intern())||internMarker()||new URLSearchParams(location.search).get('intern')==='1';}
   function post(data){frame()?.contentWindow?.postMessage(data,location.origin);}
+  // 0.99.169: Jeder Tipp liegt sofort auch auf dem Gerät. Bricht der Browser ab, bevor der Server geantwortet hat, zählt beim nächsten Öffnen der neuere Stand.
+  function lokalMerken(){if(cfg&&latestStand)localWrite('reise-lok-'+cfg.code,JSON.stringify({t:Date.now(),stand:latestStand}));}
+  function lokalLesen(am){try{const l=JSON.parse(localRead('reise-lok-'+cfg.code)||'null');if(!l||!l.stand||typeof l.stand!=='object'||!Number.isFinite(+l.t)||Date.now()-l.t>30*864e5)return null;if(am&&!(l.t>Date.parse(am)))return null;return {t:+l.t,stand:cleanSnapshot({stand:l.stand}).stand};}catch(e){return null;}}
   function context(){
     if(!cfg)return;internal=freshInternal();
     if(internal)localWrite('pd-vorschau:'+cfg.code,String(Date.now()));
     const snap=loaded?.snapshot||null;
     const kurz=!!snap&&new URLSearchParams(location.search).get('kurz')==='1'&&snap.stand?.paket==='club'&&snap.wahl?.positionen?.some(p=>['aermel_anzug_r','aermel_anzug_l'].includes(p.key));
-    post({reise:'teilen-kontext',kurz,termin:!!cfg.intern(),merken:true,stand:latestStand||snap?.stand||resumeStand?.stand||null,am:loaded?.am||resumeStand?.am||null});
+    const am=loaded?.am||resumeStand?.am||null,lok=latestStand?null:lokalLesen(am);
+    post({reise:'teilen-kontext',kurz,termin:!!cfg.intern(),merken:true,stand:latestStand||lok?.stand||snap?.stand||resumeStand?.stand||null,am:lok?new Date(lok.t).toISOString():am});
   }
   function rahmenBereit(f){if(f&&f===frame())frameReady=f;if(cfg)context();}
   function focusables(d){return [...d.querySelectorAll('button,a[href],input,select,textarea,[tabindex]')].filter(x=>!x.disabled&&x.tabIndex>=0&&x.getClientRects().length);}
@@ -75,7 +81,8 @@
     cfg=options;legacySID=uid();const h=new URLSearchParams(location.hash.slice(1));shareToken=h.get('teilen');if(h.has('teilen')&&!tokenOK(shareToken))throw Error('Dieser geteilte Link ist unvollständig. Bitte öffne den ganzen Link aus der Nachricht.');
     internal=freshInternal();if(internal)localWrite('pd-vorschau:'+cfg.code,String(Date.now()));
     if(shareToken){try{loaded=await cfg.rpc('partner_teilen_lesen',{p_token:shareToken});if(!loaded)throw Error('Dieser geteilte Stand ist nicht mehr aktiv. Bitte lass dir einen neuen Link geben.');if(loaded.code!==cfg.code)throw Error('Der geteilte Stand gehört nicht zu dieser Präsentation.');latestStand=cleanSnapshot(loaded.snapshot||{}).stand;}catch(e){loaded=null;shareToken=null;throw e;}}
-    else{try{resumeStand=await cfg.rpc('partner_reise_stand',{p_code:cfg.code});if(resumeStand?.stand)latestStand=cleanSnapshot({stand:resumeStand.stand}).stand;}catch(e){resumeStand=null;}}
+    else{try{resumeStand=await cfg.rpc('partner_reise_stand',{p_code:cfg.code});if(resumeStand?.stand)latestStand=cleanSnapshot({stand:resumeStand.stand}).stand;}catch(e){resumeStand=null;}
+      const lok=lokalLesen(resumeStand?.am||null);if(lok&&resumeStand!==null){latestStand=lok.stand;resumeStand=Object.assign({},resumeStand||{},{stand:lok.stand,am:new Date(lok.t).toISOString()});}}
     return loaded;
   }
   function start(){
@@ -137,7 +144,7 @@
     try{while(queue.length&&consent===true&&!internal&&!excluded&&visitor===v){const p=queue[0],r=checked(await cfg.rpc('partner_teilen_ereignis',{p_token:shareToken,p_besuch:v.id,p_besuch_token:v.besuch_token,p}));if(visitor!==v)break;if(r.internausschluss){excluded=true;consent=false;queue=[];if(heartbeat){clearInterval(heartbeat);heartbeat=null;}$('#pdStatToggle')?.remove();break;}if(queue[0]===p)queue.shift();}}
     catch(e){/* Keep the same sequence for an idempotent retry. */}finally{sending=false;}
   }
-  function scheduleSave(){if(!cfg||shareToken&&!visitor||!shareToken&&!latestStand)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,1600);}
+  function scheduleSave(){if(!cfg||shareToken&&!visitor||!shareToken&&!latestStand)return;clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,500);}
   async function saveNow(strict=false){
     clearTimeout(saveTimer);saveTimer=null;if(!cfg||shareToken&&!visitor||!shareToken&&!latestStand)return;if(saveRunning){saveAgain=true;if(strict){await savePromise;return saveNow(true);}return;}
     const p=shareToken?publicFields():{stand:latestStand,schritt:SCENES[Math.max(0,Math.min(SCENES.length-1,+latestStand.i||0))]},signature=(shareToken||'stand')+JSON.stringify(p);if(signature===lastSaved)return;saveRunning=true;
@@ -212,8 +219,8 @@
     if(e.data.reise==='studio-oeffnen'){if(cfg.intern()&&typeof cfg.studio==='function')cfg.studio();return;}
     if(e.data.reise==='teilen-stat'&&e.data.vertraut===true){interact(str(e.data.szene,30),str(e.data.aktion,20));return;}
     if(e.data.reise==='teilen-szene'&&SCENES.includes(e.data.szene)){tick();scene=e.data.szene;return;}
-    if(e.data.reise==='merken'&&e.data.daten?.stand){latestStand=cleanSnapshot({stand:e.data.daten.stand}).stand;scheduleSave();}
-    if(e.data.reise==='teilen-stand'&&e.data.stand){latestStand=cleanSnapshot({stand:e.data.stand}).stand;scheduleSave();}
+    if(e.data.reise==='merken'&&e.data.daten?.stand){latestStand=cleanSnapshot({stand:e.data.daten.stand}).stand;lokalMerken();scheduleSave();}
+    if((e.data.reise==='teilen-stand'||e.data.reise==='lokal')&&e.data.stand){latestStand=cleanSnapshot({stand:e.data.stand}).stand;lokalMerken();scheduleSave();}
   });
   root.PD_TEILEN={aktiv:true,vorbereiten:prepare,starten:start,rahmenBereit,oeffnen:openShare,auswertung:openReport,regeln:RULES};
   root.PD_TEILEN_APP={oeffnen:o=>openReport(o.code,o.rpc)};

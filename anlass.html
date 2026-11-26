@@ -690,6 +690,15 @@ html.zeiger .spot{opacity:1}
 .reise-bb-farben button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .reise-bb-farben [aria-disabled="true"]{cursor:wait}
 .reise-bb-farben p{flex-basis:100%;margin:0;color:#e1e8f2;font:500 14px/1.4 var(--b)}
+
+/* 0.99.169: Baustein mit Mannschaftswahl auf dem Schwarzen Brett */
+.zt.mit-team{cursor:pointer}
+.zt .zt-team{display:grid;gap:4px;margin:8px 0 2px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tinte)}
+.zt .zt-team select{font:inherit;font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;min-height:40px;padding:6px 8px;border:1px solid #9aa0b4;border-radius:6px;background:#fff;color:#141824;width:100%}
+@media(min-width:860px){.brett{overflow-x:auto;overflow-y:visible;flex-wrap:nowrap;justify-content:flex-start;scrollbar-width:thin;padding:20px 4px 26px}.brett .zt{flex:0 0 250px;max-width:none}}
+#uebersichtB{font:inherit;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#041127;border:1px solid #fff7;border-radius:7px;padding:0 12px;height:40px;flex:none;margin-left:10px;cursor:pointer}
+#uebersichtB:focus-visible{outline:2px solid #ff8a2a;outline-offset:2px}
+.info .ueb-pdf{display:inline-block;margin-top:6px;font-weight:700;text-decoration:underline;color:inherit}
 /* Präsentation zu einem Anlass (anlass.html), Beta 0.99.89. Grundlage ist reise_stil.css, hier steht nur, was dazukommt. */
 .top .fuer{font:700 12px/1 var(--t);letter-spacing:.16em;text-transform:uppercase;color:var(--hb);max-width:60vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .anlass .a-los{margin-top:24px}

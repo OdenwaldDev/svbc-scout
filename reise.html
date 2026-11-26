@@ -690,6 +690,15 @@ html.zeiger .spot{opacity:1}
 .reise-bb-farben button:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .reise-bb-farben [aria-disabled="true"]{cursor:wait}
 .reise-bb-farben p{flex-basis:100%;margin:0;color:#e1e8f2;font:500 14px/1.4 var(--b)}
+
+/* 0.99.169: Baustein mit Mannschaftswahl auf dem Schwarzen Brett */
+.zt.mit-team{cursor:pointer}
+.zt .zt-team{display:grid;gap:4px;margin:8px 0 2px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tinte)}
+.zt .zt-team select{font:inherit;font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;min-height:40px;padding:6px 8px;border:1px solid #9aa0b4;border-radius:6px;background:#fff;color:#141824;width:100%}
+@media(min-width:860px){.brett{overflow-x:auto;overflow-y:visible;flex-wrap:nowrap;justify-content:flex-start;scrollbar-width:thin;padding:20px 4px 26px}.brett .zt{flex:0 0 250px;max-width:none}}
+#uebersichtB{font:inherit;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#041127;border:1px solid #fff7;border-radius:7px;padding:0 12px;height:40px;flex:none;margin-left:10px;cursor:pointer}
+#uebersichtB:focus-visible{outline:2px solid #ff8a2a;outline-offset:2px}
+.info .ueb-pdf{display:inline-block;margin-top:6px;font-weight:700;text-decoration:underline;color:inherit}
 /* Partnerreise: räumliche Materialien. Nach reise_stil.css einbinden.
    Keine neuen Inhalte oder Bilder der Firma, keine zusätzlichen Schriftarten.
    Optional: .sz-trikot { --schrank-rueckwand: url("partner/r-schrank.webp") }
@@ -1331,6 +1340,7 @@ html.zeiger .spot{opacity:1}
     <button id="reiseAngebot" class="reise-angebot" type="button" hidden>Zum Angebot</button>
     <button id="bewegungB" class="film-knopf" type="button" hidden>Video pausieren</button>
     <button id="tonB" type="button" aria-pressed="false" aria-label="Ton an oder aus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="w1" d="M16.5 9a4 4 0 0 1 0 6"/><path class="w2" d="M19 6.5a8 8 0 0 1 0 11"/><path class="x" d="M17 10l4 4M21 10l-4 4"/></svg></button>
+    <button id="uebersichtB" type="button" aria-label="Alle Pakete auf einen Blick">Pakete</button>
     <button id="reiseTeilen" type="button" aria-label="Diese Präsentation teilen" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M7 11H5a1 1 0 0 0-1 1v8h16v-8a1 1 0 0 0-1-1h-2"/></svg></button>
   </header>
 
@@ -1570,7 +1580,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.168';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.169';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -1796,14 +1806,31 @@ const EX={
   aermel_anzug_r:{t:'Trainingsanzug, rechter Ärmel',k:'Euer Logo in Schwarz auf dem rechten Anzugärmel einer Jugendmannschaft.',p:600,ca:1,e:'einmalig',tags:{herz:3,buehne:2},bild:'anzug'},
   trikot_jugend:{t:'Trikotpatenschaft Jugend',k:'Eine Mannschaft läuft in neuen Trikots mit eurem Logo auf.',p:600,ca:1,e:'einmalig',tags:{herz:3,buehne:1},bild:'trikot'},
   team_jugend:{t:'Teampartner Jugend',k:'Eine Saison lang Partner einer Jugendmannschaft, mit Logo auf dem Mannschaftsfoto.',p:250,e:'je Saison',sais:1,tags:{herz:3,heimat:1},bild:'partner/r-jugend.webp'},
-  trainer_jugend:{t:'Patenschaft Trainerlizenz',k:'Ihr übernehmt eine Trainerlizenz. Davon haben die Kinder viele Jahre etwas.',p:300,e:'einmalig',tags:{herz:2},bild:'partner/r-jugend.webp'},
+  trainer_jugend:{t:'Patenschaft Trainerlizenz',k:'Ihr übernehmt eine Trainerlizenz. Davon haben die Kinder viele Jahre etwas.',p:300,e:'einmalig',tags:{herz:2},bild:'partner/r-trainer.webp'},
   zeltlager:{t:'Partner Zeltlager',k:'Euer Banner hängt am Zeltlager der Jugend. Die Familien erfahren, wer dahintersteht.',p:300,e:'einmalig',tags:{herz:2,heimat:2},bild:'partner/r-zeltlager.webp'},
   ferienspiele:{t:'Partner Ferienspiele',k:'Fußball in den Ferien für Kinder aus Mörlenbach und Umgebung.',p:200,e:'einmalig',tags:{heimat:3,herz:1},bild:'partner/r-ferienspiele.webp'},
   jobpost:{t:'Stellenanzeige',k:'Eure Stelle auf Instagram und Facebook, bei Spielern, Eltern und Fans aus dem Weschnitztal.',p:99,e:'je Anzeige',tags:{team:5},nicht:['premium','p1896'],schrift:'Stelle frei'},
-  business_treff:{t:'Partnertreffen bei euch',k:'Ein Abend in eurem Betrieb. Die anderen Partner lernen euch und eure Arbeit kennen.',p:250,e:'je Abend',tags:{netz:5},schrift:'Zu Gast bei euch'},
-  matchball:{t:'Matchball-Partner',k:'Ihr übergebt vor dem Anpfiff den Spielball, mit Durchsage und Foto.',p:99,e:'je Spieltag',tags:{ehre:2,buehne:2},bild:'partner/r-ball.webp'},
-  tor_monat:{t:'Tor des Monats',k:'Jeden Monat das schönste Tor mit eurem Logo, auf Instagram und Facebook.',p:300,e:'je Saison',sais:1,tags:{buehne:2,ehre:1},schrift:'Tor des Monats'}
+  business_treff:{t:'Partnertreffen bei euch',k:'Ein Abend in eurem Betrieb. Die anderen Partner lernen euch und eure Arbeit kennen.',p:250,e:'je Abend',tags:{netz:5},bild:'partner/r-treff.webp'},
+  matchball:{t:'Matchball-Partner',k:'Ihr übergebt vor dem Anpfiff den Spielball, mit Durchsage und Foto.',p:99,e:'je Spieltag',tags:{ehre:2,buehne:2},bild:'partner/r-matchball.webp'},
+  tor_monat:{t:'Tor des Monats',k:'Jeden Monat das schönste Tor mit eurem Logo, auf Instagram und Facebook.',p:300,e:'je Saison',sais:1,tags:{buehne:2,ehre:1},bild:'partner/r-tor.webp'},
+  highlights_social:{t:'Spielhighlights auf Social Media',k:'Euer Name in den Highlights nach jedem Heimspiel der Ersten.',p:50,e:'je Spieltag',tags:{buehne:3,ehre:1},bild:'partner/r-highlights.webp'},
+  stream_einblendung:{t:'Live-Einblendung im Stream',k:'Euer Logo läuft live im Stream der Heimspiele mit.',p:120,e:'je Saison',sais:1,tags:{buehne:3,netz:1},bild:'partner/r-stream.webp'},
+  aermel_erste:{t:'Ärmelpartner Erste',k:'Euer Logo auf dem Ärmel der Ersten Mannschaft.',p:600,ca:1,e:'einmalig',tags:{buehne:3,ehre:2},bild:'partner/r-aermel.webp'},
+  brust_erste:{t:'Trikotpartner Erste',k:'Euer Name auf der Brust der Ersten Mannschaft.',p:2500,e:'je Saison',sais:1,tags:{ehre:4,buehne:3},bild:'partner/r-brust.webp'},
+  turnier:{t:'Turnierpartner',k:'Ein Jugendturnier bei uns trägt euren Namen.',p:150,e:'je Turnier',tags:{heimat:2,herz:2},bild:'partner/r-turnier.webp'},
+  aufwaerm_jugend:{t:'Aufwärmshirts Jugend',k:'Eine Jugendmannschaft wärmt sich in Shirts mit eurem Logo auf.',p:250,e:'einmalig',tags:{herz:3,buehne:1},bild:'partner/r-aufwaerm.webp'},
+  aermel_jugend:{t:'Ärmelpartner Jugend',k:'Euer Logo auf dem Ärmel einer Jugendmannschaft.',p:600,ca:1,e:'einmalig',tags:{herz:3,buehne:1},bild:'partner/r-aermelj.webp'}
 };
+// 0.99.169: Das Brett zeigt alle Bausteine aus dem Katalog des Vereins. Was dort neu angelegt wird, kommt mit einem Bild seines Bereichs dazu.
+const BEREICH_TAGS={jugend:{herz:3},erste:{buehne:3},events:{heimat:2,herz:1},verein:{netz:1,heimat:1}}, BEREICH_BILD={jugend:'partner/r-jugend.webp',erste:'partner/r-matchball.webp',events:'partner/r-turnier.webp',verein:'partner/r-treff.webp'};
+const EINHEIT_T={saison:'je Saison',einmalig:'einmalig',spieltag:'je Spieltag',stueck:'je Stück'};
+let KATALOG=null;
+function bausteineUebernehmen(liste){ if(!Array.isArray(liste)||!liste.length)return; const K={};
+  for(const l of liste.slice(0,60)){ if(!l||!/^[a-z0-9_]{2,40}$/.test(String(l.key))||!(+l.preis>=0))continue; K[l.key]=l; if(ANZUG_KEYS.includes(l.key))continue;
+    let e=EX[l.key]; if(!e){ e=EX[l.key]={t:esc(String(l.titel||'').slice(0,80)),k:esc(String(l.kurz||'').slice(0,200)),e:EINHEIT_T[l.einheit]||'',tags:BEREICH_TAGS[l.bereich]||{heimat:1},bild:BEREICH_BILD[l.bereich]||'partner/r-ball.webp'}; if(l.einheit==='saison')e.sais=1; if(l.ca)e.ca=1; }
+    if(!e.preis)e.p=+l.preis; e.je=!!l.je; e.teams=Array.isArray(l.teams)?l.teams.filter(t=>t&&/^[a-z0-9]{1,12}$/.test(String(t.id))).slice(0,30).map(t=>({id:String(t.id),name:esc(String(t.name||t.id).slice(0,40))})):null; e.frei=l.frei; }
+  KATALOG=K; for(const k in S.teams){ const e=EX[k]; if(!e||!e.teams||!e.teams.some(t=>t.id===S.teams[k]))delete S.teams[k]; }
+  if(ORD[S.i]==='extras')exZeig(); if(ORD[S.i]==='bon')bonZeig(true); }
 const WEIL_EX={herz:'Weil euch die Kinder wichtig sind',buehne:'Weil ihr gesehen werden wollt',team:'Weil ihr gute Leute sucht',netz:'Weil ihr Betriebe treffen wollt',ehre:'Weil ihr vorne dabei sein wollt',heimat:'Weil ihr etwas zurückgeben wollt'};
 const KLEIN={herz:'baelle_jugend',team:'jobpost',buehne:'matchball',ehre:'matchball',heimat:'ferienspiele',netz:'business_treff'};
 
@@ -1857,7 +1884,7 @@ const DNAME={herz:'Kinder',buehne:'Sichtbarkeit',team:'Mitarbeiter',netz:'Netzwe
 /* ---------- Zustand ---------- */
 const ORD=['start','worum','verb','antrieb','buehne','groesse','platz','extras','bon','ja'];
 const AKT={verb:['1','Erster Teil','Ihr'],platz:['2','Zweiter Teil','Euer Platz'],ja:['3','Letzter Teil','Anpfiff']};
-const neu=()=>({i:0,name:'',verb:null,antrieb:[],skeptisch:false,platz:null,groesse:null,auto:false,pi:null,extras:new Set(),laufzeit:1,jahr:'',bremse:new Map(),ja:null,weg:null,eigen:'',wann:'',verl:true});
+const neu=()=>({i:0,name:'',verb:null,antrieb:[],skeptisch:false,platz:null,groesse:null,auto:false,pi:null,extras:new Set(),teams:{},laufzeit:1,jahr:'',bremse:new Map(),ja:null,weg:null,eigen:'',wann:'',verl:true});
 let S=neu(), laeuft=false, ton=false, sperrBis=0;
 // 0.99.76: Die Reise läuft im Rahmen der Partnerseite (GERAHMT). TERMIN heißt: Ein angemeldetes Konto aus dem Partner-Team hat sie geöffnet.
 // Öffnet die Firma ihren Link allein, gibt es keine Notizen fürs Gespräch und später keinen Nachlass, es wird nur gespeichert (Albert, 17.11.2026).
@@ -2270,14 +2297,16 @@ $('#nichtB').onclick=()=>geh(ORD.indexOf('antrieb'));
 /* ---------- Station 7: Schwarzes Brett ---------- */
 function exPreis(k){ const e=EX[k]; return ANZUG_KEYS.includes(k)?ANZUG_STAND?.preise?.[k]??e.p:e.preis?e.preis(pk()):e.p; }
 function anzugTeamName(team){return ANZUG_STAND?.plaetze.find(t=>t.team===team)?.name||String(team||'').toUpperCase();}
-function exTitel(k){return EX[k].t+(ANZUG_KEYS.includes(k)&&S.anzugTeam?' · '+anzugTeamName(S.anzugTeam):'');}
+function exTitel(k){const tm=S.teams[k]&&EX[k].teams?EX[k].teams.find(t=>t.id===S.teams[k]):null;return EX[k].t+(ANZUG_KEYS.includes(k)&&S.anzugTeam?' · '+anzugTeamName(S.anzugTeam):tm?' · '+tm.name:'');}
 let freieExtraHeimspiele=null;
 function exWahl(){ const p=punkte(), paket=pk(), fest=paket==='keins'?kleinstBaustein():null;
-  let l=Object.keys(EX).filter(k=>(k!=='sotd'||freieExtraHeimspiele!==0)&&(!ANZUG_KEYS.includes(k)||k===anzugKey()&&anzugFrei().length>0)&&k!==fest&&!(EX[k].nicht||[]).includes(paket)&&(!EX[k].nur||EX[k].nur.includes(paket))).map(k=>{ const t=EX[k].tags; let sc=0, best=null, bw=0; for(const d in t){ const w=t[d]*p[d]; sc+=w; if(w>bw){ bw=w; best=d; } } return {k,sc,best:best&&ECHO[best].some(x=>S.antrieb.includes(x))?best:null}; });
-  l.sort((a,b)=>b.sc-a.sc); const aus=[], zahl={}, zwing=(k,sagt)=>{ const x=l.find(e=>e.k===k); if(x&&!aus.includes(x)){ if(sagt)x.sagt=sagt; aus.push(x); zahl[x.best]=(zahl[x.best]||0)+1; } };
+  let l=Object.keys(EX).filter(k=>(!KATALOG||KATALOG[k]||ANZUG_KEYS.includes(k))&&EX[k].frei!==0&&!(EX[k].je&&EX[k].teams&&!EX[k].teams.length)&&(k!=='sotd'||freieExtraHeimspiele!==0)&&(!ANZUG_KEYS.includes(k)||k===anzugKey()&&anzugFrei().length>0)&&k!==fest&&!(EX[k].nicht||[]).includes(paket)&&(!EX[k].nur||EX[k].nur.includes(paket))).map(k=>{ const t=EX[k].tags; let sc=0, best=null, bw=0; for(const d in t){ const w=t[d]*p[d]; sc+=w; if(w>bw){ bw=w; best=d; } } return {k,sc,best:sc>=8&&best&&ECHO[best].some(x=>S.antrieb.includes(x))?best:null}; });
+  // Reihenfolge: erst, was zu einer Antwort passt, darin nach Gewicht, bei Gleichstand der größere Beitrag zuerst.
+  l.sort((a,b)=>(!!b.best-!!a.best)||b.sc-a.sc||exPreis(b.k)-exPreis(a.k)); const aus=[], zahl={}, zwing=(k,sagt)=>{ const x=l.find(e=>e.k===k); if(x&&!aus.includes(x)){ if(sagt)x.sagt=sagt; aus.push(x); zahl[x.best]=(zahl[x.best]||0)+1; } };
   if(anzugFrei().length)zwing(anzugKey());
   if(S.platz==='tag')zwing('sotd',ZITAT.tag); if(S.platz==='trikot')zwing('trikot_jugend',ZITAT.trikot); if(S.antrieb.includes('kinder'))zwing('baelle_jugend',ZITAT.kinder);
-  for(const e of l){ if(aus.length>=3)break; if(aus.includes(e)||e.sc<8)continue; const b=e.best||'x'; if((zahl[b]||0)>=2)continue; zahl[b]=(zahl[b]||0)+1; aus.push(e); }
+  // Erst, was am besten zu den Antworten passt, dann alles Übrige in derselben Reihenfolge. Nichts bleibt weg.
+  for(const e of l){ if(!aus.includes(e))aus.push(e); }
   return aus; }
 // Räumt Bausteine weg, die nicht mehr zu Paket und Antworten gehören (auch wenn das Brett übersprungen wird).
 function exPutzen(){ anzugWahlPruefen(false);if(KONDITIONEN)return; const ok=new Set(exWahl().map(e=>e.k)); if(pk()==='keins')ok.add(kleinstBaustein()); [...S.extras].forEach(k=>{ if(!ok.has(k)&&!(ANZUG_KEYS.includes(k)&&ANZUG_STAND===null))S.extras.delete(k); }); }
@@ -2290,12 +2319,19 @@ function exBild(k){ const x=EX[k], n=esc(S.name||'Euer Name');
   return '<div class="bild schrift">'+x.schrift+'</div>'; }
 function exZeig(hinweis){ exPutzen(); const l=exWahl(), paket=pk(), bandeHinweis=paket==='supporter'&&(S.platz==='bande'||S.antrieb.includes('sehen'));
   let h=l.map(e=>{if(ANZUG_KEYS.includes(e.k))return anzugKarte(); const x=EX[e.k], pr=exPreis(e.k), drin=S.extras.has(e.k), weil=e.sagt?'Ihr habt gesagt: '+e.sagt:e.best?WEIL_EX[e.best]:'Auch möglich';
-    return '<button type="button" class="zt'+(drin?' drin':'')+'" data-k="'+e.k+'" aria-pressed="'+drin+'">'+exBild(e.k)+ib(e.k,x.t).replace('data-i=','data-preis="1" data-i=')+'<span class="tx"><span class="weil-t">'+weil+'</span><b>'+x.t+'</b><p>'+x.k+'</p><span class="pr"><em>'+(x.ca?'ca. ':'')+eur(pr)+'<small>'+x.e+'</small></em><span>'+(drin?'Wieder raus':'Dazunehmen')+'</span></span></span></button>'; }).join('');
+    const info=INFO[e.k]?ib(e.k,x.t).replace('data-i=','data-preis="1" data-i='):'', inhalt='<span class="weil-t">'+weil+'</span><b>'+x.t+'</b><p>'+x.k+'</p>', preis='<span class="pr"><em>'+(x.ca?'ca. ':'')+eur(pr)+'<small>'+x.e+'</small></em><span>'+(drin?'Wieder raus':'Dazunehmen')+'</span></span>';
+    if(x.je&&x.teams&&x.teams.length){ const tw=S.teams[e.k]||'';
+      return '<div class="zt mit-team'+(drin?' drin':'')+'" data-k="'+e.k+'" role="button" tabindex="0" aria-pressed="'+drin+'">'+exBild(e.k)+info+'<span class="tx">'+inhalt+'<label class="zt-team">Mannschaft<select data-team="'+e.k+'" aria-label="Mannschaft für '+x.t+'"><option value="">Später wählen</option>'+x.teams.map(t=>'<option value="'+t.id+'"'+(t.id===tw?' selected':'')+'>'+t.name+'</option>').join('')+'</select></label>'+preis+'</span></div>'; }
+    return '<button type="button" class="zt'+(drin?' drin':'')+'" data-k="'+e.k+'" aria-pressed="'+drin+'">'+exBild(e.k)+info+'<span class="tx">'+inhalt+preis+'</span></button>'; }).join('');
   if(bandeHinweis&&paketfassung===2)h+='<div class="zt hinweis"><div class="tx"><b>Eine Bande am Spielfeld?</b><p>Beim Club Partner ist sie für 496 € netto je Saison dabei.</p><button class="knopf dunkel" type="button" id="clubB">Zum Club Partner</button></div></div>';
   else if(bandeHinweis)h+='<div class="zt hinweis"><span class="tx"><span class="weil-t">Ehrlich gerechnet</span><b>Bande dazu?</b><p>Supporter plus eigene Bande kostet mehr als der Club Partner. Dort ist die Bande schon dabei.</p><button class="knopf dunkel" type="button" id="clubB">Zum Club Partner</button></span></div>';
   $('#exL').innerHTML=h; $('#exL').hidden=!h;
-  $('#exUnter').textContent=hinweis||ANZUG_HINWEIS||(h?'Passt zu euren Antworten. Muss nicht sein.':'Zu eurem Paket fehlt nichts. Mehr braucht es nicht.');
-  $$('#exL .zt[data-k]').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(S.extras.has(k))S.extras.delete(k); else S.extras.add(k); konditionenNutzerPruefen(); exZeig(); regieZeig(); });
+  $('#exUnter').textContent=hinweis||ANZUG_HINWEIS||(h?'Vorn steht, was am besten zu euren Antworten passt. Dahinter alles, was es sonst noch gibt.':'Zu eurem Paket fehlt nichts. Mehr braucht es nicht.');
+  const neuZ=()=>{ const sl=$('#exL').scrollLeft; konditionenNutzerPruefen(); exZeig(); regieZeig(); $('#exL').scrollLeft=sl; merken(); };
+  $$('#exL .zt[data-k]').forEach(b=>{ const k=b.dataset.k, um=()=>{ if(S.extras.has(k))S.extras.delete(k); else S.extras.add(k); neuZ(); };
+    b.onclick=ev=>{ if(ev.target.closest('select,label,.ib'))return; um(); };
+    if(b.tagName!=='BUTTON')b.onkeydown=ev=>{ if((ev.key==='Enter'||ev.key===' ')&&ev.target===b){ ev.preventDefault(); um(); } }; });
+  $$('#exL select[data-team]').forEach(w=>w.onchange=()=>{ const k=w.dataset.team; if(w.value){ S.teams[k]=w.value; S.extras.add(k); } else delete S.teams[k]; neuZ(); });
   anzugKarteBinden();
   const cb=$('#clubB'); if(cb)cb.onclick=()=>{ S.pi=1; konditionenNutzerPruefen(); exZeig('Jetzt Club Partner. Die Bande ist dabei.'); regieZeig(); }; passe(); }
 
@@ -2430,6 +2466,7 @@ function paketfassungUebernehmen(daten){
 window.addEventListener('message',e=>{
   if(e.source!==window.parent||e.origin!==location.origin)return;
   if(e.data?.reise==='paketfassung')paketfassungUebernehmen(e.data);
+  if(e.data?.reise==='bausteine')bausteineUebernehmen(e.data.liste);
   if(e.data?.reise==='heimspiel-stand' && paketfassung===2 && Number.isInteger(e.data.frei) && e.data.frei>=0 && freieExtraHeimspiele!==e.data.frei){
     freieExtraHeimspiele=e.data.frei;
     if(KONDITIONEN)return;
@@ -2443,6 +2480,11 @@ function infoZeig(k,mitPreis){ const x=INFO[k]; if(!x)return; const P=PAK[k], E=
   $('#infoIn').innerHTML='<p class="i-l">'+x.l+'</p>'+x.t.map(a=>'<p>'+a+'</p>').join('')+'<h5>Das gehört dazu</h5><ul>'+x.d.map(a=>'<li>'+a+'</li>').join('')+'</ul>'+(mitPreis?'<p class="i-p">'+preis+'</p>':'')+(x.g?'<p class="i-g">'+x.g+'</p>':'');
   const a=$('#info'); a.scrollTop=0; a.classList.add('da'); a.dataset.k=k; S.info=S.info||[]; if(!S.info.includes(k))S.info.push(k); }
 const infoZu=()=>$('#info').classList.remove('da');
+// 0.99.169: Übersicht aller Pakete, von jeder Stelle der Präsentation aus (Stand wie im Partnerblatt 2027/28)
+function uebersichtZeig(){ $('#infoT').textContent='Die Partnerpakete 2027/28';
+  $('#infoIn').innerHTML='<p class="i-l">Alle vier Pakete auf einen Blick. Beiträge netto je Saison.</p>'+ST.slice().reverse().map(k=>'<h5>'+PAK[k].t+' · '+eur(PAK[k].p)+'</h5><ul>'+PAK[k].auch.map(a=>'<li>'+a+'</li>').join('')+'</ul>').join('')+'<p class="i-g">'+GUT+'</p><p><a class="ueb-pdf" href="https://svbsc.kaderwerk.pro/formulare/Partnersheet-2027-28.pdf" target="_blank" rel="noopener">Partnerblatt 2027/28 als PDF öffnen</a></p>';
+  const a=$('#info'); a.scrollTop=0; a.classList.add('da'); delete a.dataset.k; }
+if($('#uebersichtB'))$('#uebersichtB').onclick=uebersichtZeig;
 $('#infoX').onclick=infoZu;
 F.addEventListener('click',e=>{ const i=e.target.closest('.ib'); if(i){ e.preventDefault(); e.stopPropagation(); infoZeig(i.dataset.i,i.dataset.preis==='1'); return; }
   if($('#info').classList.contains('da')&&!e.target.closest('#info'))infoZu(); },true);
@@ -2591,7 +2633,7 @@ let notizAlt='';
 function reiseMelden(){ try{ const n=reiseNotiz(); if(!n||n===notizAlt||window.parent===window)return; notizAlt=n; window.parent.postMessage({reise:'notiz',notiz:n},location.origin); }catch(e){} }
 // Die Wahl geht nur mit, wenn die Firma Ja gesagt hat. Vorher ist das Paket nur ein Vorschlag und darf nicht in den Vertrag rutschen.
 function reiseFertig(){ try{ merken(); window.parent.postMessage({reise:'fertig',name:S.name||'',paket:(typeof pk==='function'?pk():null),notiz:reiseNotiz(),
-  wahl:S.ja==='dabei'?{paket:pk(),extras:[...S.extras],anzug_team:S.anzugTeam||null,anzug_seite:S.anzugSeite||AERMEL_SEITE,saisons:S.laufzeit,auto:!!S.verl,beginn:KONDITIONEN?KONDITIONEN.beginn:'2027-07-01'}:null},location.origin); }catch(e){} }
+  wahl:(S.ja==='dabei'||eigeneWahl()||S.extras.size)?{paket:(S.ja==='dabei'||eigeneWahl())?pk():null,fest:S.ja==='dabei',extras:[...S.extras],teams:Object.assign({},S.teams),anzug_team:S.anzugTeam||null,anzug_seite:S.anzugSeite||AERMEL_SEITE,saisons:S.laufzeit,auto:!!S.verl,beginn:KONDITIONEN?KONDITIONEN.beginn:'2027-07-01'}:null},location.origin); }catch(e){} }
 /* ---------- Speichern, Spur und Wiederkommen (0.99.76, R12, R15, R17) ----------
    Der Rahmen in partner.html kennt den persönlichen Link und spricht mit dem Server (partner_reise_stand, partner_reise_merken).
    Die Reise selbst kennt weder Schlüssel noch Adresse: Sie schickt nur Nachrichten an den Rahmen. Ohne Rahmen wird nichts gespeichert.
@@ -2601,13 +2643,17 @@ const SZ_NAME={start:'Start',worum:'Worum es geht',verb:'Woher kennt ihr uns?',a
 const SID=(()=>{ try{ return crypto.randomUUID(); }catch(e){ return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g,()=>(Math.random()*16|0).toString(16)); } })();
 const T0=Date.now(), szSek={}, klNeu=[]; let klZahl=0, merkUhr=null, GEMERKT=null;
 setInterval(()=>{ if(MERKT&&!NEUES_TEILEN&&!document.hidden){ const id=ORD[S.i]; szSek[id]=(szSek[id]||0)+1; } },1000);
-function standJetzt(){ const o={i:S.i,name:S.name,skeptisch:!!S.skeptisch,auto:!!S.auto,verl:!!S.verl,laufzeit:S.laufzeit,antrieb:S.antrieb.slice(),extras:[...S.extras],info:(S.info||[]).slice(),paket:pk(),aermel:AERMEL_SEITE,kleidung:KLEIDUNG,anzug_team:S.anzugTeam||null,anzug_seite:S.anzugSeite||AERMEL_SEITE,eigen:String(S.eigen||'').slice(0,90)};
+function standJetzt(){ const o={i:S.i,name:S.name,skeptisch:!!S.skeptisch,auto:!!S.auto,verl:!!S.verl,laufzeit:S.laufzeit,antrieb:S.antrieb.slice(),extras:[...S.extras],teams:Object.assign({},S.teams),info:(S.info||[]).slice(),paket:pk(),aermel:AERMEL_SEITE,kleidung:KLEIDUNG,anzug_team:S.anzugTeam||null,anzug_seite:S.anzugSeite||AERMEL_SEITE,eigen:String(S.eigen||'').slice(0,90)};
   ['verb','platz','jahr','ja','weg','wann'].forEach(k=>{ if(S[k])o[k]=S[k]; }); ['groesse','pi'].forEach(k=>{ if(S[k]!=null)o[k]=S[k]; }); return o; }
 function merken(){ clearTimeout(merkUhr); merkUhr=null; if(!MERKT)return;
   if(GEMERKT&&S.i===0&&$('#wieder')?.hidden===false)return; // Die Rückkehr-Auswahl hat den gespeicherten Stand noch nicht übernommen.
   if(NEUES_TEILEN){try{window.parent.postMessage({reise:'merken',daten:{schritt:ORD[S.i],stand:standJetzt()}},location.origin);}catch(e){}return;}
   try{ window.parent.postMessage({reise:'merken',sitzung:SID,daten:{schritt:ORD[S.i],hoch:innerHeight>innerWidth,dauer_s:Math.round((Date.now()-T0)/1000),stand:standJetzt(),szenen:Object.assign({},szSek),klicks:klNeu.splice(0),info:(S.info||[]).slice()}},location.origin); }catch(e){} }
-function merkBald(){ if(!MERKT||merkUhr)return; merkUhr=setTimeout(merken,1800); }
+function merkBald(){ if(!MERKT||merkUhr)return; merkUhr=setTimeout(merken,600); }
+// 0.99.169: Jeder Tipp liegt sofort auch auf dem Gerät (der Rahmen schreibt ihn in den Speicher des Browsers). Bricht der Browser ab,
+// bevor der Server geantwortet hat, geht es beim nächsten Öffnen an derselben Stelle weiter.
+function merkSofort(){ if(!MERKT||(GEMERKT&&S.i===0&&$('#wieder')?.hidden===false))return; setTimeout(()=>{ try{ window.parent.postMessage({reise:'lokal',stand:standJetzt()},location.origin); }catch(e){} },0); }
+F.addEventListener('click',merkSofort,{passive:true}); F.addEventListener('change',merkSofort,{passive:true});
 setInterval(()=>{ if(MERKT&&!document.hidden)merken(); },20000);
 addEventListener('pagehide',merken); document.addEventListener('visibilitychange',()=>{ if(document.hidden)merken(); });
 F.addEventListener('pointerdown',e=>{ if(!MERKT||NEUES_TEILEN||klZahl>=400)return; const b=e.target.closest('.ib, button, .sa, .zt, .br, [role="button"]'), z=b?(b.dataset.i||b.dataset.w||b.dataset.k||b.dataset.ja||b.dataset.b||b.id||''):'';
@@ -2617,7 +2663,7 @@ F.addEventListener('click',e=>{if(!GERAHMT||!e.isTrusted||e.target.closest('#rei
 function standSetz(st){ const n=neu(); S=n; S.name=String(FIRMA!==null?FIRMA:(st.name||'')); ['verb','platz','jahr','wann'].forEach(k=>{ if(st[k])S[k]=st[k]; });
   if(['aermel_r','aermel_l'].includes(st.aermel))AERMEL_SEITE=st.aermel;KLEIDUNG=kleidungswahl(st.kleidung);S.anzugTeam=typeof st.anzug_team==='string'?st.anzug_team:null;S.anzugSeite=['aermel_l','aermel_r'].includes(st.anzug_seite)?st.anzug_seite:AERMEL_SEITE;S.eigen=String(st.eigen||'').slice(0,90);const eigen=$('#rEigen');if(eigen)eigen.value=S.eigen;
   S.antrieb=(st.antrieb||[]).filter(a=>HAUPT[a]); S.skeptisch=!!st.skeptisch&&!S.antrieb.length; S.auto=!!st.auto; if(st.groesse!=null&&!S.auto)S.groesse=+st.groesse; if(st.pi!=null)S.pi=+st.pi;
-  S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins'; konditionenInStand();anzugWahlPruefen(false);
+  S.extras=new Set((st.extras||[]).filter(k=>EX[k])); S.teams={}; if(st.teams&&typeof st.teams==='object')for(const k of Object.keys(st.teams).slice(0,16)){ if(EX[k]&&/^[a-z0-9]{1,12}$/.test(String(st.teams[k])))S.teams[k]=String(st.teams[k]); } S.laufzeit=[1,2,3].includes(st.laufzeit)?st.laufzeit:1; S.verl=st.verl!==false; S.info=(st.info||[]).filter(k=>INFO[k]); S.warKeins=pk()==='keins'; konditionenInStand();anzugWahlPruefen(false);
   $('#nameIn').value=S.name; setzName(S.name);
   $$('[data-frage="verb"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===S.verb)); $('[data-frage="verb"]').classList.toggle('gewaehlt',!!S.verb); verbBild(S.verb); $('#und').hidden=!S.verb; $('#jahrIn').value=S.jahr||'';
   $$('[data-frage="platz"] [data-w]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.w===S.platz));
@@ -2655,7 +2701,7 @@ window.addEventListener('message',e=>{ try{ if(e.source!==window.parent||e.origi
   MERKT=!!e.data.merken; TERMIN=!!e.data.termin; html.classList.toggle('termin',TERMIN); konditionenHinweis();
   GEMERKT=null;
   if(e.data.stand&&typeof e.data.stand==='object'){ GEMERKT=Object.assign({},e.data.stand,{_am:e.data.am||null}); wiederZeig(); } }catch(x){} });
-if(navigator.webdriver)Object.assign(window.REISE_PRUEF,{marke:()=>MARKE,merken:()=>merken(),modus:()=>({termin:TERMIN,merkt:MERKT,sid:SID}),sek:()=>szSek,ticket:pi=>{ S.pi=pi; tkZeig(); return $('#tkBox').innerHTML; }});
+if(navigator.webdriver)Object.assign(window.REISE_PRUEF,{marke:()=>MARKE,merken:()=>merken(),modus:()=>({termin:TERMIN,merkt:MERKT,sid:SID}),sek:()=>szSek,fertig:()=>reiseFertig(),ticket:pi=>{ S.pi=pi; tkZeig(); return $('#tkBox').innerHTML; }});
 const angebotKnopf=$('#reiseAngebot');
 if(IM_RAHMEN&&angebotKnopf){
   window.addEventListener('message',e=>{
