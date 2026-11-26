@@ -99,7 +99,8 @@
   const lk=k=>L.find(x=>x.key===k);
   // Bei Glücksspiel, Alkohol und Ähnlichem: keine Werbung auf Jugendkleidung (im Deck „ohne Jugend-Trikot“)
   const JUGEND_KLEIDUNG=['trikot_jugend','aufwaerm_jugend','aermel_anzug_l','aermel_anzug_r'];
-  function filtern(ls){ const ohne=((D&&D.deck&&D.deck.passung)||{}).ohne||[]; ls=KURZ?ls.filter(l=>l.bereich!=='zweite'):ls; return ohne.includes('trikot')?ls.filter(l=>!JUGEND_KLEIDUNG.includes(l.key)):ls; }
+  function filtern(ls){ const ohne=((D&&D.deck&&D.deck.passung)||{}).ohne||[]; ls=KURZ?ls.filter(l=>l.bereich!=='zweite'||l.key==='aermel_zweite'):ls;   // 0.99.170 (Albert, 26.11.2026): der Ärmel der Zweiten muss buchbar sein, der Rest der Zweiten bleibt aus dem kurzen Ablauf
+    return ohne.includes('trikot')?ls.filter(l=>!JUGEND_KLEIDUNG.includes(l.key)):ls; }
   let uid=0;
 
   function teilenSnapshot(st){
@@ -1119,7 +1120,12 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     const umfang=entwurf&&wert.team&&wert.kleidung?.length?wert:null;
     const trikotvorschau=entwurf&&wert.trikotvorschau===true&&!umfang;
     const mitAermel=trikotvorschau||umfang||posten.some(p=>CA_KEYS.includes(p.key)&&p.key!=='trikot_jugend');
-    if(umfang)inhalte.push({titel:'Ärmelpartnerschaft',preis:'Nach Absprache',beschreibung:'Die Vorschau zeigt die aktuell freien Ärmel für unsere gemeinsame Auswahl. Mannschaft und Ausführung stimmen wir vor der Bestellung mit euch ab.'});
+    // 0.99.170 (Albert, 26.11.2026): Erste und Zweite haben den Ärmel als Komplettsatz im Katalog (Heim, Auswärts, Trainingsanzug).
+    // Zeigt der Entwurf genau diesen Satz, steht die Leistung mit ihrem Richtwert im Vorschlag statt „Nach Absprache“.
+    const satzLeistung=umfang&&umfang.kleidung.length===3?lk(umfang.team==='h1'?'aermel_erste':umfang.team==='h2'?'aermel_zweite':''):null;
+    if(umfang)inhalte.push(satzLeistung&&satzLeistung.preis!=null
+      ?{titel:satzLeistung.titel,preis:'ca. '+eur(satzLeistung.preis)+' netto '+(PLIB.EINHEIT[satzLeistung.einheit]||''),beschreibung:satzLeistung.text||satzLeistung.kurz}
+      :{titel:'Ärmelpartnerschaft',preis:'Nach Absprache',beschreibung:'Die Vorschau zeigt die aktuell freien Ärmel für unsere gemeinsame Auswahl. Mannschaft und Ausführung stimmen wir vor der Bestellung mit euch ab.'});
     if(trikotvorschau)inhalte.push({titel:'Optional auf dem Trikotärmel',beschreibung:'So sieht euer Logo auf dem Heimtrikot aus. Wenn euch der Ärmel gefällt, schauen wir gemeinsam nach einer freien Mannschaft.'});
     const meta=entwurf?'Vorschlag für unser Gespräch':[wert.nr,wert.beginn?'Ab '+datum(wert.beginn):'',wert.saisons?(wert.saisons===1?'Eine Saison':wert.saisons+' Saisons'):'',wert.bis||wert.gueltig_bis?'Gültig bis '+datum(wert.bis||wert.gueltig_bis):''].filter(Boolean).join(' · ');
     window.PARTNER_ANGEBOT.oeffnen({
@@ -1132,9 +1138,12 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
         plaetze:async()=>{
           const frei=await partnerAermelLaden();
           if(trikotvorschau)return frei.filter(p=>p.art==='heim').slice(0,1);
+          // Komplettsatz der Ersten und Zweiten: Heim, Auswärts und Trainingsanzug, alle auf der Seite des freien Heimärmels.
+          const satzSeite=t=>(frei.find(p=>p.team===t&&p.art==='heim')||frei.find(p=>p.team===t)||{}).seite;
           return frei.filter(p=>umfang?p.team===umfang.team&&p.seite===umfang.seite&&umfang.kleidung.includes(p.art):posten.some(e=>{
           if(e.key==='aermel_anzug_l'||e.key==='aermel_anzug_r')return e.mannschaft===p.team&&p.art==='anzug'&&p.seite===(e.key.endsWith('_l')?'aermel_l':'aermel_r');
-          return p.art==='heim'&&((e.key==='aermel_erste'&&p.team==='h1')||(e.key==='aermel_zweite'&&p.team==='h2')||(e.key==='aermel_jugend'&&p.team===e.mannschaft));
+          if((e.key==='aermel_erste'&&p.team==='h1')||(e.key==='aermel_zweite'&&p.team==='h2'))return p.seite===satzSeite(p.team);
+          return p.art==='heim'&&e.key==='aermel_jugend'&&p.team===e.mannschaft;
         }));},
         bild:p=>TRAININGSANZUG.angebot({art:p.art,seite:p.seite,logo:aermelLogo(),firma,breite:1440}),
         waehlen:()=>aermelVorschau(umfang?.seite,umfang?.kleidung?.[0],umfang?.team)
