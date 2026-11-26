@@ -1451,10 +1451,10 @@ html.zeiger .spot{opacity:1}
       <h2 class="auf" style="--v:1">Wie wollt ihr <em>dabei sein?</em></h2>
       <p class="konditionen-hinweis" data-konditionen-hinweis hidden role="status"></p>
       <div class="stufen auf" style="--v:2" data-frage="groesse">
-        <button class="stf s3" type="button" data-w="3" aria-pressed="false"><b>Einer von acht</b><span>Ganz vorne. Einer je Branche.</span></button>
-        <button class="stf s2" type="button" data-w="2" aria-pressed="false"><b>Vorne stehen</b><span>Bevorzugter Platz und alle Partnertreffen.</span></button>
-        <button class="stf s1" type="button" data-w="1" aria-pressed="false"><b>Sichtbar sein</b><span>Eure Bande am Platz.</span></button>
-        <button class="stf s0" type="button" data-w="0" aria-pressed="false"><b>Dabei sein</b><span>Euer Logo an der Partnerwand.</span></button>
+        <button class="stf s3" type="button" data-w="3" aria-pressed="false"><b>Einer von acht</b><span>Einer von acht Plätzen neben unserem Hauptpartner.</span></button>
+        <button class="stf s2" type="button" data-w="2" aria-pressed="false"><b>Vorne stehen</b><span>Ihr sucht den Platz eurer Bande bevorzugt aus.</span></button>
+        <button class="stf s1" type="button" data-w="1" aria-pressed="false"><b>Sichtbar sein</b><span>Eine Bande am Spielfeld.</span></button>
+        <button class="stf s0" type="button" data-w="0" aria-pressed="false"><b>Dabei sein</b><span>Euer Logo an der Supporterwand.</span></button>
       </div>
       <div class="lob" id="lob-groesse" aria-live="polite"><p></p></div>
       <div class="gr-fuss auf" style="--v:3"><button class="zeile leise" type="button" id="autoB" aria-pressed="false">Wissen wir noch nicht. Schlagt ihr etwas vor.</button><button class="zeile leise" type="button" id="kleinstB" aria-pressed="false">Erst mal etwas Kleines.</button></div>
@@ -1570,7 +1570,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.167';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.168';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);
@@ -1761,17 +1761,17 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const ST=['supporter','club','premium','p1896'];
 const PAK={
   keins:{t:'Ein Baustein',p:0},
-  supporter:{t:'SVM Supporter',p:189,pl:60,auch:['Euer Logo an der Partnerwand am Platz.','Logo mit Link auf unserer Partnerseite.','Der Partner-Aufkleber 2027/28, auch als Bild für eure Internetseite.']},
-  club:{t:'Club Partner',p:496,pl:30,auch:['Eure Bande am Platz. Wo sie hängt, stimmen wir vorher ab.','Eine Partnerkarte für die Heimspiele, die ihr weitergeben könnt.','Einladung zum Partnerabend und eine Begrüßung auf Instagram und Facebook.']},
-  premium:{t:'Premium Partner',p:896,pl:16,auch:['Bevorzugter Platz für eure Bande.','Alle vier Partnertreffen im Jahr und der Partnerabend.','Zwei Partnerkarten und eine Stellenanzeige je Saison.']},
-  p1896:{t:'1896 Partner',p:1896,pl:8,auch:['Bande an einem der besten Plätze.','Kein zweiter aus eurer Branche unter den acht.','Ein Heimspiel je Saison als Partner des Tages, vier Partnerkarten.']}
+  supporter:{t:'Club Supporter',p:189,pl:60,auch:[]},
+  club:{t:'Club Partner',p:496,pl:30,auch:[]},
+  premium:{t:'Premium Partner',p:896,pl:16,auch:[]},
+  p1896:{t:'1896 Partner',p:1896,pl:8,auch:[]}
 };
 const GRUND={
-  buehne:{supporter:'Euer Logo hängt an der Partnerwand am Platz.',club:'Eure Bande steht am Platz, bei jedem Heimspiel.',premium:'Eure Bande bekommt einen bevorzugten Platz.',p1896:'Eure Bande bekommt einen der besten Plätze, und ein Heimspiel läuft in eurem Namen.'},
+  buehne:{},
   herz:{supporter:'Ihr tragt den ganzen Verein mit, von den Minikickern bis zur Ersten.',club:'Ihr tragt den ganzen Verein mit, von den Minikickern bis zur Ersten.',premium:'Ihr tragt den ganzen Verein mit, von den Minikickern bis zur Ersten.',p1896:'Ihr tragt den ganzen Verein mit, von den Minikickern bis zur Ersten.'},
-  team:{supporter:'Am Platz stehen jede Woche Jugendspieler und Eltern. Die sehen dann euren Namen.',club:'Am Platz stehen jede Woche Jugendspieler und Eltern. Die sehen dann eure Bande.',premium:'Eine Stellenanzeige je Saison ist schon dabei.',p1896:'Zwei Stellenanzeigen je Saison sind schon dabei.'},
-  netz:{supporter:'Ihr steht mit Link auf unserer Partnerseite, neben den anderen Betrieben.',club:'Ihr seid zum Partnerabend eingeladen.',premium:'Alle vier Partnertreffen im Jahr stehen euch offen.',p1896:'Bei den Partnertreffen habt ihr Vorrang als Gastgeber.'},
-  ehre:{supporter:'Der Partner-Aufkleber zeigt: Ihr gehört dazu.',club:'Wir begrüßen euch öffentlich auf Instagram und Facebook.',premium:'Einmal in der Saison stellen wir euren Betrieb besonders heraus.',p1896:'Ihr seid einer von nur acht, mit nummeriertem Schild.'},
+  team:{},
+  netz:{},
+  ehre:{},
   heimat:{supporter:'Euer Name steht dort, wo der Ort zusammenkommt.',club:'Mit eurer Partnerkarte seid ihr bei den Heimspielen einfach dabei.',premium:'Zwei Partnerkarten: Nehmt jemanden mit zum Heimspiel.',p1896:'Vier Partnerkarten: Nehmt drei Leute aus dem Betrieb mit.'}
 };
 const ZITAT={kinder:'Kindern etwas ermöglichen',sehen:'Im Ort gesehen werden',leute:'Gute Leute finden',netz:'Andere Betriebe treffen',zurueck:'Etwas zurückgeben',vorn:'Vorne mit dabei sein',
@@ -1846,9 +1846,9 @@ const SATZ={
 const EINWAND={
   herz:'Falls es zu viel ist: Nur für die Jugend gibt es die Ballpatenschaft für 150 €.',
   buehne:'Bei Zweifel: Frag, wer den Betrieb sehen soll, Kunden oder Bewerber. Wenn die nicht bei uns am Platz stehen, sag das ehrlich.',
-  team:'Bei Zweifel: Versprich keine Bewerbungen. Biete an, eine Stellenanzeige für 99 € auszuprobieren.',
+  team:'Bei Zweifel: Versprich keine Bewerbungen. Am Platz stehen Leute aus der Gegend, mehr sagen wir nicht zu.',
   netz:'Bei Zweifel: Lad den Partner zum nächsten Partnerabend ein, ohne Paket. Erst die anderen kennenlernen.',
-  ehre:'Wenn es um die acht geht: Sag, ob die Branche noch frei ist. Nur sagen, wenn du es sicher weißt.',
+  ehre:'Wenn es um die acht geht: Sag, ob noch ein Platz frei ist. Nur sagen, wenn du es sicher weißt.',
   heimat:'Bei Zögern: Frag, was der Verein früher bedeutet hat. Nicht drängen. Zum nächsten Heimspiel einladen.',
   gast:'Der Partner ist noch nicht überzeugt. Zeig, hör zu, biete das Heimspiel an. Heute muss nichts entschieden werden.'
 };
@@ -2227,9 +2227,9 @@ function gehoertZeig(){ const z=[]; if(S.verb)z.push(ZITAT[S.verb]); S.antrieb.s
   $('#gehoert').innerHTML=z.map(x=>'<q>'+x+'</q>').join('')+(mehr>0?'<small>und '+(mehr===1?'ein weiterer Grund':ZAHLWORT[mehr]+' weitere Gründe')+'</small>':''); }
 function wimpelZeig(){ const r=ROLLE[reihe()[0]||'gast']; $('#wTitel').textContent=r[0]; $('#wText').textContent=S.eigen||r[1]; $('#wJahr').textContent=S.jahr?'Betrieb seit '+S.jahr:'Saison 2027/28'; $('#wimpel').classList.toggle('gold',pk()==='p1896'); }
 const HAUPT={kinder:'herz',sehen:'buehne',leute:'team',netz:'netz',zurueck:'heimat',vorn:'ehre'};
-const STICH=['Bande','Partnerwand','Partnerkarte','Partnerabend','Instagram','Partnertreffen','Stellenanzeige','Heimspiel','Aufkleber'];
+const STICH=['Bande','Partnerwand','Partnerkarte','Partnerabend','Heimspiel','Doppelpass'];
 // Was ab welchem Paket dazugehört (Index wie ST): Grundlage für den Hinweis zum Hochstufen.
-const FEHLT={netz:[[1,'fehlt hier der Partnerabend'],[2,'fehlen hier alle vier Partnertreffen']],buehne:[[1,'fehlt hier die eigene Bande']],team:[[2,'fehlt hier die Stellenanzeige']]};
+const FEHLT={netz:[[1,'fehlt hier die Einladung zum Partnerabend']],buehne:[[1,'fehlt hier die eigene Bande']],team:[]};
 // Nur was der Partner wörtlich gesagt hat: erst seine Gründe, dann sein Woher, dann sein Platz.
 function gruende(){ const p=pk(), a=[]; let hin=null;
   if(S.platz==='wand')hin=[ZITAT.wand,p==='supporter'?'Euer Name steht an der Partnerwand. Mehr Aufsehen gibt es nicht.':'Wo eure Bande hängt, stimmen wir vorher mit euch ab.'];
@@ -2254,7 +2254,7 @@ function tkZeig(wechsel){ if(KONDITIONEN){konditionenTicket();return;} const p=p
     const P=PAK[p], g=gruende(), txt=g.map(x=>x[1]).join(' '), rat=ratText(i,rg), auch=P.auch.filter(x=>!STICH.some(s=>x.includes(s)&&txt.includes(s))).slice(0,g.length<2?3:1);
     const selbst=(eigeneWahl()&&S.pi==null)||(S.pi!=null&&S.pi!==rg); ueber=selbst?'Eure Wahl':'Unser Vorschlag';
     const kind=['club','premium','p1896'].includes(p)?'<p class="klein">Bande: Druck exkl., Montage inkl.</p>':'';
-    h='<article class="tk tk-'+p+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">'+(p==='p1896'?(paketfassung===2?'Acht Plätze am Hauptplatz':'Acht Plätze, einer je Branche'):'Höchstens '+P.pl+' Partner')+'</p><h3>'+P.t+ib(p,P.t).replace('data-i=','data-preis="1" data-i=')+'</h3>'+(WIDMUNG?'<p class="tk-wid">'+esc(WIDMUNG.titel)+'</p>':'')+'</div><p class="tk-preis">'+eur(P.p)+'<small>je Saison, netto</small></p></div><div class="tk-in">'
+    h='<article class="tk tk-'+p+(wechsel?' wechsel':'')+'" id="tk"><div class="tk-kopf"><div><p class="tk-nr">'+(p==='p1896'?'Acht Plätze am Hauptplatz':'Höchstens '+P.pl+' Partner')+'</p><h3>'+P.t+ib(p,P.t).replace('data-i=','data-preis="1" data-i=')+'</h3>'+(WIDMUNG?'<p class="tk-wid">'+esc(WIDMUNG.titel)+'</p>':'')+'</div><p class="tk-preis">'+eur(P.p)+'<small>je Saison, netto</small></p></div><div class="tk-in">'
       +(WIDMUNG&&WIDMUNG.text?'<p class="tk-widt">'+esc(WIDMUNG.text)+'</p>':'')
       +(g.length?'<h4>Darum passt das zu euch</h4><ul>'+g.map(x=>'<li>'+(x[0]?'<q>'+x[0]+'</q>':'')+x[1]+'</li>').join('')+'</ul>':'')
       +(auch.length&&!(g.length>=3||(rat&&g.length>=2))?'<h4>'+(g.length?'Außerdem dabei':'Das ist dabei')+'</h4><ul>'+auch.map(x=>'<li>'+x+'</li>').join('')+'</ul>':'')+kind+rat+'</div></article>'; }
@@ -2326,18 +2326,10 @@ window.addEventListener('message',e=>{if(e.source!==window.parent||e.origin!==lo
 const GUT='Preise netto, je Saison. Eine Saison ist die kürzeste Laufzeit, kündbar jedes Jahr bis 31. März.', GUT_B=' Bande: Druck exkl., Montage inkl.';
 const KIND='Fotos mit Kindern stellen wir nur ins Netz, wenn die Eltern und ab 14 Jahren auch die Jugendlichen selbst zugestimmt haben.';
 const INFO={
-  supporter:{l:'Der Einstieg. Für alle, die sagen: Wir gehören dazu.',
-    t:['Nicht jeder Betrieb will groß auftreten. Manche wollen einfach, dass es den Verein im Ort auch in zwanzig Jahren noch gibt. Genau dafür ist der Supporter da.','Euer Logo hängt an der Partnerwand am Platz. Wer dort steht, gilt im Ort als einer, der mitträgt.'],
-    d:['Euer Logo auf der Supporter-Tafel der Partnerwand. Sie wird jedes Jahr neu gestaltet.','Logo mit Link auf unserer Partnerseite im Netz.','Das Saison-Zeichen 2027/28 als Aufkleber und als Bild für eure Internetseite.','Partner des Tages könnt ihr dazubuchen.'],g:GUT},
-  club:{l:'Ab hier steht euer Name am Spielfeld.',
-    t:['Die Bande gehört zum Fußballplatz wie das Tor. Wer dort steht, ist Teil des Bildes, bei jedem Heimspiel. Eltern, Nachbarn und Kunden sehen euren Namen immer am selben Ort.','Und ihr bleibt nicht unter euch: Beim Partnerabend lernt ihr die anderen Betriebe kennen, die den Verein tragen.'],
-    d:['Eure Bande am Platz, nach Verfügbarkeit. Wo sie hängt, stimmen wir vorher mit euch ab.','Größere Darstellung im Club-Bereich der Partnerwand.','Logo, Kurzeintrag und Link auf unserer Partnerseite im Netz.','Eine Partnerkarte für die Heimspiele, die ihr weitergeben könnt.','Die Einladung zum Partnerabend.','Eine Begrüßung auf Instagram und Facebook.','Stellenanzeige und Partner des Tages könnt ihr dazubuchen.'],g:GUT+GUT_B},
-  premium:{l:'Für Betriebe, die mehr wollen als ein Schild.',
-    t:['Eure Bande bekommt einen bevorzugten Platz. Wichtiger ist aber, was daneben passiert: Ihr seid bei allen vier Partnertreffen im Jahr dabei. Dort lernt man sich kennen, lange bevor man sich braucht.','Einmal in der Saison stellen wir euren Betrieb eigens heraus. Und wenn ihr Leute sucht: Eine Stellenanzeige ist schon dabei.'],
-    d:['Bevorzugter Platz für eure Bande.','Hervorgehobene Darstellung an der Partnerwand, mit ausführlichem Profil eures Betriebs.','Zwei Partnerkarten für die Heimspiele, zum Weitergeben.','Der Partnerabend und alle vier Partnertreffen im Jahr.','Einmal je Saison stellen wir euren Betrieb besonders heraus.','Eine Stellenanzeige je Saison.','Das Begrüßungspaket mit Saison-Zeichen, Partnerkarten und Saisonübersicht.','Partner des Tages könnt ihr dazubuchen.'],g:GUT+GUT_B},
-  p1896:{l:'Acht Plätze. Einer je Branche.',
-    t:['Sport gehört hier seit 1896 zum Ort. Fußball seit 1933. Acht Betriebe tragen diese Zahl, mehr werden es nicht. Aus jeder Branche ist nur einer dabei.','Wer hier steht, zeigt dem Ort, dass er vorangeht. Ihr bekommt einen der besten Plätze für eure Bande, ein Heimspiel in eurem Namen und bei den Partnertreffen den Vorrang als Gastgeber.'],
-    d:['Bande an einem der besten Plätze, nach Verfügbarkeit.','Kein zweiter Betrieb aus eurer Branche unter den acht.','Ein Heimspiel je Saison als Partner des Tages. Das Spiel sucht ihr vor den anderen aus.','Vier Partnerkarten für die Heimspiele, zum Weitergeben.','Der Partnerabend, alle Partnertreffen und der Vorrang als Gastgeber.','Ein Porträt eures Betriebs oder ein kurzer Film je Saison.','Zwei Stellenanzeigen je Saison.','Das nummerierte Schild: einer von acht.'],g:GUT+GUT_B},
+  supporter:{l:'',t:[],d:[],g:GUT},
+  club:{l:'',t:[],d:[],g:GUT},
+  premium:{l:'',t:[],d:[],g:GUT},
+  p1896:{l:'',t:[],d:[],g:GUT},
   sotd:{l:'Ein Heimspiel lang gehört der Platz euch.',
     t:['Euer Name fällt in mehreren Durchsagen, und danach berichten wir auf Instagram und Facebook. Das passt zu einem Jubiläum, zu einer Neueröffnung oder wenn ihr euren Leuten einfach einmal etwas Besonderes zeigen wollt.'],
     d:['Mehrere Durchsagen mit eurem Namen.','Bericht nach dem Spiel auf Instagram und Facebook.','Der Preis richtet sich nach dem Paket: Supporter 189 €, Club Partner 169 €, Premium Partner 149 €.','Beim 1896 Partner ist ein Heimspiel je Saison schon dabei.']},
@@ -2366,7 +2358,7 @@ const INFO={
     d:['Ihr seid Partner der Ferienspiele und werdet dort genannt.','Einmalig, keine Laufzeit.']},
   jobpost:{l:'Eure Stelle dort, wo die Leute von hier sind.',
     t:['Eure Stellenanzeige erreicht Spieler, Eltern und Fans aus dem Weschnitztal. Bewerbungen können wir nicht versprechen. Aber wer bei uns am Platz steht, kommt aus der Gegend und will meistens auch hier bleiben.'],
-    d:['Eine Stellenanzeige bei uns im Netz.','Im Premium Partner ist eine Anzeige je Saison dabei, im 1896 Partner sind es zwei.']},
+    d:['Eine Stellenanzeige bei uns im Netz.']},
   business_treff:{l:'Die Partner kommen zu euch.',
     t:['Ein Abend in eurem Betrieb. Ihr zeigt, was ihr macht, und man kommt ins Gespräch. So lernt man sich anders kennen als über eine Visitenkarte.'],
     d:['Ein Partnertreffen bei euch im Betrieb.','Die anderen Partner sind eingeladen.']},
@@ -2377,30 +2369,24 @@ const INFO={
     t:['Über Tore reden die Leute. Zum Tor des Monats gibt es ein Video und einen Beitrag auf Instagram und Facebook, mit eurem Logo. Diesen Platz gibt es nur einmal.'],
     d:['Video und Beitrag zum Tor des Monats, jeden Monat.','Euer Logo im Beitrag.','Nur ein Partner je Saison.']}
 };
-// Der bisherige Flyer bleibt auch für bereits vorgestellte Firmen lesbar.
+// Paketstand laut Partnerblatt 2027/28 (wie private.partner_paketfakten, 265). Er gilt in jeder Präsentation, auch ohne Daten vom Deck.
 const imDoppelpass='Wir stellen euren Betrieb im Stadionheft „Doppelpass“ vor.';
 const inDerHalbzeit='Bei eurem Partnerspiel stellen wir euch in einem kurzen Halbzeitinterview vor. Den Ablauf stimmen wir mit euch und dem Spielbetrieb ab.';
-for(const key of ST){
-  INFO[key].d.push(imDoppelpass);
-  PAK[key].auch.push(imDoppelpass);
-}
-INFO.p1896.d.push(inDerHalbzeit);
-INFO.sotd.d.push(inDerHalbzeit);
-
-// Die gewählte Fassung kommt ausschließlich vom Deck. Alte Einladungen behalten ihren Flyer.
-function paketfassungUebernehmen(daten){
-  if(daten.fassung!==2||paketfassung===2||!Array.isArray(daten.leistungen))return;
-  const katalog=Object.fromEntries(daten.leistungen.map(l=>[l.key,l]));
-  if(!ST.every(key=>Array.isArray(katalog[key]?.punkte)&&katalog[key].punkte.length))return;
-  paketfassung=2;
+const DRUCK='Die Druckkosten kommen hinzu, die Montage ist enthalten.';
+const PAKETSTAND={
+  supporter:{titel:'Club Supporter',kurz:'Euer Logo an der Supporterwand.',punkte:['Euer Firmenlogo steht auf der Supporterwand.',imDoppelpass]},
+  club:{titel:'Club Partner',kurz:'Eine Bande am Spielfeld.',punkte:['Euer Logo steht auf der Partnerwand.','Ihr bekommt eine Einzelbande von 2,50 × 0,80 m an einem Standardplatz.','Eine übertragbare Partnerkarte für die Heimspiele.','Einladung zum Partnerabend einmal pro Saison.',DRUCK,imDoppelpass]},
+  premium:{titel:'Premium Partner',kurz:'Ihr sucht den Platz eurer Bande bevorzugt aus.',punkte:['Euer Logo steht größer auf der Partnerwand.','Eine Einzelbande von 2,50 × 0,80 m auf einem bevorzugten Platz. Unter den 16 Premium-Partnern wählt zuerst, wer zuerst zusagt.','Zwei übertragbare Partnerkarten für die Heimspiele.','Einladung zum Partnerabend einmal pro Saison.',DRUCK,imDoppelpass]},
+  p1896:{titel:'1896 Partner',kurz:'Einer von acht Plätzen neben unserem Hauptpartner.',punkte:['Eigener Auftritt auf der 1896-Partnerwand.','Eine Doppelbande von 5,00 × 0,80 m auf einem der acht Plätze links und rechts vom Hauptpartner.','Vier übertragbare Partnerkarten für die Heimspiele.','Einladung zum Partnerabend einmal pro Saison.','Ein Heimspiel pro Saison als Spieltagspartner mit Vorwahlrecht: Wir nennen euch in unseren Social-Media-Beiträgen, bei der Mannschaftsaufstellung und bei den Tordurchsagen und stellen euch in einem kurzen Halbzeitinterview vor.',DRUCK,imDoppelpass]}
+};
+function pakettexte(katalog){
   for(const [i,key] of ST.entries()){
     const l=katalog[key], punkte=l.punkte.map(esc);
     Object.assign(PAK[key],{t:esc(l.titel),auch:punkte});
     if(l.preis!=null)PAK[key].p=Number(l.preis);
     Object.assign(INFO[key],{l:esc(l.kurz),t:[],d:punkte,g:GUT});
     const gruppe=$('[data-frage="groesse"] [data-w="'+i+'"]');
-    $('span:not(.ib)',gruppe).textContent=l.kurz;
-    const info=$('.ib',gruppe);if(info)info.setAttribute('aria-label','Mehr zu '+l.titel);
+    if(gruppe){ const sp=$('span:not(.ib)',gruppe); if(sp)sp.textContent=l.kurz; const info=$('.ib',gruppe); if(info)info.setAttribute('aria-label','Mehr zu '+l.titel); }
     for(const grund of ['ehre','netz','team','buehne'])GRUND[grund][key]=punkte[0];
     if(key!=='supporter'){
       GRUND.buehne[key]=punkte[1];GRUND.netz[key]=punkte[3];GRUND.team[key]=punkte[2];
@@ -2409,6 +2395,17 @@ function paketfassungUebernehmen(daten){
   KLEIN.team='baelle_jugend';
   FEHLT.netz=[[1,'fehlt hier die Einladung zum Partnerabend']];FEHLT.team=[];
   EX.jobpost.nur=[]; SATZ.team='Frag, ob der Betrieb schon jemanden aus dem Verein beschäftigt.';
+}
+pakettexte(PAKETSTAND);
+INFO.sotd.d.push(inDerHalbzeit);
+
+// Die gewählte Fassung kommt ausschließlich vom Deck. Alte Einladungen behalten ihren Flyer.
+function paketfassungUebernehmen(daten){
+  if(daten.fassung!==2||paketfassung===2||!Array.isArray(daten.leistungen))return;
+  const katalog=Object.fromEntries(daten.leistungen.map(l=>[l.key,l]));
+  if(!ST.every(key=>Array.isArray(katalog[key]?.punkte)&&katalog[key].punkte.length))return;
+  paketfassung=2;
+  pakettexte(katalog);
   EX.bande_erste.nur=['club','premium','p1896'];
   for(const key of ['sotd','bande_erste']){
     const l=katalog[key];if(!l)continue;

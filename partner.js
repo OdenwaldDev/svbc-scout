@@ -78,7 +78,7 @@
     erste:{k:'Die Erste',titel:'Erste Mannschaft',text:'Die Erste ist die Mannschaft, über die im Ort gesprochen wird. Euer Name ist bei jedem Heimspiel dabei, auf dem Trikot oder an der Bande, und später auf den Fotos.',bild:'partner/hero.jpg',pos:'center 40%',alt:'Die Erste des SV/BSC Mörlenbach',teaser:'Trikot und Bande bei jedem Heimspiel.'},
     zweite:{k:'Die Zweite',titel:'Zweite Mannschaft',text:'In der Zweiten spielen Männer, die tagsüber arbeiten und abends zum Training kommen. Dazu kommen Spieler aus der A-Jugend, die hier ihre ersten Spiele bei den Herren machen.',teaser:'Trikot und Ärmel der Zweiten.'},
     events:{k:'Zeltlager und Turniere',titel:'Zeltlager und Turniere',text:'Zeltlager, Ferienspiele und Turniere der Jugend. Euer Banner hängt dort, wo an diesen Tagen alle zusammenkommen: Kinder, Eltern und Trainer.',teaser:'Zeltlager, Ferienspiele und Turniere.'},
-    verein:{k:'Der ganze Verein',titel:'Der ganze Verein',text:'Mit einem Paket steht ihr hinter dem ganzen Verein, von den Minikickern bis zur Ersten. Je nach Paket gehören die Partnerwand, eine eigene Bande, Karten für die Heimspiele und die Treffen unserer Partner dazu.',teaser:'Vier Pakete, dazu eure Stellenanzeige bei uns.'}};
+    verein:{k:'Der ganze Verein',titel:'Der ganze Verein',text:'Mit einem Paket steht ihr hinter dem ganzen Verein, von den Minikickern bis zur Ersten. Je nach Paket gehören die Partnerwand, eine eigene Bande, Karten für die Heimspiele und der Partnerabend dazu.',teaser:'Vier Pakete für die Saison 2027/28.'}};
   const ZWECK_PARTNER={Jugend:'die Jugend des SV/BSC',Zeltlager:'das Zeltlager der Jugend',Ferienspiele:'die Ferienspiele',Erste:'die Erste','Erste Mannschaft':'die Erste','Zweite Mannschaft':'die Zweite',Verein:'den Verein'};
   const ZWECK_VERTRAG={Jugend:'seine Jugendabteilung',Zeltlager:'das Zeltlager seiner Jugend',Ferienspiele:'seine Ferienspiele','Erste Mannschaft':'seine erste Mannschaft','Zweite Mannschaft':'seine zweite Mannschaft',Verein:'seine Fußballabteilung'};
   const ZWECK_TXT={Jugend:'unsere Jugend',Zeltlager:'das Zeltlager',Ferienspiele:'die Ferienspiele','Erste Mannschaft':'die Erste','Zweite Mannschaft':'die Zweite',Verein:'den Verein'}, zweckTxt=z=>ZWECK_TXT[z]||'den Verein';
@@ -358,7 +358,7 @@
     const veraltet=/sap.{0,12}daten.*klare prozesse/i.test(h)&&/260 kinder/i.test(h)&&/arbeit im hintergrund/i.test(h);
     return h&&!veraltet?esc(h):'Fast 300 Kinder spielen bei uns Fußball. Hier könnt ihr euch die Banden am Platz und die Partnerpakete für die nächste Saison ansehen.'; }
   const STUFEN=()=>L.filter(l=>l.art==='paket'&&l.preis!=null).sort((a,b)=>(STUFE.indexOf(a.key)+1||9)-(STUFE.indexOf(b.key)+1||9)||+a.preis-+b.preis);
-  const bausteinListe=w=>L.filter(l=>(l.key!=='bande_erste'||bandenzusatzErlaubt())&&(D.paketfassung!==2||l.key!=='jobpost')&&l.bereich===w&&l.art!=='paket'&&!['spende','sonstiges'].includes(l.art)&&l.preis!=null&&(!['aermel_anzug_l','aermel_anzug_r'].includes(l.key)||M.some(m=>frei(l,m.id)>0)));
+  const bausteinListe=w=>L.filter(l=>(l.key!=='bande_erste'||bandenzusatzErlaubt())&&l.key!=='jobpost'&&l.bereich===w&&l.art!=='paket'&&!['spende','sonstiges'].includes(l.art)&&l.preis!=null&&(!['aermel_anzug_l','aermel_anzug_r'].includes(l.key)||M.some(m=>frei(l,m.id)>0)));
   const hatPaket=()=>S.korb.some(e=>(lk(e.key)||{}).art==='paket');
   const oder=a=>a.length>1?a.slice(0,-1).join(', ')+' oder '+a[a.length-1]:(a[0]||'');
   // Worum es geht, in einem Satz aus den Daten: wie viele Pakete, ab welchem Preis, welche Bausteine es gibt
@@ -966,7 +966,7 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     stationenNeu(); }
   // 0.99.55 Trichter: nach der Paketwahl bis zu drei passende Zusätze zum Antippen (Highlights, Stream, Matchball, Jugend-Events)
   function upsellHtml(pk){ const basis=['highlights_social','stream_einblendung','matchball','sotd','zeltlager','ferienspiele','tor_monat'];
-    const ls=basis.map(lk).filter(l=>l&&(D.paketfassung!==2||l.key!=='jobpost')&&l.preis!=null&&!l.je_mannschaft&&frei(l,null)!==0&&!imKorb(l.key,null)&&!(pk.key==='p1896'&&l.key==='sotd')).map((l,i)=>({l,w:score(l)*10-i})).sort((a,b)=>b.w-a.w).slice(0,3).map(x=>x.l);
+    const ls=basis.map(lk).filter(l=>l&&l.key!=='jobpost'&&l.preis!=null&&!l.je_mannschaft&&frei(l,null)!==0&&!imKorb(l.key,null)&&!(pk.key==='p1896'&&l.key==='sotd')).map((l,i)=>({l,w:score(l)*10-i})).sort((a,b)=>b.w-a.w).slice(0,3).map(x=>x.l);
     if(!ls.length)return '';
     return `<ul class="pk-up" aria-label="Passt dazu">${ls.map(l=>`<li><div><b>${esc(l.titel)}</b>${l.kurz?`<small>${esc(l.kurz)}</small>`:''}<em>${eur(l.key==='sotd'?PLIB.sotdPreis(l,[pk]):l.preis)} ${esc(PLIB.EINHEIT[l.einheit]||'')}, netto</em></div><button type="button" class="knopf-w" data-up="${l.key}">Dazunehmen</button></li>`).join('')}</ul>`; }
   // 0.99.53: Fotos zu Zeltlager und Ferienspielen

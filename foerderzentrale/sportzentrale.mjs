@@ -1,6 +1,6 @@
-import { draftProblems, evaluate, today, validateCase } from "./domain.mjs?v=beta-0.99.167";
-import { projectPdf } from "./documents.mjs?v=beta-0.99.167";
-import { eml, encodeBytes } from "./eml.mjs?v=beta-0.99.167";
+import { draftProblems, evaluate, today, validateCase } from "./domain.mjs?v=beta-0.99.168";
+import { projectPdf } from "./documents.mjs?v=beta-0.99.168";
+import { eml, encodeBytes } from "./eml.mjs?v=beta-0.99.168";
 
 function download(content, type, filename) {
   const url = URL.createObjectURL(new Blob([content], { type }));
