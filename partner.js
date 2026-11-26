@@ -1127,9 +1127,21 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
       ?{titel:satzLeistung.titel,preis:'ca. '+eur(satzLeistung.preis)+' netto '+(PLIB.EINHEIT[satzLeistung.einheit]||''),beschreibung:satzLeistung.text||satzLeistung.kurz}
       :{titel:'Ärmelpartnerschaft',preis:'Nach Absprache',beschreibung:'Die Vorschau zeigt die aktuell freien Ärmel für unsere gemeinsame Auswahl. Mannschaft und Ausführung stimmen wir vor der Bestellung mit euch ab.'});
     if(trikotvorschau)inhalte.push({titel:'Optional auf dem Trikotärmel',beschreibung:'So sieht euer Logo auf dem Heimtrikot aus. Wenn euch der Ärmel gefällt, schauen wir gemeinsam nach einer freien Mannschaft.'});
+    // 0.99.171 (Albert, 26.11.2026): Steht ein Paket im Angebot, geht es als Bühne auf: Name, großer Preis, Inhalt. Die Zeile in der Liste entfällt dafür.
+    const hauptIdx=posten.findIndex(p=>window.PARTNER_ANGEBOT.pakete.includes(p.key)), hauptP=hauptIdx>=0?posten[hauptIdx]:null, hauptL=hauptP?lk(hauptP.key)||{}:null;
+    const hauptBetrag=hauptP?(entwurf?hauptL.preis:hauptP.summe):null;
+    const paket=hauptP&&hauptBetrag!=null&&!(hauptP.menge>1)?{titel:hauptP.titel||hauptL.titel||hauptP.key,betrag:+hauptBetrag,preis:eur(hauptBetrag),einheit:'netto '+(PLIB.EINHEIT[hauptP.einheit||hauptL.einheit]||''),
+      punkte:String(hauptP.beschreibung||hauptP.text||hauptL.text||hauptL.kurz||'').split(/(?:\n+|(?<=[.!?])\s+(?=[A-ZÄÖÜ]))/u).map(x=>x.trim()).filter(Boolean)}:null;
+    if(paket)inhalte.splice(hauptIdx,1);
+    const vergleich=paket?wirkungZahl(paket.betrag):null;
     const meta=entwurf?'Vorschlag für unser Gespräch':[wert.nr,wert.beginn?'Ab '+datum(wert.beginn):'',wert.saisons?(wert.saisons===1?'Eine Saison':wert.saisons+' Saisons'):'',wert.bis||wert.gueltig_bis?'Gültig bis '+datum(wert.bis||wert.gueltig_bis):''].filter(Boolean).join(' · ');
     window.PARTNER_ANGEBOT.oeffnen({
-      entwurf,firma,positionen:inhalte,metadaten:meta,
+      entwurf,firma,positionen:inhalte,metadaten:entwurf&&paket?'':meta,paket,
+      wofuer:paket?{satz:wirkung({key:hauptP.key}),zahl:vergleich?vergleich.n:0,
+        vergleich:vergleich?'So viel wie '+vergleich.n+' '+vergleich.titel+'. Euer Beitrag geht in den ganzen Verein, das hier ist nur zum Vorstellen.':'',
+        // In der Vereinspräsentation genügt Schließen, sonst öffnet sie sich. Die Bausteine stehen auf der Seite darunter.
+        verein:()=>{if(!$('#reiseRahmen'))$('#heroVerein')?.click();},
+        bausteine:()=>{const f=$('#reiseRahmen');if(f){f.remove();document.documentElement.style.overflow='';}zu('bausteine',true);}}:null,
       summe:!entwurf&&wert.netto_gesamt!=null?'Gesamt über die Laufzeit '+eur(wert.netto_gesamt)+' netto':'',
       hinweis:entwurf?(vorschlag.vorbehalt==='branche'||wert.paket==='p1896'&&D.exklusiv_vergeben?'Ob der 1896-Platz in eurer Branche verfügbar ist, klären wir vor einer Zusage.':'Die Platzierung stimmen wir gemeinsam ab.'):'',
       bande:bandentyp?()=>window.PD_BANDENSTUDIO.amSpielfeld(entwurf&&wert.quer===true):null,

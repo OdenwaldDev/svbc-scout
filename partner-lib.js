@@ -2596,6 +2596,23 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
   function knopf(text,klasse,aktion){
     const b=element('button',klasse,text);b.type='button';b.onclick=aktion;return b;
   }
+  // Der Preis zählt in gut einer Sekunde hoch. Wer weniger Bewegung eingestellt hat, sieht ihn sofort.
+  function hochzaehlen(el,betrag,endtext){
+    const ruhig=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(ruhig||!Number.isInteger(betrag)||betrag<10||typeof requestAnimationFrame!=='function')return;
+    el.setAttribute('aria-label',endtext);
+    const zeigen=n=>{el.textContent=endtext.replace(/[\d.]+/,n.toLocaleString('de-DE'));};
+    const dauer=1150;let start=0;zeigen(0);
+    const schritt=t=>{
+      if(!el.isConnected)return;
+      if(!start)start=t;
+      const x=Math.min(1,(t-start)/dauer),weich=1-Math.pow(1-x,4);
+      if(x<1){zeigen(Math.round(betrag*weich));requestAnimationFrame(schritt);}
+      else{el.textContent=endtext;el.classList.add('da-fertig');}
+    };
+    // Erst zählen, wenn die Bühne aufgegangen ist.
+    setTimeout(()=>requestAnimationFrame(schritt),420);
+  }
   function oeffnen(o){
     if(document.getElementById('pdDirektangebot'))return;
     const fokus=document.activeElement, dialog=element('dialog','da-dialog');
@@ -2603,11 +2620,31 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     dialog.addEventListener('close',()=>{dialog.remove();if(fokus?.isConnected)fokus.focus();},{once:true});
     const kopf=element('header','da-kopf');
     const wappen=element('img');wappen.src='partner/wappen.png';wappen.alt='SV/BSC Mörlenbach';
-    kopf.append(wappen,element('span','da-rubrik',o.entwurf?'Gesprächsentwurf':'Euer Angebot'),knopf('Schließen','da-close',()=>dialog.close()));
+    kopf.append(wappen,element('span','da-rubrik',o.entwurf?'Unser Vorschlag':'Euer Angebot'),knopf('Schließen','da-close',()=>dialog.close()));
     const titel=element('h1','',o.firma);titel.id='daFirma';
     const body=element('div','da-inhalt');
     body.append(titel);
     if(o.metadaten)body.append(element('p','da-meta',o.metadaten));
+    // 0.99.171 (Albert, 26.11.2026): Das Paket geht als Bühne auf. Der Preis steht groß da und zählt hoch, gleich darunter die Bande der Firma,
+    // dann offen, was im Paket steckt.
+    let buehne=null,drin=null;
+    if(o.paket){
+      const b=buehne=element('section','da-buehne');b.setAttribute('aria-label',o.paket.titel);
+      b.append(element('p','da-pk-rubrik',o.entwurf?'Unser Vorschlag für euch':'Euer Paket'),element('h2','da-pk-name',o.paket.titel));
+      if(o.paket.preis){
+        const zeile=element('p','da-pk-preis'),zahl=element('span','da-zahl',o.paket.preis);
+        zeile.append(zahl);if(o.paket.einheit)zeile.append(element('span','da-einheit',o.paket.einheit));b.append(zeile);
+        hochzaehlen(zahl,o.paket.betrag,o.paket.preis);
+      }
+      if(o.paket.punkte?.length){
+        drin=element('section','da-drin');drin.setAttribute('aria-labelledby','daDrin');
+        const h=element('h2','','Das steckt drin');h.id='daDrin';
+        const ul=element('ul','da-punkte');
+        o.paket.punkte.forEach((x,i)=>{const li=element('li','',x);li.style.setProperty('--i',i);ul.append(li);});
+        drin.append(h,ul);
+      }
+      body.append(b);
+    }
     const leistungen=element('section','da-leistungen');leistungen.setAttribute('aria-label','Angebotene Leistungen');
     for(const pos of o.positionen){
       const detail=element('details','da-leistung'),sum=element('summary');
@@ -2623,7 +2660,7 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
       }else inhalt.append(element('p','',zeilen[0]||'Weitere Einzelheiten besprechen wir mit euch.'));
       detail.append(sum,inhalt);leistungen.append(detail);
     }
-    body.append(leistungen);
+    if(o.positionen.length)body.append(leistungen);
     if(o.summe)body.append(element('p','da-summe',o.summe));
     if(o.hinweis)body.append(element('p','da-hinweis',o.hinweis));
     // Jede Ansicht lädt unabhängig. Ein abgelöster oder geschlossener Entwurf erhält keine fremden Bilder.
@@ -2642,11 +2679,24 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
       laden();
     }
     const medien=element('section','da-medien');medien.setAttribute('aria-label','Euer Auftritt');
-    body.append(medien);
+    if(buehne){buehne.after(medien);if(drin)medien.after(drin);}else body.append(medien);
     function bild(container,title,sub,malen){
       const fig=element('figure','da-motiv'),fläche=element('div','da-foto'),cap=element('figcaption');
       cap.append(element('strong','',title),element('span','',sub));fig.append(fläche,cap);container.append(fig);
       foto(fläche,malen,title+', '+sub);
+    }
+    if(o.wofuer){
+      const w=element('section','da-wofuer');w.setAttribute('aria-labelledby','daWofuer');
+      const h=element('h2','','Wofür euer Beitrag da ist');h.id='daWofuer';w.append(h);
+      if(o.wofuer.satz)w.append(element('p','',o.wofuer.satz));
+      if(o.wofuer.zahl){
+        const k=element('div','da-vergleich');k.append(element('b','',String(o.wofuer.zahl)),element('span','',o.wofuer.vergleich));w.append(k);
+      }
+      const z=element('div','da-wege');
+      if(o.wofuer.verein)z.append(knopf('Den Verein kennenlernen','da-link',()=>{dialog.close();o.wofuer.verein();}));
+      if(o.wofuer.bausteine)z.append(knopf('Zusatzbausteine ansehen','da-link',()=>{dialog.close();o.wofuer.bausteine();}));
+      if(z.children.length)w.append(z);
+      body.append(w);
     }
     const fuss=element('footer','da-fuss');
     if(o.weiter)fuss.append(knopf('Angebotsdetails öffnen','da-haupt',()=>{dialog.close();o.weiter();}));
