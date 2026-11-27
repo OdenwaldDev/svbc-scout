@@ -34,6 +34,10 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .hg img,.hg video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hg video{opacity:0;transition:opacity .8s}
 .hg video.laeuft{opacity:1}
+/* 0.99.175: Der Film liegt genau über seinem Standbild, auch wenn das Bild nicht mittig sitzt. */
+.hg [data-hg="ball"] video{object-position:50% 70%}
+/* Hochkant liegt der Ball am Ende rechts im Netz: Bild und Film dorthin rücken, sonst rollt er aus dem Ausschnitt. */
+@media(max-aspect-ratio:1/1){.hg [data-hg="netz"] img,.hg [data-hg="netz"] video{object-position:88% 50%}}
 .hg .zoom{animation:atem 22s ease-in-out infinite alternate}
 @keyframes atem{from{transform:scale(1.04)}to{transform:scale(1.14)}}
 .schleier{position:absolute;inset:0;z-index:-2;pointer-events:none;transition:background 1s;background:linear-gradient(180deg,rgba(6,10,28,.7) 0,rgba(6,10,28,.3) 28%,rgba(6,10,28,.66) 62%,rgba(6,10,28,.96) 100%)}
@@ -1327,9 +1331,10 @@ html.zeiger .spot{opacity:1}
 </style></head><body><div id="film" data-s="start" data-licht="1">
   <div class="hg" aria-hidden="true">
     <div data-hg="nacht" class="an" data-reise-medium data-reise-szenen="start" data-reise-video="partner/r-stadionclip.mp4"><img class="zoom" src="partner/stadion-original-nordost.jpg" alt=""></div>
-    <div data-hg="rasen"><img class="zoom" src="partner/r-rasen.webp" alt=""></div>
-    <div data-hg="ball"><img class="zoom" src="partner/r-ball.webp" alt="" style="object-position:50% 70%"></div>
-    <div data-hg="rauch"><img class="zoom" src="partner/stadion-original-nord.jpg" alt=""></div>
+    <div data-hg="rasen" data-reise-medium data-reise-szenen="antrieb groesse bon" data-reise-video="partner/r-rasen.mp4"><img class="zoom" src="partner/r-rasen.webp" alt=""></div>
+    <div data-hg="ball" data-reise-medium data-reise-szenen="platz extras" data-reise-video="partner/r-ball.mp4"><img class="zoom" src="partner/r-ball.webp" alt="" style="object-position:50% 70%"></div>
+    <div data-hg="schuhe" data-reise-medium data-reise-szenen="verb" data-reise-video="partner/r-schuhe.mp4"><img class="zoom" src="partner/r-schuhe.webp" alt=""></div>
+    <div data-hg="netz" data-reise-medium data-reise-szenen="ja" data-reise-video="partner/r-netz.mp4"><img class="zoom" src="partner/r-netz.webp" alt=""></div>
   </div>
   <div class="schleier"></div>
   <div class="strahl s1"></div><div class="strahl s2"></div>
@@ -1384,7 +1389,7 @@ html.zeiger .spot{opacity:1}
   </section>
 
   <!-- 1 Woher -->
-  <section class="szene" data-s="verb" data-hg="rasen">
+  <section class="szene" data-s="verb" data-hg="schuhe">
     <img class="sz-bild" data-fuer="hier" src="partner/stadion-original-nordost.jpg" alt=""><img class="sz-bild" data-fuer="familie" src="partner/r-jugend.webp" alt=""><img class="sz-bild" data-fuer="ehemalig" src="partner/r-hero.webp" alt=""><img class="sz-bild" data-fuer="partner" src="partner/r-bande.webp" alt="">
     <div class="in">
       <p class="eyebrow auf">Erst mal zu euch<span data-name data-vor=", " data-leer=""></span></p>
@@ -1525,7 +1530,7 @@ html.zeiger .spot{opacity:1}
   </section>
 
   <!-- 10 Anpfiff -->
-  <section class="szene" data-s="ja" data-hg="rauch" data-licht="1">
+  <section class="szene" data-s="ja" data-hg="netz" data-licht="1">
     <div class="in">
       <div class="ja-in" id="jaVor">
         <p class="eyebrow auf">Jetzt seid ihr dran<span data-name data-vor=", " data-leer=""></span></p>
@@ -1580,7 +1585,7 @@ window.REISE_TRIKOT=(()=>{
     if(art!=='anzug')benoetigt.push(['TRIKOT3D','trikot3d.js']);
     for(const [name,datei] of benoetigt){
       if(vorhanden(name))continue;
-      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.174';
+      if(!module.has(name))module.set(name,new Promise((ok,nein)=>{ const s=document.createElement('script'); s.src=datei+'?v=beta-0.99.175';
         s.onload=()=>vorhanden(name)?ok():nein(new Error('Vorschaumodul fehlt')); s.onerror=()=>nein(new Error('Vorschaumodul nicht erreichbar'));
         document.head.appendChild(s); }).catch(e=>{module.delete(name);throw e;}));
       await module.get(name);

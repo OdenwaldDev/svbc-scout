@@ -1135,11 +1135,12 @@ ${demo()?'<div class="demo">Probeansicht zum Durchklicken. Hier wird nichts gesp
     if(paket)inhalte.splice(hauptIdx,1);
     const vergleich=paket?wirkungZahl(paket.betrag):null;
     const meta=entwurf?'Vorschlag für unser Gespräch':[wert.nr,wert.beginn?'Ab '+datum(wert.beginn):'',wert.saisons?(wert.saisons===1?'Eine Saison':wert.saisons+' Saisons'):'',wert.bis||wert.gueltig_bis?'Gültig bis '+datum(wert.bis||wert.gueltig_bis):''].filter(Boolean).join(' · ');
+    // 0.99.175 (Albert, 27.11.2026): Über dem Abschnitt zum Beitrag stehen Kinderschuhe und ein alter Ball an der Kabinenbank. Das Bild soll an die eigene Zeit am Platz erinnern, ohne es auszusprechen.
     window.PARTNER_ANGEBOT.oeffnen({
       entwurf,firma,positionen:inhalte,metadaten:entwurf&&paket?'':meta,paket,
       gruss:String(D.deck.passung?.gruss||'').trim().slice(0,300),
       logo:D.deck.logo?{src:D.deck.logo,dunkel:D.deck.logo_hell===false}:null,
-      wofuer:paket?{szene:'jugendtraining-am-platz',satz:wirkung({key:hauptP.key}),zahl:vergleich?vergleich.n:0,
+      wofuer:paket?{szene:'r-schuhe',satz:wirkung({key:hauptP.key}),zahl:vergleich?vergleich.n:0,
         vergleich:vergleich?'So viel wie '+vergleich.n+' '+vergleich.titel+'. Euer Beitrag geht in den ganzen Verein, das hier ist nur zum Vorstellen.':'',
         // In der Vereinspräsentation genügt Schließen, sonst öffnet sie sich. Die Bausteine stehen auf der Seite darunter.
         verein:()=>{if(!$('#reiseRahmen'))$('#heroVerein')?.click();},

@@ -2717,9 +2717,10 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     if(o.wofuer){
       const w=element('section','da-wofuer');w.setAttribute('aria-labelledby','daWofuer');
       // 0.99.174 (Albert, 27.11.2026): Erst das Bild vom Platz, dann der Satz. Kein zusätzlicher Spruch, das Bild soll für sich stehen.
+      // 0.99.175: Zeigt die Szene Menschen, die es so nicht gab, steht der Hinweis dabei (szeneHinweis). Stimmungsbilder ohne Menschen brauchen keinen.
       if(o.wofuer.szene){
         const fig=element('figure','da-szene');fig.setAttribute('aria-hidden','true');
-        fig.append(film(o.wofuer.szene,true),element('figcaption','','KI-inszenierte Vereinsszene'));w.append(fig);
+        fig.append(film(o.wofuer.szene,true));if(o.wofuer.szeneHinweis)fig.append(element('figcaption','',o.wofuer.szeneHinweis));w.append(fig);
       }
       const h=element('h2','','Wofür euer Beitrag da ist');h.id='daWofuer';w.append(h);
       if(o.wofuer.satz)w.append(element('p','',o.wofuer.satz));
