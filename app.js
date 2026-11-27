@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.175', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.176', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -15747,7 +15747,7 @@ const SPO_ST=[['idee','Idee'],['angeschrieben','Angeschrieben'],['gespraech','Ge
 const SPO_STL=Object.fromEntries(SPO_ST);
 const SPO_WEITER={idee:'angeschrieben',angeschrieben:'gespraech',gespraech:'angebot',angebot:'partner'};
 // Partnerstufen, Laufzeiten und Zusatzoptionen wie im Partnersheet 2027/28 (Beta 0.32)
-const SPO_STUFE={supporter:{t:'SVM Supporter',p:189,s:'Ich unterstütze.',d:'Logo auf der Supporter-Tafel, Logo und Link auf der Website, Saison-Badge.'},
+const SPO_STUFE={supporter:{t:'Club Supporter',p:189,s:'Ich unterstütze.',d:'Logo auf der Supporter-Tafel, Logo und Link auf der Website, Saison-Badge.'},
   club:{t:'Club Partner',p:496,s:'Ich werde sichtbar.',d:'Bande nach Verfügbarkeit, 1 Partnerkarte, Einladung zum Partnerabend, Partner-Begrüßung auf Social Media.'},
   premium:{t:'Premium Partner',p:896,s:'Sichtbar + vernetzt.',d:'Bevorzugte Bande, 2 Partnerkarten, Partnerabend, alle Business Treffs, Partner-Spotlight, 1 Job-Post.',max:16},
   p1896:{t:'1896 Partner',p:1896,s:'Innerer Partnerkreis.',d:'Topplatzierung, 4 Partnerkarten, 1 Partner des Tages inklusive mit Vorwahlrecht, Branchenexklusivität, 2 Job-Posts.',max:8}};
@@ -18344,7 +18344,7 @@ const PS_DATEI='Partnersheet-2027-28.pdf', PS_SAISON='2027/28';
 const psUrl=()=>{ try{ return new URL('formulare/'+PS_DATEI,location.href).href; }catch(e){ return 'formulare/'+PS_DATEI; } };
 function psKarte(){
   const admin=typeof isAdmin==='function'&&isAdmin(), drive=typeof OG!=='undefined'&&OG.ue&&OG.ue.drive;
-  const stufen=Object.entries(SPO_STUFE).map(([k,s])=>`<span><b>${svEsc(k==='supporter'?'Club Supporter':s.t)}</b>${spoEur(s.p)}${s.max?` · max. ${s.max}`:''}</span>`).join('');
+  const stufen=Object.entries(SPO_STUFE).map(([k,s])=>`<span><b>${svEsc(s.t)}</b>${spoEur(s.p)}${s.max?` · max. ${s.max}`:''}</span>`).join('');
   return `<div class="card ps-karte" id="psKarte">
     <a class="ps-bild" href="formulare/${PS_DATEI}" target="_blank" rel="noopener" aria-label="Partnerblatt ansehen"><img src="formulare/Partnersheet-2027-28-vorschau.jpg" alt="Partnerblatt ${PS_SAISON}, Seite 1" loading="lazy"></a>
     <div class="ps-txt"><h3>Partnerblatt ${PS_SAISON}</h3>
@@ -18910,6 +18910,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.176',v:'0.99.176',datum:'2026-11-27',titel:'Partner: Die kleinste Stufe heißt überall Club Supporter',kurz:'Die vier Stufen heißen jetzt an jeder Stelle gleich: Club Supporter, Club Partner, Premium Partner und 1896 Partner.',punkte:[{ic:'i',t:'Ein Name für die kleinste Stufe',d:'In Verträgen, Präsentationen, der Auswertung und im Katalog steht jetzt Club Supporter, so wie im Partnerblatt. Preis und Inhalt der Stufe sind unverändert.',r:'team'}]},
   {id:'0.99.175',v:'0.99.175',datum:'2026-11-27',titel:'Angebot und Präsentation: neue Stimmungsfilme',kurz:'Im Angebot stehen über dem Abschnitt zum Beitrag jetzt Kinderschuhe und ein alter Ball an der Kabinenbank. In der Präsentation zum Durchklicken bewegt sich der Hintergrund in fünf weiteren Szenen.',punkte:[{ic:'i',t:'Kabinenbank im Angebot',d:'Die Szene mit Kinderschuhen und Lederball ersetzt die Trainingsszene über „Wofür euer Beitrag da ist“. Sie zeigt keine Menschen und läuft stumm.',r:'team'},{ic:'i',t:'Bewegte Hintergründe in der Präsentation',d:'Bei „Woher kennt ihr uns?“ steht die Kabinenbank, bei „Seid ihr dabei?“ rollt ein Ball ins Netz, dazu bewegen sich Rasen und Ball in den Szenen dazwischen. Mit „Video pausieren“ bleibt das Standbild stehen.',r:'team'}]},
   {id:'0.99.174',v:'0.99.174',datum:'2026-11-27',titel:'Angebot: Rasen unter Flutlicht, Logo und persönliche Zeile',kurz:'Das persönliche Angebot wirkt hochwertiger: Hinter dem Preis liegt der Rasen unter Flutlicht, das Logo der Firma steht über ihrem Namen, und über dem Abschnitt zum Beitrag läuft eine Szene vom Platz.',punkte:[{ic:'i',t:'Rasen hinter dem Preis',d:'Der Film aus der Präsentation läuft stumm hinter dem Paket. Wer weniger Bewegung eingestellt hat, sieht ein Standbild.',r:'team'},{ic:'i',t:'Logo und persönliche Zeile',d:'Das Logo der Firma steht über ihrem Namen. In der Präsentation der Firma gibt es das neue Feld „Persönliche Zeile im Angebot“ für zwei bis drei Sätze, die nur für diese Firma gelten.',r:'team'},{ic:'i',t:'Szene vom Platz',d:'Über „Wofür euer Beitrag da ist“ läuft eine kurze Szene vom Training. Sie ist als KI-inszeniert gekennzeichnet.',r:'team'}]},
   {id:'0.99.173',v:'0.99.173',datum:'2026-11-27',titel:'FuPa-Zahlen für alle',kurz:'Einsätze, Spielzeit, Tore und Vorlagen der eigenen Spieler kommen jetzt für alle aus FuPa. fussball.de bleibt nur der Rückfall, wenn FuPa nichts hat.',punkte:[{ic:'i',t:'FuPa hat für alle Vorrang',d:'Bisher sahen nur Leitung und Trainer die FuPa-Zahlen, alle anderen die von fussball.de. Dort stimmt die Spielzeit nicht, weil nur Einwechslungen bekannt sind. Jetzt gelten die FuPa-Zahlen der eigenen Spieler für jeden.'},{ic:'i',t:'FuPa-Abruf fällt nicht mehr aus',d:'Der Abruf am Montag und Freitag wird nachgeholt, wenn der Start um 10 Uhr verpasst wurde.',r:'team'}]},
@@ -24440,7 +24441,7 @@ const PD={d:null,laedt:null,q:'',flt:'alle'};
 // 0.99.86 (Albert, 18.11.2026): Links an Firmen laufen über Kaderwerk, kurz und nicht zu erraten: https://partner.kaderwerk.pro/#firma-k7m2xq9d.
 // Der kurze Schlüssel kommt vom Server (partner_decks.kurz, 203). Fehlt er einmal, gilt der lange Link auf derselben Adresse.
 const PD_HOST='https://partner.kaderwerk.pro/';
-const PD_ST={supporter:'SVM Supporter',club:'Club Partner',premium:'Premium Partner',p1896:'1896 Partner'};
+const PD_ST={supporter:'Club Supporter',club:'Club Partner',premium:'Premium Partner',p1896:'1896 Partner'};
 const PD_AST={neu:'neu',versendet:'per Mail raus',fehler:'Mail fehlgeschlagen',uebernommen:'übernommen',storniert:'storniert'};
 function pdLink(code,kurz){ const d=!kurz&&typeof PD!=='undefined'&&PD.d?(PD.d.decks||[]).find(x=>x.code===code):null, k=kurz||(d&&d.kurz)||''; return k?PD_HOST+'#'+k:PD_HOST+'partner.html#d='+code; }
 function pdDatum(ts){ try{ return new Date(ts).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
@@ -38559,7 +38560,7 @@ const R122_SZN = Object.fromEntries(R122_SZ);
 const R122_GRUND = { kinder: 'Kindern etwas ermöglichen', sehen: 'Im Ort gesehen werden', leute: 'Gute Leute finden', netz: 'Andere Betriebe treffen', zurueck: 'Etwas zurückgeben', vorn: 'Vorne mit dabei sein' };
 const R122_VERB = { hier: 'von hier', familie: 'einer spielt bei uns', ehemalig: 'hat selbst hier gespielt', partner: 'ist schon Partner', neu: 'kennt uns noch kaum' };
 const R122_PLATZ = { bande: 'an der Bande', trikot: 'auf einem Jugendtrikot', tag: 'ein Heimspiel lang', wand: 'lieber leise dabei' };
-const R122_PAKET = { keins: 'ein einzelner Baustein', supporter: 'SVM Supporter', club: 'Club Partner', premium: 'Premium Partner', p1896: '1896 Partner' };
+const R122_PAKET = { keins: 'ein einzelner Baustein', supporter: 'Club Supporter', club: 'Club Partner', premium: 'Premium Partner', p1896: '1896 Partner' };
 // Welche Leistung zu welchem Grund passt. Hat die Firma davon nichts gebucht, gilt der Grund als offene Möglichkeit.
 const R122_PASST = { kinder: ['baelle_jugend', 'trikot_jugend', 'team_jugend', 'trainer_jugend', 'zeltlager', 'aermel_jugend'], sehen: ['club', 'premium', 'p1896', 'bande_erste', 'sotd', 'matchball', 'tor_monat'],
   leute: ['jobpost', 'premium', 'p1896'], netz: ['business_treff', 'club', 'premium', 'p1896'], zurueck: ['ferienspiele', 'zeltlager', 'supporter', 'club', 'premium', 'p1896'], vorn: ['p1896', 'sotd', 'tor_monat'] };
@@ -46643,7 +46644,7 @@ function ptErgebnis(M){
     <label class="og-fl">Warum es passt<textarea id="ptTx" rows="4" maxlength="700">${ptE(P.text||'')}</textarea></label>
     <label class="og-fl">Punkte (eine Zeile je Punkt)<textarea id="ptPu" rows="3" maxlength="900">${ptE((P.punkte||[]).join('\n'))}</textarea></label>
     <div class="og-fl"><span>Bereiche, die passen (sortiert die Präsentation)</span><div class="pt-chips">${Object.keys(PT_HERZ).map(k=>`<label class="pe-chip"><input type="checkbox" data-herz="${k}"${(P.herz||[]).includes(k)?' checked':''}> ${PT_HERZ[k]}</label>`).join('')}</div></div>
-    <label class="og-fl">Empfohlenes Paket<select id="ptEmpf"><option value="">keins</option>${[['supporter','SVM Supporter'],['club','Club Partner'],['premium','Premium Partner'],['p1896','1896 Partner']].map(([k,t])=>`<option value="${k}"${R.empfehlung===k?' selected':''}>${t}</option>`).join('')}</select></label>
+    <label class="og-fl">Empfohlenes Paket<select id="ptEmpf"><option value="">keins</option>${[['supporter','Club Supporter'],['club','Club Partner'],['premium','Premium Partner'],['p1896','1896 Partner']].map(([k,t])=>`<option value="${k}"${R.empfehlung===k?' selected':''}>${t}</option>`).join('')}</select></label>
     <div class="btnrow sbact"><button class="btn" type="button" id="ptStart">${SVI('eye')} Speichern und Präsentation starten</button><button class="btn ghost" type="button" id="ptSave">Nur speichern</button></div></div>`;
   O.querySelectorAll('[data-lg]').forEach(b=>b.onclick=()=>{ PT.wahl=+b.dataset.lg; PT.hell=!PT.logos[PT.wahl].weiss; ptErgebnis(M); });
   O.querySelector('#ptLo').onchange=async e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return; try{ const src=await pdLogo(f); PT.logos.unshift(Object.assign({quelle:'Eigenes Bild'},await ptFreistellen(src))); PT.wahl=0; PT.hell=!PT.logos[0].weiss; ptErgebnis(M); }catch(err){ kToast('⚠️ '+err.message); } };

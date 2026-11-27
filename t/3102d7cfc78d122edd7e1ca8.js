@@ -127,7 +127,7 @@ const SPO_ST=[['idee','Idee'],['angeschrieben','Angeschrieben'],['gespraech','Ge
 const SPO_STL=Object.fromEntries(SPO_ST);
 const SPO_WEITER={idee:'angeschrieben',angeschrieben:'gespraech',gespraech:'angebot',angebot:'partner'};
 // Partnerstufen, Laufzeiten und Zusatzoptionen wie im Partnersheet 2027/28 (Beta 0.32)
-const SPO_STUFE={supporter:{t:'SVM Supporter',p:189,s:'Ich unterstütze.',d:'Logo auf der Supporter-Tafel, Logo und Link auf der Website, Saison-Badge.'},
+const SPO_STUFE={supporter:{t:'Club Supporter',p:189,s:'Ich unterstütze.',d:'Logo auf der Supporter-Tafel, Logo und Link auf der Website, Saison-Badge.'},
   club:{t:'Club Partner',p:496,s:'Ich werde sichtbar.',d:'Bande nach Verfügbarkeit, 1 Partnerkarte, Einladung zum Partnerabend, Partner-Begrüßung auf Social Media.'},
   premium:{t:'Premium Partner',p:896,s:'Sichtbar + vernetzt.',d:'Bevorzugte Bande, 2 Partnerkarten, Partnerabend, alle Business Treffs, Partner-Spotlight, 1 Job-Post.',max:16},
   p1896:{t:'1896 Partner',p:1896,s:'Innerer Partnerkreis.',d:'Topplatzierung, 4 Partnerkarten, 1 Partner des Tages inklusive mit Vorwahlrecht, Branchenexklusivität, 2 Job-Posts.',max:8}};

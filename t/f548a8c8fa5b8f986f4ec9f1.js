@@ -41,7 +41,7 @@ const PD={d:null,laedt:null,q:'',flt:'alle'};
 // 0.99.86 (Albert, 18.11.2026): Links an Firmen laufen über Kaderwerk, kurz und nicht zu erraten: https://partner.kaderwerk.pro/#firma-k7m2xq9d.
 // Der kurze Schlüssel kommt vom Server (partner_decks.kurz, 203). Fehlt er einmal, gilt der lange Link auf derselben Adresse.
 const PD_HOST='https://partner.kaderwerk.pro/';
-const PD_ST={supporter:'SVM Supporter',club:'Club Partner',premium:'Premium Partner',p1896:'1896 Partner'};
+const PD_ST={supporter:'Club Supporter',club:'Club Partner',premium:'Premium Partner',p1896:'1896 Partner'};
 const PD_AST={neu:'neu',versendet:'per Mail raus',fehler:'Mail fehlgeschlagen',uebernommen:'übernommen',storniert:'storniert'};
 function pdLink(code,kurz){ const d=!kurz&&typeof PD!=='undefined'&&PD.d?(PD.d.decks||[]).find(x=>x.code===code):null, k=kurz||(d&&d.kurz)||''; return k?PD_HOST+'#'+k:PD_HOST+'partner.html#d='+code; }
 function pdDatum(ts){ try{ return new Date(ts).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }

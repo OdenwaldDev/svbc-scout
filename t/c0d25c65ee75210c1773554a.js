@@ -1,6 +1,6 @@
 const R122_VERB = { hier: 'von hier', familie: 'einer spielt bei uns', ehemalig: 'hat selbst hier gespielt', partner: 'ist schon Partner', neu: 'kennt uns noch kaum' };
 const R122_PLATZ = { bande: 'an der Bande', trikot: 'auf einem Jugendtrikot', tag: 'ein Heimspiel lang', wand: 'lieber leise dabei' };
-const R122_PAKET = { keins: 'ein einzelner Baustein', supporter: 'SVM Supporter', club: 'Club Partner', premium: 'Premium Partner', p1896: '1896 Partner' };
+const R122_PAKET = { keins: 'ein einzelner Baustein', supporter: 'Club Supporter', club: 'Club Partner', premium: 'Premium Partner', p1896: '1896 Partner' };
 // Welche Leistung zu welchem Grund passt. Hat die Firma davon nichts gebucht, gilt der Grund als offene Möglichkeit.
 const R122_PASST = { kinder: ['baelle_jugend', 'trikot_jugend', 'team_jugend', 'trainer_jugend', 'zeltlager', 'aermel_jugend'], sehen: ['club', 'premium', 'p1896', 'bande_erste', 'sotd', 'matchball', 'tor_monat'],
   leute: ['jobpost', 'premium', 'p1896'], netz: ['business_treff', 'club', 'premium', 'p1896'], zurueck: ['ferienspiele', 'zeltlager', 'supporter', 'club', 'premium', 'p1896'], vorn: ['p1896', 'sotd', 'tor_monat'] };
