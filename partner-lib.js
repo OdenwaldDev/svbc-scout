@@ -2613,6 +2613,24 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     // Erst zählen, wenn die Bühne aufgegangen ist. Kommt das Angebot direkt aus dem Ladebild, geht es etwas später auf.
     setTimeout(()=>requestAnimationFrame(schritt),document.documentElement.classList.contains('start-oeffnet')?820:420);
   }
+  // 0.99.174: Stummer Schmuckfilm in Schleife. Wer weniger Bewegung eingestellt hat, sieht das Standbild.
+  // Mit spaet lädt und läuft der Film erst, wenn er zu sehen ist, und hält an, sobald er aus dem Blick ist.
+  function film(name,spaet){
+    if(typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches){
+      const still=element('img');still.alt='';still.loading='lazy';still.src='partner/'+name+'.webp';return still;
+    }
+    const v=element('video');v.muted=true;v.loop=true;v.playsInline=true;v.tabIndex=-1;v.disablePictureInPicture=true;
+    v.setAttribute('muted','');v.setAttribute('playsinline','');v.poster='partner/'+name+'.webp';
+    const quelle='partner/'+name+'.mp4';
+    if(spaet&&typeof IntersectionObserver==='function'){
+      v.preload='none';v.dataset.film=quelle;
+      new IntersectionObserver(l=>l.forEach(x=>{
+        if(!v.isConnected)return;
+        if(x.isIntersecting){if(!v.getAttribute('src'))v.src=quelle;v.play().catch(()=>{});}else v.pause();
+      }),{threshold:.2}).observe(v);
+    }else{v.autoplay=true;v.preload='auto';v.src=quelle;}
+    return v;
+  }
   function oeffnen(o){
     if(document.getElementById('pdDirektangebot'))return;
     const fokus=document.activeElement, dialog=element('dialog','da-dialog');
@@ -2623,13 +2641,24 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     kopf.append(wappen,element('span','da-rubrik',o.entwurf?'Unser Vorschlag':'Euer Angebot'),knopf('Schließen','da-close',()=>dialog.close()));
     const titel=element('h1','',o.firma);titel.id='daFirma';
     const body=element('div','da-inhalt');
+    // 0.99.174: Das Logo der Firma steht über ihrem Namen. Helle Logos bekommen dunklen Grund.
+    if(o.logo?.src){
+      const marke=element('div','da-marke'+(o.logo.dunkel?' da-dunkel':'')),bild=element('img');
+      bild.alt='';bild.src=o.logo.src;marke.append(bild);body.append(marke);
+    }
     body.append(titel);
+    // 0.99.174 (Albert, 27.11.2026): Eine persönliche Zeile an die Firma steht direkt unter dem Namen. Sie kommt aus der Präsentation der Firma, nie aus dem Code.
+    if(o.gruss)body.append(element('p','da-gruss',o.gruss));
     if(o.metadaten)body.append(element('p','da-meta',o.metadaten));
     // 0.99.171 (Albert, 26.11.2026): Das Paket geht als Bühne auf. Der Preis steht groß da und zählt hoch, gleich darunter die Bande der Firma,
     // dann offen, was im Paket steckt.
     let buehne=null,drin=null;
     if(o.paket){
-      const b=buehne=element('section','da-buehne');b.setAttribute('aria-label',o.paket.titel);
+      const b=buehne=element('section','da-buehne da-mit-rasen');b.setAttribute('aria-label',o.paket.titel);
+      // 0.99.174 (Albert, 27.11.2026): Hinter dem Preis liegt der Rasen unter Flutlicht, derselbe Film wie in der Präsentation.
+      // Er ist reiner Schmuck (film).
+      const rasen=element('div','da-rasen');rasen.setAttribute('aria-hidden','true');rasen.append(film('r-rasen'));
+      b.append(rasen);
       b.append(element('p','da-pk-rubrik',o.entwurf?'Unser Vorschlag für euch':'Euer Paket'),element('h2','da-pk-name',o.paket.titel));
       if(o.paket.preis){
         const zeile=element('p','da-pk-preis'),zahl=element('span','da-zahl',o.paket.preis);
@@ -2687,6 +2716,11 @@ PLIB.rechnungPdf=function(jsPDF,R,vd,V){
     }
     if(o.wofuer){
       const w=element('section','da-wofuer');w.setAttribute('aria-labelledby','daWofuer');
+      // 0.99.174 (Albert, 27.11.2026): Erst das Bild vom Platz, dann der Satz. Kein zusätzlicher Spruch, das Bild soll für sich stehen.
+      if(o.wofuer.szene){
+        const fig=element('figure','da-szene');fig.setAttribute('aria-hidden','true');
+        fig.append(film(o.wofuer.szene,true),element('figcaption','','KI-inszenierte Vereinsszene'));w.append(fig);
+      }
       const h=element('h2','','Wofür euer Beitrag da ist');h.id='daWofuer';w.append(h);
       if(o.wofuer.satz)w.append(element('p','',o.wofuer.satz));
       if(o.wofuer.zahl){

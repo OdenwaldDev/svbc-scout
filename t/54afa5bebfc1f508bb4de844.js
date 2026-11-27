@@ -153,6 +153,9 @@ function pdForm(d,vor){
     <label class="og-fl">Unterüberschrift<input id="pdWi" maxlength="90" value="${svEsc(P.widmung||'')}" placeholder="z.B. Für sportliche Wettkämpfe in der Saisonvorbereitung"></label>
     <label class="og-fl">Absatz dazu<textarea id="pdWt" rows="3" maxlength="600" placeholder="Wofür der Beitrag der Firma gedacht ist, in zwei bis drei Sätzen.">${svEsc(P.widmung_text||'')}</textarea></label>
     <p class="note small">Steht in der Präsentation am empfohlenen Paket und im Vertrag unter dem Paket. Leer lassen, wenn es keine Widmung gibt.</p>
+    <h3 class="pd-h">Persönliche Zeile im Angebot</h3>
+    <label class="og-fl">Zeile an die Firma<textarea id="pdGr" rows="3" maxlength="300" placeholder="Zwei bis drei Sätze, die nur für diese Firma gelten.">${svEsc(P.gruss||'')}</textarea></label>
+    <p class="note small">Steht im persönlichen Angebot direkt unter dem Firmennamen. Leer lassen, wenn es keine gibt.</p>
     <h3 class="pd-h">Warum es passt</h3>
     <label class="og-fl">Überschrift<input id="pdTi" maxlength="80" value="${svEsc(P.titel||'')}" placeholder="z.B. Handwerk mit Heimat."></label>
     <label class="og-fl">Einstieg für die Firma (leer lassen für den Vereinstext)<textarea id="pdHe" rows="2" maxlength="300">${svEsc(P.hero||'')}</textarea></label>
@@ -177,7 +180,7 @@ function pdForm(d,vor){
     catch(e){ kToast(e.message||'Das Logo lässt sich nicht speichern.'); return; }
     const v=id=>(M.querySelector(id)||{}).value||'';
     const p={id:d?d.id:null,firma:v('#pdFi'),kurzname:v('#pdKu'),anrede:v('#pdAn'),ansprech:v('#pdAp'),email:v('#pdEm'),adresse:v('#pdAd'),branche:v('#pdBr'),web:v('#pdWe'),empfehlung:v('#pdEmpf'),notiz:v('#pdNo'),
-      passung:{suchnamen:v('#pdSu').trim(),widmung:v('#pdWi').trim(),widmung_text:v('#pdWt').trim(),titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
+      passung:{suchnamen:v('#pdSu').trim(),gruss:v('#pdGr').trim(),widmung:v('#pdWi').trim(),widmung_text:v('#pdWt').trim(),titel:v('#pdTi').trim(),hero:v('#pdHe').trim(),ohne:M.querySelector('#pdOJ').checked?['trikot']:[],text:v('#pdTx').trim(),punkte:v('#pdPu').split('\n').map(s=>s.trim()).filter(Boolean).slice(0,6),
         fakten:v('#pdFa').split('\n').map(s=>s.split('|')).filter(a=>a.length>=2&&a[0].trim()).map(a=>({z:a[0].trim().slice(0,12),t:a.slice(1).join('|').trim().slice(0,80)})).slice(0,4)}};
     p.logo_hell=!M.querySelector('#pdLd').checked; if(logo){ p.logo=logo; p.passung.marke=null; } if(d)p.aktiv=M.querySelector('#pdAk').checked;
     if(/[–—]/.test(JSON.stringify(p.passung))){ kToast('Bitte keine Gedankenstriche, lieber Komma oder Doppelpunkt'); return; }
