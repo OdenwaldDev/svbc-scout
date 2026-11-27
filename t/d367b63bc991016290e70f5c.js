@@ -597,7 +597,7 @@ function klaZusammen(rows){ const n=v=>v==null?null:Number(v);
     tore:s('tore'),vorlagen:s('vorlagen'),gelb:s('gelb'),gelbrot:s('gelbrot'),rot:s('rot'),elf:s('elf_der_woche'),mvp:haupt.mvp,mvpStand:haupt.mvp_stand,
     url:haupt.source_url,geprueft:haupt.checked_at,zeilen:rows}; }
 async function svKlaLaden(){
-  if(typeof canScout!=='function'||!canScout())return;
+  // 0.99.173 (Albert, 27.11.2026: „Alle kriegen FuPa-Daten“): Jeder lädt die FuPa-Werte. Der Server gibt ohne Scouting-Recht nur die der eigenen Spieler heraus (268_fupa_fuer_alle.sql).
   try{ const r=await SVB.sb.rpc('kla_saison'); if(!r.error&&r.data)KLAW.saison=r.data; }catch(e){}
   // die letzten Saisons bis zur neuesten (FuPa oder App, je nachdem, was weiter ist)
   const neu=[klaSk('cur'),KLAW.saison&&KLAW.saison.saison].filter(Boolean).sort().pop(), ss=[neu]; while(ss.length<4)ss.push(klaVor(ss[ss.length-1]));
