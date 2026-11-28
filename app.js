@@ -2099,7 +2099,7 @@ function openSlotPicker(i,depth){
 }
 
 /* ===== App-Modus: installierbar, offline-fest, aktualisiert sich selbst ===== */
-const APP_BUILD='beta-0.99.176', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
+const APP_BUILD='beta-0.99.177', OUTBOX_KEY='svbcOutbox', APP_HIDE_KEY='svbcInstallHide';
 let _appPrompt=null, _appNew=null, _obT=null;
 function appStandalone(){ try{ return !!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }catch(e){ return false; } }
 function appPlatform(){
@@ -18910,6 +18910,7 @@ async function avUpdateFenster(id){
    Sichtbarkeit je Punkt: r:'team' (ohne Gäste) · r:'scout' · r:'admin' · ohne r = alle
    ===================================================================== */
 const SV_PATCHES=[
+  {id:'0.99.177',v:'0.99.177',datum:'2026-11-28',titel:'Doppelpass: anschauen, blättern, Artikel einfach hineinziehen',kurz:'Neben „Freigeben“ steht jetzt „Doppelpass anschauen“. Und ein Artikel aus Word lässt sich auf die gewünschte Seite ziehen.',punkte:[{ic:'i',t:'Doppelpass anschauen',d:'Der Knopf steht in der Heftkarte, im Fenster zum Freigeben und auf der Startseite. Die Ansicht ist nur zum Lesen: große Pfeile, Wischen, Sprung zu einer Seite und Vollbild. Wer freigeben darf, kann es dort gleich tun.',r:'team'},{ic:'i',t:'Artikel aus Word hineinziehen',d:'Eine Word-Datei (.docx) oder Textdatei auf eine Seite ziehen und loslassen. Überschrift, Vorspann und Text werden übernommen, das erste Foto aus der Datei auf Wunsch auch. Vor dem Speichern gibt es eine Vorschau, danach „Rückgängig“. Am Handy geht es über „Artikel aus Word“.',r:'team'}]},
   {id:'0.99.176',v:'0.99.176',datum:'2026-11-27',titel:'Partner: Die kleinste Stufe heißt überall Club Supporter',kurz:'Die vier Stufen heißen jetzt an jeder Stelle gleich: Club Supporter, Club Partner, Premium Partner und 1896 Partner.',punkte:[{ic:'i',t:'Ein Name für die kleinste Stufe',d:'In Verträgen, Präsentationen, der Auswertung und im Katalog steht jetzt Club Supporter, so wie im Partnerblatt. Preis und Inhalt der Stufe sind unverändert.',r:'team'}]},
   {id:'0.99.175',v:'0.99.175',datum:'2026-11-27',titel:'Angebot und Präsentation: neue Stimmungsfilme',kurz:'Im Angebot stehen über dem Abschnitt zum Beitrag jetzt Kinderschuhe und ein alter Ball an der Kabinenbank. In der Präsentation zum Durchklicken bewegt sich der Hintergrund in fünf weiteren Szenen.',punkte:[{ic:'i',t:'Kabinenbank im Angebot',d:'Die Szene mit Kinderschuhen und Lederball ersetzt die Trainingsszene über „Wofür euer Beitrag da ist“. Sie zeigt keine Menschen und läuft stumm.',r:'team'},{ic:'i',t:'Bewegte Hintergründe in der Präsentation',d:'Bei „Woher kennt ihr uns?“ steht die Kabinenbank, bei „Seid ihr dabei?“ rollt ein Ball ins Netz, dazu bewegen sich Rasen und Ball in den Szenen dazwischen. Mit „Video pausieren“ bleibt das Standbild stehen.',r:'team'}]},
   {id:'0.99.174',v:'0.99.174',datum:'2026-11-27',titel:'Angebot: Rasen unter Flutlicht, Logo und persönliche Zeile',kurz:'Das persönliche Angebot wirkt hochwertiger: Hinter dem Preis liegt der Rasen unter Flutlicht, das Logo der Firma steht über ihrem Namen, und über dem Abschnitt zum Beitrag läuft eine Szene vom Platz.',punkte:[{ic:'i',t:'Rasen hinter dem Preis',d:'Der Film aus der Präsentation läuft stumm hinter dem Paket. Wer weniger Bewegung eingestellt hat, sieht ein Standbild.',r:'team'},{ic:'i',t:'Logo und persönliche Zeile',d:'Das Logo der Firma steht über ihrem Namen. In der Präsentation der Firma gibt es das neue Feld „Persönliche Zeile im Angebot“ für zwei bis drei Sätze, die nur für diese Firma gelten.',r:'team'},{ic:'i',t:'Szene vom Platz',d:'Über „Wofür euer Beitrag da ist“ läuft eine kurze Szene vom Training. Sie ist als KI-inszeniert gekennzeichnet.',r:'team'}]},
@@ -35525,7 +35526,7 @@ function shHeftHtml(){ const D = SH.d, h = shNaechstes(), lt = D.darf.leitung, c
     ${schritt(3, frei, s1 && !frei, 'Freigabe der Redaktion', frei ? 'Freigegeben' + (h.freigegeben_von ? ' von ' + shE(h.freigegeben_von) : '') + (h.freigegeben_am ? ' am ' + shE(shDatum(h.freigegeben_am)) : '') : (c.redaktion_name ? shE(c.redaktion_name) + ', ' : '') + (h.freigabe_ab ? 'Bitte geht am ' + shE(shDatum(h.freigabe_ab)) + ' raus' : 'sobald die Abgabe steht') + (h.freigabe_notiz ? '. Notiz: ' + shE(h.freigabe_notiz) : ''), `<span class="sh-pill ${st[0]}">${st[1]}</span>`)}
     ${schritt(4, h.status === 'gedruckt', frei, 'Druck', (c.druck_firma ? shE(c.druck_firma) : 'Druckerei') + (c.druck_name ? ', ' + shE(c.druck_name) : '') + (h.abgabe ? ' · Abgabe ' + shE(shDatum(h.abgabe)) : ''), frei ? '<span class="sh-pill warn">Datei abgeben</span>' : '')}
     ${h.notiz ? `<p class="note sh-notiz">${shE(h.notiz)}</p>` : ''}
-    <div class="sh-akt">${D.darf.freigeben && !frei ? `<button type="button" class="btn" data-sh-frei="ja" data-id="${h.id}">Freigeben</button><button type="button" class="btn ghost" data-sh-frei="nein" data-id="${h.id}">Noch nicht</button>` : ''}
+    <div class="sh-akt"><button type="button" class="btn sh-lesen" data-sh-lesen="${h.id}">Doppelpass anschauen</button>${D.darf.freigeben && !frei ? `<button type="button" class="btn" data-sh-frei="ja" data-id="${h.id}">Freigeben</button><button type="button" class="btn ghost" data-sh-frei="nein" data-id="${h.id}">Noch nicht</button>` : ''}
       ${lt && !frei && s1 ? `<button type="button" class="btn ghost" id="shFragen" data-id="${h.id}">${h.status === 'freigabe' ? 'Noch einmal um Freigabe bitten' : 'Zur Freigabe schicken'}</button>` : ''}
       ${lt && h.status === 'freigegeben' ? `<button type="button" class="btn" id="shGedruckt" data-id="${h.id}">Als gedruckt abhaken</button>` : ''}
       <button type="button" class="btn ghost" data-sh-plan="${h.id}">Seiten planen</button><button type="button" class="btn ghost" data-sh-satz="${h.id}">Vorschau und Texte</button>
@@ -35622,10 +35623,12 @@ function shFreigabeDialog(h, ja){ if(!h) return;
   const M = svModal(`<div class="mhead"><div><h2 style="margin:0">${ja ? 'Heft freigeben?' : 'Noch nicht freigeben'}</h2><div class="msub">${shE(h.titel)}</div></div></div>
     <p class="note">${ja ? 'Mit der Freigabe geht das Heft in den Druck' + (h.abgabe ? ', Abgabe ist am ' + shE(shDatum(h.abgabe)) : '') + '. Die Leitung im Bereich Partner bekommt Bescheid.' : 'Schreib kurz dazu, was noch fehlt. Die Leitung im Bereich Partner bekommt Bescheid.'}</p>
     ${h.pdf_url ? `<p><a class="btn ghost" href="${shE(h.pdf_url)}" target="_blank" rel="noopener">Heft ansehen</a></p>` : ''}
+    ${typeof hvaAnschauen === 'function' ? '<p><button type="button" class="btn ghost sh-lesen" id="shF_lesen">Doppelpass anschauen</button></p>' : ''}
     <label class="field"><span>Notiz${ja ? ' <small>wenn du magst</small>' : ''}</span><textarea id="shF_n" rows="2" maxlength="500"></textarea></label>
     <p class="note" id="shF_f" role="alert" hidden></p>
     <div class="pz-tc-dlgk"><button type="button" class="btn" id="shF_ok">${ja ? 'Freigeben' : 'Noch nicht'}</button><button type="button" class="btn ghost" id="shF_ab">Abbrechen</button></div>`);
   M.querySelector('#shF_ab').onclick = () => closeOverlay();
+  { const l = M.querySelector('#shF_lesen'); if(l) l.onclick = () => { closeOverlay(); hvaAnschauen(h.id); }; }
   M.querySelector('#shF_ok').onclick = () => paEinmal(M.querySelector('#shF_ok'), async () => {
     try{ await shRpc('stadionheft_freigabe', { p_id:h.id, p_ja:ja, p_notiz:M.querySelector('#shF_n').value }); closeOverlay(); kToast(ja ? 'Das Heft ist freigegeben.' : 'Notiert: noch nicht freigegeben.');
       SH.hin = null; try{ shHomeKarte(true); }catch(e){} try{ if(typeof frLaden === 'function') frLaden(true).then(() => { try{ frKarte(); }catch(e){} }); }catch(e){} await shNeuZeichnen(); }
@@ -42912,6 +42915,160 @@ if(typeof S120_GRUPPEN !== 'undefined'){ const g = S120_GRUPPEN.find(x => x[0] =
 if(typeof spoBody === 'function'){ const _b = spoBody; spoBody = function(){ if(SPO.view === 'zusagen'){ const B = document.getElementById('spoB'); if(B){ ZU.laden = null; ZU.d = null; zuZeigen(B); } return; } return _b.apply(this, arguments); }; }
 
 (function(){var s=document.createElement('style');s.textContent="/* Beta 0.99.167 · Zusagen für die neue Saison */\n.zu-zeile{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;}\n.zu-zaehl{display:inline-flex;gap:5px;align-items:baseline;font-size:12.5px;padding:5px 10px;border-radius:99px;border:1px solid var(--line);color:var(--ink2);}\n.zu-zaehl b{font-size:13.5px;color:inherit;font-variant-numeric:tabular-nums;}\n.zu-sum{border-color:#e8741f;}\n.zu-top{border-radius:12px;padding:12px 14px;margin:0 0 14px;background:color-mix(in srgb,#e8741f 9%,transparent);font-size:14px;line-height:1.45;}\n.zu-top ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:4px;}\n.zu-top li.e3 b{color:#c2300c;}\n.zu-lk{font:inherit;text-align:left;background:none;border:0;padding:4px 0;color:inherit;cursor:pointer;min-height:34px;}\n.zu-lk b{font-weight:800;}\n.zu-gr{margin:18px 0 8px;font-size:15px;display:flex;gap:10px;align-items:baseline;}\n.zu-gr small{font-size:13px;font-weight:700;color:var(--ink3);font-variant-numeric:tabular-nums;}\n.zu-k{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:10px;min-width:0;}\n.zu-k.zu-rot{border-color:#c2300c;box-shadow:inset 3px 0 0 #c2300c;}\n.zu-k.zu-fertig{border-color:#1f8a4c;box-shadow:inset 3px 0 0 #1f8a4c;}\n.zu-k header{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;}\n.zu-k header>div{min-width:0;}\n.zu-k h4{margin:0;font-size:16.5px;line-height:1.25;overflow-wrap:anywhere;}\n.zu-k header p{margin:2px 0 0;font-size:13px;color:var(--ink3);overflow-wrap:anywhere;}\n.zu-r{text-align:right;flex:none;display:grid;}\n.zu-r b{font-size:15px;font-variant-numeric:tabular-nums;}\n.zu-r small{font-size:12px;color:var(--ink3);}\n.zu-hin{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:13.5px;}\n.zu-hin li{padding-left:14px;position:relative;}\n.zu-hin li::before{content:\"\";position:absolute;left:0;top:.55em;width:7px;height:7px;border-radius:50%;background:var(--ink3);}\n.zu-hin li.e3{color:#c2300c;font-weight:700;}\n.zu-hin li.e3::before{background:#c2300c;}\n.zu-hin li.e2{color:#c2570c;}\n.zu-hin li.e2::before{background:#e8741f;}\n.zu-schritte{margin:0;padding:0;list-style:none;display:grid;gap:2px;}\n.zu-schritte li{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px dashed var(--line);font-size:14px;}\n.zu-schritte li:first-child{border-top:0;}\n.zu-hk{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:#fff;}\n.zu-hk svg{width:13px;height:13px;}\n.zu-schritte li.ok .zu-hk{background:#1f8a4c;border-color:#1f8a4c;}\n.zu-st{display:grid;min-width:0;flex:1;}\n.zu-st small{font-size:12px;color:var(--ink3);}\n.zu-schritte li:not(.ok) .zu-st b{color:var(--ink2);font-weight:600;}\n.zu-link{font:inherit;font-size:13px;font-weight:600;padding:6px 4px;border:0;background:none;color:var(--ink3);text-decoration:underline;cursor:pointer;min-height:34px;flex:none;}\n.zu-akt{display:flex;flex-wrap:wrap;gap:8px;}\n.zu-dok{display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap;}\n.zu-wege{display:grid;gap:8px;margin:10px 0;}\n.zu-raus{margin-top:6px;}\n";document.head.appendChild(s);})();
+/* =====================================================================
+   Beta 0.99.177 · Doppelpass: anschauen, blättern, Artikel hineinziehen
+   Albert, 28.11.2026: Wer das Heft prüfen soll, muss es ohne Suchen finden und durchblättern können, neben „Freigeben“ steht
+   „Doppelpass anschauen“. Bearbeiten muss für Leute ohne Technik so einfach sein wie möglich: ein Artikel aus Word wird auf
+   die Seite gezogen, losgelassen, fertig.
+   (1) Knopf „Doppelpass anschauen“ in der Heftkarte (svm103.js) und in der Freigabe. Öffnet die Vorschau aus svm106.js als
+       reine Leseansicht (HV.lesen): große Pfeile, Wischen, Seitenzahlen, Vollbild, keine Bearbeitung, kein Fachwort.
+   (2) Artikel hineinziehen: .docx oder .txt auf eine Seite fallen lassen (oder „Artikel aus Word“ wählen). Die Datei wird im
+       Browser gelesen, nichts geht an Dritte. Vorschau mit „Passt so“, danach „Rückgängig“. Gespeichert wird über
+       stadionheft_seite_inhalt (162), wie beim Schreiben von Hand. Nur Seiten mit freiem Text (jugend, soma, rueckblick,
+       eigen, frei) nehmen Artikel; auf andere Seiten (Titel, Tabelle, Anzeige …) kommt keiner.
+   Die Lese-Funktionen (hvaDocx, hvaTxt, hvaStruktur) brauchen keine Seite und sind in unit_heftartikel.mjs getestet.
+   ===================================================================== */
+const HVA = { undo:null, dialog:null };
+const HVA_TEXTTYPEN = ['jugend', 'soma', 'rueckblick', 'eigen', 'frei'];
+const HVA_MAX = { kopf:160, vorspann:500, text:12000 };
+
+/* ---------- Lesen: Word und Text ---------- */
+function hvaEnt(s){ return String(s || '').replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(+d))
+  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&'); }
+// document.xml -> Absätze: { t, stil, fett, liste, bild }
+function hvaAbsaetze(xml){ const out = [], re = /<w:p[ >][\s\S]*?<\/w:p>/g; let m;
+  while((m = re.exec(xml))){ const p = m[0], st = /<w:pStyle[^>]*w:val="([^"]*)"/.exec(p), liste = /<w:numPr>/.test(p);
+    let t = '', fettN = 0, runN = 0; const runs = p.match(/<w:r[ >][\s\S]*?<\/w:r>/g) || [];
+    runs.forEach(r => { let rt = ''; const parts = r.match(/<w:t(?:\s[^>]*)?>[\s\S]*?<\/w:t>|<w:tab\/>|<w:br\/>|<w:cr\/>/g) || [];
+      parts.forEach(x => { if(/^<w:t[ >]/.test(x)) rt += hvaEnt(x.replace(/<[^>]+>/g, '')); else rt += ' '; });
+      if(rt.trim()){ runN++; if(/<w:b\/>|<w:b w:val="(1|true|on)"\/>/.test(r)) fettN++; } t += rt; });
+    const bild = /<a:blip[^>]*r:embed="([^"]*)"/.exec(p);
+    out.push({ t:t.replace(/[ \t ]+/g, ' ').trim(), stil:st ? st[1] : '', fett:runN > 0 && fettN === runN, liste, bild:bild ? bild[1] : null }); }
+  return out; }
+function hvaEbene(stil){ const m = /^(?:heading|berschrift|überschrift|title|titel|untertitel|subtitle)\s*([0-9]?)/i.exec(stil || ''); if(!m) return 0;
+  if(/^(title|titel)/i.test(stil)) return 1; if(/^(subtitle|untertitel)/i.test(stil)) return -1; return m[1] ? +m[1] : 1; }
+// Absätze -> { kopf, vorspann, text, gekuerzt }: die erste Zeile ist die Überschrift, ein kurzer zweiter Absatz der Vorspann
+function hvaStruktur(items){ const L = (items || []).filter(x => x && x.t && String(x.t).trim()); if(!L.length) return null; const kopf = L.shift().t.slice(0, HVA_MAX.kopf); let vor = '';
+  if(L.length >= 2 && (hvaEbene(L[0].stil) === -1 || (!hvaEbene(L[0].stil) && !L[0].liste && L[0].t.length <= 300 && !L[0].fett))){ vor = L.shift().t.slice(0, HVA_MAX.vorspann); }
+  const zeilen = L.map(x => { const e = hvaEbene(x.stil); if(e >= 1 || (x.fett && x.t.length <= 90 && !/[.:;!?]$/.test(x.t))) return '## ' + x.t; return (x.liste ? '• ' : '') + x.t; });
+  let text = zeilen.join('\n'), gekuerzt = false; if(text.length > HVA_MAX.text){ text = text.slice(0, HVA_MAX.text); text = text.slice(0, Math.max(text.lastIndexOf('\n'), 0) || HVA_MAX.text); gekuerzt = true; }
+  return { kopf, vorspann:vor, text, gekuerzt }; }
+function hvaTxt(roh){ const z = String(roh || '').replace(/\r/g, '').split('\n').map(l => l.trim());
+  return hvaStruktur(z.filter(Boolean).map(l => /^#{1,6}\s/.test(l) ? { t:l.replace(/^#{1,6}\s+/, ''), stil:'Heading2', fett:false, liste:false } : { t:l, stil:'', fett:false, liste:/^[-*•]\s/.test(l) }).map(x => x.liste ? Object.assign(x, { t:x.t.replace(/^[-*•]\s+/, '') }) : x)); }
+async function hvaZip(){ if(window.JSZip) return window.JSZip; if(typeof sxScript === 'function') await sxScript('vendor/jszip.min.js', () => window.JSZip); return window.JSZip; }
+async function hvaDocx(buf){ const JS = await hvaZip(); const z = await JS.loadAsync(buf), f = z.file('word/document.xml'); if(!f) throw new Error('Das ist keine Word-Datei im Format .docx.');
+  const xml = await f.async('string'), items = hvaAbsaetze(xml), art = hvaStruktur(items); if(!art) throw new Error('In der Datei steht kein Text.');
+  // erstes Bild: Beziehung nachschlagen und aus dem Archiv holen
+  const mit = items.find(x => x.bild); art.bild = null;
+  if(mit){ const rf = z.file('word/_rels/document.xml.rels'); if(rf){ const rels = await rf.async('string'), re = /<Relationship\b[^>]*>/g; let m, ziel = null;
+      while((m = re.exec(rels))){ const t = m[0], id = /\bId="([^"]*)"/.exec(t), tg = /\bTarget="([^"]*)"/.exec(t); if(id && tg && id[1] === mit.bild){ ziel = tg[1]; break; } }
+      if(ziel){ const pfad = ziel.startsWith('/') ? ziel.slice(1) : 'word/' + ziel.replace(/^\.\//, ''), bf = z.file(pfad), ext = (pfad.split('.').pop() || '').toLowerCase();
+        if(bf && /^(png|jpe?g|webp|gif)$/.test(ext)){ const b = await bf.async('blob'); art.bild = new Blob([b], { type:ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : ext === 'gif' ? 'image/gif' : 'image/jpeg' }); } } } }
+  return art; }
+async function hvaLesen(file){ const n = String(file.name || '').toLowerCase();
+  if(/\.docx$/.test(n)) return hvaDocx(await file.arrayBuffer());
+  if(/\.(txt|md)$/.test(n) || file.type === 'text/plain'){ const a = hvaTxt(await file.text()); if(!a) throw new Error('In der Datei steht kein Text.'); a.bild = null; return a; }
+  if(/\.(doc|pages|odt|rtf|pdf)$/.test(n)) throw new Error('Diese Datei kann ich nicht lesen. Bitte in Word „Speichern unter“ wählen und das Format „Word-Dokument (.docx)“ nehmen.');
+  throw new Error('Diese Datei kann ich nicht lesen. Ich nehme Word-Dateien (.docx) und Textdateien (.txt).'); }
+
+/* ---------- Anschauen: die Vorschau als reine Leseansicht ---------- */
+if(typeof hvOeffnen === 'function'){ const _o = hvOeffnen; hvOeffnen = function(id, seite){ HV.lesen = false; return _o.apply(this, arguments); }; }
+function hvLeseOeffnen(id){ if(typeof hvOeffnen !== 'function') return; hvOeffnen(id); HV.lesen = true; }
+if(typeof shBinden === 'function'){ const _b = shBinden; shBinden = function(B){ const r = _b.apply(this, arguments); B.querySelectorAll('[data-sh-lesen]').forEach(b => b.onclick = () => hvLeseOeffnen(b.dataset.shLesen)); return r; }; }
+if(typeof hvWaehlen === 'function'){ const _w = hvWaehlen; hvWaehlen = function(i){ if(HV.lesen) return hvGeh(i); return _w.apply(this, arguments); }; }
+async function hvaFreigeber(){ try{ const s = await shRpc('stadionheft_auto_stand', {}); return !!(s && s.freigeben); }catch(e){ return false; } }
+function hvaKopf(B){ const h = HV.d.heft, n = HV.d.seiten.length, K = B.querySelector('.hv-kopf'); if(!K) return; const hv = B.querySelector('#hv'); if(hv) hv.classList.toggle('lesen', !!HV.lesen);
+  const sub = K.querySelector('.sh-sub'), akt = K.querySelector('.sh-akt'); if(!n || !akt) return;
+  if(HV.lesen){ if(sub) sub.textContent = 'Blättern mit den großen Pfeilen oder durch Wischen. Unten kannst du eine Seite direkt anspringen.';
+    akt.innerHTML = '<button type="button" class="btn ghost hva-gross" id="hvaVoll">Vollbild</button>' + (HV.d.planen ? '<button type="button" class="btn ghost hva-gross" id="hvaEdit">Bearbeiten</button>' : '');
+    akt.insertAdjacentHTML('afterbegin', '<button type="button" class="btn hva-gross" id="hvaFrei" hidden>Freigeben</button>');
+    const hin = B.querySelector('#hvHin'); if(hin) hin.hidden = true;
+    const v = B.querySelector('#hvaVoll'); if(v) v.onclick = () => hvaVoll(B, true);
+    const e = B.querySelector('#hvaEdit'); if(e) e.onclick = () => { HV.lesen = false; hvMalen(B); };
+    const fr = B.querySelector('#hvaFrei'); if(fr && h.status !== 'freigegeben' && h.status !== 'gedruckt') hvaFreigeber().then(ok => { if(ok && fr.isConnected){ fr.hidden = false; fr.onclick = () => shFreigabeDialog({ id:h.id, titel:h.titel, abgabe:h.abgabe }, true); } });
+    if(!B.querySelector('#hvaVollZu')){ const hp = B.querySelector('#hvHaupt'); if(hp) hp.insertAdjacentHTML('afterbegin', '<button type="button" class="btn hva-vollzu" id="hvaVollZu">Schließen</button>'); }
+    const z = B.querySelector('#hvaVollZu'); if(z) z.onclick = () => hvaVoll(B, false); }
+  else if(HV.d.planen && h.status !== 'gedruckt'){ if(sub) sub.textContent = 'Blättern mit den Pfeilen oder durch Wischen. Seite antippen, um Text und Foto zu setzen. Eine Word-Datei auf eine Seite ziehen legt den Artikel dort ab.';
+    akt.insertAdjacentHTML('afterbegin', '<button type="button" class="btn hva-gross" id="hvaWahl">Artikel aus Word</button><input type="file" id="hvaDatei" accept=".docx,.txt,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>');
+    const w = B.querySelector('#hvaWahl'), f = B.querySelector('#hvaDatei'); if(w && f){ w.onclick = () => f.click(); f.onchange = () => { const x = f.files[0]; f.value = ''; if(x) hvaStart(x, null); }; }
+    if(!B.querySelector('#hvaZone')){ const hp = B.querySelector('#hvHaupt'); if(hp) hp.insertAdjacentHTML('beforebegin', '<div class="hva-zone" id="hvaZone" role="button" tabindex="0">Word-Datei hierher ziehen oder antippen, um sie zu wählen</div>');
+      const zo = B.querySelector('#hvaZone'); if(zo && f){ zo.onclick = () => f.click(); zo.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); f.click(); } }; } } }
+  hvaLeiste(B); }
+function hvaVoll(B, an){ const hp = B.querySelector('#hvHaupt'); if(!hp) return; hp.classList.toggle('voll', !!an); document.documentElement.classList.toggle('hva-voll', !!an);
+  try{ if(an && hp.requestFullscreen) hp.requestFullscreen().catch(() => {}); else if(!an && document.fullscreenElement) document.exitFullscreen().catch(() => {}); }catch(e){}
+  if(typeof hvBuch === 'function') hvBuch(B); }
+if(typeof document !== 'undefined' && !window._hvaFs){ window._hvaFs = 1; document.addEventListener('fullscreenchange', () => { if(!document.fullscreenElement){ const hp = document.getElementById('hvHaupt'); if(hp && hp.classList.contains('voll')){ hp.classList.remove('voll'); document.documentElement.classList.remove('hva-voll'); const B = shOrt(); if(B && typeof hvBuch === 'function') hvBuch(B); } } });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ const hp = document.getElementById('hvHaupt'); if(hp && hp.classList.contains('voll')){ hp.classList.remove('voll'); document.documentElement.classList.remove('hva-voll'); } } }); }
+// Seiten in der Leseansicht: kein „Bearbeiten“ im Namen, nicht antippbar
+function hvaLeiste(B){ if(!HV.lesen) return; B.querySelectorAll('.hv-seite[data-i]').forEach(el => { el.removeAttribute('tabindex'); el.removeAttribute('role'); el.setAttribute('aria-label', 'Seite ' + (+el.dataset.i + 1)); el.style.cursor = 'default'; }); }
+if(typeof hvMalen === 'function'){ const _m = hvMalen; hvMalen = function(B){ const r = _m.apply(this, arguments); try{ hvaKopf(B); }catch(e){} return r; }; }
+if(typeof hvBuch === 'function'){ const _bu = hvBuch; hvBuch = function(B){ const r = _bu.apply(this, arguments); try{ hvaLeiste(B); }catch(e){} return r; }; }
+
+/* ---------- Artikel hineinziehen ---------- */
+function hvaDarf(){ return !!(HV.heft && HV.d && HV.d.planen && !HV.lesen && HV.d.heft.status !== 'gedruckt'); }
+function hvaTextSeite(i){ const s = HV.d.seiten[i]; return !!s && HVA_TEXTTYPEN.includes(s.typ); }
+function hvaInhalt(i){ const d = HV.d.seiten[i].daten || {}; return !!(d.kopf || d.text || d.vorspann); }
+function hvaSeitenName(i){ const s = HV.d.seiten[i], T = SHP_TYP[s.typ] || SHP_TYP.frei, d = s.daten || {}; return `Seite ${i + 1} · ${T[0]}${d.kopf ? ': ' + String(d.kopf).slice(0, 40) : hvaInhalt(i) ? ' (hat schon Text)' : ' (leer)'}`; }
+function hvaBesteSeite(wunsch){ if(wunsch != null && hvaTextSeite(wunsch)) return wunsch; const n = HV.d.seiten.length;
+  for(let i = Math.max(0, HV.i); i < n; i++) if(hvaTextSeite(i) && !hvaInhalt(i)) return i;
+  for(let i = 0; i < n; i++) if(hvaTextSeite(i) && !hvaInhalt(i)) return i;
+  for(let i = 0; i < n; i++) if(hvaTextSeite(i)) return i; return null; }
+async function hvaStart(file, wunsch){ if(!hvaDarf()) return;
+  let art; try{ kToast('Lese die Datei …'); art = await hvaLesen(file); }catch(e){ hvaFehler(e.message || String(e)); return; }
+  if(wunsch != null && !hvaTextSeite(wunsch)) kToast('Auf diese Seite passt kein Artikel. Ich schlage eine andere Seite vor.');
+  const ziel = hvaBesteSeite(wunsch); if(ziel == null){ hvaFehler('Im Heft gibt es keine Seite für einen Artikel. Lege unter „Seiten planen“ eine Seite „Freie Seite“, „Jugend“ oder „SOMA“ an.'); return; }
+  hvaDialog(art, ziel, file.name); }
+function hvaFehler(t){ svModal(`<div class="mhead"><div><h2 style="margin:0">Das hat nicht geklappt</h2></div></div><p class="note">${hvE(t)}</p><div class="pz-tc-dlgk"><button type="button" class="btn" id="hvaOk">Verstanden</button></div>`).querySelector('#hvaOk').onclick = () => closeOverlay(); }
+function hvaDialog(art, ziel, name){ const opts = HV.d.seiten.map((s, i) => hvaTextSeite(i) ? `<option value="${i}"${i === ziel ? ' selected' : ''}>${hvE(hvaSeitenName(i))}</option>` : '').join('');
+  const M = svModal(`<div class="mhead"><div><h2 style="margin:0">Artikel auf eine Seite legen</h2><div class="msub">${hvE(name || '')}</div></div></div>
+    <label class="field"><span>Auf welche Seite?</span><select id="hvaSeite">${opts}</select></label>
+    <p class="note hva-warn" id="hvaErsetzt" hidden></p>
+    <label class="field"><span>Überschrift</span><input id="hvaKopf" maxlength="${HVA_MAX.kopf}" value="${hvE(art.kopf)}"></label>
+    <label class="field"><span>Vorspann <small>darf leer sein</small></span><textarea id="hvaVor" rows="2" maxlength="${HVA_MAX.vorspann}">${hvE(art.vorspann)}</textarea></label>
+    <label class="field"><span>Text <small>jede Zeile ist ein Absatz, ## davor macht eine Zwischenüberschrift</small></span><textarea id="hvaText" rows="9" maxlength="${HVA_MAX.text}">${hvE(art.text)}</textarea></label>
+    ${art.bild ? '<label class="sh-schalter"><input type="checkbox" id="hvaBild" checked><span><b>Erstes Foto aus der Datei übernehmen</b><small>weitere Fotos aus der Datei werden nicht übernommen</small></span></label>' : ''}
+    ${art.gekuerzt ? '<p class="note hva-warn">Der Text war sehr lang und wurde gekürzt.</p>' : ''}
+    <p class="note" id="hvaMeld" role="alert" hidden></p>
+    <div class="pz-tc-dlgk"><button type="button" class="btn" id="hvaJa">Passt so, auf die Seite legen</button><button type="button" class="btn ghost" id="hvaNein">Abbrechen</button></div>`);
+  const sel = M.querySelector('#hvaSeite'), er = M.querySelector('#hvaErsetzt');
+  const pruef = () => { const i = +sel.value; if(hvaInhalt(i)){ er.hidden = false; er.textContent = `Auf Seite ${i + 1} steht schon ein Text. Er wird ersetzt. Mit „Rückgängig“ holst du ihn zurück.`; } else er.hidden = true; }; sel.onchange = pruef; pruef();
+  M.querySelector('#hvaNein').onclick = () => closeOverlay();
+  M.querySelector('#hvaJa').onclick = async () => { const b = M.querySelector('#hvaJa'), meld = M.querySelector('#hvaMeld'); b.disabled = true; meld.hidden = true;
+    try{ await hvaLegen(+sel.value, { kopf:M.querySelector('#hvaKopf').value, vorspann:M.querySelector('#hvaVor').value, text:M.querySelector('#hvaText').value }, art.bild && M.querySelector('#hvaBild') && M.querySelector('#hvaBild').checked ? art.bild : null); closeOverlay(); }
+    catch(e){ b.disabled = false; meld.hidden = false; meld.textContent = e.message || String(e); } }; }
+async function hvaLegen(i, f, bild){ if(!(await hvVerlassen())) throw new Error('Die Seite, an der du gerade arbeitest, ließ sich nicht speichern.');
+  const s = HV.d.seiten[i]; if(!s || !hvaTextSeite(i)) throw new Error('Auf diese Seite passt kein Artikel.');
+  const vorher = JSON.parse(JSON.stringify(s.daten || {})), neu = Object.assign({}, vorher, { kopf:f.kopf, vorspann:f.vorspann, text:f.text }); delete neu.ki;
+  if(bild){ const ext = bild.type === 'image/png' ? 'png' : 'jpg'; neu.foto = await hvFotoHoch(new File([bild], 'artikel.' + ext, { type:bild.type })); }
+  const sauber = hvSauber(neu); if(!sauber.kopf && !sauber.text) throw new Error('Ohne Überschrift und Text gibt es nichts zu legen.');
+  await shRpc('stadionheft_seite_inhalt', { p_id:s.id, p_daten:sauber }); s.daten = sauber; HVA.undo = { id:s.id, i, vorher };
+  hvaNachher(i, 'Der Artikel liegt auf Seite ' + (i + 1) + '.'); }
+function hvaNachher(i, satz){ HV.i = i; hvSetzen(); const B = shOrt(); if(!B) return; if(typeof hvGeh === 'function') hvGeh(i, true); if(B.querySelector('#hvBuch')){ hvBuch(B); hvLeiste(B); hvHinweise(B); hvaLeiste(B); }
+  const w = (typeof hvWarn === 'function' ? hvWarn(i) : [])[0]; let bar = B.querySelector('#hvaBar'); if(bar) bar.remove();
+  const hp = B.querySelector('#hvHaupt'); if(!hp) return; hp.insertAdjacentHTML('beforebegin', `<div class="card hva-bar" id="hvaBar" role="status"><span>${hvE(satz)}${w ? ' <b>Hinweis:</b> ' + hvE(w) : ''}</span>${HVA.undo ? '<button type="button" class="btn ghost" id="hvaRueck">Rückgängig</button>' : ''}<button type="button" class="btn ghost" id="hvaBarZu" aria-label="Meldung schließen">OK</button></div>`);
+  const r = B.querySelector('#hvaRueck'); if(r) r.onclick = hvaRueckgaengig; const z = B.querySelector('#hvaBarZu'); if(z) z.onclick = () => B.querySelector('#hvaBar').remove(); }
+async function hvaRueckgaengig(){ const u = HVA.undo; if(!u || !HV.d) return; const s = HV.d.seiten.find(x => x.id === u.id); if(!s) return;
+  try{ await shRpc('stadionheft_seite_inhalt', { p_id:u.id, p_daten:hvSauber(u.vorher) }); s.daten = hvSauber(u.vorher); HVA.undo = null; hvaNachher(u.i, 'Zurückgenommen: Seite ' + (u.i + 1) + ' ist wieder wie vorher.'); }catch(e){ kToast(e.message); } }
+
+/* ---------- Ziehen und Fallenlassen ---------- */
+function hvaMitDatei(e){ const t = e.dataTransfer; return !!t && Array.prototype.indexOf.call(t.types || [], 'Files') >= 0; }
+function hvaMarke(an, el){ document.querySelectorAll('.hva-ziel,.hva-an').forEach(x => x.classList.remove('hva-ziel', 'hva-an')); if(an && el) el.classList.add(el.classList.contains('hv-seite') ? 'hva-ziel' : 'hva-an'); }
+if(typeof document !== 'undefined' && !window._hvaDoc){ window._hvaDoc = 1;
+  const ziel = e => { const hp = document.getElementById('hvHaupt'), z = document.getElementById('hvaZone'); const im = e.target && e.target.closest ? e.target : null; if(!im) return null;
+    if(!(hp && hp.contains(im)) && !(z && z.contains(im))) return null; const sp = im.closest('.hv-seite[data-i]'); return { el:sp || z || hp, i:sp ? +sp.dataset.i : null }; };
+  document.addEventListener('dragover', e => { if(!hvaDarf() || !hvaMitDatei(e)) return; const z = ziel(e); if(!z) return; e.preventDefault(); try{ e.dataTransfer.dropEffect = 'copy'; }catch(x){} hvaMarke(true, z.el); });
+  document.addEventListener('dragleave', e => { if(!e.relatedTarget) hvaMarke(false); });
+  document.addEventListener('drop', e => { if(!hvaDarf() || !hvaMitDatei(e)) return; const z = ziel(e); hvaMarke(false); if(!z) return; e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(f) hvaStart(f, z.i); }); }
+
+/* ---------- Einstiege: Heftkarte, Freigabe-Fenster, Karte auf der Startseite ---------- */
+function hvaAnschauen(id){ if(!id) return; if(shAn() && shOrt()) hvLeseOeffnen(id); else if(typeof shVoll === 'function') shVoll(() => hvLeseOeffnen(id)); }
+if(typeof shHomeKarte === 'function'){ const _hk = shHomeKarte; shHomeKarte = async function(){ const r = await _hk.apply(this, arguments);
+  try{ const k = document.getElementById('shHome'), x = SH.hin; if(k && x && x.id && !k.querySelector('.sh-lesen')){ const akt = k.querySelector('.sh-akt');
+      if(akt){ const b = document.createElement('button'); b.type = 'button'; b.className = 'btn sh-lesen'; b.textContent = 'Doppelpass anschauen'; b.onclick = () => hvaAnschauen(x.id); akt.prepend(b);
+        akt.querySelectorAll('#shHomeHeft, #shHomeAuf').forEach(e => e.classList.add('ghost')); } } }catch(e){}
+  return r; }; }
+
+(function(){var s=document.createElement('style');s.textContent="/* Doppelpass anschauen und Artikel hineinziehen (svm136.js) */\n.sh-lesen{font-weight:800;}\n.hva-gross{min-height:52px;font-size:16px;}\n.sh-akt .sh-lesen{flex:1 1 220px;}\n/* Leseansicht: ruhig, große Pfeile auch am Handy */\n.hv.lesen .hv-buehne{grid-template-columns:64px minmax(0,1fr) 64px;gap:10px;}\n.hv.lesen .hv-nav{width:64px;height:88px;font-size:44px;border-width:2px;}\n.hv.lesen .hv-seite[data-i]{cursor:default;}\n.hv.lesen .hv-ed{display:none;}\n.hv.lesen .hv-leiste .hv-ch{min-width:44px;height:48px;font-size:16px;}\n.hv.lesen .hv-wo{font-size:17px;font-weight:750;margin:14px 0 10px;}\n@media (max-width:560px){\n  .hv.lesen .hv-buehne{grid-template-columns:1fr 1fr;grid-template-areas:\"buch buch\" \"vor weiter\";gap:12px;}\n  .hv.lesen .hv-buehne .hv-buch{grid-area:buch;}\n  .hv.lesen .hv-buehne #hvVor{grid-area:vor;display:grid;width:auto;height:64px;}\n  .hv.lesen .hv-buehne #hvWeiter{grid-area:weiter;display:grid;width:auto;height:64px;}\n}\n/* Vollbild */\n#hvHaupt.voll{position:fixed;inset:0;z-index:56;margin:0;padding:12px 12px 16px;overflow:auto;background:var(--bg,#05070c);align-content:start;}\n#hvHaupt.voll .hv-buch{max-width:min(1200px,calc((100vh - 190px) * 1.414));}\n#hvHaupt.voll .hv-buch.einzel{max-width:min(640px,max(300px,calc((100vh - 190px) * .707)));}\n.hva-vollzu{display:none;justify-self:end;min-height:48px;min-width:120px;font-size:16px;}\n#hvHaupt.voll .hva-vollzu{display:inline-flex;align-items:center;justify-content:center;}\nhtml.hva-voll body{overflow:hidden;}\n/* Artikel hineinziehen */\n.hva-zone{margin:12px 0 0;padding:16px;border:2px dashed var(--line);border-radius:14px;text-align:center;font-size:16px;font-weight:650;color:var(--ink2);cursor:pointer;min-height:56px;display:grid;place-items:center;}\n.hva-zone:hover,.hva-zone:focus-visible{border-color:var(--brand);color:var(--ink);outline:none;}\n.hva-zone.hva-an{border-color:var(--brand);background:rgba(90,130,255,.12);color:var(--ink);}\n.hv-seite.hva-ziel{outline:4px solid var(--brand);outline-offset:3px;}\n#hvHaupt.hva-an{outline:3px dashed var(--brand);outline-offset:4px;border-radius:12px;}\n.hva-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0 0;padding:12px 14px;font-size:16px;}\n.hva-bar>span{flex:1 1 240px;}\n.hva-bar .btn{min-height:48px;}\n.hva-warn{color:#b45309;}\n@media (prefers-reduced-motion:reduce){ .hva-zone{transition:none;} }\n";document.head.appendChild(s);})();
 (function(){var s=document.createElement('style');s.textContent=".bd-buehne{position:relative}.bd-bearbeiten{position:absolute;right:14px;bottom:14px;min-height:44px;padding:10px 16px;border:1px solid #d8deeb;border-radius:12px;background:#fff;color:#1d2760;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 3px 14px #101e3630;cursor:pointer}.bd-bearbeiten:focus-visible,.bd-partner-dialog button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-kundenfreigabe{display:flex;gap:10px;align-items:center;min-height:44px;margin-top:16px;font-size:15px;line-height:1.4}.bd-kundenfreigabe input{width:22px;height:22px;accent-color:#1d2760}.bd-projekt-hinweis{font-size:13px;line-height:1.45;color:#596173;margin:12px 0}.bd-partner-dialog{position:fixed;inset:0;z-index:2147483300;background:#101b35b3;display:grid;place-items:center;padding:16px}.bd-partner-dialog>section{display:flex;flex-direction:column;width:min(1500px,100%);height:calc(100vh - 32px);height:calc(100dvh - 32px);max-height:1100px;overflow:hidden;background:#f5f6f9;border:1px solid #dbe1ee;border-radius:20px;box-shadow:0 24px 90px #050c2660}.bd-partner-dialog header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e4ed}.bd-partner-dialog small{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#62708c}.bd-partner-dialog h2{font:700 22px Barlow,system-ui,sans-serif;margin:3px 0;color:#1d2760}.bd-partner-dialog header button{width:44px;height:44px;border:0;border-radius:12px;background:#edf0f7;color:#1d2760;font-size:28px;cursor:pointer}.bd-partner-dialog [data-bd-status]{margin:0;padding:10px 20px;font:500 14px/1.4 Barlow,system-ui,sans-serif;color:#6b3b20;background:#fff4e6}.bd-partner-dialog [data-bd-status]:empty{display:none}.bd-partner-dialog iframe{flex:1;min-height:0;width:100%;border:0;background:#f5f6f9}.bd-partner-dialog [hidden],.bd-kundenfreigabe[hidden],.bd-bearbeiten[hidden]{display:none!important}@media(max-width:600px){.bd-partner-dialog{padding:0}.bd-partner-dialog>section{height:100vh;height:100dvh;max-height:none;border:0;border-radius:0}.bd-partner-dialog header{padding:10px 14px}.bd-bearbeiten{bottom:10px;right:10px}}\n.bd-creator-vorschau{position:relative;aspect-ratio:16/10;min-height:220px;overflow:hidden;border:1px solid #dbe1ee;border-radius:14px;background:#e9eef4}.bd-creator-vorschau canvas{display:block;position:absolute;inset:0;width:100%;height:100%}.bd-creator-projekt [hidden]{display:none!important}\n\n.bd-creator-hat-projekt .pz-tc-links>:not(.bd-creator-projekt),.bd-creator-hat-projekt .pz-tc-rechts>section:not(:first-child),.bd-creator-hat-projekt .pz-bc-felder,.bd-creator-hat-projekt .pz-bc-schalter{display:none}.bd-creator-hat-projekt .bd-creator-projekt{margin-top:0}\n.bd-motive{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.bd-motive[hidden]{display:none}.bd-motive button{min-height:44px;padding:10px 14px;border:1px solid #9caac0;border-radius:8px;background:#fff;color:#1d2760;font:600 15px/1.2 Barlow,system-ui,sans-serif;cursor:pointer}.bd-motive button[aria-pressed=\"true\"]{border-color:#1d2760;box-shadow:inset 0 -3px #e8741f}.bd-motive button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-motive button:disabled{opacity:.65;cursor:wait}\n\n.bd-bb-farben button::before{content:\"\";display:inline-block;width:.75em;height:.75em;margin-inline-end:.5em;border-radius:50%;background:#e8741f;box-shadow:inset 0 0 0 1px #0002}\n.bd-bb-farben [data-bb-farbe=\"rosa\"]::before{background:#ca0f86}\n.bd-bb-farben [aria-disabled=\"true\"]{cursor:wait}\n";document.head.appendChild(s);})();
 /* Personal presentation links, functional snapshots and voluntary later-use statistics.
    No third-party analytics, coordinates, device IDs, automatic mail or guessed probability. */

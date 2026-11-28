@@ -269,7 +269,7 @@ function shHeftHtml(){ const D = SH.d, h = shNaechstes(), lt = D.darf.leitung, c
     ${schritt(3, frei, s1 && !frei, 'Freigabe der Redaktion', frei ? 'Freigegeben' + (h.freigegeben_von ? ' von ' + shE(h.freigegeben_von) : '') + (h.freigegeben_am ? ' am ' + shE(shDatum(h.freigegeben_am)) : '') : (c.redaktion_name ? shE(c.redaktion_name) + ', ' : '') + (h.freigabe_ab ? 'Bitte geht am ' + shE(shDatum(h.freigabe_ab)) + ' raus' : 'sobald die Abgabe steht') + (h.freigabe_notiz ? '. Notiz: ' + shE(h.freigabe_notiz) : ''), `<span class="sh-pill ${st[0]}">${st[1]}</span>`)}
     ${schritt(4, h.status === 'gedruckt', frei, 'Druck', (c.druck_firma ? shE(c.druck_firma) : 'Druckerei') + (c.druck_name ? ', ' + shE(c.druck_name) : '') + (h.abgabe ? ' · Abgabe ' + shE(shDatum(h.abgabe)) : ''), frei ? '<span class="sh-pill warn">Datei abgeben</span>' : '')}
     ${h.notiz ? `<p class="note sh-notiz">${shE(h.notiz)}</p>` : ''}
-    <div class="sh-akt">${D.darf.freigeben && !frei ? `<button type="button" class="btn" data-sh-frei="ja" data-id="${h.id}">Freigeben</button><button type="button" class="btn ghost" data-sh-frei="nein" data-id="${h.id}">Noch nicht</button>` : ''}
+    <div class="sh-akt"><button type="button" class="btn sh-lesen" data-sh-lesen="${h.id}">Doppelpass anschauen</button>${D.darf.freigeben && !frei ? `<button type="button" class="btn" data-sh-frei="ja" data-id="${h.id}">Freigeben</button><button type="button" class="btn ghost" data-sh-frei="nein" data-id="${h.id}">Noch nicht</button>` : ''}
       ${lt && !frei && s1 ? `<button type="button" class="btn ghost" id="shFragen" data-id="${h.id}">${h.status === 'freigabe' ? 'Noch einmal um Freigabe bitten' : 'Zur Freigabe schicken'}</button>` : ''}
       ${lt && h.status === 'freigegeben' ? `<button type="button" class="btn" id="shGedruckt" data-id="${h.id}">Als gedruckt abhaken</button>` : ''}
       <button type="button" class="btn ghost" data-sh-plan="${h.id}">Seiten planen</button><button type="button" class="btn ghost" data-sh-satz="${h.id}">Vorschau und Texte</button>
@@ -366,10 +366,12 @@ function shFreigabeDialog(h, ja){ if(!h) return;
   const M = svModal(`<div class="mhead"><div><h2 style="margin:0">${ja ? 'Heft freigeben?' : 'Noch nicht freigeben'}</h2><div class="msub">${shE(h.titel)}</div></div></div>
     <p class="note">${ja ? 'Mit der Freigabe geht das Heft in den Druck' + (h.abgabe ? ', Abgabe ist am ' + shE(shDatum(h.abgabe)) : '') + '. Die Leitung im Bereich Partner bekommt Bescheid.' : 'Schreib kurz dazu, was noch fehlt. Die Leitung im Bereich Partner bekommt Bescheid.'}</p>
     ${h.pdf_url ? `<p><a class="btn ghost" href="${shE(h.pdf_url)}" target="_blank" rel="noopener">Heft ansehen</a></p>` : ''}
+    ${typeof hvaAnschauen === 'function' ? '<p><button type="button" class="btn ghost sh-lesen" id="shF_lesen">Doppelpass anschauen</button></p>' : ''}
     <label class="field"><span>Notiz${ja ? ' <small>wenn du magst</small>' : ''}</span><textarea id="shF_n" rows="2" maxlength="500"></textarea></label>
     <p class="note" id="shF_f" role="alert" hidden></p>
     <div class="pz-tc-dlgk"><button type="button" class="btn" id="shF_ok">${ja ? 'Freigeben' : 'Noch nicht'}</button><button type="button" class="btn ghost" id="shF_ab">Abbrechen</button></div>`);
   M.querySelector('#shF_ab').onclick = () => closeOverlay();
+  { const l = M.querySelector('#shF_lesen'); if(l) l.onclick = () => { closeOverlay(); hvaAnschauen(h.id); }; }
   M.querySelector('#shF_ok').onclick = () => paEinmal(M.querySelector('#shF_ok'), async () => {
     try{ await shRpc('stadionheft_freigabe', { p_id:h.id, p_ja:ja, p_notiz:M.querySelector('#shF_n').value }); closeOverlay(); kToast(ja ? 'Das Heft ist freigegeben.' : 'Notiert: noch nicht freigegeben.');
       SH.hin = null; try{ shHomeKarte(true); }catch(e){} try{ if(typeof frLaden === 'function') frLaden(true).then(() => { try{ frKarte(); }catch(e){} }); }catch(e){} await shNeuZeichnen(); }
