@@ -5,6 +5,177 @@ if(typeof shHomeKarte === 'function'){ const _hk = shHomeKarte; shHomeKarte = as
   return r; }; }
 
 (function(){var s=document.createElement('style');s.textContent="/* Doppelpass anschauen und Artikel hineinziehen (svm136.js) */\n.sh-lesen{font-weight:800;}\n.hva-gross{min-height:52px;font-size:16px;}\n.sh-akt .sh-lesen{flex:1 1 220px;}\n/* Leseansicht: ruhig, große Pfeile auch am Handy */\n.hv.lesen .hv-buehne{grid-template-columns:64px minmax(0,1fr) 64px;gap:10px;}\n.hv.lesen .hv-nav{width:64px;height:88px;font-size:44px;border-width:2px;}\n.hv.lesen .hv-seite[data-i]{cursor:default;}\n.hv.lesen .hv-ed{display:none;}\n.hv.lesen .hv-leiste .hv-ch{min-width:44px;height:48px;font-size:16px;}\n.hv.lesen .hv-wo{font-size:17px;font-weight:750;margin:14px 0 10px;}\n@media (max-width:560px){\n  .hv.lesen .hv-buehne{grid-template-columns:1fr 1fr;grid-template-areas:\"buch buch\" \"vor weiter\";gap:12px;}\n  .hv.lesen .hv-buehne .hv-buch{grid-area:buch;}\n  .hv.lesen .hv-buehne #hvVor{grid-area:vor;display:grid;width:auto;height:64px;}\n  .hv.lesen .hv-buehne #hvWeiter{grid-area:weiter;display:grid;width:auto;height:64px;}\n}\n/* Vollbild */\n#hvHaupt.voll{position:fixed;inset:0;z-index:56;margin:0;padding:12px 12px 16px;overflow:auto;background:var(--bg,#05070c);align-content:start;}\n#hvHaupt.voll .hv-buch{max-width:min(1200px,calc((100vh - 190px) * 1.414));}\n#hvHaupt.voll .hv-buch.einzel{max-width:min(640px,max(300px,calc((100vh - 190px) * .707)));}\n.hva-vollzu{display:none;justify-self:end;min-height:48px;min-width:120px;font-size:16px;}\n#hvHaupt.voll .hva-vollzu{display:inline-flex;align-items:center;justify-content:center;}\nhtml.hva-voll body{overflow:hidden;}\n/* Artikel hineinziehen */\n.hva-zone{margin:12px 0 0;padding:16px;border:2px dashed var(--line);border-radius:14px;text-align:center;font-size:16px;font-weight:650;color:var(--ink2);cursor:pointer;min-height:56px;display:grid;place-items:center;}\n.hva-zone:hover,.hva-zone:focus-visible{border-color:var(--brand);color:var(--ink);outline:none;}\n.hva-zone.hva-an{border-color:var(--brand);background:rgba(90,130,255,.12);color:var(--ink);}\n.hv-seite.hva-ziel{outline:4px solid var(--brand);outline-offset:3px;}\n#hvHaupt.hva-an{outline:3px dashed var(--brand);outline-offset:4px;border-radius:12px;}\n.hva-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0 0;padding:12px 14px;font-size:16px;}\n.hva-bar>span{flex:1 1 240px;}\n.hva-bar .btn{min-height:48px;}\n.hva-warn{color:#b45309;}\n@media (prefers-reduced-motion:reduce){ .hva-zone{transition:none;} }\n";document.head.appendChild(s);})();
+/* =====================================================================
+   Sportzentrale 0.99.178 · Reiter „Drops“ im Partner-Bereich
+   Albert, 27.11.2026: Albert und Lukas sehen alle Vorbestellungen der Drops in der App, ohne ins Shop-Backoffice zu müssen,
+   und wissen genau, was bestellt werden muss. Nach dem Ende kommt einmal eine Zusammenfassung (270_drops_reiter.sql).
+   - Sehen darf, wer im Shop-Backoffice darf: Admin oder Recht „shop“ (geprüft auf dem Server über shop.pruefen).
+   - Daten: app_drops() (Liste), shop_bo_vorbestellungen(slug) (Drop, Größen, Bestellungen), shop_bo_vorbestellung_status(id, status).
+   - Adresse, Handy und E-Mail stehen nur in der Einzelansicht und in der CSV-Datei, nie in Liste, Mitteilung oder Konsole.
+   ===================================================================== */
+const DRP = { drops:null, slug:null, d:null, q:'', st:'alle', fehler:'', uhr:null, geladen:0 };
+const DRP_ERW = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+const DRP_ST = { neu:'Neu', bestaetigt:'Bestätigt', storniert:'Storniert' };
+function drpDarf(){ return svRole() === 'admin' || (typeof svDarf === 'function' && svDarf('shop') === true); }
+function drpEur(c){ return ((Number(c) || 0) / 100).toLocaleString('de-DE', { style:'currency', currency:'EUR' }); }
+function drpKind(g){ return /^[0-9]+$/.test(String(g || '')); }
+function drpGrName(g){ return drpKind(g) ? 'Kinder ' + g : String(g || ''); }
+function drpZeit(t){ const d = new Date(t); return isNaN(d) ? '' : d.toLocaleString('de-DE', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) + ' Uhr'; }
+function drpRest(ms){ if(ms <= 0) return ''; const m = Math.round(ms / 60000), t = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60;
+  return t ? `${t} Tag${t > 1 ? 'e' : ''} ${h} Std.` : h ? `${h} Std. ${mm} Min.` : `${mm} Min.`; }
+
+/* Stand eines Drops: noch nicht offen, offen, vorbei */
+function drpStand(dr){ const jetzt = Date.now() + (DRP.versatz || 0), a = new Date(dr.start_at).getTime(), e = new Date(dr.ende_at).getTime();
+  if(jetzt < a) return { k:'bald', t:'Startet ' + drpZeit(dr.start_at), rest:drpRest(a - jetzt) };
+  if(jetzt < e) return { k:'offen', t:'Läuft', rest:drpRest(e - jetzt) };
+  return { k:'vorbei', t:'Vorbei seit ' + drpZeit(dr.ende_at), rest:'' }; }
+
+/* Größen zählen (ohne Stornierte), Erwachsene und Kinder getrennt, Umsatz nach Preis je Art */
+function drpZaehlen(D){ const L = (D && D.liste) || [], dr = (D && D.drop) || {}, g = {};
+  L.forEach(v => { if(v.status !== 'storniert') g[v.groesse] = (g[v.groesse] || 0) + 1; });
+  const pk = Number(dr.preis_kinder_cent) || Number(dr.preis_cent) || 0, pe = Number(dr.preis_cent) || 0;
+  const erw = DRP_ERW.filter(x => g[x]).map(x => [x, g[x]]).concat(Object.keys(g).filter(x => !drpKind(x) && !DRP_ERW.includes(x)).sort().map(x => [x, g[x]]));
+  const kind = Object.keys(g).filter(drpKind).sort((a, b) => a - b).map(x => [x, g[x]]);
+  const nE = erw.reduce((s, x) => s + x[1], 0), nK = kind.reduce((s, x) => s + x[1], 0);
+  return { erw, kind, nE, nK, n:nE + nK, umsatz:nE * pe + nK * pk,
+    auftraege:new Set(L.filter(v => v.status !== 'storniert').map(v => v.auftrag || v.id)).size,
+    neu:L.filter(v => v.status === 'neu').length }; }
+
+/* Text für den Lieferanten, ohne Namen */
+function drpLieferText(D){ const Z = drpZaehlen(D), dr = D.drop || {};
+  const z = [`${dr.titel || 'Drop'}: ${Z.n} Teile`];
+  if(Z.erw.length) z.push('', `Erwachsene (${Z.nE}):`, ...Z.erw.map(([g, n]) => `${g}: ${n}`));
+  if(Z.kind.length) z.push('', `Kinder (${Z.nK}):`, ...Z.kind.map(([g, n]) => `${g}: ${n}`));
+  return z.join('\n'); }
+
+/* Bestellungen nach Auftrag zusammenfassen: Teile einer gemeinsamen Bestellung stehen zusammen */
+function drpAuftraege(L){ const m = new Map();
+  (L || []).forEach(v => { const k = v.auftrag || v.id; if(!m.has(k)) m.set(k, []); m.get(k).push(v); });
+  const A = [...m.values()].map(t => t.sort((a, b) => (a.nr || 0) - (b.nr || 0)));
+  A.sort((a, b) => String(b[0].created_at).localeCompare(String(a[0].created_at)));
+  return A; }
+function drpPasst(t){ const q = DRP.q.trim().toLowerCase();
+  if(DRP.st !== 'alle' && !t.some(v => v.status === DRP.st)) return false;
+  if(!q) return true;
+  return t.some(v => String(v.name || '').toLowerCase().includes(q) || String(v.nr) === q.replace(/^nr\.?\s*/, '') || String(v.ort || '').toLowerCase().includes(q)); }
+
+async function drpLaden(neu){
+  if(!DRP.drops || neu){ DRP.drops = await svtRpc('app_drops', {}); }
+  if(!DRP.slug || !DRP.drops.some(x => x.slug === DRP.slug)){ const of = DRP.drops.find(x => drpStand(x).k === 'offen'); DRP.slug = (of || DRP.drops[0] || {}).slug || null; }
+  if(DRP.drops[0] && DRP.drops[0].jetzt) DRP.versatz = new Date(DRP.drops[0].jetzt).getTime() - Date.now();
+  DRP.d = DRP.slug ? await svtRpc('shop_bo_vorbestellungen', { p_slug:DRP.slug }) : null;
+  DRP.geladen = Date.now(); }
+
+async function drpRender(B){
+  if(!drpDarf()){ B.innerHTML = '<div class="card"><div class="empty">Die Drops sehen Admins und wer den Shop betreut.</div></div>'; return; }
+  if(!DRP.d) B.innerHTML = '<div class="card"><div class="empty">Lade Drops …</div></div>';
+  try{ await drpLaden(!DRP.drops); DRP.fehler = ''; }catch(e){ DRP.fehler = (e && e.message) || String(e); }
+  if(SPO.view !== 'drops' || !B.isConnected) return;
+  drpZeichnen(B); drpUhr(B); }
+
+function drpZeichnen(B){
+  if(DRP.fehler){ B.innerHTML = `<div class="card"><div class="empty">⚠️ ${svEsc(DRP.fehler)}</div><div class="btnrow"><button type="button" class="btn ghost" id="drpNochmal">Noch einmal laden</button></div></div>`;
+    B.querySelector('#drpNochmal').onclick = () => { DRP.drops = null; drpRender(B); }; return; }
+  if(!DRP.d || !DRP.d.drop){ B.innerHTML = '<div class="card"><div class="empty">Noch kein Drop angelegt.</div></div>'; return; }
+  const D = DRP.d, dr = D.drop, S = drpStand(dr), Z = drpZaehlen(D), A = drpAuftraege(D.liste).filter(drpPasst);
+  const tab = (titel, R, n) => R.length ? `<div class="drp-gr"><h4>${titel} <span>${n}</span></h4><table class="drp-tab"><tbody>${R.map(([g, k]) => `<tr><th>${svEsc(g)}</th><td><span class="drp-bar" style="--w:${Math.max(6, Math.round(k / Math.max(1, ...R.map(x => x[1])) * 100))}%"></span><b>${k}</b></td></tr>`).join('')}</tbody><tfoot><tr><th>Summe</th><td><b>${n}</b></td></tr></tfoot></table></div>` : '';
+  const zeile = t => { const v = t[0], st = t.every(x => x.status === 'storniert') ? 'storniert' : t.some(x => x.status === 'neu') ? 'neu' : 'bestaetigt';
+    return `<button type="button" class="drp-z drp-${st}" data-drpa="${svEsc(v.auftrag || v.id)}"><span class="drp-z-k"><b>${svEsc(v.name)}</b><small>Nr. ${t.map(x => x.nr).join(', ')} · ${svEsc(drpZeit(v.created_at))}</small></span>
+      <span class="drp-z-t">${t.map(x => `<i class="${x.status === 'storniert' ? 'weg' : ''}">${svEsc(drpGrName(x.groesse))}</i>`).join('')}</span><span class="drp-st">${DRP_ST[st]}</span></button>`; };
+  const wahl = (DRP.drops || []).length > 1 ? `<select id="drpWahl" aria-label="Drop wählen">${DRP.drops.map(x => `<option value="${svEsc(x.slug)}"${x.slug === DRP.slug ? ' selected' : ''}>${svEsc(x.titel)}</option>`).join('')}</select>` : '';
+  B.innerHTML = `<div class="card drp">
+    <div class="drp-kopf"><div><h3 class="trh">📦 ${svEsc(dr.titel)}</h3><p class="note"><span class="drp-lauf drp-${S.k}">${svEsc(S.t)}</span>${S.rest ? ` · noch <b id="drpRest">${svEsc(S.rest)}</b>${S.k === 'offen' ? ' bis Ende ' + svEsc(drpZeit(dr.ende_at)) : ''}` : ''}</p></div>
+      <div class="drp-kn">${wahl}<button type="button" class="btn ghost" id="drpNeu" title="Neu laden">↻ Neu laden</button></div></div>
+    <div class="drp-k">
+      <div class="drp-t"><span>Teile</span><b>${Z.n}</b><small>${Z.auftraege} Bestellung${Z.auftraege === 1 ? '' : 'en'}${Z.nK ? ` · ${Z.nK} Kinder` : ''}</small></div>
+      <div class="drp-t"><span>Umsatz</span><b>${drpEur(Z.umsatz)}</b><small>Erwachsene ${drpEur(dr.preis_cent)}${dr.preis_kinder_cent ? `, Kinder ${drpEur(dr.preis_kinder_cent)}` : ''}</small></div>
+      <div class="drp-t${Z.neu ? ' drp-warn' : ''}"><span>Noch nicht bestätigt</span><b>${Z.neu}</b><small>${Z.neu ? 'Teile im Stand „Neu“' : 'alles bestätigt'}</small></div>
+    </div>
+    <h4 class="drp-h">Was bestellen wir?</h4>
+    ${Z.n ? `<div class="drp-grn">${tab('Erwachsene', Z.erw, Z.nE)}${tab('Kinder', Z.kind, Z.nK)}</div>
+      <div class="btnrow"><button type="button" class="btn" id="drpKopie">📋 Kopieren für den Lieferanten</button><button type="button" class="btn ghost" id="drpCsv">${typeof SVI === 'function' ? SVI('download') : '⬇'} CSV mit allen Bestellungen</button></div>`
+      : '<p class="note">Noch keine Vorbestellung. Sobald jemand bestellt, steht es hier, und Albert und Lukas bekommen eine Mitteilung.</p>'}
+    <h4 class="drp-h">Bestellungen</h4>
+    <div class="drp-filter"><input type="search" id="drpQ" placeholder="Name, Ort oder Nummer" value="${svEsc(DRP.q)}" aria-label="Bestellungen durchsuchen">
+      <div class="drp-chips" role="group" aria-label="Stand">${[['alle', 'Alle'], ['neu', 'Neu'], ['bestaetigt', 'Bestätigt'], ['storniert', 'Storniert']].map(([k, l]) => `<button type="button" class="chip${DRP.st === k ? ' on' : ''}" data-drpst="${k}" aria-pressed="${DRP.st === k}">${l}</button>`).join('')}</div></div>
+    <div class="drp-liste">${A.length ? A.map(zeile).join('') : `<p class="note">${(D.liste || []).length ? 'Nichts gefunden.' : 'Noch keine Bestellungen.'}</p>`}</div>
+  </div>`;
+  const w = B.querySelector('#drpWahl'); if(w) w.onchange = () => { DRP.slug = w.value; DRP.d = null; drpRender(B); };
+  B.querySelector('#drpNeu').onclick = () => { DRP.drops = null; drpRender(B); };
+  const k = B.querySelector('#drpKopie'); if(k) k.onclick = () => drpKopieren(drpLieferText(D));
+  const c = B.querySelector('#drpCsv'); if(c) c.onclick = () => drpCsv(D);
+  const q = B.querySelector('#drpQ'); q.oninput = () => { DRP.q = q.value; const p = q.selectionStart; drpZeichnen(B); const n = B.querySelector('#drpQ'); n.focus(); try{ n.setSelectionRange(p, p); }catch(e){} };
+  B.querySelectorAll('[data-drpst]').forEach(b => b.onclick = () => { DRP.st = b.dataset.drpst; drpZeichnen(B); });
+  B.querySelectorAll('[data-drpa]').forEach(b => b.onclick = () => drpDetail(b.dataset.drpa, B)); }
+
+/* Restzeit läuft mit, alle zwei Minuten kommen neue Bestellungen dazu (nie während ein Fenster offen ist oder jemand tippt) */
+function drpUhr(B){ clearInterval(DRP.uhr);
+  DRP.uhr = setInterval(() => {
+    if(SPO.view !== 'drops' || !B.isConnected){ clearInterval(DRP.uhr); return; }
+    const r = B.querySelector('#drpRest'); if(r && DRP.d && DRP.d.drop){ const S = drpStand(DRP.d.drop); if(S.rest) r.textContent = S.rest; }
+    if(Date.now() - DRP.geladen > 120000 && !document.hidden && !document.querySelector('#overlay.open') && document.activeElement?.id !== 'drpQ'){
+      DRP.geladen = Date.now(); drpLaden(true).then(() => { if(SPO.view === 'drops' && B.isConnected && !document.querySelector('#overlay.open')) drpZeichnen(B); }).catch(() => {}); }
+  }, 20000); }
+
+async function drpKopieren(txt){
+  try{ await navigator.clipboard.writeText(txt); kToast('✓ Kopiert'); }
+  catch(e){ const M = svModal(`<div class="drp-sheet"><h2>Text für den Lieferanten</h2><p class="msub">Markieren und kopieren.</p><textarea readonly rows="12" class="drp-txt">${svEsc(txt)}</textarea></div>`);
+    const t = M.querySelector('textarea'); t.focus(); t.select(); } }
+
+function drpCsv(D){ const z = v => '"' + String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
+  const kopf = ['Nr.', 'Bestellung', 'Datum', 'Name', 'Straße', 'PLZ', 'Ort', 'Handy', 'E-Mail', 'Größe', 'Art', 'Stand'];
+  const nr = new Map(); drpAuftraege(D.liste).slice().reverse().forEach((t, i) => nr.set(t[0].auftrag || t[0].id, i + 1));
+  const L = (D.liste || []).slice().sort((a, b) => (a.nr || 0) - (b.nr || 0));
+  const zeilen = L.map(v => [v.nr, nr.get(v.auftrag || v.id), drpZeit(v.created_at), v.name, v.strasse, v.plz, v.ort, v.handy, v.email, v.groesse, drpKind(v.groesse) ? 'Kinder' : 'Erwachsene', DRP_ST[v.status] || v.status].map(z).join(';'));
+  const txt = '﻿' + [kopf.map(z).join(';')].concat(zeilen).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type:'text/csv;charset=utf-8' }));
+  a.download = 'drop-' + (D.drop.slug || 'vorbestellungen') + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+
+/* Einzelansicht: Adresse und Kontakt nur hier; Stand je Teil ändern, Storno nur mit Rückfrage im Fenster */
+function drpDetail(key, B){
+  const t = (DRP.d.liste || []).filter(v => (v.auftrag || v.id) === key).sort((a, b) => (a.nr || 0) - (b.nr || 0)); if(!t.length) return;
+  const v = t[0];
+  const M = svModal(`<div class="drp-sheet"><h2>${svEsc(v.name)}</h2><p class="msub">Bestellt ${svEsc(drpZeit(v.created_at))}${t.length > 1 ? ` · ${t.length} Teile` : ''}</p>
+    <div class="drp-adr"><div>${svEsc(v.strasse)}<br>${svEsc(v.plz)} ${svEsc(v.ort)}</div>
+      <div><a href="tel:${svEsc(String(v.handy || '').replace(/[^0-9+]/g, ''))}">${svEsc(v.handy)}</a><br><a href="mailto:${svEsc(v.email)}">${svEsc(v.email)}</a></div></div>
+    <div class="drp-teile">${t.map((x, i) => `<div class="drp-teil" data-drpid="${svEsc(x.id)}"><div><b>${svEsc(drpGrName(x.groesse))}</b><small>Nr. ${x.nr}${t.length > 1 ? ` · Teil ${i + 1} von ${t.length}` : ''}</small></div>
+      <div class="drp-chips">${['neu', 'bestaetigt', 'storniert'].map(s => `<button type="button" class="chip${x.status === s ? ' on' : ''}" data-drps="${s}" aria-pressed="${x.status === s}">${DRP_ST[s]}</button>`).join('')}</div></div>`).join('')}</div>
+    ${t.length > 1 && t.some(x => x.status === 'neu') ? '<div class="btnrow"><button type="button" class="btn" id="drpAlleOk">Alle Teile bestätigen</button></div>' : ''}
+    <p class="drp-frage" id="drpFrage" hidden></p></div>`);
+  const setzen = async (ids, s) => { try{ for(const id of ids) await svtRpc('shop_bo_vorbestellung_status', { p_id:id, p_status:s });
+      ids.forEach(id => { const x = DRP.d.liste.find(y => y.id === id); if(x) x.status = s; });
+      kToast(s === 'storniert' ? '✓ Storniert' : '✓ Gespeichert'); closeOverlay(); drpZeichnen(B); }
+    catch(e){ kToast('⚠️ ' + ((e && e.message) || e)); } };
+  M.querySelectorAll('[data-drpid]').forEach(row => row.querySelectorAll('[data-drps]').forEach(b => b.onclick = () => {
+    const id = row.dataset.drpid, s = b.dataset.drps, x = t.find(y => y.id === id); if(!x || x.status === s) return;
+    if(s !== 'storniert') return setzen([id], s);
+    const f = M.querySelector('#drpFrage'); f.hidden = false;
+    f.innerHTML = `Teil ${svEsc(drpGrName(x.groesse))} (Nr. ${x.nr}) wirklich stornieren? Es zählt dann nicht mehr mit. <span class="btnrow"><button type="button" class="btn danger" id="drpJa">Ja, stornieren</button><button type="button" class="btn ghost" id="drpNein">Nein</button></span>`;
+    f.querySelector('#drpJa').onclick = () => setzen([id], 'storniert'); f.querySelector('#drpNein').onclick = () => { f.hidden = true; }; }));
+  const alle = M.querySelector('#drpAlleOk'); if(alle) alle.onclick = () => setzen(t.filter(x => x.status === 'neu').map(x => x.id), 'bestaetigt'); }
+
+/* Reiter im Partner-Bereich (wie die Shop-Finanzen nur für Berechtigte), Gruppe „Übersicht“ */
+if(typeof S120_GRUPPEN !== 'undefined'){ const g = S120_GRUPPEN.find(x => x[0] === 'start'); if(g && !g[2].includes('drops')) g[2].push('drops'); }
+{ const _sr137 = spoRender; spoRender = async function(){ const r = await _sr137.apply(this, arguments);
+  try{ const seg = document.querySelector('#panel-sponsoring .spo-seg');
+    if(seg && drpDarf() && !seg.querySelector('[data-spov="drops"]')){ const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.dataset.spov = 'drops'; b.textContent = 'Drops';
+      if(SPO.view === 'drops') b.classList.add('on');
+      const nach = seg.querySelector('[data-spov="termine"]') || seg.querySelector('[data-spov="zentrale"]'); if(nach && nach.nextSibling) seg.insertBefore(b, nach.nextSibling); else seg.appendChild(b);
+      b.onclick = () => { SPO.view = 'drops'; seg.querySelectorAll('[data-spov]').forEach(x => x.classList.toggle('on', x === b)); spoBody(); }; } }catch(e){ console.warn('Drops', e); }
+  return r; }; }
+{ const _sb137 = spoBody; spoBody = function(){ if(SPO.view === 'drops'){ const B = document.getElementById('spoB'); if(B) drpRender(B); try{ if(typeof s120Zeig === 'function') s120Zeig(); }catch(e){} return; } return _sb137.apply(this, arguments); }; }
+
+/* Adresse #drops (aus der Mitteilung) öffnet den Reiter */
+function drpAusAdresse(h){ if(!/^#?drops$/.test(String(h || ''))) return false; const t0 = Date.now();
+  const los = () => { const g = document.getElementById('gate');
+    if(typeof _remoteDone !== 'undefined' && _remoteDone && g && g.classList.contains('done') && typeof SVU !== 'undefined' && SVU && SVU.id){ if(drpDarf() && typeof n88Partner === 'function') n88Partner('drops'); }
+    else if(Date.now() - t0 < 60000) setTimeout(los, 400); };
+  los(); return true; }
+if(typeof svZiel === 'function'){ const _z137 = svZiel; svZiel = function(h){ if(drpAusAdresse(h)) return Promise.resolve(true); return _z137.apply(this, arguments); }; }
+window.addEventListener('hashchange', () => { if(location.hash === '#drops'){ try{ history.replaceState(history.state, '', location.pathname + location.search); }catch(x){} drpAusAdresse('drops'); } });
+
+(function(){var s=document.createElement('style');s.textContent="/* Reiter „Drops“ (svm137.js) */\n.drp-kopf{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-start;}\n.drp-kn{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}\n.drp-kn select{min-height:40px;border-radius:12px;padding:0 10px;}\n.drp-lauf{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:700;font-size:12.5px;border:1px solid var(--line2);}\n.drp-lauf.drp-offen{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.5);}\n.drp-lauf.drp-bald{background:rgba(234,179,8,.14);border-color:rgba(234,179,8,.45);}\n.drp-lauf.drp-vorbei{background:rgba(148,163,196,.12);}\n.drp-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0 6px;}\n.drp-t{padding:12px 14px;border-radius:16px;border:1px solid var(--line2);background:rgba(148,163,196,.06);min-width:0;}\n.drp-t span{display:block;font-size:12.5px;color:var(--ink3);}\n.drp-t b{display:block;font-size:24px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;}\n.drp-t small{display:block;font-size:12px;color:var(--ink3);margin-top:3px;line-height:1.35;}\n.drp-t.drp-warn{border-color:rgba(234,179,8,.55);}\n.drp-h{margin:18px 0 8px;font-size:15px;}\n.drp-grn{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}\n.drp-gr h4{margin:0 0 6px;font-size:13px;color:var(--ink3);font-weight:700;}\n.drp-gr h4 span{float:right;font-variant-numeric:tabular-nums;}\n.drp-tab{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;}\n.drp-tab th{text-align:left;width:64px;padding:5px 0;font-weight:700;}\n.drp-tab td{padding:5px 0;display:flex;align-items:center;gap:8px;}\n.drp-tab td b{min-width:28px;text-align:right;}\n.drp-bar{display:block;height:10px;border-radius:6px;background:var(--acc,#f59e0b);width:var(--w);max-width:calc(100% - 40px);}\n.drp-tab tfoot th,.drp-tab tfoot td{border-top:1px solid var(--line2);padding-top:7px;}\n.drp-tab tfoot td{justify-content:flex-end;}\n.drp-filter{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;}\n.drp-filter input{flex:1 1 200px;min-height:40px;border-radius:12px;padding:0 12px;}\n.drp-chips{display:flex;flex-wrap:wrap;gap:6px;}\n.drp-liste{display:flex;flex-direction:column;gap:6px;}\n.drp-z{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border-radius:14px;border:1px solid var(--line2);background:rgba(148,163,196,.05);color:inherit;font:inherit;cursor:pointer;min-height:48px;}\n.drp-z:hover{background:rgba(148,163,196,.12);}\n.drp-z-k{flex:1 1 auto;min-width:0;}\n.drp-z-k b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}\n.drp-z-k small{display:block;color:var(--ink3);font-size:12px;}\n.drp-z-t{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;}\n.drp-z-t i{font-style:normal;font-weight:700;font-size:12.5px;padding:2px 8px;border-radius:8px;border:1px solid var(--line2);}\n.drp-z-t i.weg{text-decoration:line-through;opacity:.55;}\n.drp-st{font-size:12px;color:var(--ink3);min-width:74px;text-align:right;}\n.drp-z.drp-neu .drp-st{color:#eab308;font-weight:700;}\n.drp-z.drp-storniert{opacity:.6;}\n.drp-sheet .drp-adr{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:8px 0 14px;padding:12px;border-radius:14px;border:1px solid var(--line2);line-height:1.5;word-break:break-word;}\n.drp-teile{display:flex;flex-direction:column;gap:8px;}\n.drp-teil{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line2);}\n.drp-teil small{display:block;color:var(--ink3);font-size:12px;}\n.drp-frage{margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(239,68,68,.5);background:rgba(239,68,68,.08);}\n.drp-frage .btnrow{margin-top:8px;}\n.drp-txt{width:100%;font:13px/1.45 ui-monospace,monospace;}\n@media (max-width:560px){ .drp-z{flex-wrap:wrap;} .drp-z-t{justify-content:flex-start;} .drp-st{min-width:0;} }\n.drp-teil .chip.on{background:rgba(59,130,246,.16);border-color:rgba(59,130,246,.65);font-weight:800;}\n";document.head.appendChild(s);})();
 (function(){var s=document.createElement('style');s.textContent=".bd-buehne{position:relative}.bd-bearbeiten{position:absolute;right:14px;bottom:14px;min-height:44px;padding:10px 16px;border:1px solid #d8deeb;border-radius:12px;background:#fff;color:#1d2760;font:600 15px Barlow,system-ui,sans-serif;box-shadow:0 3px 14px #101e3630;cursor:pointer}.bd-bearbeiten:focus-visible,.bd-partner-dialog button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-kundenfreigabe{display:flex;gap:10px;align-items:center;min-height:44px;margin-top:16px;font-size:15px;line-height:1.4}.bd-kundenfreigabe input{width:22px;height:22px;accent-color:#1d2760}.bd-projekt-hinweis{font-size:13px;line-height:1.45;color:#596173;margin:12px 0}.bd-partner-dialog{position:fixed;inset:0;z-index:2147483300;background:#101b35b3;display:grid;place-items:center;padding:16px}.bd-partner-dialog>section{display:flex;flex-direction:column;width:min(1500px,100%);height:calc(100vh - 32px);height:calc(100dvh - 32px);max-height:1100px;overflow:hidden;background:#f5f6f9;border:1px solid #dbe1ee;border-radius:20px;box-shadow:0 24px 90px #050c2660}.bd-partner-dialog header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 20px;background:#fff;border-bottom:1px solid #e0e4ed}.bd-partner-dialog small{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#62708c}.bd-partner-dialog h2{font:700 22px Barlow,system-ui,sans-serif;margin:3px 0;color:#1d2760}.bd-partner-dialog header button{width:44px;height:44px;border:0;border-radius:12px;background:#edf0f7;color:#1d2760;font-size:28px;cursor:pointer}.bd-partner-dialog [data-bd-status]{margin:0;padding:10px 20px;font:500 14px/1.4 Barlow,system-ui,sans-serif;color:#6b3b20;background:#fff4e6}.bd-partner-dialog [data-bd-status]:empty{display:none}.bd-partner-dialog iframe{flex:1;min-height:0;width:100%;border:0;background:#f5f6f9}.bd-partner-dialog [hidden],.bd-kundenfreigabe[hidden],.bd-bearbeiten[hidden]{display:none!important}@media(max-width:600px){.bd-partner-dialog{padding:0}.bd-partner-dialog>section{height:100vh;height:100dvh;max-height:none;border:0;border-radius:0}.bd-partner-dialog header{padding:10px 14px}.bd-bearbeiten{bottom:10px;right:10px}}\n.bd-creator-vorschau{position:relative;aspect-ratio:16/10;min-height:220px;overflow:hidden;border:1px solid #dbe1ee;border-radius:14px;background:#e9eef4}.bd-creator-vorschau canvas{display:block;position:absolute;inset:0;width:100%;height:100%}.bd-creator-projekt [hidden]{display:none!important}\n\n.bd-creator-hat-projekt .pz-tc-links>:not(.bd-creator-projekt),.bd-creator-hat-projekt .pz-tc-rechts>section:not(:first-child),.bd-creator-hat-projekt .pz-bc-felder,.bd-creator-hat-projekt .pz-bc-schalter{display:none}.bd-creator-hat-projekt .bd-creator-projekt{margin-top:0}\n.bd-motive{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.bd-motive[hidden]{display:none}.bd-motive button{min-height:44px;padding:10px 14px;border:1px solid #9caac0;border-radius:8px;background:#fff;color:#1d2760;font:600 15px/1.2 Barlow,system-ui,sans-serif;cursor:pointer}.bd-motive button[aria-pressed=\"true\"]{border-color:#1d2760;box-shadow:inset 0 -3px #e8741f}.bd-motive button:focus-visible{outline:3px solid #e8741f;outline-offset:3px}.bd-motive button:disabled{opacity:.65;cursor:wait}\n\n.bd-bb-farben button::before{content:\"\";display:inline-block;width:.75em;height:.75em;margin-inline-end:.5em;border-radius:50%;background:#e8741f;box-shadow:inset 0 0 0 1px #0002}\n.bd-bb-farben [data-bb-farbe=\"rosa\"]::before{background:#ca0f86}\n.bd-bb-farben [aria-disabled=\"true\"]{cursor:wait}\n";document.head.appendChild(s);})();
 /* Personal presentation links, functional snapshots and voluntary later-use statistics.
    No third-party analytics, coordinates, device IDs, automatic mail or guessed probability. */

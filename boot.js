@@ -497,16 +497,30 @@ async function enter(opts){
   if(!prof.pw_set&&!SV.offline){ viewSetPassword('invite',prof); return; }   // noch kein eigenes Passwort → erst festlegen (egal ob per Link, Code oder gespeicherter Anmeldung)
   await loadAndStart();
 }
-async function fetchDataset(token){
-  const r=await fetch(CFG.url+'/rest/v1/dataset?id=eq.1&select=version,body',{headers:{apikey:CFG.anon,Authorization:'Bearer '+token,Accept:'application/vnd.pgrst.object+json'}});
-  if(r.status===406)throw new Error('kein-datenbestand');
-  if(!r.ok)throw new Error('Datenbestand: HTTP '+r.status);
-  const total=+r.headers.get('content-length')||+(CFG.dataBytes||0)||3200000;
-  if(!r.body||!r.body.getReader){ loading('Spielerdaten werden geladen …',60); return await r.json(); }
-  const rd=r.body.getReader(), parts=[]; let got=0;
-  for(;;){ const {done,value}=await rd.read(); if(done)break; parts.push(value); got+=value.length; loading('Spielerdaten werden geladen … '+Math.round(got/1048576*10)/10+' MB',Math.min(96,got/total*100)); }
-  const buf=new Uint8Array(got); let o=0; for(const p of parts){ buf.set(p,o); o+=p.length; }
-  return JSON.parse(new TextDecoder().decode(buf));
+async function fetchDataset(token,versuch){
+  // 0.99.178: Hängt die Verbindung (Handy, Wechsel zwischen WLAN und Mobilfunk), stand der Ladebalken früher für immer kurz vor dem Ende.
+  // Jetzt: 20 Sekunden ohne neue Daten brechen ab, einmal wird neu versucht, danach startet die App mit dem gespeicherten Stand (loadAndStart).
+  versuch=versuch||0; const ac=(typeof AbortController==='function')?new AbortController():null; let uhr=null;
+  const wach=()=>{ if(!ac)return; clearTimeout(uhr); uhr=setTimeout(()=>{ try{ ac.abort(); }catch(e){} },20000); };
+  try{
+    wach();
+    const r=await fetch(CFG.url+'/rest/v1/dataset?id=eq.1&select=version,body',{headers:{apikey:CFG.anon,Authorization:'Bearer '+token,Accept:'application/vnd.pgrst.object+json'},cache:'no-store',signal:ac?ac.signal:undefined});
+    if(r.status===406)throw new Error('kein-datenbestand');
+    if(!r.ok)throw new Error('Datenbestand: HTTP '+r.status);
+    const total=+r.headers.get('content-length')||+(CFG.dataBytes||0)||3200000;
+    if(!r.body||!r.body.getReader){ loading('Spielerdaten werden geladen …',60); const j=await r.json(); clearTimeout(uhr); return j; }
+    const rd=r.body.getReader(), parts=[]; let got=0;
+    for(;;){ const {done,value}=await rd.read(); if(done)break; wach(); parts.push(value); got+=value.length; loading('Spielerdaten werden geladen … '+Math.round(got/1048576*10)/10+' MB',Math.min(96,got/total*100)); }
+    clearTimeout(uhr);
+    const buf=new Uint8Array(got); let o=0; for(const p of parts){ buf.set(p,o); o+=p.length; }
+    return JSON.parse(new TextDecoder().decode(buf));
+  }catch(e){
+    clearTimeout(uhr);
+    const haengt=!!(ac&&ac.signal.aborted);
+    if(String(e&&e.message)!=='kein-datenbestand'&&versuch<1){ loading(haengt?'Verbindung hängt, neuer Versuch …':'Neuer Versuch …',20); await new Promise(r=>setTimeout(r,800)); return fetchDataset(token,versuch+1); }
+    if(haengt)throw new Error('Datenbestand: keine Antwort');
+    throw e;
+  }
 }
 function SV_LEER(){ return {version:'leer',body:{generated:'',players:[],jugend:[],clubs:{},ligaGA:{},startelf:{formation:'4-4-2',slots:{}},startelfLast:{formation:'4-4-2',slots:{}},startelfNow:{formation:'4-4-2',slots:{}}}}; }
 async function loadAndStart(){
@@ -523,7 +537,7 @@ async function loadAndStart(){
   else if(!SV.offline&&session){
     try{ ds=await fetchDataset(session.access_token); await IDB.set('dataset',ds); }
     catch(e){ if(String(e.message)==='kein-datenbestand'&&(SV.profile.role==='jugend'||ohneBestand)){ ds=SV_LEER(); }   // Jugendtrainer ohne Freigabe für die Erste: App startet mit leerem Datenbestand
-    else{ if(String(e.message)==='kein-datenbestand'){ card.innerHTML='<h2>Noch keine Daten</h2><p class="sub">Der Spieler-Datenbestand wurde noch nicht hochgeladen.</p>'; showCard(); return; } if(cached){ ds=cached; SV.offline=true; } else throw e; } }
+    else{ if(String(e.message)==='kein-datenbestand'){ card.innerHTML='<h2>Noch keine Daten</h2><p class="sub">Der Spieler-Datenbestand wurde noch nicht hochgeladen.</p>'; showCard(); return; } if(cached){ ds=cached; SV.offline=true; } else if(/keine Antwort|Failed to fetch|NetworkError|Load failed/i.test(String(e&&e.message))){ viewLogin('Die Spielerdaten kamen nicht an. Bitte die App schließen und neu öffnen.','err'); return; } else throw e; } }
   }
   if(!ds){ viewLogin('Keine Verbindung. Für den ersten Start auf diesem Gerät wird Internet gebraucht.','err'); return; }
   window.__SVBC_DATA=ds.body; window.__SVBC_USER=SV.profile; window.__SVBC_DSVER=ds.version;
